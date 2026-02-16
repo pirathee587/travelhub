@@ -1,0 +1,102 @@
+
+export const statusBadge = {
+    pending: "badge-pending",
+    active: "badge-active",
+    completed: "badge-completed",
+    cancelled: "badge-cancelled",
+};
+
+export interface Booking {
+    id: string;
+    customerName: string;
+    customerEmail: string;
+    contactNumber: string;
+    destination: string;
+    travelDates: string;
+    packageType: string;
+    vehicle: string;
+    driver: string;
+    amount: number;
+    status: "pending" | "active" | "completed" | "cancelled";
+}
+
+export const bookings: Booking[] = [
+    {
+        id: "BK001",
+        customerName: "Sarah Johnson",
+        customerEmail: "sarah.j@email.com",
+        contactNumber: "+1 (555) 123-4567",
+        destination: "Sigiriya, Dambulla",
+        travelDates: "Jan 15 - Jan 22, 2025",
+        packageType: "Cultural Triangle Heritage",
+        vehicle: "Toyota Innova",
+        driver: "Rahul Singh",
+        amount: 450,
+        status: "active",
+    },
+    {
+        id: "BK002",
+        customerName: "Michael Chen",
+        customerEmail: "m.chen@email.com",
+        contactNumber: "+1 (555) 987-6543",
+        destination: "Ella, Badulla",
+        travelDates: "Jan 18 - Jan 25, 2025",
+        packageType: "Hill Country Train Adventure",
+        vehicle: "Mercedes V-Class",
+        driver: "Pierre Martin",
+        amount: 320,
+        status: "pending",
+    },
+    {
+        id: "BK003",
+        customerName: "Emma Wilson",
+        customerEmail: "emma.w@email.com",
+        contactNumber: "+44 20 7123 4567",
+        destination: "Mirissa, Matara",
+        travelDates: "Jan 10 - Jan 17, 2025",
+        packageType: "Southern Coastal Bliss",
+        vehicle: "Speedboat Transfer",
+        driver: "Ahmed Hassan",
+        amount: 600,
+        status: "completed",
+    },
+    {
+        id: "BK004",
+        customerName: "James Brown",
+        customerEmail: "james.b@email.com",
+        contactNumber: "+1 (555) 234-5678",
+        destination: "Yala National Park",
+        travelDates: "Jan 20 - Jan 27, 2025",
+        packageType: "Wild Yala Safari",
+        vehicle: "Safari Jeep",
+        driver: "Hans Weber",
+        amount: 250,
+        status: "pending",
+    },
+    {
+        id: "BK005",
+        customerName: "Lisa Anderson",
+        customerEmail: "lisa.a@email.com",
+        contactNumber: "+61 2 1234 5678",
+        destination: "Galle Fort, Galle",
+        travelDates: "Jan 05 - Jan 12, 2025",
+        packageType: "Southern Coastal Bliss",
+        vehicle: "Toyota Alphard",
+        driver: "Takeshi Yamamoto",
+        amount: 600,
+        status: "cancelled",
+    },
+    {
+        id: "BK006",
+        customerName: "David Kim",
+        customerEmail: "david.k@email.com",
+        contactNumber: "+82 2-1234-5678",
+        destination: "Jaffna",
+        travelDates: "Jan 22 - Jan 28, 2025",
+        packageType: "Jaffna Tamil Culture",
+        vehicle: "Lexus LX",
+        driver: "Omar Hassan",
+        amount: 400,
+        status: "pending",
+    },
+];
