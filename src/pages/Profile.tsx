@@ -361,32 +361,7 @@ const Profile = () => {
             </Dialog>
           </div>
 
-          {/* Performance Stats */}
-          <div className="mt-6 rounded-xl border border-border bg-card p-6">
-            <h3 className="font-semibold text-foreground">Performance</h3>
-            <div className="mt-4 space-y-4">
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">Total Trips</span>
-                <span className="font-semibold text-foreground">{profile.totalTrips}</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">Total Revenue</span>
-                <span className="font-semibold text-foreground">
-                  ${profile.totalRevenue.toLocaleString()}
-                </span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">Completion Rate</span>
-                <span className="font-semibold text-success">{profile.completionRate}%</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">Cancellation Rate</span>
-                <span className="font-semibold text-destructive">
-                  {100 - profile.completionRate}%
-                </span>
-              </div>
-            </div>
-          </div>
+
         </div>
 
         {/* Reviews Section */}

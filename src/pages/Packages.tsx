@@ -415,8 +415,20 @@ const Packages = () => {
                 pkg.available ? "border-border" : "border-muted opacity-75"
               )}
             >
-              {/* Gradient Header */}
-              <div className="h-24 bg-gradient-to-br from-primary via-primary to-accent/80" />
+              {/* Package Image */}
+              <div className="aspect-video w-full relative overflow-hidden bg-muted">
+                {pkg.images && pkg.images.length > 0 ? (
+                  <img
+                    src={pkg.images[0]}
+                    alt={pkg.name}
+                    className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                  />
+                ) : (
+                  <div className="h-full w-full bg-gradient-to-br from-primary via-primary to-accent/80 flex items-center justify-center">
+                    <MapPin className="h-8 w-8 text-primary-foreground opacity-50" />
+                  </div>
+                )}
+              </div>
 
               {/* Content */}
               <div className="p-5">

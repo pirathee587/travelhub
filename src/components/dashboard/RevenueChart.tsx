@@ -4,7 +4,6 @@ import {
   XAxis,
   YAxis,
   CartesianGrid,
-  Tooltip,
   ResponsiveContainer,
 } from "recharts";
 
@@ -50,15 +49,6 @@ export function RevenueChart() {
             tick={{ fill: "hsl(215, 15%, 50%)", fontSize: 12 }}
             tickFormatter={(value) => `$${value / 1000}k`}
           />
-          <Tooltip
-            contentStyle={{
-              backgroundColor: "hsl(0, 0%, 100%)",
-              border: "1px solid hsl(214, 25%, 90%)",
-              borderRadius: "12px",
-              boxShadow: "0 4px 20px -4px hsl(215 25% 15% / 0.1)",
-            }}
-            formatter={(value: number) => [`$${value.toLocaleString()}`, "Revenue"]}
-          />
           <Area
             type="monotone"
             dataKey="revenue"
@@ -66,6 +56,8 @@ export function RevenueChart() {
             strokeWidth={2}
             fillOpacity={1}
             fill="url(#colorRevenue)"
+            isAnimationActive={false}
+            activeDot={false}
           />
         </AreaChart>
       </ResponsiveContainer>

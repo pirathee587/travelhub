@@ -51,6 +51,9 @@ interface Driver {
   email: string; // Added email
   image?: string; // Added image
   license: string;
+  nic?: string; // Added NIC
+  licenseIssuedDate?: string; // Added License Issued Date
+  licenseExpiryDate?: string; // Added License Expiry Date
   contact: string;
   rating: number; // Added rating
   vehicle?: string;
@@ -58,30 +61,33 @@ interface Driver {
 }
 
 const initialVehicles: Vehicle[] = [
-  { id: "V001", name: "Toyota Innova Crysta", type: "SUV", registration: "KA-01-AB-1234", capacity: 7, status: "available", images: ["https://images.unsplash.com/photo-1590362891991-f776e747a588?q=80&w=2669&auto=format&fit=crop"] },
-  { id: "V002", name: "Mercedes V-Class", type: "Van", registration: "KA-01-CD-5678", capacity: 8, status: "booked", driver: "Pierre Martin", images: ["https://images.unsplash.com/photo-1549643981-22920253fce3?q=80&w=2671&auto=format&fit=crop"] },
-  { id: "V003", name: "Range Rover Sport", type: "SUV", registration: "KA-01-EF-9012", capacity: 5, status: "maintenance", images: ["https://images.unsplash.com/photo-1606016159991-dfe4f2746ad2?q=80&w=2574&auto=format&fit=crop"] },
-  { id: "V004", name: "Toyota Alphard", type: "Van", registration: "KA-01-GH-3456", capacity: 7, status: "booked", driver: "Takeshi Yamamoto", images: ["https://images.unsplash.com/photo-1621689252328-98e821014168?q=80&w=2670&auto=format&fit=crop"] },
-  { id: "V005", name: "BMW X7", type: "SUV", registration: "KA-01-IJ-7890", capacity: 7, status: "available", images: ["https://images.unsplash.com/photo-1555215695-3004980adade?q=80&w=2670&auto=format&fit=crop"] },
+  { id: "V001", name: "Bajaj RE 4S", type: "Tuk-tuk", registration: "KA-01-AB-1234", capacity: 3, status: "available", images: ["https://images.unsplash.com/photo-1549557404-399a91873173?q=80&w=2671&auto=format&fit=crop"] },
+  { id: "V002", name: "Mercedes V-Class", type: "Van", registration: "KA-01-CD-5678", capacity: 8, status: "booked", driver: "Kavindu Jayasinghe", images: ["https://images.unsplash.com/photo-1549643981-22920253fce3?q=80&w=2671&auto=format&fit=crop"] },
+  { id: "V003", name: "Maruti Suzuki Wagon R", type: "Hatchback", registration: "KA-01-EF-9012", capacity: 4, status: "maintenance", images: ["https://images.unsplash.com/photo-1626322997193-4a1618063073?q=80&w=2671&auto=format&fit=crop"] },
+  { id: "V004", name: "Toyota Alphard", type: "Van", registration: "KA-01-GH-3456", capacity: 7, status: "booked", driver: "Tharushi Fernando", images: ["https://images.unsplash.com/photo-1621689252328-98e821014168?q=80&w=2670&auto=format&fit=crop"] },
+  { id: "V005", name: "Suzuki Alto 800", type: "Hatchback", registration: "KA-01-IJ-7890", capacity: 4, status: "available", images: ["https://images.unsplash.com/photo-1596726225381-80410656a5c1?q=80&w=2670&auto=format&fit=crop"] },
 ];
 
 const initialDrivers: Driver[] = [
   {
     id: "D001",
-    name: "Rahul Singh",
-    email: "rahul.singh@example.com",
+    name: "Nimal Perera",
+    email: "nimal.perera@gmail.com",
     license: "KA-DL-123456",
-    contact: "+91 98765 43210",
+    nic: "NIC123456789",
+    licenseIssuedDate: "2020-01-01",
+    licenseExpiryDate: "2030-01-01",
+    contact: "+94 77 123 4567",
     rating: 4.8,
     status: "available",
     image: "https://images.unsplash.com/photo-1633332755192-727a05c4013d?w=100&auto=format&fit=crop&q=60"
   },
   {
     id: "D002",
-    name: "Pierre Martin",
-    email: "pierre.m@example.com",
+    name: "Kavindu Jayasinghe",
+    email: "kavindu.j@gmail.com",
     license: "FR-DL-789012",
-    contact: "+33 612 345 678",
+    contact: "+94 71 234 5678",
     rating: 4.5,
     vehicle: "Mercedes V-Class",
     status: "on-trip",
@@ -89,10 +95,10 @@ const initialDrivers: Driver[] = [
   },
   {
     id: "D003",
-    name: "Takeshi Yamamoto",
-    email: "takeshi.y@example.com",
+    name: "Tharushi Fernando",
+    email: "tharushi.f@gmail.com",
     license: "JP-DL-345678",
-    contact: "+81 90 1234 5678",
+    contact: "+94 76 345 6789",
     rating: 4.9,
     vehicle: "Toyota Alphard",
     status: "on-trip",
@@ -100,10 +106,10 @@ const initialDrivers: Driver[] = [
   },
   {
     id: "D004",
-    name: "Hans Weber",
-    email: "hans.weber@example.com",
+    name: "Saman Kumara",
+    email: "saman.kumara@gmail.com",
     license: "CH-DL-901234",
-    contact: "+41 79 123 45 67",
+    contact: "+94 70 456 7890",
     rating: 4.7,
     status: "off-duty"
   },
@@ -130,10 +136,21 @@ const Vehicles = () => {
     name: "",
     email: "",
     license: "",
+    nic: "",
+    licenseIssuedDate: "",
+    licenseExpiryDate: "",
     contact: "",
     rating: 5.0,
     status: "available",
     image: "",
+  });
+
+  const [editingDriver, setEditingDriver] = useState<Driver | null>(null);
+  const [isEditDriverOpen, setIsEditDriverOpen] = useState(false);
+  const [editDriverForm, setEditDriverForm] = useState({
+    email: "",
+    contact: "",
+    license: "",
   });
 
   const [isAddVehicleOpen, setIsAddVehicleOpen] = useState(false);
@@ -265,7 +282,15 @@ const Vehicles = () => {
   };
 
   const handleAddDriver = () => {
-    if (newDriver.name && newDriver.email && newDriver.license && newDriver.contact) {
+    if (
+      newDriver.name &&
+      newDriver.email &&
+      newDriver.license &&
+      newDriver.contact &&
+      newDriver.nic &&
+      newDriver.licenseIssuedDate &&
+      newDriver.licenseExpiryDate
+    ) {
       setDrivers([
         ...drivers,
         {
@@ -273,14 +298,52 @@ const Vehicles = () => {
           name: newDriver.name,
           email: newDriver.email,
           license: newDriver.license,
+          nic: newDriver.nic,
+          licenseIssuedDate: newDriver.licenseIssuedDate,
+          licenseExpiryDate: newDriver.licenseExpiryDate,
           contact: newDriver.contact,
           rating: 5.0,
           image: newDriver.image,
           status: "available",
         } as Driver,
       ]);
-      setNewDriver({ name: "", email: "", license: "", contact: "", rating: 5.0, status: "available", image: "" });
+      setNewDriver({
+        name: "",
+        email: "",
+        license: "",
+        nic: "",
+        licenseIssuedDate: "",
+        licenseExpiryDate: "",
+        contact: "",
+        rating: 5.0,
+        status: "available",
+        image: ""
+      });
       setIsAddDriverOpen(false);
+    }
+  };
+
+  const handleEditDriver = (driver: Driver) => {
+    setEditingDriver(driver);
+    setEditDriverForm({
+      email: driver.email,
+      contact: driver.contact,
+      license: driver.license,
+    });
+    setIsEditDriverOpen(true);
+  };
+
+  const handleUpdateDriver = () => {
+    if (editingDriver && editDriverForm.email && editDriverForm.contact && editDriverForm.license) {
+      setDrivers(
+        drivers.map((d) =>
+          d.id === editingDriver.id
+            ? { ...d, email: editDriverForm.email, contact: editDriverForm.contact, license: editDriverForm.license }
+            : d
+        )
+      );
+      setIsEditDriverOpen(false);
+      setEditingDriver(null);
     }
   };
 
@@ -607,6 +670,32 @@ const Vehicles = () => {
                       />
                     </div>
                     <div className="space-y-2">
+                      <Label>NIC Number</Label>
+                      <Input
+                        placeholder="e.g., NIC123456789"
+                        value={newDriver.nic}
+                        onChange={(e) => setNewDriver({ ...newDriver, nic: e.target.value })}
+                      />
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label>License Issued Date</Label>
+                        <Input
+                          type="date"
+                          value={newDriver.licenseIssuedDate}
+                          onChange={(e) => setNewDriver({ ...newDriver, licenseIssuedDate: e.target.value })}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>License Expiry Date</Label>
+                        <Input
+                          type="date"
+                          value={newDriver.licenseExpiryDate}
+                          onChange={(e) => setNewDriver({ ...newDriver, licenseExpiryDate: e.target.value })}
+                        />
+                      </div>
+                    </div>
+                    <div className="space-y-2">
                       <Label>Contact</Label>
                       <Input
                         placeholder="e.g., +91 98765 43210"
@@ -616,6 +705,48 @@ const Vehicles = () => {
                     </div>
 
                     <Button className="w-full" onClick={handleAddDriver}>Add Driver</Button>
+                  </div>
+                </DialogContent>
+              </Dialog>
+
+              <Dialog open={isEditDriverOpen} onOpenChange={setIsEditDriverOpen}>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Edit Driver Details</DialogTitle>
+                  </DialogHeader>
+                  <div className="space-y-4 py-4">
+                    <div className="space-y-2">
+                      <Label>Driver Name</Label>
+                      <Input value={editingDriver?.name || ""} disabled className="bg-muted" />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Email Address</Label>
+                      <Input
+                        placeholder="e.g., john@example.com"
+                        type="email"
+                        value={editDriverForm.email}
+                        onChange={(e) => setEditDriverForm({ ...editDriverForm, email: e.target.value })}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Contact</Label>
+                      <Input
+                        placeholder="e.g., +91 98765 43210"
+                        value={editDriverForm.contact}
+                        onChange={(e) => setEditDriverForm({ ...editDriverForm, contact: e.target.value })}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>License Number</Label>
+                      <Input
+                        placeholder="e.g., KA-DL-123456"
+                        value={editDriverForm.license}
+                        onChange={(e) => setEditDriverForm({ ...editDriverForm, license: e.target.value })}
+                      />
+                    </div>
+                    <Button className="w-full" onClick={handleUpdateDriver}>
+                      Update Driver
+                    </Button>
                   </div>
                 </DialogContent>
               </Dialog>
@@ -701,7 +832,12 @@ const Vehicles = () => {
                         </td>
                         <td className="px-6 py-4 text-right">
                           <div className="flex items-center justify-end gap-2">
-                            <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-8 w-8 p-0"
+                              onClick={() => handleEditDriver(driver)}
+                            >
                               <Edit className="h-4 w-4" />
                             </Button>
                             <Button

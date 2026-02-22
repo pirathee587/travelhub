@@ -21,8 +21,8 @@ const mockBookings: Booking[] = [
     destination: "Bali, Indonesia",
     travelDates: "Jan 15 - Jan 22",
     packageType: "Premium Beach",
-    vehicle: "Toyota Innova",
-    driver: "Rahul Singh",
+    vehicle: "Bajaj RE 4S",
+    driver: "Nimal Perera",
     status: "active",
   },
   {
@@ -32,7 +32,7 @@ const mockBookings: Booking[] = [
     travelDates: "Jan 18 - Jan 25",
     packageType: "City Explorer",
     vehicle: "Mercedes V-Class",
-    driver: "Pierre Martin",
+    driver: "Kavindu Jayasinghe",
     status: "pending",
   },
   {
@@ -51,8 +51,8 @@ const mockBookings: Booking[] = [
     destination: "Swiss Alps",
     travelDates: "Jan 20 - Jan 27",
     packageType: "Adventure Plus",
-    vehicle: "Range Rover",
-    driver: "Hans Weber",
+    vehicle: "Maruti Suzuki Wagon R",
+    driver: "Saman Kumara",
     status: "pending",
   },
   {
@@ -62,7 +62,7 @@ const mockBookings: Booking[] = [
     travelDates: "Jan 05 - Jan 12",
     packageType: "Cultural Tour",
     vehicle: "Toyota Alphard",
-    driver: "Takeshi Yamamoto",
+    driver: "Tharushi Fernando",
     status: "cancelled",
   },
 ];

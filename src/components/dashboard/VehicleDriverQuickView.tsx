@@ -10,9 +10,9 @@ interface Vehicle {
 }
 
 const vehicles: Vehicle[] = [
-  { id: "V001", name: "Toyota Innova Crysta", type: "SUV", status: "available" },
+  { id: "V001", name: "Bajaj RE 4S", type: "Tuk-tuk", status: "available" },
   { id: "V002", name: "Mercedes V-Class", type: "Van", status: "booked", driver: "Pierre Martin" },
-  { id: "V003", name: "Range Rover Sport", type: "SUV", status: "maintenance" },
+  { id: "V003", name: "Maruti Suzuki Wagon R", type: "Hatchback", status: "maintenance" },
   { id: "V004", name: "Toyota Alphard", type: "Van", status: "booked", driver: "Takeshi Yamamoto" },
 ];
 

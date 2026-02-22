@@ -17,7 +17,7 @@ const navItems = [
   { icon: LayoutDashboard, label: "Dashboard", path: "/" },
   { icon: Car, label: "Vehicles & Drivers", path: "/vehicles" },
   { icon: CalendarCheck, label: "Bookings", path: "/bookings" },
-  { icon: Package, label: "Packages", path: "/packages" },
+  // { icon: Package, label: "Packages", path: "/packages" },
   { icon: BarChart3, label: "Analytics", path: "/analytics" },
   { icon: User, label: "Profile", path: "/profile" },
 ];
