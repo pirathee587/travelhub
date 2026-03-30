@@ -1,12 +1,10 @@
 package com.travelhub.backend.repository;
 
-import com.travelhub.backend.entity.User;
+import com.travelhub.backend.entity.Agent;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
-import java.util.Optional;
 
 @Repository
-public interface UserRepository extends JpaRepository<User, Long> {
-    Optional<User> findByEmail(String email);
+public interface AgentRepository extends JpaRepository<Agent, Long> {
     Boolean existsByEmail(String email);
 }
