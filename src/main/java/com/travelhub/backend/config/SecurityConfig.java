@@ -18,6 +18,8 @@ public class SecurityConfig {
                         .requestMatchers("/api/packages/**").permitAll()
                         .requestMatchers("/api/hotels/**").permitAll()
                         .requestMatchers("/api/tourist/**").permitAll()
+                        .requestMatchers("/api/reviews/**").permitAll()
+                        .requestMatchers("/api/tourist/**").permitAll()
                         .anyRequest().permitAll()
                 );
         return http.build();
