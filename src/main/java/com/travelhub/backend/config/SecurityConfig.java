@@ -18,8 +18,9 @@ public class SecurityConfig {
                         .requestMatchers("/api/packages/**").permitAll()
                         .requestMatchers("/api/hotels/**").permitAll()
                         .requestMatchers("/api/tourist/**").permitAll()
-                        .requestMatchers("/api/reviews/**").permitAll()
-                        .requestMatchers("/api/tourist/**").permitAll()
+                        .requestMatchers("/api/reviews/**").permitAll() // Feature B: Reviews
+                        .requestMatchers("/api/upload/**").permitAll()   // Feature A: Image Upload
+                        .requestMatchers("/uploads/**").permitAll()       // Feature A: Serve saved images
                         .anyRequest().permitAll()
                 );
         return http.build();
