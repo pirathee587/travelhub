@@ -1,7 +1,9 @@
 package com.travelhub.backend.controller;
 
+import com.travelhub.backend.dto.request.BookingRequest;
 import com.travelhub.backend.dto.response.BookingResponse;
 import com.travelhub.backend.dto.response.TripResponse;
+import com.travelhub.backend.service.BookingCreationService;
 import com.travelhub.backend.service.BookingService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -15,6 +17,7 @@ import java.util.List;
 public class BookingController {
 
     private final BookingService bookingService;
+    private final BookingCreationService bookingCreationService;
 
     // GET /api/tourist/trips?userId=1
     @GetMapping("/trips")
@@ -43,5 +46,18 @@ public class BookingController {
     @GetMapping("/bookings/{id}")
     public ResponseEntity<BookingResponse> getBookingById(@PathVariable Long id) {
         return ResponseEntity.ok(bookingService.getBookingById(id));
+    }
+
+    // POST /api/tourist/bookings
+    @PostMapping("/bookings")
+    public ResponseEntity<BookingResponse> createBooking(
+            @RequestBody BookingRequest request) {
+        return ResponseEntity.ok(bookingCreationService.createBooking(request));
+    }
+
+    // PUT /api/tourist/bookings/1/cancel
+    @PutMapping("/bookings/{id}/cancel")
+    public ResponseEntity<BookingResponse> cancelBooking(@PathVariable Long id) {
+        return ResponseEntity.ok(bookingCreationService.cancelBooking(id));
     }
 }
