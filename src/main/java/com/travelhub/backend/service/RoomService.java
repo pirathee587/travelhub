@@ -2,7 +2,6 @@ package com.travelhub.backend.service;
 
 import com.travelhub.backend.entity.Room;
 import com.travelhub.backend.repository.RoomRepository;
-import com.travelhub.backend.service.ImageUploadService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;

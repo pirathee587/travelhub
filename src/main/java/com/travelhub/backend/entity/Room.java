@@ -2,10 +2,12 @@ package com.travelhub.backend.entity;
 
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
+import jakarta.persistence.Table;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Positive;
 
 @Entity
+@Table(name = "rooms")
 public class Room {
 
     @Id
