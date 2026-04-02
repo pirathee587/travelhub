@@ -1,39 +1,31 @@
 package com.travelhub.backend.service;
 
-import com.travelhub.backend.common.BadRequestException;
 import com.travelhub.backend.dto.response.ImageUploadResponse;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.*;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
 import java.util.List;
 import java.util.UUID;
 
-/**
- * ImageUploadService — core business logic for Feature A (Image Upload Utility).
- *
- * Flow:
- *   1. Validate: not empty, correct type, within size limit
- *   2. Generate a unique UUID-based filename
- *   3. Create the uploads/room-images/ directory if it doesn't exist
- *   4. Save the file to disk using Files.copy (reliable)
- *   5. Return ImageUploadResponse with the public URL
- */
 @Service
 public class ImageUploadService {
 
-    // Reads from application.properties — defaults to "uploads" if not set
-    @Value("${app.upload.dir:uploads}")
-    private String uploadDir;
+    @Value("${supabase.url}")
+    private String supabaseUrl;
 
-    // Reads from application.properties — defaults to localhost:8080 if not set
-    @Value("${app.base-url:http://localhost:8080}")
-    private String baseUrl;
+    @Value("${supabase.key}")
+    private String supabaseKey;
+
+    @Value("${supabase.bucket}")
+    private String supabaseBucket;
+
+    @Autowired
+    private RestTemplate restTemplate;
 
     // Only these image formats are accepted
     private static final List<String> ALLOWED_TYPES = List.of(
@@ -58,7 +50,7 @@ public class ImageUploadService {
         // ── Step 1: Validate ──────────────────────────────────────────────────
 
         if (file == null || file.isEmpty()) {
-            throw new BadRequestException("No file selected. Please choose an image.");
+            throw new RuntimeException("No file selected. Please choose an image.");
         }
 
         String originalFilename = file.getOriginalFilename();
@@ -71,44 +63,50 @@ public class ImageUploadService {
         boolean isValidExtension = ALLOWED_EXTENSIONS.contains(extension);
 
         if (!isValidType && !isValidExtension) {
-            throw new BadRequestException(
+            throw new RuntimeException(
                     "Invalid file type '" + file.getContentType() +
                     "'. Only JPG, PNG, and WEBP images are allowed."
             );
         }
 
         if (file.getSize() > MAX_SIZE_BYTES) {
-            throw new BadRequestException("File size exceeds the 5MB limit.");
+            throw new RuntimeException("File size exceeds the 5MB limit.");
         }
 
         // ── Step 2: Generate unique filename ─────────────────────────────────
 
         String uniqueFileName = UUID.randomUUID().toString() + extension;
 
-        // ── Step 3 & 4: Create directory and save file ───────────────────────
+        // ── Step 3 & 4: Upload to Supabase ──────────────────────────────────
 
         try {
-            // toAbsolutePath() ensures it works regardless of working directory
-            Path uploadPath = Paths.get(uploadDir, "room-images").toAbsolutePath();
-            Files.createDirectories(uploadPath);
+            String uploadUrl = String.format("%s/storage/v1/object/%s/%s", supabaseUrl, supabaseBucket, uniqueFileName);
 
-            Path filePath = uploadPath.resolve(uniqueFileName);
+            HttpHeaders headers = new HttpHeaders();
+            headers.set("Authorization", "Bearer " + supabaseKey);
+            headers.set("apikey", supabaseKey);
+            headers.setContentType(MediaType.valueOf(file.getContentType()));
 
-            // Files.copy with InputStream is the most reliable way in Spring Boot
-            Files.copy(file.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
+            HttpEntity<byte[]> entity = new HttpEntity<>(file.getBytes(), headers);
+
+            ResponseEntity<String> response = restTemplate.exchange(uploadUrl, HttpMethod.POST, entity, String.class);
+
+            if (!response.getStatusCode().is2xxSuccessful()) {
+                throw new RuntimeException("Failed to upload to Supabase: " + response.getBody());
+            }
 
         } catch (IOException ex) {
-            throw new RuntimeException(
-                    "Failed to save the image file. Details: " + ex.getMessage()
-            );
+            throw new RuntimeException("Failed to read image file: " + ex.getMessage());
+        } catch (Exception ex) {
+            throw new RuntimeException("Supabase Upload Error: " + ex.getMessage());
         }
 
         // ── Step 5: Build and return response ────────────────────────────────
 
-        String imageUrl = baseUrl + "/uploads/room-images/" + uniqueFileName;
+        String publicUrl = String.format("%s/storage/v1/object/public/%s/%s", supabaseUrl, supabaseBucket, uniqueFileName);
 
         return ImageUploadResponse.builder()
-                .imageUrl(imageUrl)
+                .imageUrl(publicUrl)
                 .fileName(uniqueFileName)
                 .build();
     }

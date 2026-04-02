@@ -2,15 +2,24 @@ package com.travelhub.backend.entity;
 
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Positive;
 
 @Entity
 public class Room {
 
     @Id
     private String id;
+
+    @NotBlank(message = "Room name is required")
     private String name;
+
+    @NotBlank(message = "Room type is required")
     private String type;
+
+    @Positive(message = "Price must be greater than zero")
     private double price;
+
     private String description;
     private String imageUrl;
     private boolean availability;
