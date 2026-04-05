@@ -22,14 +22,20 @@ public class RoomController {
                                         @RequestParam double price,
                                         @RequestParam(required = false) String description,
                                         @RequestParam(required = false) MultipartFile image,
-                                        @RequestParam(defaultValue = "true") boolean availability) {
-        Room room = roomService.addRoom(name, type, price, description, image, availability);
+                                        @RequestParam(defaultValue = "true") boolean availability,
+                                        @RequestParam Long hotelId) {
+        Room room = roomService.addRoom(name, type, price, description, image, availability, hotelId);
         return ResponseEntity.ok(room);
     }
 
     @GetMapping
     public ResponseEntity<List<Room>> getAllRooms() {
         return ResponseEntity.ok(roomService.getAllRooms());
+    }
+
+    @GetMapping("/hotel/{hotelId}")
+    public ResponseEntity<List<Room>> getRoomsByHotelId(@PathVariable Long hotelId) {
+        return ResponseEntity.ok(roomService.getRoomsByHotelId(hotelId));
     }
 
     @GetMapping("/{id}")
