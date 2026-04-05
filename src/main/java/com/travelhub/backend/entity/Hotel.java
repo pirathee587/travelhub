@@ -18,6 +18,10 @@ public class Hotel {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "owner_id")
+    private User owner;
+
     @Column(nullable = false)
     private String hotelName;
 
