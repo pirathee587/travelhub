@@ -19,6 +19,7 @@ public class Package {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "agent_id", nullable = false)
     private Agent agent;
@@ -28,6 +29,7 @@ public class Package {
 
     @Column(nullable = false)
     private String destination;
+
 
     private String startPlace;
     private String endPlace;
@@ -39,11 +41,13 @@ public class Package {
     private Double rating;
     private Integer reviewCount;
 
+
     @Column(columnDefinition = "TEXT")
     private String festivalDetails;
 
     private Boolean trending = false;
     private Boolean isActive = true;
+    private String district;
 
     @OneToMany(mappedBy = "pkg", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<PackageItinerary> itinerary;

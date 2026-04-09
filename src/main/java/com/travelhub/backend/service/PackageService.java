@@ -61,6 +61,7 @@ public class PackageService {
                 .festivalDetails(pkg.getFestivalDetails())
                 .trending(pkg.getTrending())
                 .agentName(pkg.getAgent() != null ? pkg.getAgent().getAgentName() : null)
+                .district(pkg.getDistrict())
                 .build();
     }
 
@@ -102,6 +103,7 @@ public class PackageService {
                 .agentRating(pkg.getAgent() != null ? pkg.getAgent().getRating() : null)
                 .itinerary(itineraryDays)
                 .images(imageUrls)
+                .district(pkg.getDistrict())
                 .build();
     }
 

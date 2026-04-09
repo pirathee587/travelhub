@@ -37,4 +37,5 @@ public class Hotel {
 
     @Column(columnDefinition = "TEXT")
     private String amenities;
+    private String district;
 }

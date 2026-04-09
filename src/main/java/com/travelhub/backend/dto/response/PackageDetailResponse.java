@@ -31,6 +31,7 @@ public class PackageDetailResponse {
     private Double agentRating;
     private List<ItineraryDayResponse> itinerary;
     private List<String> images;
+    private String district;
 
     @Data
     @Builder
