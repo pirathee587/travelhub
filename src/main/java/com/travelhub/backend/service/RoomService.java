@@ -24,7 +24,7 @@ public class RoomService {
     @Autowired
     private ImageUploadService imageUploadService;
 
-    public Room addRoom(String name, String type, double price, String description, MultipartFile image, boolean availability, Long hotelId) {
+    public Room addRoom(String name, String type, double price, String description, MultipartFile image, Long hotelId) {
         Hotel hotel = hotelRepository.findById(hotelId)
                 .orElseThrow(() -> new RuntimeException("Hotel not found with id: " + hotelId));
 
@@ -40,7 +40,6 @@ public class RoomService {
         room.setPrice(price);
         room.setDescription(description);
         room.setImageUrl(imageUrl);
-        room.setAvailability(availability);
         room.setHotel(hotel);
 
         return roomRepository.save(room);
@@ -59,9 +58,14 @@ public class RoomService {
         return room.orElseThrow(() -> new RuntimeException("Room not found"));
     }
 
-    public Room updateRoomAvailability(String id, boolean availability) {
-        Room room = getRoomById(id);
-        room.setAvailability(availability);
-        return roomRepository.save(room);
+    public List<Room> searchRooms(Long hotelId, String query) {
+        if (query == null || query.trim().isEmpty()) {
+            return getRoomsByHotelId(hotelId);
+        }
+        return roomRepository.findByHotelIdAndNameContainingIgnoreCase(hotelId, query.trim());
+    }
+
+    public List<String> getDistinctRoomTypes(Long hotelId) {
+        return roomRepository.findDistinctRoomTypesByHotelId(hotelId);
     }
 }

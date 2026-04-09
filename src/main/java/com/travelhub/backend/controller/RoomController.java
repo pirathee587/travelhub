@@ -22,9 +22,8 @@ public class RoomController {
                                         @RequestParam double price,
                                         @RequestParam(required = false) String description,
                                         @RequestParam(required = false) MultipartFile image,
-                                        @RequestParam(defaultValue = "true") boolean availability,
                                         @RequestParam Long hotelId) {
-        Room room = roomService.addRoom(name, type, price, description, image, availability, hotelId);
+        Room room = roomService.addRoom(name, type, price, description, image, hotelId);
         return ResponseEntity.ok(room);
     }
 
@@ -43,8 +42,13 @@ public class RoomController {
         return ResponseEntity.ok(roomService.getRoomById(id));
     }
 
-    @PatchMapping("/{id}/availability")
-    public ResponseEntity<Room> updateRoomAvailability(@PathVariable String id, @RequestParam boolean availability) {
-        return ResponseEntity.ok(roomService.updateRoomAvailability(id, availability));
+    @GetMapping("/search")
+    public ResponseEntity<List<Room>> searchRoomsByName(@RequestParam Long hotelId, @RequestParam String query) {
+        return ResponseEntity.ok(roomService.searchRooms(hotelId, query));
+    }
+
+    @GetMapping("/hotel/{hotelId}/types")
+    public ResponseEntity<List<String>> getDistinctRoomTypes(@PathVariable Long hotelId) {
+        return ResponseEntity.ok(roomService.getDistinctRoomTypes(hotelId));
     }
 }

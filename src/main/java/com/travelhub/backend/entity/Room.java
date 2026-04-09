@@ -22,7 +22,6 @@ public class Room {
 
     private String description;
     private String imageUrl;
-    private boolean availability;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "hotel_id")
@@ -77,13 +76,6 @@ public class Room {
         this.imageUrl = imageUrl;
     }
 
-    public boolean isAvailability() {
-        return availability;
-    }
-
-    public void setAvailability(boolean availability) {
-        this.availability = availability;
-    }
 
     public Hotel getHotel() {
         return hotel;

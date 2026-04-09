@@ -11,7 +11,6 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class HotelDashboardStatsResponse {
     private Long totalRooms;
-    private Long availableRooms;
     private Long totalAmenities;
     private Long totalReviews;
     private Double averageRating;

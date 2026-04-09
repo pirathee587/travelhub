@@ -20,15 +20,33 @@ public class AmenityService {
     @Autowired
     private HotelRepository hotelRepository;
 
+    private String normalizeIconName(String iconName) {
+        if (iconName == null || iconName.trim().isEmpty()) {
+            return "HelpCircle"; // default fallback
+        }
+        
+        String[] words = iconName.trim().split("(\\s+|-|_)");
+        StringBuilder pascalCase = new StringBuilder();
+        for (String word : words) {
+            if (word.length() > 0) {
+                pascalCase.append(Character.toUpperCase(word.charAt(0)))
+                          .append(word.substring(1).toLowerCase());
+            }
+        }
+        return pascalCase.toString();
+    }
+
     // POST /api/amenities — Add a new amenity
     public Amenity addAmenity(AmenityRequest request) {
         Hotel hotel = hotelRepository.findById(request.getHotelId())
                 .orElseThrow(() -> new ResourceNotFoundException("Hotel", "id", request.getHotelId()));
 
+        String normalizedIcon = normalizeIconName(request.getIconName());
+
         Amenity amenity = Amenity.builder()
                 .name(request.getName())
                 .description(request.getDescription())
-                .iconName(request.getIconName())
+                .iconName(normalizedIcon)
                 .hotel(hotel)
                 .build();
         return amenityRepository.save(amenity);
