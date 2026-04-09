@@ -25,4 +25,5 @@ public class PackageResponse {
     private String festivalDetails;
     private Boolean trending;
     private String agentName;
+    private String district;
 }

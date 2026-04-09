@@ -22,4 +22,5 @@ public class HotelResponse {
     private Integer reviewCount;
     private String imageUrl;
     private List<String> amenities;
+    private String district;
 }

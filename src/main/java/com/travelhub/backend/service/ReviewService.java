@@ -2,10 +2,12 @@ package com.travelhub.backend.service;
 
 import com.travelhub.backend.dto.request.ReviewRequest;
 import com.travelhub.backend.dto.response.ReviewResponse;
+import com.travelhub.backend.entity.Booking;
 import com.travelhub.backend.entity.Hotel;
 import com.travelhub.backend.entity.Package;
 import com.travelhub.backend.entity.Review;
 import com.travelhub.backend.entity.User;
+import com.travelhub.backend.repository.BookingRepository;
 import com.travelhub.backend.repository.HotelRepository;
 import com.travelhub.backend.repository.PackageRepository;
 import com.travelhub.backend.repository.ReviewRepository;
@@ -23,6 +25,7 @@ public class ReviewService {
     private final UserRepository userRepository;
     private final PackageRepository packageRepository;
     private final HotelRepository hotelRepository;
+    private final BookingRepository bookingRepository;
 
     // Get reviews for a package
     public List<ReviewResponse> getPackageReviews(Long packageId) {
@@ -42,6 +45,18 @@ public class ReviewService {
 
     // Submit review for a package
     public ReviewResponse addPackageReview(Long packageId, ReviewRequest request) {
+
+        // Check booking exists and completed
+        List<Booking> bookings = bookingRepository.findByUserId(request.getUserId());
+        boolean hasBooked = bookings.stream()
+                .anyMatch(b -> b.getPkg().getId().equals(packageId)
+                        && b.getStatus().equals("completed"));
+
+        if (!hasBooked) {
+            throw new RuntimeException(
+                    "You can only review packages you have completed booking!");
+        }
+
         User user = userRepository.findById(request.getUserId())
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
@@ -63,6 +78,19 @@ public class ReviewService {
 
     // Submit review for a hotel
     public ReviewResponse addHotelReview(Long hotelId, ReviewRequest request) {
+
+        // Check booking exists and completed
+        List<Booking> bookings = bookingRepository.findByUserId(request.getUserId());
+        boolean hasBooked = bookings.stream()
+                .anyMatch(b -> b.getHotel() != null
+                        && b.getHotel().getId().equals(hotelId)
+                        && b.getStatus().equals("completed"));
+
+        if (!hasBooked) {
+            throw new RuntimeException(
+                    "You can only review hotels you have stayed in!");
+        }
+
         User user = userRepository.findById(request.getUserId())
                 .orElseThrow(() -> new RuntimeException("User not found"));
 

@@ -53,6 +53,7 @@ public class HotelService {
                 .reviewCount(hotel.getReviewCount())
                 .imageUrl(hotel.getImageUrl())
                 .amenities(amenityList)
+                .district(hotel.getDistrict())
                 .build();
     }
 }
