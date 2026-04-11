@@ -12,6 +12,8 @@ import java.time.LocalDate;
 @AllArgsConstructor
 public class TripResponse {
     private Long id;
+    private Long packageId;
+    private Long hotelId;
     private String packageName;
     private String destination;
     private LocalDate startDate;
