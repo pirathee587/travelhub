@@ -50,6 +50,8 @@ public class BookingService {
     private TripResponse toTripResponse(Booking booking) {
         return TripResponse.builder()
                 .id(booking.getId())
+                .packageId(booking.getPkg() != null ? booking.getPkg().getId() : null)
+                .hotelId(booking.getHotel() != null ? booking.getHotel().getId() : null)
                 .packageName(booking.getPkg() != null ? booking.getPkg().getPackageName() : null)
                 .destination(booking.getPkg() != null ? booking.getPkg().getDestination() : null)
                 .startDate(booking.getStartDate())
