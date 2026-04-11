@@ -8,12 +8,14 @@ import org.springframework.stereotype.Service;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
+import com.travelhub.backend.repository.ReviewRepository;
 
 @Service
 @RequiredArgsConstructor
 public class HotelService {
 
     private final HotelRepository hotelRepository;
+    private final ReviewRepository reviewRepository;
 
     public List<HotelResponse> getAllHotels() {
         return hotelRepository.findAll()
@@ -49,8 +51,10 @@ public class HotelService {
                 .description(hotel.getDescription())
                 .priceFrom(hotel.getPriceFrom())
                 .priceTo(hotel.getPriceTo())
-                .rating(hotel.getRating())
-                .reviewCount(hotel.getReviewCount())
+                .rating(reviewRepository.getAverageRatingByHotelId(hotel.getId()) != null ?
+                        Math.round(reviewRepository.getAverageRatingByHotelId(hotel.getId()) * 10.0) / 10.0 : 0.0)
+                .reviewCount(reviewRepository.getReviewCountByHotelId(hotel.getId()) != null ?
+                        reviewRepository.getReviewCountByHotelId(hotel.getId()).intValue() : 0)
                 .imageUrl(hotel.getImageUrl())
                 .amenities(amenityList)
                 .district(hotel.getDistrict())

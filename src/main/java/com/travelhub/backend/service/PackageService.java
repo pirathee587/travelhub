@@ -10,12 +10,14 @@ import org.springframework.stereotype.Service;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
+import com.travelhub.backend.repository.ReviewRepository;
 
 @Service
 @RequiredArgsConstructor
 public class PackageService {
 
     private final PackageRepository packageRepository;
+    private final ReviewRepository reviewRepository;
 
     public List<PackageResponse> getAllPackages() {
         return packageRepository.findByIsActiveTrue()
@@ -56,8 +58,10 @@ public class PackageService {
                 .duration(pkg.getDuration())
                 .category(pkg.getCategory())
                 .imageUrl(pkg.getImageUrl())
-                .rating(pkg.getRating())
-                .reviewCount(pkg.getReviewCount())
+                .rating(reviewRepository.getAverageRatingByPackageId(pkg.getId()) != null ?
+                        Math.round(reviewRepository.getAverageRatingByPackageId(pkg.getId()) * 10.0) / 10.0 : 0.0)
+                .reviewCount(reviewRepository.getReviewCountByPackageId(pkg.getId()) != null ?
+                        reviewRepository.getReviewCountByPackageId(pkg.getId()).intValue() : 0)
                 .festivalDetails(pkg.getFestivalDetails())
                 .trending(pkg.getTrending())
                 .agentName(pkg.getAgent() != null ? pkg.getAgent().getAgentName() : null)
@@ -92,9 +96,10 @@ public class PackageService {
                 .priceTo(pkg.getPriceTo())
                 .duration(pkg.getDuration())
                 .category(pkg.getCategory())
-                .imageUrl(pkg.getImageUrl())
-                .rating(pkg.getRating())
-                .reviewCount(pkg.getReviewCount())
+                .imageUrl(pkg.getImageUrl()).rating(reviewRepository.getAverageRatingByPackageId(pkg.getId()) != null ?
+                        Math.round(reviewRepository.getAverageRatingByPackageId(pkg.getId()) * 10.0) / 10.0 : 0.0)
+                .reviewCount(reviewRepository.getReviewCountByPackageId(pkg.getId()) != null ?
+                        reviewRepository.getReviewCountByPackageId(pkg.getId()).intValue() : 0)
                 .festivalDetails(pkg.getFestivalDetails())
                 .trending(pkg.getTrending())
                 .agentId(pkg.getAgent() != null ? pkg.getAgent().getId() : null)
