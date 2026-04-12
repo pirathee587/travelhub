@@ -8,6 +8,8 @@ import {
   Calendar,
   Edit,
   Camera,
+  Globe,
+  MessageCircle,
 } from 'lucide-react';
 import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
 import { Button } from '@/components/ui/button';
@@ -28,14 +30,27 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Badge } from '@/components/ui/badge';
+
+const SRI_LANKA_DISTRICTS = [
+  'Ampara', 'Anuradhapura', 'Badulla', 'Batticaloa', 'Colombo', 'Galle', 'Gampaha', 'Hambantota', 
+  'Jaffna', 'Kalutara', 'Kandy', 'Kegalle', 'Kilinochchi', 'Kurunegala', 'Mannar', 'Matale', 
+  'Matara', 'Monaragala', 'Mullaitivu', 'Nuwara Eliya', 'Polonnaruwa', 'Puttalam', 'Ratnapura', 
+  'Trincomalee', 'Vavuniya'
+].sort();
 
 const initialProfile = {
-  name: 'John Smith',
+  displayName: 'John Smith',
   email: 'john.smith@travelagent.com',
   phone: '+94 77 123 4567',
+  secondaryPhone: '',
+  whatsappNumber: '+94 77 123 4567',
   location: 'Colombo, Sri Lanka',
-  company: 'Sri Lanka Travel Experts',
   bio: 'Experienced travel agent specializing in Sri Lankan tours, from cultural heritage sites to pristine beaches. Over 8 years of experience creating unforgettable island adventures.',
+  languages: 'English, Sinhala',
+  operatingDistricts: ['Colombo', 'Galle', 'Kandy'],
+  websiteUrl: '',
   memberSince: 'March 2020',
   totalTrips: 156,
   totalRevenue: 84200,
@@ -44,7 +59,7 @@ const initialProfile = {
   image: '',
 };
 
-const reviews = [
+const initialReviews = [
   {
     id: 'R001',
     customer: 'Sarah Johnson',
@@ -151,17 +166,20 @@ const Profile = () => {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const fileInputRef = useRef(null);
 
-  const [imgFilter, setImgFilter] = useState('all');
+  const [reviewsState, setReviewsState] = useState(initialReviews);
   const [ratingFilter, setRatingFilter] = useState('all');
   const [destinationFilter, setDestinationFilter] = useState('all');
   const [packageFilter, setPackageFilter] = useState('all');
   const [sortOrder, setSortOrder] = useState('newest');
+  
+  const [activeReplyId, setActiveReplyId] = useState(null);
+  const [replyInputs, setReplyInputs] = useState({});
 
   // Extract unique values for filters
-  const destinations = Array.from(new Set(reviews.map((r) => r.trip)));
-  const packages = Array.from(new Set(reviews.map((r) => r.package)));
+  const destinations = Array.from(new Set(reviewsState.map((r) => r.trip)));
+  const packages = Array.from(new Set(reviewsState.map((r) => r.package)));
 
-  const filteredReviews = reviews
+  const filteredReviews = reviewsState
     .filter((review) => {
       if (ratingFilter !== 'all' && review.rating !== parseInt(ratingFilter))
         return false;
@@ -202,6 +220,15 @@ const Profile = () => {
     setIsEditDialogOpen(false);
   };
 
+  const handleSendReply = (reviewId) => {
+    if (!replyInputs[reviewId]?.trim()) return;
+    
+    setReviewsState(prev => 
+      prev.map(r => r.id === reviewId ? { ...r, reply: replyInputs[reviewId] } : r)
+    );
+    setActiveReplyId(null);
+  };
+
   return (
     <DashboardLayout
       title="Profile"
@@ -210,22 +237,23 @@ const Profile = () => {
     >
       <div className="grid gap-6 lg:grid-cols-3">
         {/* Profile Card */}
-        <div className="lg:col-span-1">
+        <div className="lg:col-span-1 space-y-6">
           <div className="rounded-xl border border-border bg-card p-6">
             <div className="relative mx-auto w-fit group">
               <div className="h-24 w-24 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center overflow-hidden border-2 border-primary/20">
                 {profile.image ? (
                   <img
                     src={profile.image}
-                    alt={profile.name}
+                    alt={profile.displayName}
                     className="h-full w-full object-cover"
                   />
                 ) : (
-                  <div className="text-3xl font-bold text-primary-foreground">
-                    {profile.name
+                  <div className="text-3xl font-bold text-primary-foreground uppercase">
+                    {profile.displayName
                       .split(' ')
                       .map((n) => n[0])
-                      .join('')}
+                      .join('')
+                      .slice(0, 2)}
                   </div>
                 )}
               </div>
@@ -239,9 +267,8 @@ const Profile = () => {
 
             <div className="mt-4 text-center">
               <h2 className="text-xl font-semibold text-foreground">
-                {profile.name}
+                {profile.displayName}
               </h2>
-              <p className="text-sm text-muted-foreground">{profile.company}</p>
               <div className="mt-2 flex items-center justify-center gap-1">
                 {Array.from({ length: 5 }).map((_, i) => (
                   <Star
@@ -260,23 +287,60 @@ const Profile = () => {
 
             <div className="mt-6 space-y-4">
               <div className="flex items-center gap-3 text-sm">
-                <Mail className="h-4 w-4 text-muted-foreground" />
-                <span className="text-foreground">{profile.email}</span>
+                <Mail className="h-4 w-4 text-muted-foreground shrink-0" />
+                <span className="text-foreground truncate" title={profile.email}>{profile.email}</span>
               </div>
               <div className="flex items-center gap-3 text-sm">
-                <Phone className="h-4 w-4 text-muted-foreground" />
+                <Phone className="h-4 w-4 text-muted-foreground shrink-0" />
                 <span className="text-foreground">{profile.phone}</span>
               </div>
+              {profile.secondaryPhone && (
+                <div className="flex items-center gap-3 text-sm">
+                  <Phone className="h-4 w-4 text-muted-foreground shrink-0" />
+                  <span className="text-foreground">{profile.secondaryPhone}</span>
+                </div>
+              )}
+              {profile.whatsappNumber && (
+                <div className="flex items-center gap-3 text-sm">
+                  <MessageCircle className="h-4 w-4 text-success shrink-0" />
+                  <span className="text-foreground">{profile.whatsappNumber} (WhatsApp)</span>
+                </div>
+              )}
               <div className="flex items-center gap-3 text-sm">
-                <MapPin className="h-4 w-4 text-muted-foreground" />
+                <MapPin className="h-4 w-4 text-muted-foreground shrink-0" />
                 <span className="text-foreground">{profile.location}</span>
               </div>
+              {profile.websiteUrl && (
+                <div className="flex items-center gap-3 text-sm">
+                  <Globe className="h-4 w-4 text-muted-foreground shrink-0" />
+                  <a href={profile.websiteUrl.startsWith('http') ? profile.websiteUrl : `https://${profile.websiteUrl}`} target="_blank" rel="noreferrer" className="text-primary hover:underline truncate" title={profile.websiteUrl}>{profile.websiteUrl}</a>
+                </div>
+              )}
               <div className="flex items-center gap-3 text-sm">
-                <Calendar className="h-4 w-4 text-muted-foreground" />
+                <Calendar className="h-4 w-4 text-muted-foreground shrink-0" />
                 <span className="text-foreground">
                   Member since {profile.memberSince}
                 </span>
               </div>
+            </div>
+
+            <div className="mt-6 pt-6 border-t border-border">
+              <h4 className="text-sm font-semibold text-foreground mb-3">Operating Districts</h4>
+              <div className="flex flex-wrap gap-2">
+                {profile.operatingDistricts.length > 0 ? profile.operatingDistricts.map(d => (
+                  <Badge key={d} variant="secondary">{d}</Badge>
+                )) : <span className="text-sm text-muted-foreground">Not specified</span>}
+              </div>
+              
+              <h4 className="text-sm font-semibold text-foreground mt-5 mb-2">Languages</h4>
+              <p className="text-sm text-muted-foreground">{profile.languages || 'Not specified'}</p>
+            </div>
+            
+            <div className="mt-6 pt-6 border-t border-border">
+               <h4 className="text-sm font-semibold text-foreground mb-2">About</h4>
+               <p className="text-sm leading-relaxed text-muted-foreground">
+                  {profile.bio || 'No bio provided.'}
+               </p>
             </div>
 
             <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
@@ -290,13 +354,13 @@ const Profile = () => {
                   Edit Profile
                 </Button>
               </DialogTrigger>
-              <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+              <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
                   <DialogTitle>Edit Profile</DialogTitle>
                 </DialogHeader>
                 <div className="space-y-4 py-4">
                   {/* Image Upload Area */}
-                  <div className="flex flex-col items-center gap-4 mb-2">
+                  <div className="flex flex-col items-center gap-4 mb-4">
                     <div
                       className="relative h-24 w-24 rounded-full border-2 border-dashed border-input flex items-center justify-center overflow-hidden hover:bg-muted/50 transition-colors cursor-pointer group"
                       onClick={() => fileInputRef.current?.click()}
@@ -333,74 +397,130 @@ const Profile = () => {
                         variant="ghost"
                         size="sm"
                         onClick={removeProfileImage}
-                        className="text-xs text-destructive h-6"
+                        className="text-xs text-destructive h-6 mt-1"
                       >
                         Remove Photo
                       </Button>
                     )}
                   </div>
 
-                  <div className="space-y-2">
-                    <Label>Full Name</Label>
-                    <Input
-                      value={editForm.name}
-                      onChange={(e) =>
-                        setEditForm({ ...editForm, name: e.target.value })
-                      }
-                    />
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                     <div className="md:col-span-2 space-y-2">
+                       <Label>Display Name</Label>
+                       <Input
+                         value={editForm.displayName}
+                         onChange={(e) =>
+                           setEditForm({ ...editForm, displayName: e.target.value })
+                         }
+                         placeholder="Individual or Agency Name"
+                       />
+                     </div>
+                     <div className="space-y-2">
+                       <Label>Email</Label>
+                       <Input
+                         value={editForm.email}
+                         disabled
+                         className="bg-muted text-muted-foreground"
+                         title="Email cannot be edited"
+                       />
+                     </div>
+                     <div className="space-y-2">
+                       <Label>Primary Phone</Label>
+                       <Input
+                         value={editForm.phone}
+                         onChange={(e) =>
+                           setEditForm({ ...editForm, phone: e.target.value })
+                         }
+                       />
+                     </div>
+                     <div className="space-y-2">
+                       <Label>Secondary Phone</Label>
+                       <Input
+                         value={editForm.secondaryPhone}
+                         onChange={(e) =>
+                           setEditForm({ ...editForm, secondaryPhone: e.target.value })
+                         }
+                       />
+                     </div>
+                     <div className="space-y-2">
+                       <Label>WhatsApp Number</Label>
+                       <Input
+                         value={editForm.whatsappNumber}
+                         onChange={(e) =>
+                           setEditForm({ ...editForm, whatsappNumber: e.target.value })
+                         }
+                       />
+                     </div>
+                     <div className="space-y-2">
+                       <Label>Location (City/District)</Label>
+                       <Input
+                         value={editForm.location}
+                         onChange={(e) =>
+                           setEditForm({ ...editForm, location: e.target.value })
+                         }
+                       />
+                     </div>
+                     <div className="space-y-2">
+                       <Label>Website URL</Label>
+                       <Input
+                         value={editForm.websiteUrl}
+                         onChange={(e) =>
+                           setEditForm({ ...editForm, websiteUrl: e.target.value })
+                         }
+                         placeholder="https://..."
+                       />
+                     </div>
+                     <div className="md:col-span-2 space-y-2">
+                       <Label>Languages</Label>
+                       <Input
+                         value={editForm.languages}
+                         onChange={(e) =>
+                           setEditForm({ ...editForm, languages: e.target.value })
+                         }
+                         placeholder="e.g. English, Sinhala, Tamil"
+                       />
+                     </div>
+                     
+                     <div className="md:col-span-2 space-y-2">
+                       <Label>Bio</Label>
+                       <Textarea
+                         value={editForm.bio}
+                         onChange={(e) =>
+                           setEditForm({ ...editForm, bio: e.target.value })
+                         }
+                         rows={4}
+                       />
+                     </div>
+
+                     <div className="md:col-span-2 space-y-3 mt-2">
+                       <Label>Operating Districts</Label>
+                       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 pt-2 border rounded-md p-4 bg-muted/20">
+                         {SRI_LANKA_DISTRICTS.map(district => (
+                           <div key={district} className="flex items-center space-x-2">
+                             <Checkbox 
+                               id={`district-${district}`} 
+                               checked={editForm.operatingDistricts.includes(district)}
+                               onCheckedChange={(checked) => {
+                                  if (checked) {
+                                     setEditForm(prev => ({...prev, operatingDistricts: [...prev.operatingDistricts, district]}));
+                                  } else {
+                                     setEditForm(prev => ({...prev, operatingDistricts: prev.operatingDistricts.filter(d => d !== district)}));
+                                  }
+                               }}
+                             />
+                             <Label htmlFor={`district-${district}`} className="text-sm font-normal cursor-pointer text-muted-foreground">{district}</Label>
+                           </div>
+                         ))}
+                       </div>
+                     </div>
                   </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label>Email</Label>
-                      <Input
-                        value={editForm.email}
-                        disabled
-                        className="bg-muted text-muted-foreground"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label>Phone</Label>
-                      <Input
-                        value={editForm.phone}
-                        onChange={(e) =>
-                          setEditForm({ ...editForm, phone: e.target.value })
-                        }
-                      />
-                    </div>
+
+                  <div className="pt-4 flex justify-end gap-3 border-t mt-6">
+                    <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>Cancel</Button>
+                    <Button onClick={handleSaveProfile}>
+                      Save Changes
+                    </Button>
                   </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label>Location</Label>
-                      <Input
-                        value={editForm.location}
-                        onChange={(e) =>
-                          setEditForm({ ...editForm, location: e.target.value })
-                        }
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label>Company</Label>
-                      <Input
-                        value={editForm.company}
-                        onChange={(e) =>
-                          setEditForm({ ...editForm, company: e.target.value })
-                        }
-                      />
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Bio</Label>
-                    <Textarea
-                      value={editForm.bio}
-                      onChange={(e) =>
-                        setEditForm({ ...editForm, bio: e.target.value })
-                      }
-                      rows={3}
-                    />
-                  </div>
-                  <Button className="w-full" onClick={handleSaveProfile}>
-                    Save Changes
-                  </Button>
                 </div>
               </DialogContent>
             </Dialog>
@@ -422,7 +542,7 @@ const Profile = () => {
               <div className="flex items-center gap-2 rounded-full bg-success/10 px-4 py-2">
                 <CheckCircle className="h-4 w-4 text-success" />
                 <span className="text-sm font-medium text-success">
-                  {reviews.filter((r) => r.rating >= 4).length} positive reviews
+                  {reviewsState.filter((r) => r.rating >= 4).length} positive reviews
                 </span>
               </div>
             </div>
@@ -502,7 +622,8 @@ const Profile = () => {
                           {review.customer
                             .split(' ')
                             .map((n) => n[0])
-                            .join('')}
+                            .join('')
+                            .slice(0, 2)}
                         </div>
                         <div>
                           <p className="font-medium text-foreground">
@@ -528,22 +649,48 @@ const Profile = () => {
                     <p className="mt-3 text-sm leading-relaxed text-foreground/80">
                       {review.comment}
                     </p>
-                    <p className="mt-3 text-xs text-muted-foreground">
+                    <p className="mt-3 text-xs text-muted-foreground pb-4">
                       {new Date(review.date).toLocaleDateString()} •{' '}
                       {review.package}
                     </p>
+                    
+                    {review.reply ? (
+                      <div className="mt-2 ml-4 md:ml-8 rounded-lg bg-muted/40 p-4 border-l-2 border-primary">
+                        <p className="text-xs font-semibold text-primary mb-1">You replied:</p>
+                        <p className="text-sm text-foreground/80">{review.reply}</p>
+                      </div>
+                    ) : (
+                      <div className="mt-2 pt-4 border-t border-border">
+                        {activeReplyId === review.id ? (
+                          <div className="space-y-3">
+                            <Textarea 
+                              placeholder="Type your reply here..."
+                              value={replyInputs[review.id] || ''}
+                              onChange={(e) => setReplyInputs({ ...replyInputs, [review.id]: e.target.value })}
+                              className="text-sm min-h-[80px]"
+                            />
+                            <div className="flex justify-end gap-2">
+                              <Button variant="ghost" size="sm" onClick={() => setActiveReplyId(null)}>Cancel</Button>
+                              <Button size="sm" onClick={() => handleSendReply(review.id)}>Send Reply</Button>
+                            </div>
+                          </div>
+                        ) : (
+                          <Button variant="ghost" size="sm" onClick={() => {
+                            setActiveReplyId(review.id);
+                            if (replyInputs[review.id] === undefined) {
+                              setReplyInputs({ ...replyInputs, [review.id]: '' });
+                            }
+                          }} className="gap-2 text-muted-foreground hover:text-foreground">
+                            <MessageCircle className="h-4 w-4" />
+                            Reply
+                          </Button>
+                        )}
+                      </div>
+                    )}
                   </div>
                 ))
               )}
             </div>
-          </div>
-
-          {/* Bio Section */}
-          <div className="mt-6 rounded-xl border border-border bg-card p-6">
-            <h3 className="font-semibold text-foreground">About Me</h3>
-            <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
-              {profile.bio}
-            </p>
           </div>
         </div>
       </div>

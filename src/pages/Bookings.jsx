@@ -28,14 +28,21 @@ import {
 } from '@/components/ui/select';
 import { cn } from '@/lib/utils';
 import { useNavigate } from 'react-router-dom';
-import { bookings, statusBadge } from '@/data/bookings';
+import { bookings as initialBookings, statusBadge } from '@/data/bookings';
 
 const Bookings = () => {
   const navigate = useNavigate();
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [localBookings, setLocalBookings] = useState(initialBookings);
 
-  const filteredBookings = bookings.filter((booking) => {
+  const handleUpdateStatus = (id, newStatus) => {
+    setLocalBookings((prev) =>
+      prev.map((b) => (b.id === id ? { ...b, status: newStatus } : b))
+    );
+  };
+
+  const filteredBookings = localBookings.filter((booking) => {
     const matchesSearch =
       booking.customerName.toLowerCase().includes(search.toLowerCase()) ||
       booking.destination.toLowerCase().includes(search.toLowerCase()) ||
@@ -45,9 +52,9 @@ const Bookings = () => {
     return matchesSearch && matchesStatus;
   });
 
-  const pendingCount = bookings.filter((b) => b.status === 'pending').length;
-  const activeCount = bookings.filter((b) => b.status === 'active').length;
-  const completedCount = bookings.filter(
+  const pendingCount = localBookings.filter((b) => b.status === 'pending').length;
+  const activeCount = localBookings.filter((b) => b.status === 'active').length;
+  const completedCount = localBookings.filter(
     (b) => b.status === 'completed'
   ).length;
 
@@ -177,6 +184,7 @@ const Bookings = () => {
                       size="sm"
                       variant="outline"
                       className="gap-1 border-success text-success hover:bg-success hover:text-success-foreground"
+                      onClick={() => handleUpdateStatus(booking.id, 'active')}
                     >
                       <Check className="h-4 w-4" />
                       Accept
@@ -185,6 +193,7 @@ const Bookings = () => {
                       size="sm"
                       variant="outline"
                       className="gap-1 border-destructive text-destructive hover:bg-destructive hover:text-destructive-foreground"
+                      onClick={() => handleUpdateStatus(booking.id, 'cancelled')}
                     >
                       <X className="h-4 w-4" />
                       Decline
