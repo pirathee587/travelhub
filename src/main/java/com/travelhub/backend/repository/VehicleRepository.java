@@ -7,6 +7,10 @@ import java.util.List;
 
 @Repository
 public interface VehicleRepository extends JpaRepository<Vehicle, Long> {
+
+    // Your methods
     List<Vehicle> findByAgentId(Long agentId);
-    List<Vehicle> findByIsAvailableTrue();
+    List<Vehicle> findByAgentIdAndLifecycleStatus(Long agentId, String lifecycleStatus);
+    List<Vehicle> findByAgentIdAndStatus(Long agentId, String status);
+    boolean existsByRegistration(String registration);
 }
