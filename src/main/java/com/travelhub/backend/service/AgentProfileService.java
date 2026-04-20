@@ -16,13 +16,13 @@ public class AgentProfileService {
 
     public AgentProfileResponse getProfile(Long agentId) {
         Agent agent = agentRepository.findById(agentId)
-                .orElseThrow(() -> new ResourceNotFoundException("Agent not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Agent", "id", agentId));
         return toResponse(agent);
     }
 
     public AgentProfileResponse updateProfile(Long agentId, AgentProfileRequest request) {
         Agent agent = agentRepository.findById(agentId)
-                .orElseThrow(() -> new ResourceNotFoundException("Agent not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Agent", "id", agentId));
 
         agent.setAgentName(request.getAgentName());
         agent.setPhone(request.getPhone());

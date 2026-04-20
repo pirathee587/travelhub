@@ -87,9 +87,11 @@ public class BookingService {
                 .driverRating(booking.getVehicle() != null ? booking.getVehicle().getDriverRating() : null)
                 .driverTrips(booking.getVehicle() != null ? booking.getVehicle().getDriverTrips() : null)
                 .vehicleType(booking.getVehicle() != null ? booking.getVehicle().getVehicleType() : null)
-                .vehicleModel(booking.getVehicle() != null ? booking.getVehicle().getVehicleModel() : null)
+                .vehicleModel(booking.getVehicle() != null ? booking.getVehicle().getModel() : null)
                 .vehicleRegistration(booking.getVehicle() != null ? booking.getVehicle().getRegistration() : null)
-                .vehicleCapacity(booking.getVehicle() != null ? booking.getVehicle().getCapacity() : null)
+                .vehicleCapacity(booking.getVehicle() != null && booking.getVehicle().getCapacity() != null
+                        ? booking.getVehicle().getCapacity().toString()
+                        : null)
                 .build();
     }
 }

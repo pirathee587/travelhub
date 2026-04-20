@@ -33,16 +33,16 @@ public class DriverService {
 
     public DriverResponse getDriverById(Long agentId, Long driverId) {
         Driver driver = driverRepository.findById(driverId)
-                .orElseThrow(() -> new ResourceNotFoundException("Driver not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Driver", "id", driverId));
         if (!driver.getAgent().getId().equals(agentId)) {
-            throw new ResourceNotFoundException("Driver not found for this agent");
+            throw new ResourceNotFoundException("Driver", "agentId", agentId);
         }
         return toResponse(driver);
     }
 
     public DriverResponse createDriver(Long agentId, DriverRequest request) {
         Agent agent = agentRepository.findById(agentId)
-                .orElseThrow(() -> new ResourceNotFoundException("Agent not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Agent", "id", agentId));
 
         if (driverRepository.existsByNic(request.getNic())) {
             throw new BadRequestException("A driver with this NIC already exists");
@@ -80,9 +80,9 @@ public class DriverService {
 
     public DriverResponse updateDriver(Long agentId, Long driverId, DriverRequest request) {
         Driver driver = driverRepository.findById(driverId)
-                .orElseThrow(() -> new ResourceNotFoundException("Driver not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Driver", "id", driverId));
         if (!driver.getAgent().getId().equals(agentId)) {
-            throw new ResourceNotFoundException("Driver not found for this agent");
+            throw new ResourceNotFoundException("Driver", "agentId", agentId);
         }
 
         // Only update non-locked fields
@@ -101,9 +101,9 @@ public class DriverService {
 
     public DriverResponse updateStatus(Long agentId, Long driverId, String status) {
         Driver driver = driverRepository.findById(driverId)
-                .orElseThrow(() -> new ResourceNotFoundException("Driver not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Driver", "id", driverId));
         if (!driver.getAgent().getId().equals(agentId)) {
-            throw new ResourceNotFoundException("Driver not found for this agent");
+            throw new ResourceNotFoundException("Driver", "agentId", agentId);
         }
         driver.setStatus(status);
         return toResponse(driverRepository.save(driver));
@@ -111,9 +111,9 @@ public class DriverService {
 
     public DriverResponse updateLifecycle(Long agentId, Long driverId, String lifecycleStatus) {
         Driver driver = driverRepository.findById(driverId)
-                .orElseThrow(() -> new ResourceNotFoundException("Driver not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Driver", "id", driverId));
         if (!driver.getAgent().getId().equals(agentId)) {
-            throw new ResourceNotFoundException("Driver not found for this agent");
+            throw new ResourceNotFoundException("Driver", "agentId", agentId);
         }
         driver.setLifecycleStatus(lifecycleStatus);
         return toResponse(driverRepository.save(driver));
@@ -121,9 +121,9 @@ public class DriverService {
 
     public void deleteDriver(Long agentId, Long driverId) {
         Driver driver = driverRepository.findById(driverId)
-                .orElseThrow(() -> new ResourceNotFoundException("Driver not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Driver", "id", driverId));
         if (!driver.getAgent().getId().equals(agentId)) {
-            throw new ResourceNotFoundException("Driver not found for this agent");
+            throw new ResourceNotFoundException("Driver", "agentId", agentId);
         }
         if (driver.getStatus().equals("on-trip")) {
             throw new BadRequestException("Cannot delete a driver who is currently on a trip");

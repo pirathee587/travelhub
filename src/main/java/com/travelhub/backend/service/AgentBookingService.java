@@ -31,18 +31,18 @@ public class AgentBookingService {
 
     public BookingResponse getBookingById(Long agentId, Long bookingId) {
         Booking booking = bookingRepository.findById(bookingId)
-                .orElseThrow(() -> new ResourceNotFoundException("Booking not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Booking", "id", bookingId));
         if (!booking.getVehicle().getAgent().getId().equals(agentId)) {
-            throw new ResourceNotFoundException("Booking not found for this agent");
+            throw new ResourceNotFoundException("Booking", "agentId", agentId);
         }
         return toResponse(booking);
     }
 
     public BookingResponse acceptBooking(Long agentId, Long bookingId) {
         Booking booking = bookingRepository.findById(bookingId)
-                .orElseThrow(() -> new ResourceNotFoundException("Booking not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Booking", "id", bookingId));
         if (!booking.getVehicle().getAgent().getId().equals(agentId)) {
-            throw new ResourceNotFoundException("Booking not found for this agent");
+            throw new ResourceNotFoundException("Booking", "agentId", agentId);
         }
         if (!booking.getStatus().equals("pending")) {
             throw new BadRequestException("Only pending bookings can be accepted");
@@ -55,9 +55,9 @@ public class AgentBookingService {
     public BookingResponse declineBooking(Long agentId, Long bookingId,
                                           BookingActionRequest request) {
         Booking booking = bookingRepository.findById(bookingId)
-                .orElseThrow(() -> new ResourceNotFoundException("Booking not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Booking", "id", bookingId));
         if (!booking.getVehicle().getAgent().getId().equals(agentId)) {
-            throw new ResourceNotFoundException("Booking not found for this agent");
+            throw new ResourceNotFoundException("Booking", "agentId", agentId);
         }
         if (!booking.getStatus().equals("pending")) {
             throw new BadRequestException("Only pending bookings can be declined");
@@ -69,9 +69,9 @@ public class AgentBookingService {
 
     public BookingResponse completeBooking(Long agentId, Long bookingId) {
         Booking booking = bookingRepository.findById(bookingId)
-                .orElseThrow(() -> new ResourceNotFoundException("Booking not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Booking", "id", bookingId));
         if (!booking.getVehicle().getAgent().getId().equals(agentId)) {
-            throw new ResourceNotFoundException("Booking not found for this agent");
+            throw new ResourceNotFoundException("Booking", "agentId", agentId);
         }
         if (!booking.getStatus().equals("active")) {
             throw new BadRequestException("Only active bookings can be completed");

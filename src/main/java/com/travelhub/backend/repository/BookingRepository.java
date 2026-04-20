@@ -11,6 +11,7 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
     // Existing methods (keep these — teammates use them)
     List<Booking> findByUserId(Long userId);
     List<Booking> findByUserIdAndStatus(Long userId, String status);
+    Long countByUserIdAndStatus(Long userId, String status);
 
     // Your new methods for agent dashboard
     List<Booking> findByVehicleAgentId(Long agentId);

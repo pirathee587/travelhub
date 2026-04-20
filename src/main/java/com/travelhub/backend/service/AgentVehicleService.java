@@ -32,16 +32,16 @@ public class AgentVehicleService {
 
     public VehicleResponse getVehicleById(Long agentId, Long vehicleId) {
         Vehicle vehicle = vehicleRepository.findById(vehicleId)
-                .orElseThrow(() -> new ResourceNotFoundException("Vehicle not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Vehicle", "id", vehicleId));
         if (!vehicle.getAgent().getId().equals(agentId)) {
-            throw new ResourceNotFoundException("Vehicle not found for this agent");
+            throw new ResourceNotFoundException("Vehicle", "agentId", agentId);
         }
         return toResponse(vehicle);
     }
 
     public VehicleResponse createVehicle(Long agentId, VehicleRequest request) {
         Agent agent = agentRepository.findById(agentId)
-                .orElseThrow(() -> new ResourceNotFoundException("Agent not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Agent", "id", agentId));
 
         Vehicle vehicle = Vehicle.builder()
                 .agent(agent)
@@ -79,9 +79,9 @@ public class AgentVehicleService {
 
     public VehicleResponse updateVehicle(Long agentId, Long vehicleId, VehicleRequest request) {
         Vehicle vehicle = vehicleRepository.findById(vehicleId)
-                .orElseThrow(() -> new ResourceNotFoundException("Vehicle not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Vehicle", "id", vehicleId));
         if (!vehicle.getAgent().getId().equals(agentId)) {
-            throw new ResourceNotFoundException("Vehicle not found for this agent");
+            throw new ResourceNotFoundException("Vehicle", "agentId", agentId);
         }
 
         // Only update editable fields
@@ -100,9 +100,9 @@ public class AgentVehicleService {
 
     public VehicleResponse updateStatus(Long agentId, Long vehicleId, String status) {
         Vehicle vehicle = vehicleRepository.findById(vehicleId)
-                .orElseThrow(() -> new ResourceNotFoundException("Vehicle not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Vehicle", "id", vehicleId));
         if (!vehicle.getAgent().getId().equals(agentId)) {
-            throw new ResourceNotFoundException("Vehicle not found for this agent");
+            throw new ResourceNotFoundException("Vehicle", "agentId", agentId);
         }
         vehicle.setStatus(status);
         vehicle.setIsAvailable(status.equals("available"));
@@ -111,9 +111,9 @@ public class AgentVehicleService {
 
     public VehicleResponse updateLifecycle(Long agentId, Long vehicleId, String lifecycleStatus) {
         Vehicle vehicle = vehicleRepository.findById(vehicleId)
-                .orElseThrow(() -> new ResourceNotFoundException("Vehicle not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Vehicle", "id", vehicleId));
         if (!vehicle.getAgent().getId().equals(agentId)) {
-            throw new ResourceNotFoundException("Vehicle not found for this agent");
+            throw new ResourceNotFoundException("Vehicle", "agentId", agentId);
         }
         vehicle.setLifecycleStatus(lifecycleStatus);
         return toResponse(vehicleRepository.save(vehicle));
@@ -121,9 +121,9 @@ public class AgentVehicleService {
 
     public void deleteVehicle(Long agentId, Long vehicleId) {
         Vehicle vehicle = vehicleRepository.findById(vehicleId)
-                .orElseThrow(() -> new ResourceNotFoundException("Vehicle not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Vehicle", "id", vehicleId));
         if (!vehicle.getAgent().getId().equals(agentId)) {
-            throw new ResourceNotFoundException("Vehicle not found for this agent");
+            throw new ResourceNotFoundException("Vehicle", "agentId", agentId);
         }
         if (vehicle.getStatus().equals("booked")) {
             throw new BadRequestException("Cannot delete a vehicle that is currently booked");
