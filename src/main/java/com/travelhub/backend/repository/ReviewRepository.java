@@ -28,6 +28,6 @@ public interface ReviewRepository extends JpaRepository<Review, Long> {
     Long getReviewCountByHotelId(@Param("hotelId") Long hotelId);
 
     // Your new methods — added below
-    List<Review> findByAgentId(Long agentId);
-    List<Review> findByAgentIdAndRating(Long agentId, Integer rating);
+    List<Review> findByAgent_Id(Long agentId);
+    List<Review> findByAgent_IdAndRating(Long agentId, Integer rating);
 }

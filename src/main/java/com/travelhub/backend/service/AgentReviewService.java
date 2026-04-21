@@ -19,9 +19,9 @@ public class AgentReviewService {
     public List<ReviewResponse> getReviews(Long agentId, Integer rating) {
         List<Review> reviews;
         if (rating != null) {
-            reviews = reviewRepository.findByAgentIdAndRating(agentId, rating);
+            reviews = reviewRepository.findByAgent_IdAndRating(agentId, rating);
         } else {
-            reviews = reviewRepository.findByAgentId(agentId);
+            reviews = reviewRepository.findByAgent_Id(agentId);
         }
         return reviews.stream().map(this::toResponse).collect(Collectors.toList());
     }
