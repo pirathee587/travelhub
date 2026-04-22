@@ -13,6 +13,7 @@ public class AgentProfileResponse {
     private String secondaryPhone;
     private String whatsappNumber;
     private String companyName;
+    private String agencyName;
     private String location;
     private String bio;
     private String languages;

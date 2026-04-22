@@ -29,6 +29,7 @@ public class Agent {
     private String secondaryPhone;
     private String whatsappNumber;
     private String companyName;
+    private String agencyName;
     private String location;
 
     @Column(columnDefinition = "TEXT")

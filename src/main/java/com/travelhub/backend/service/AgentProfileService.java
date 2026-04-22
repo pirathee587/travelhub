@@ -34,6 +34,7 @@ public class AgentProfileService {
         agent.setOperatingDistricts(request.getOperatingDistricts());
         agent.setWebsiteUrl(request.getWebsiteUrl());
         agent.setCompanyName(request.getCompanyName());
+        agent.setAgencyName(request.getAgencyName() != null ? request.getAgencyName().trim() : null);
 
         if (request.getProfileImage() != null) {
             agent.setProfileImage(request.getProfileImage());
@@ -52,6 +53,7 @@ public class AgentProfileService {
                 .secondaryPhone(agent.getSecondaryPhone())
                 .whatsappNumber(agent.getWhatsappNumber())
                 .companyName(agent.getCompanyName())
+                .agencyName(agent.getAgencyName())
                 .location(agent.getLocation())
                 .bio(agent.getBio())
                 .languages(agent.getLanguages())
