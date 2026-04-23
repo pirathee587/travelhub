@@ -21,104 +21,104 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class ReviewService {
 
-    private final ReviewRepository reviewRepository;
-    private final UserRepository userRepository;
-    private final PackageRepository packageRepository;
-    private final HotelRepository hotelRepository;
-    private final BookingRepository bookingRepository;
+        private final ReviewRepository reviewRepository;
+        private final UserRepository userRepository;
+        private final PackageRepository packageRepository;
+        private final HotelRepository hotelRepository;
+        private final BookingRepository bookingRepository;
 
-    // Get reviews for a package
-    public List<ReviewResponse> getPackageReviews(Long packageId) {
-        return reviewRepository.findByPkgId(packageId)
-                .stream()
-                .map(this::toReviewResponse)
-                .collect(Collectors.toList());
-    }
-
-    // Get reviews for a hotel
-    public List<ReviewResponse> getHotelReviews(Long hotelId) {
-        return reviewRepository.findByHotelId(hotelId)
-                .stream()
-                .map(this::toReviewResponse)
-                .collect(Collectors.toList());
-    }
-
-    // Submit review for a package
-    public ReviewResponse addPackageReview(Long packageId, ReviewRequest request) {
-
-        // Check booking exists and completed
-        List<Booking> bookings = bookingRepository.findByUserId(request.getUserId());
-        boolean hasBooked = bookings.stream()
-                .anyMatch(b -> b.getPkg().getId().equals(packageId)
-                        && b.getStatus().equals("completed"));
-
-        if (!hasBooked) {
-            throw new RuntimeException(
-                    "You can only review packages you have completed booking!");
+        // Get reviews for a package
+        public List<ReviewResponse> getPackageReviews(Long packageId) {
+                return reviewRepository.findByPkgId(packageId)
+                                .stream()
+                                .map(this::toReviewResponse)
+                                .collect(Collectors.toList());
         }
 
-        User user = userRepository.findById(request.getUserId())
-                .orElseThrow(() -> new RuntimeException("User not found"));
-
-        Package pkg = packageRepository.findById(packageId)
-                .orElseThrow(() -> new RuntimeException("Package not found"));
-
-        Review review = Review.builder()
-                .user(user)
-                .pkg(pkg)
-                .userName(request.getUserName())
-                .title(request.getTitle())
-                .comment(request.getComment())
-                .rating(request.getRating())
-                .build();
-
-        Review saved = reviewRepository.save(review);
-        return toReviewResponse(saved);
-    }
-
-    // Submit review for a hotel
-    public ReviewResponse addHotelReview(Long hotelId, ReviewRequest request) {
-
-        // Check booking exists and completed
-        List<Booking> bookings = bookingRepository.findByUserId(request.getUserId());
-        boolean hasBooked = bookings.stream()
-                .anyMatch(b -> b.getHotel() != null
-                        && b.getHotel().getId().equals(hotelId)
-                        && b.getStatus().equals("completed"));
-
-        if (!hasBooked) {
-            throw new RuntimeException(
-                    "You can only review hotels you have stayed in!");
+        // Get reviews for a hotel
+        public List<ReviewResponse> getHotelReviews(Long hotelId) {
+                return reviewRepository.findByHotelId(hotelId)
+                                .stream()
+                                .map(this::toReviewResponse)
+                                .collect(Collectors.toList());
         }
 
-        User user = userRepository.findById(request.getUserId())
-                .orElseThrow(() -> new RuntimeException("User not found"));
+        // Submit review for a package
+        public ReviewResponse addPackageReview(Long packageId, ReviewRequest request) {
 
-        Hotel hotel = hotelRepository.findById(hotelId)
-                .orElseThrow(() -> new RuntimeException("Hotel not found"));
+                // Check booking exists and completed
+                List<Booking> bookings = bookingRepository.findByUserId(request.getUserId());
+                boolean hasBooked = bookings.stream()
+                                .anyMatch(b -> b.getPkg().getId().equals(packageId)
+                                                && b.getStatus().equals("completed"));
 
-        Review review = Review.builder()
-                .user(user)
-                .hotel(hotel)
-                .userName(request.getUserName())
-                .title(request.getTitle())
-                .comment(request.getComment())
-                .rating(request.getRating())
-                .build();
+                if (!hasBooked) {
+                        throw new RuntimeException(
+                                        "You can only review packages you have completed booking!");
+                }
 
-        Review saved = reviewRepository.save(review);
-        return toReviewResponse(saved);
-    }
+                User user = userRepository.findById(request.getUserId())
+                                .orElseThrow(() -> new RuntimeException("User not found"));
 
-    // Map Review → ReviewResponse
-    private ReviewResponse toReviewResponse(Review review) {
-        return ReviewResponse.builder()
-                .id(review.getId())
-                .userName(review.getUserName())
-                .title(review.getTitle())
-                .comment(review.getComment())
-                .rating(review.getRating())
-                .reviewDate(review.getReviewDate())
-                .build();
-    }
+                Package pkg = packageRepository.findById(packageId)
+                                .orElseThrow(() -> new RuntimeException("Package not found"));
+
+                Review review = Review.builder()
+                                .user(user)
+                                .pkg(pkg)
+                                .userName(request.getUserName())
+                                .title(request.getTitle())
+                                .comment(request.getComment())
+                                .rating(request.getRating())
+                                .build();
+
+                Review saved = reviewRepository.save(review);
+                return toReviewResponse(saved);
+        }
+
+        // Submit review for a hotel
+        public ReviewResponse addHotelReview(Long hotelId, ReviewRequest request) {
+
+                // Check booking exists and completed
+                List<Booking> bookings = bookingRepository.findByUserId(request.getUserId());
+                boolean hasBooked = bookings.stream()
+                                .anyMatch(b -> b.getHotel() != null
+                                                && b.getHotel().getId().equals(hotelId)
+                                                && b.getStatus().equals("completed"));
+
+                if (!hasBooked) {
+                        throw new RuntimeException(
+                                        "You can only review hotels you have stayed in!");
+                }
+
+                User user = userRepository.findById(request.getUserId())
+                                .orElseThrow(() -> new RuntimeException("User not found"));
+
+                Hotel hotel = hotelRepository.findById(hotelId)
+                                .orElseThrow(() -> new RuntimeException("Hotel not found"));
+
+                Review review = Review.builder()
+                                .user(user)
+                                .hotel(hotel)
+                                .userName(request.getUserName())
+                                .title(request.getTitle())
+                                .comment(request.getComment())
+                                .rating(request.getRating())
+                                .build();
+
+                Review saved = reviewRepository.save(review);
+                return toReviewResponse(saved);
+        }
+
+        // Map Review → ReviewResponse
+        private ReviewResponse toReviewResponse(Review review) {
+                return ReviewResponse.builder()
+                                .id(review.getId())
+                                .userName(review.getUserName())
+                                .title(review.getTitle())
+                                .comment(review.getComment())
+                                .rating(review.getRating())
+                                .reviewDate(review.getReviewDate())
+                                .build();
+        }
 }
