@@ -13,6 +13,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/amenities")
+@CrossOrigin(origins = "*")
 public class AmenityController {
 
     @Autowired
@@ -32,6 +33,13 @@ public class AmenityController {
     public ResponseEntity<ApiResponse> getAllAmenities() {
         List<Amenity> amenities = amenityService.getAllAmenities();
         return ResponseEntity.ok(new ApiResponse(true, "Amenities fetched successfully", amenities));
+    }
+
+    // GET /api/amenities/hotel/{hotelId} — Fetch amenities for a specific hotel
+    @GetMapping("/hotel/{hotelId}")
+    public ResponseEntity<ApiResponse> getAmenitiesByHotelId(@PathVariable Long hotelId) {
+        List<Amenity> amenities = amenityService.getAmenitiesByHotelId(hotelId);
+        return ResponseEntity.ok(new ApiResponse(true, "Hotel amenities fetched successfully", amenities));
     }
 
     // GET /api/amenities/{id}

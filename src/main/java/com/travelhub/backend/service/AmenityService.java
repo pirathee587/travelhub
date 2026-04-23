@@ -57,6 +57,11 @@ public class AmenityService {
         return amenityRepository.findAll();
     }
 
+    // New: Fetch amenities for a specific hotel
+    public List<Amenity> getAmenitiesByHotelId(Long hotelId) {
+        return amenityRepository.findByHotelId(hotelId);
+    }
+
     // GET /api/amenities/{id} — Fetch single amenity (optional but good practice)
     public Amenity getAmenityById(Long id) {
         return amenityRepository.findById(id)
