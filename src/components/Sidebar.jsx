@@ -1,7 +1,8 @@
 import React from 'react'
 import { Link, useLocation } from 'react-router-dom'
+
 import {
-  Map,
+  Plane,
   LayoutDashboard,
   Users,
   Hotel,
@@ -15,7 +16,7 @@ const MenuItem = ({icon, label, to}) => {
   const isActive = location.pathname === to
   return (
     <Link to={to} className={`flex items-center justify-between menu-item px-4 py-0 rounded-xl cursor-pointer transition ${
-      isActive ? 'bg-teal-800 bg-opacity-50' : 'hover:bg-teal-800 hover:bg-opacity-30'
+      isActive ? 'bg-gradient-to-r from-blue-500 to-blue-600 bg-opacity-50' : 'hover:bg-teal-800 hover:bg-opacity-30'
     }`}>
       <div className="flex items-center gap-3">
         <div className="text-2xl">{icon}</div>
@@ -23,7 +24,6 @@ const MenuItem = ({icon, label, to}) => {
       </div>
       {isActive && (
         <svg width="20" height="8" viewBox="0 0 5 2" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-          <path d="M0.833252 0.833344H4.16659" stroke="#F9B81F" strokeWidth="1.66667" strokeLinecap="round" strokeLinejoin="round"/>
         </svg>
       )}
     </Link>
@@ -32,7 +32,7 @@ const MenuItem = ({icon, label, to}) => {
 
 export default function Sidebar(){
   return (
-    <aside className="sidebar w-72 bg-gradient-to-b from-teal-900 to-teal-950 
+    <aside className="sidebar w-72 bg-teal-950 from-teal-900 to-teal-950 
 text-teal-50 px-5 py-8 flex flex-col gap-8 min-h-screen">
 
       
@@ -40,17 +40,17 @@ text-teal-50 px-5 py-8 flex flex-col gap-8 min-h-screen">
 <div className="flex items-center gap-4">
   
   {/* Icon Box */}
-  <div className="w-16 h-16 bg-yellow-400 rounded-2xl flex items-center justify-center">
-    <Map size={30} className="text-black" strokeWidth={2.5} />
+  <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl flex items-center justify-center">
+    <Plane className="text-white w-10 h-10" strokeWidth={2.5} />
   </div>
 
   {/* Text */}
   <div>
     <div className="font-bold text-3xl text-white leading-tight">
-      Ceylon
+      TravelHub
     </div>
     <div className="text-lg text-teal-200">
-      Tourism Admin
+      Dashboard
     </div>
   </div>
 

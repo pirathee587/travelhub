@@ -12,8 +12,6 @@ export default function Header(){
       {/* Right: Icons & User */}
       <div className="flex items-center gap-5">
         {/* Dark Mode Toggle */}
-        <button className="text-gray-500 text-2xl hover:text-gray-700 transition">🌙</button>
-        
         {/* Notifications */}
         <div className="relative">
           <button className="text-gray-500 text-2xl hover:text-gray-700 transition">🔔</button>

@@ -32,7 +32,9 @@ export default function HotelApprovals(){
             <div className="p-4">
               <h3 className="text-lg font-bold text-gray-900">{h.name}</h3>
               <p className="text-gray-600 mt-1">{h.district} • {h.rooms} rooms</p>
-              <p className="text-sm text-gray-600 mt-2">Rating: ⭐ {h.rating}</p>
+              {h.status !== 'Pending' && (
+                <p className="text-sm text-gray-600 mt-2">Rating: ⭐ {h.rating}</p>
+              )}
               <div className="mt-4">
                 <span className={`inline-block px-3 py-1 rounded-full text-sm font-semibold ${
                   h.status === 'Approved' ? 'bg-green-100 text-green-700' : 'bg-orange-100 text-orange-700'

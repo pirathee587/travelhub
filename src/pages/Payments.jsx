@@ -41,7 +41,6 @@ export default function Payments(){
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
         <StatCard title="Total Revenue" value={totalRevenue} trend="+18% from last month" icon="💰" bgColor="bg-teal-100" />
-        <StatCard title="Commission Earned" value={commissionEarned} trend="+12% from last month" icon="📈" bgColor="bg-green-100" />
         <StatCard title="Pending Payments" value={pendingPayments} trend={`${mockTransactions.filter(t => t.status === 'Pending').length} transactions`} icon="📦" bgColor="bg-orange-100" />
         <StatCard title="Total Refunds" value={totalRefunds} trend="-5% from last month" icon="📉" bgColor="bg-red-100" />
       </div>
@@ -73,7 +72,6 @@ export default function Payments(){
               <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Tourist / Agent</th>
               <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Type</th>
               <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Amount</th>
-              <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Commission</th>
               <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Status</th>
             </tr>
           </thead>
@@ -99,7 +97,6 @@ export default function Payments(){
                   </span>
                 </td>
                 <td className="px-6 py-4 text-sm font-semibold text-gray-900">${t.amount}</td>
-                <td className="px-6 py-4 text-sm font-semibold text-gray-900">${t.commission}</td>
                 <td className="px-6 py-4">
                   <span className={`inline-block px-3 py-1 rounded-full text-xs font-medium ${t.status === 'Completed' ? 'bg-teal-100 text-teal-700' : 'bg-orange-100 text-orange-700'}`}>
                     {t.status}

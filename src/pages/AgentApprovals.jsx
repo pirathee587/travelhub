@@ -60,7 +60,6 @@ export default function AgentApprovals(){
           <thead><tr className="border-b">
             <th className="px-6 py-3 text-left">Name</th>
             <th className="px-6 py-3 text-left">Owner</th>
-            <th className="px-6 py-3 text-left">Vehicle</th>
             <th className="px-6 py-3 text-left">Status</th>
             <th className="px-6 py-3 text-left">Actions</th>
           </tr></thead>
@@ -69,7 +68,6 @@ export default function AgentApprovals(){
               <tr key={a.id} className="border-t">
                 <td className="px-6 py-3 font-bold text-gray-900">{a.name}</td>
                 <td className="px-6 py-3">{a.owner}</td>
-                <td className="px-6 py-3">{a.vehicle}</td>
                 <td className="px-6 py-3"><span className={
                   'px-2 py-1 rounded font-semibold text-sm ' +
                   (a.status === 'Approved' ? 'bg-green-100 text-green-700' :

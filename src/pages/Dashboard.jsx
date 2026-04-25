@@ -38,7 +38,7 @@ export default function Dashboard(){
       {/* Welcome Banner */}
       <div className="bg-gradient-to-r from-teal-700 to-teal-600 rounded-2xl p-8 text-white">
         <div className="text-sm font-medium opacity-90">Welcome back, Admin</div>
-        <h1 className="text-4xl font-bold mt-2">Ceylon Tourism Dashboard</h1>
+        <h1 className="text-4xl font-bold mt-2">Travel Hub Dashboard</h1>
         <p className="text-lg mt-3 opacity-90">Manage and monitor Sri Lanka's tourism ecosystem from one<br/>powerful platform</p>
       </div>
 
@@ -94,6 +94,9 @@ export default function Dashboard(){
           icon="🏢"
           bgColor="bg-teal-100"
         />
+        </div>
+        {/* Stats Grid Row 2 */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
         <StatsCard 
           title="Active Packages" 
           value="1,234" 
@@ -101,10 +104,6 @@ export default function Dashboard(){
           icon="📦"
           bgColor="bg-yellow-100"
         />
-      </div>
-
-      {/* Stats Grid Row 2 */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
         <StatsCard 
           title="Total Bookings" 
           value="52,847" 
@@ -112,13 +111,7 @@ export default function Dashboard(){
           icon="📅"
           bgColor="bg-teal-100"
         />
-        <StatsCard 
-          title="Pending Approvals" 
-          value="58" 
-          change="Requires attention"
-          icon="⏰"
-          bgColor="bg-orange-100"
-        />
+        
         <StatsCard 
           title="Monthly Revenue" 
           value="$284,500" 
@@ -126,13 +119,7 @@ export default function Dashboard(){
           icon="💼"
           bgColor="bg-teal-100"
         />
-        <StatsCard 
-          title="Conversion Rate" 
-          value="68%" 
-          change="+5% from last month"
-          icon="📈"
-          bgColor="bg-teal-100"
-        />
+        
       </div>
 
       {/* Charts Row */}
