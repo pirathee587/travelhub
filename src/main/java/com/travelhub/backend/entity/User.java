@@ -37,11 +37,27 @@ public class User {
 
     private String profileImage;
 
+    // --- Admin Control Fields ---
+    @Column(name = "is_active")
+    @Builder.Default
+    private Boolean isActive = true;
+
+    @Column(name = "agent_approved")
+    @Builder.Default
+    private Boolean agentApproved = false;
+
+    // --- Password Reset Logic ---
+    private String passwordResetToken;
+    private LocalDateTime passwordResetExpires;
+
     @Column(updatable = false)
     private LocalDateTime createdAt;
 
     @PrePersist
     protected void onCreate() {
-        createdAt = LocalDateTime.now();
+        this.createdAt = LocalDateTime.now();
+        // Fallback checks for non-builder instantiation
+        if (this.isActive == null) this.isActive = true;
+        if (this.agentApproved == null) this.agentApproved = false;
     }
 }
