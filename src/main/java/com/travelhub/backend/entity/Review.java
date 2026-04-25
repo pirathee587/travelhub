@@ -5,7 +5,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "reviews")
@@ -19,36 +19,42 @@ public class Review {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    // Teammate's existing relationships — keep these!
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id", nullable = false)
-    private User user;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "package_id")
+    @JoinColumn(name = "pkg_id")
     private Package pkg;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "hotel_id")
     private Hotel hotel;
 
-    @Column(nullable = false)
-    private String userName;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id")
+    private User user;
 
-    private String title;
+    // Your new relationships
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "agent_id")
+    private Agent agent;
 
-    @Column(columnDefinition = "TEXT", nullable = false)
-    private String comment;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "booking_id")
+    private Booking booking;
 
     @Column(nullable = false)
     private Integer rating;
 
-    @Column(nullable = false)
-    private LocalDate reviewDate;
+    @Column(columnDefinition = "TEXT")
+    private String comment;
+
+    // Your new field
+    private String reply;
+
+    @Column(updatable = false)
+    private LocalDateTime createdAt;
 
     @PrePersist
     protected void onCreate() {
-        if (reviewDate == null) {
-            reviewDate = LocalDate.now();
-        }
+        createdAt = LocalDateTime.now();
     }
 }

@@ -66,8 +66,6 @@ public class ReviewService {
         Review review = Review.builder()
                 .user(user)
                 .pkg(pkg)
-                .userName(request.getUserName())
-                .title(request.getTitle())
                 .comment(request.getComment())
                 .rating(request.getRating())
                 .build();
@@ -100,8 +98,6 @@ public class ReviewService {
         Review review = Review.builder()
                 .user(user)
                 .hotel(hotel)
-                .userName(request.getUserName())
-                .title(request.getTitle())
                 .comment(request.getComment())
                 .rating(request.getRating())
                 .build();
@@ -114,11 +110,14 @@ public class ReviewService {
     private ReviewResponse toReviewResponse(Review review) {
         return ReviewResponse.builder()
                 .id(review.getId())
-                .userName(review.getUserName())
-                .title(review.getTitle())
+                .customerName(review.getUser() != null ? review.getUser().getName() : "Anonymous")
                 .comment(review.getComment())
                 .rating(review.getRating())
-                .reviewDate(review.getReviewDate())
+                .date(review.getCreatedAt() != null ? review.getCreatedAt().toLocalDate().toString() : null)
+                .trip(review.getPkg() != null ? review.getPkg().getDestination() : null)
+                .packageName(review.getPkg() != null ? review.getPkg().getPackageName() : null)
+                .reply(review.getReply())
+                .hasReply(review.getReply() != null && !review.getReply().isEmpty())
                 .build();
     }
 }
