@@ -37,6 +37,28 @@ public class User {
 
     private String profileImage;
 
+    // Role-specific fields (Nullable based on role)
+    private String nationality;           // Tourist
+    private String agencyName;            // Agent
+    private String licenseNumber;         // Agent (For Admin Verification)
+    private String hotelName;             // Hotel Owner
+    private String businessRegistrationId; // Hotel Owner (For Admin Verification)
+    private String businessAddress;        // Hotel Owner
+    private String district;               // Hotel Owner
+
+    // Preferred Language (EN, SI, TA)
+    private String preferredLanguage;
+
+    // Auth & Status
+    @Column(nullable = false)
+    private boolean isEmailVerified = false;
+
+    private String verificationToken;
+    private String passwordResetToken;
+
+    @Column(nullable = false)
+    private String status = "PENDING"; // PENDING, ACTIVE, DEACTIVATED
+
     @Column(updatable = false)
     private LocalDateTime createdAt;
 
