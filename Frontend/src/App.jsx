@@ -17,6 +17,8 @@ import NotFound from "./pages/NotFound";
 import Signup from "./pages/Signup";
 import Login from "./pages/Login";
 import VerifyEmail from "./pages/VerifyEmail";
+import ForgotPassword from "./pages/ForgotPassword";
+import ResetPassword from "./pages/ResetPassword";
 import HotelDashboard from "./pages/teammate-dashboards/HotelDashboard";
 import AgentDashboard from "./pages/teammate-dashboards/AgentDashboard";
 import AdminDashboard from "./pages/teammate-dashboards/AdminDashboard";
@@ -37,6 +39,8 @@ const App = () => (
                     <Route path="/" element={<Explore />} />
                     <Route path="/signup" element={<Signup />} />
                     <Route path="/login" element={<Login />} />
+                    <Route path="/forgot-password" element={<ForgotPassword />} />
+                    <Route path="/reset-password" element={<ResetPassword />} />
                     <Route path="/verify" element={<VerifyEmail />} />
                     <Route path="/overview" element={<Overview />} />
                     <Route path="/hotel-dashboard" element={<DashboardLayout><HotelDashboard /></DashboardLayout>} />
