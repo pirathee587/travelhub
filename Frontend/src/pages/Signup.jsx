@@ -102,15 +102,47 @@ const Signup = () => {
 
             <div className="border-t pt-4 mt-4">
               {formData.role === 'TOURIST' && (
-                <div className="space-y-2">
+                <div className="space-y-2 animate-in fade-in slide-in-from-top-2 duration-300">
                   <Label htmlFor="nationality">{t('nationality')}</Label>
                   <Input id="nationality" name="nationality" onChange={handleChange} required />
                 </div>
               )}
-              {/* Role-specific message */}
-              {formData.role !== 'TOURIST' && (
-                <div className="p-3 bg-blue-50 border border-blue-200 rounded-md text-blue-700 text-sm">
-                  {t('additional_info_later')}
+              
+              {formData.role === 'AGENT' && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 animate-in fade-in slide-in-from-top-2 duration-300">
+                  <div className="space-y-2">
+                    <Label htmlFor="agencyName">{t('agency_name')}</Label>
+                    <Input id="agencyName" name="agencyName" onChange={handleChange} required />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="licenseNumber">{t('license_number')}</Label>
+                    <Input id="licenseNumber" name="licenseNumber" onChange={handleChange} required />
+                  </div>
+                </div>
+              )}
+
+              {formData.role === 'HOTEL_OWNER' && (
+                <div className="space-y-4 animate-in fade-in slide-in-from-top-2 duration-300">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="hotelName">{t('hotel_name')}</Label>
+                      <Input id="hotelName" name="hotelName" onChange={handleChange} required />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="businessRegistrationId">{t('business_reg_id')}</Label>
+                      <Input id="businessRegistrationId" name="businessRegistrationId" onChange={handleChange} required />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="businessAddress">{t('business_address')}</Label>
+                      <Input id="businessAddress" name="businessAddress" onChange={handleChange} required />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="district">{t('district')}</Label>
+                      <Input id="district" name="district" onChange={handleChange} required />
+                    </div>
+                  </div>
                 </div>
               )}
             </div>
