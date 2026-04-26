@@ -50,13 +50,13 @@ public class User {
     private String preferredLanguage;
 
     // Auth & Status
-    @Column(nullable = false)
+    @Column(nullable = true)
     private boolean isEmailVerified = false;
 
     private String verificationToken;
     private String passwordResetToken;
 
-    @Column(nullable = false)
+    @Column(nullable = true)
     private String status = "PENDING"; // PENDING, ACTIVE, DEACTIVATED
 
     @Column(updatable = false)

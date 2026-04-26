@@ -13,7 +13,15 @@ import {
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
+import { useNavigate } from "react-router-dom";
+ 
 export function DashboardHeader({ userName, showSearch = true }) {
+    const navigate = useNavigate();
+    const handleLogout = () => {
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        navigate('/login');
+    };
     const [searchQuery, setSearchQuery] = useState("");
     const [searchSuggestions, setSearchSuggestions] = useState([]);
     const [showSuggestions, setShowSuggestions] = useState(false);
@@ -171,7 +179,9 @@ export function DashboardHeader({ userName, showSearch = true }) {
                             <DropdownMenuItem>Preferences</DropdownMenuItem>
                             <DropdownMenuItem>Billing</DropdownMenuItem>
                             <DropdownMenuSeparator />
-                            <DropdownMenuItem className="text-destructive">Log out</DropdownMenuItem>
+                            <DropdownMenuItem onClick={handleLogout} className="text-destructive cursor-pointer">
+                                Log out
+                            </DropdownMenuItem>
                         </DropdownMenuContent>
                     </DropdownMenu>
                 </div>

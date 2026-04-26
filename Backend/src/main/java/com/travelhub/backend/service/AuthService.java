@@ -60,7 +60,12 @@ public class AuthService {
         userRepository.save(user);
 
         // Send verification email
-        emailService.sendVerificationEmail(user.getEmail(), verificationToken);
+        try {
+            emailService.sendVerificationEmail(user.getEmail(), verificationToken);
+        } catch (Exception e) {
+            System.err.println("Failed to send verification email: " + e.getMessage());
+            return new ApiResponse(true, "User registered successfully, but verification email could not be sent. Please contact support.");
+        }
 
         return new ApiResponse(true, "User registered successfully. Please check your email for verification.");
     }

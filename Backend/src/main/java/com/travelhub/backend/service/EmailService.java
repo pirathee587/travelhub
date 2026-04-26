@@ -20,7 +20,7 @@ public class EmailService {
     private String baseUrl;
 
     public void sendVerificationEmail(String email, String token) {
-        String verificationUrl = baseUrl + "/api/auth/verify?token=" + token;
+        String verificationUrl = "http://localhost:5175/verify?token=" + token;
         String message = "<h3>Welcome to TravelHub!</h3>"
                 + "<p>Please click the link below to verify your email address:</p>"
                 + "<a href=\"" + verificationUrl + "\">Verify Email</a>";

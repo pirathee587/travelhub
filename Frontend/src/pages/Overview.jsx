@@ -31,13 +31,15 @@ const Overview = () => {
     const scrollContainerRef = useRef(null);
     const [selectedPackageId, setSelectedPackageId] = useState(null);
     const [selectedHotelId, setSelectedHotelId] = useState(null);
+    const user = JSON.parse(localStorage.getItem('user') || '{}');
 
     useEffect(() => {
+        const userId = user.id || 1;
         Promise.all([
-            api.getStats(1),
-            api.getTrips(1),
-            api.getDocuments(1),
-            api.getRecommendations(1),
+            api.getStats(userId),
+            api.getTrips(userId),
+            api.getDocuments(userId),
+            api.getRecommendations(userId),
         ]).then(([statsData, tripsData, docsData, recsData]) => {
             setStats(statsData);
             setTrips(tripsData);
@@ -100,7 +102,7 @@ const Overview = () => {
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                     <div>
                         <h1 className="text-2xl lg:text-3xl font-bold">
-                            Welcome back! 👋
+                            Welcome back, {user.name || 'Traveler'}! 👋
                         </h1>
                         <p className="text-muted-foreground mt-1">
                             Here's what's happening with your travels
