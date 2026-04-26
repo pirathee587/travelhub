@@ -7,6 +7,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/packages")
@@ -33,5 +34,13 @@ public class PackageController {
     @GetMapping("/{id}")
     public ResponseEntity<PackageDetailResponse> getPackageById(@PathVariable Long id) {
         return ResponseEntity.ok(packageService.getPackageById(id));
+    }
+
+    // ── Chatbot endpoint ───────────────────────────────────────────────────
+    // GET /api/packages/chatbot-data
+    // Called by Python AI service on startup and every 30 min to sync ChromaDB
+    @GetMapping("/chatbot-data")
+    public ResponseEntity<List<Map<String, Object>>> getPackagesForChatbot() {
+    return ResponseEntity.ok(packageService.getAllPackagesForChatbot());
     }
 }

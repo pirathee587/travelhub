@@ -39,6 +39,10 @@ public class SecurityConfig {
                         .requestMatchers("/uploads/**").permitAll()
                         .requestMatchers("/api/tourist/**").permitAll()
 
+                        // ── Chatbot Routes ──
+                        .requestMatchers("/chat").permitAll() // Public access for tourists
+                        .requestMatchers("/sync").hasRole("ADMIN") // Only admins can trigger data sync
+
                         // ── Admin Protected Routes ──
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
 

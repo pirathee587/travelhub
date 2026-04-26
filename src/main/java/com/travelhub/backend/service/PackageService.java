@@ -11,6 +11,8 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 import com.travelhub.backend.repository.ReviewRepository;
+import java.util.Map;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
@@ -124,4 +126,36 @@ public class PackageService {
                 .activities(activities)
                 .build();
     }
+    // ── Chatbot data method ────────────────────────────────────────────────
+    // Added for AI chatbot feature — returns all active packages as simple maps
+    // so the Python RAG service can load them into ChromaDB
+    @Transactional(readOnly = true)
+    public List<Map<String, Object>> getAllPackagesForChatbot() {
+    // Use a fresh query to avoid lazy loading issues with Agent relationship
+    return packageRepository.findByIsActiveTrue()
+            .stream()
+            .map(pkg -> {
+                Map<String, Object> map = new java.util.HashMap<>();
+                map.put("id",              pkg.getId());
+                map.put("packageName",     pkg.getPackageName());
+                map.put("destination",     pkg.getDestination());
+                map.put("district",        pkg.getDistrict());
+                map.put("category",        pkg.getCategory());
+                map.put("priceFrom",       pkg.getPriceFrom());
+                map.put("priceTo",         pkg.getPriceTo());
+                map.put("duration",        pkg.getDuration());
+                map.put("rating",          pkg.getRating());
+                map.put("festivalDetails", pkg.getFestivalDetails());
+                map.put("startPlace",      pkg.getStartPlace());
+                map.put("endPlace",        pkg.getEndPlace());
+                // Safely get agent name — avoid null pointer if agent is null
+                try {
+                    map.put("agentName", pkg.getAgent() != null ? pkg.getAgent().getAgentName() : "");
+                } catch (Exception e) {
+                    map.put("agentName", "");
+                }
+                return map;
+            })
+            .collect(Collectors.toList());
+}
 }

@@ -4,7 +4,8 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -16,11 +17,20 @@ import org.springframework.web.filter.OncePerRequestFilter;
 import java.io.IOException;
 
 @Component
-@RequiredArgsConstructor
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtTokenProvider jwtTokenProvider;
-    private final UserDetailsService userDetailsService;
+
+    // @Lazy breaks the circular dependency —
+    // UserDetailsService is only loaded when first actually needed,
+    // not during Spring startup bean creation
+    @Lazy
+    @Autowired
+    private UserDetailsService userDetailsService;
+
+    public JwtAuthenticationFilter(JwtTokenProvider jwtTokenProvider) {
+        this.jwtTokenProvider = jwtTokenProvider;
+    }
 
     @Override
     protected void doFilterInternal(HttpServletRequest request,
@@ -28,27 +38,25 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                                     FilterChain filterChain)
             throws ServletException, IOException {
 
-        // Read the Authorization header
         String authHeader = request.getHeader("Authorization");
 
-        // If no Bearer token found, skip this filter
+        // No token — skip filter, continue to next filter
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
             filterChain.doFilter(request, response);
             return;
         }
 
-        // Extract the token (remove "Bearer " prefix)
+        // Remove "Bearer " prefix to get raw token
         String token = authHeader.substring(7);
 
         try {
-            // Validate the token and extract email
             if (jwtTokenProvider.validateToken(token)) {
                 String email = jwtTokenProvider.getEmailFromToken(token);
 
-                // Load user details from database
+                // Load user from database using email
                 UserDetails userDetails = userDetailsService.loadUserByUsername(email);
 
-                // Create authentication object and set in security context
+                // Create authentication and set in Spring Security context
                 UsernamePasswordAuthenticationToken authentication =
                         new UsernamePasswordAuthenticationToken(
                                 userDetails,
@@ -60,12 +68,10 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                         new WebAuthenticationDetailsSource().buildDetails(request)
                 );
 
-                // Tell Spring Security this request is authenticated
                 SecurityContextHolder.getContext().setAuthentication(authentication);
             }
         } catch (Exception e) {
-            // Invalid token — just continue without authenticating
-            // The request will be rejected by SecurityConfig if the route is protected
+            // Invalid token — clear context, request continues unauthenticated
             SecurityContextHolder.clearContext();
         }
 
