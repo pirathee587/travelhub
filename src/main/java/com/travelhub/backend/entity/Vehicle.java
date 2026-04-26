@@ -19,16 +19,16 @@ public class Vehicle {
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "agent_id", nullable = false)
+    @JoinColumn(name = "agent_id", nullable = true)
     private Agent agent;
 
     // Owner Information
-    @Column(nullable = false)
+    @Column(nullable = true)
     private String ownerFirstName;
 
     private String ownerLastName;
 
-    @Column(nullable = false, unique = true)
+    @Column(nullable = true, unique = true)
     private String nicNumber;
 
     private String nicFrontImage;
@@ -36,27 +36,27 @@ public class Vehicle {
     private String addressLine1;
     private String addressLine2;
 
-    @Column(nullable = false)
+    @Column(nullable = true)
     private String mobileNumber;
 
     private String secondaryMobileNumber;
     private String ownerEmail;
 
     // Vehicle Details
-    @Column(nullable = false)
+    @Column(nullable = true)
     private String vehicleType;   // Tuk | Car | Minivan/VAN
 
-    @Column(nullable = false)
+    @Column(nullable = true)
     private String brand;
 
-    @Column(nullable = false)
+    @Column(nullable = true)
     private String model;
 
     private String color;
-    private Integer capacity;
+    private String capacity;
     private String yearOfManufacture;
 
-    @Column(nullable = false, unique = true)
+    @Column(nullable = true, unique = true)
     private String registration;
 
     // Documents
@@ -69,10 +69,10 @@ public class Vehicle {
     private String vehicleImageInside;
 
     // Status
-    @Column(nullable = false)
+    @Column(nullable = true)
     private String status = "available";       // available | booked | maintenance
 
-    @Column(nullable = false)
+    @Column(nullable = true)
     private String lifecycleStatus = "active"; // active | suspended
 
     // Currently assigned driver name (for display)

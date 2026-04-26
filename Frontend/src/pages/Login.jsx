@@ -57,7 +57,12 @@ const Login = () => {
               <Input id="email" name="email" type="email" onChange={handleChange} required placeholder="john@example.com" />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="password">{t('password')}</Label>
+              <div className="flex items-center justify-between">
+                <Label htmlFor="password">{t('password')}</Label>
+                <Link to="/forgot-password" name="forgotPasswordLink" className="text-xs text-indigo-600 hover:underline">
+                  Forgot Password?
+                </Link>
+              </div>
               <Input id="password" name="password" type="password" onChange={handleChange} required />
             </div>
             <Button type="submit" className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 mt-4">
