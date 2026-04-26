@@ -15,6 +15,8 @@ import com.travelhub.backend.repository.ReviewRepository;
 import com.travelhub.backend.service.HotelPricingService.PriceRange;
 
 import lombok.RequiredArgsConstructor;
+import java.util.Map;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
@@ -119,5 +121,28 @@ public class HotelService {
                 .district(hotel.getDistrict())
                 .applicationStatus(hotel.getApplicationStatus())
                 .build();
+    }
+    // ── Chatbot data method ────────────────────────────────────────────────
+    // Added for AI chatbot feature — returns all hotels as simple maps
+    // so the Python RAG service can load them into ChromaDB
+    @Transactional(readOnly = true)
+    public List<Map<String, Object>> getAllHotelsForChatbot() {
+    return hotelRepository.findAll()
+            .stream()
+            .map(hotel -> {
+                Map<String, Object> map = new java.util.HashMap<>();
+                map.put("id",          hotel.getId());
+                map.put("hotelName",   hotel.getHotelName());
+                map.put("destination", hotel.getDestination());
+                map.put("location",    hotel.getLocation());
+                map.put("district",    hotel.getDistrict());
+                map.put("description", hotel.getDescription());
+                map.put("priceFrom",   hotel.getPriceFrom());
+                map.put("priceTo",     hotel.getPriceTo());
+                map.put("rating",      hotel.getRating());
+                map.put("amenities",   hotel.getAmenities());
+                return map;
+            })
+            .collect(Collectors.toList());
     }
 }

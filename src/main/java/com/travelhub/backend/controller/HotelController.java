@@ -6,6 +6,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/hotels")
@@ -31,4 +32,13 @@ public class HotelController {
     public ResponseEntity<HotelResponse> getHotelById(@PathVariable Long id) {
         return ResponseEntity.ok(hotelService.getHotelById(id));
     }
+
+    // ── Chatbot endpoint ───────────────────────────────────────────────────
+    // GET /api/hotels/chatbot-data
+    // Called by Python AI service on startup and every 30 min to sync ChromaDB
+    @GetMapping("/chatbot-data")
+    public ResponseEntity<List<Map<String, Object>>> getHotelsForChatbot() {
+    return ResponseEntity.ok(hotelService.getAllHotelsForChatbot());
+    }
 }
+ 
