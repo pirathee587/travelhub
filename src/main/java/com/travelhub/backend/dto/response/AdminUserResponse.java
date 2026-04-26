@@ -7,7 +7,7 @@ public record AdminUserResponse(
         String email,
         String role,
         String telephone,
-        Boolean isActive,
+        Boolean isActive,a
         Boolean agentApproved,
         String createdAt
 ) {}
