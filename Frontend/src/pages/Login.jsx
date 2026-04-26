@@ -29,14 +29,21 @@ const Login = () => {
       toast.success(t('login_success'));
       
       // Redirect based on role
-      if (role === 'AGENT') {
-        navigate(`/agent-dashboard/${agentId || ''}`);
-      } else if (role === 'HOTEL_OWNER') {
-        navigate(`/hotel-dashboard/${hotelId || ''}`);
-      } else if (role === 'ADMIN') {
-        navigate('/admin-dashboard');
-      } else {
-        navigate('/overview'); // Tourist / Default
+      switch (role.toUpperCase()) {
+        case 'TOURIST':
+          navigate('/overview');
+          break;
+        case 'AGENT':
+          navigate('/agent-dashboard');
+          break;
+        case 'HOTEL_OWNER':
+          navigate('/hotel-dashboard');
+          break;
+        case 'ADMIN':
+          navigate('/admin-dashboard');
+          break;
+        default:
+          navigate('/overview');
       }
     } catch (err) {
       toast.error(err.response?.data?.message || t('login_failed'));
