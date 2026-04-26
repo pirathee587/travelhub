@@ -43,9 +43,9 @@ const App = () => (
                     <Route path="/reset-password" element={<ResetPassword />} />
                     <Route path="/verify" element={<VerifyEmail />} />
                     <Route path="/overview" element={<Overview />} />
-                    <Route path="/hotel-dashboard" element={<DashboardLayout><HotelDashboard /></DashboardLayout>} />
-                    <Route path="/agent-dashboard" element={<DashboardLayout><AgentDashboard /></DashboardLayout>} />
-                    <Route path="/admin-dashboard" element={<DashboardLayout><AdminDashboard /></DashboardLayout>} />
+                    <Route path="/hotel-dashboard/:id?" element={<DashboardLayout><HotelDashboard /></DashboardLayout>} />
+                    <Route path="/agent-dashboard/:id?" element={<DashboardLayout><AgentDashboard /></DashboardLayout>} />
+                    <Route path="/admin-dashboard/:id?" element={<DashboardLayout><AdminDashboard /></DashboardLayout>} />
                     <Route path="/trips" element={<MyTrips />} />
                     <Route path="/documents" element={<Documents />} />
                     <Route path="/explore" element={<Explore />} />

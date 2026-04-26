@@ -6,7 +6,20 @@ import { mockAgents } from '../../lib/teammate-mock-data'
 export default function AgentDetailsPage() {
   const navigate = useNavigate()
   const { id } = useParams()
-  const agentId = Number(id)
+  
+  // Resolve agentId: Params -> localStorage -> Default (1)
+  let agentId = Number(id)
+  if (!agentId || isNaN(agentId)) {
+    const userJson = localStorage.getItem('user')
+    if (userJson) {
+      const user = JSON.parse(userJson)
+      agentId = Number(user.agentId)
+    }
+  }
+  if (!agentId || isNaN(agentId)) {
+    agentId = 1 // Fallback for demo
+  }
+
   const agent = mockAgents.find(a => a.id === agentId)
 
   return (

@@ -30,9 +30,9 @@ const Login = () => {
       
       // Redirect based on role
       if (role === 'AGENT') {
-        navigate('/agent-dashboard');
+        navigate(`/agent-dashboard/${agentId || ''}`);
       } else if (role === 'HOTEL_OWNER') {
-        navigate('/hotel-dashboard');
+        navigate(`/hotel-dashboard/${hotelId || ''}`);
       } else if (role === 'ADMIN') {
         navigate('/admin-dashboard');
       } else {

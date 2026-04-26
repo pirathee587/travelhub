@@ -6,7 +6,20 @@ import HotelDetailsView from '../../components/teammates/HotelDetailsView'
 export default function HotelDetailsPage() {
   const navigate = useNavigate()
   const { id } = useParams()
-  const hotelId = Number(id)
+
+  // Resolve hotelId: Params -> localStorage -> Default (1)
+  let hotelId = Number(id)
+  if (!hotelId || isNaN(hotelId)) {
+    const userJson = localStorage.getItem('user')
+    if (userJson) {
+      const user = JSON.parse(userJson)
+      hotelId = Number(user.hotelId)
+    }
+  }
+  if (!hotelId || isNaN(hotelId)) {
+    hotelId = 1 // Fallback for demo
+  }
+
   const hotel = mockHotels.find(h => h.id === hotelId)
 
   return (
