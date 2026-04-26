@@ -1,8 +1,7 @@
 package com.travelhub.backend.controller;
 
-
-import com.travelhub.backend.service.AdminUserService;
 import com.travelhub.backend.common.ApiResponse;
+import com.travelhub.backend.service.AdminUserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -11,6 +10,7 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/api/admin/users")
 @RequiredArgsConstructor
+@CrossOrigin(origins = "*")
 @PreAuthorize("hasRole('ADMIN')")
 public class AdminUserController {
 
@@ -26,7 +26,8 @@ public class AdminUserController {
 
     // GET /api/admin/users/{id}
     @GetMapping("/{id}")
-    public ResponseEntity<?> getUserById(@PathVariable Long id) {
+    public ResponseEntity<?> getUserById(
+            @PathVariable Long id) {
         return ResponseEntity.ok(
                 new ApiResponse(true, "User found",
                         adminUserService.getUserById(id)));
@@ -69,7 +70,8 @@ public class AdminUserController {
 
     // PATCH /api/admin/users/agents/{id}/approve
     @PatchMapping("/agents/{id}/approve")
-    public ResponseEntity<?> approveAgent(@PathVariable Long id) {
+    public ResponseEntity<?> approveAgent(
+            @PathVariable Long id) {
         return ResponseEntity.ok(
                 new ApiResponse(true, "Agent approved",
                         adminUserService.approveAgent(id)));
@@ -77,7 +79,8 @@ public class AdminUserController {
 
     // DELETE /api/admin/users/{id}
     @DeleteMapping("/{id}")
-    public ResponseEntity<?> deleteUser(@PathVariable Long id) {
+    public ResponseEntity<?> deleteUser(
+            @PathVariable Long id) {
         adminUserService.deleteUser(id);
         return ResponseEntity.ok(
                 new ApiResponse(true, "User deleted", null));
