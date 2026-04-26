@@ -37,6 +37,29 @@ public class User {
 
     private String profileImage;
 
+    // Role-specific fields (Nullable based on role)
+    private String nationality;           // Tourist
+    private String agencyName;            // Agent
+    private String licenseNumber;         // Agent (For Admin Verification)
+    private String hotelName;             // Hotel Owner
+    private String businessRegistrationId; // Hotel Owner (For Admin Verification)
+    private String businessAddress;        // Hotel Owner
+    private String district;               // Hotel Owner
+
+    // Preferred Language (EN, SI, TA)
+    private String preferredLanguage;
+
+    // Auth & Status
+    @Column(name = "is_email_verified", nullable = true)
+    private boolean isEmailVerified = false;
+
+    private String verificationToken;
+    private String passwordResetToken;
+    private LocalDateTime passwordResetExpires;
+
+    @Column(nullable = true)
+    private String status = "PENDING"; // PENDING, ACTIVE, DEACTIVATED
+
     // --- Admin Control Fields ---
     @Column(name = "is_active")
     @Builder.Default
@@ -46,9 +69,9 @@ public class User {
     @Builder.Default
     private Boolean agentApproved = false;
 
-    // --- Password Reset Logic ---
-    private String passwordResetToken;
-    private LocalDateTime passwordResetExpires;
+    private Long agentId; // Link to the Agent table
+    private Long hotelId; // Link to the Hotel table
+    
 
     @Column(updatable = false)
     private LocalDateTime createdAt;

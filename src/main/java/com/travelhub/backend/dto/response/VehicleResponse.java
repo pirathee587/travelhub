@@ -19,7 +19,7 @@ public class VehicleResponse {
     private String brand;
     private String model;
     private String color;
-    private Integer capacity;
+    private String capacity;
     private String yearOfManufacture;
     private String registration;
     private String insuranceExpiryDate;
