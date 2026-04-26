@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { DashboardLayout } from "@/components/dashboard/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -6,15 +6,14 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardFooter } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { toast } from "@/components/ui/use-toast";
-import { User, Mail, MapPin, Camera, Save, X, Edit2 } from "lucide-react";
-import { userName as initialUserName } from "@/data/mockData";
+import { User, Mail, MapPin, Camera, Save, X, Edit2, Lock, Loader2 } from "lucide-react";
+import axios from "axios";
 
 // Simple Textarea component if not available, otherwise import it
 import { Textarea as ShdnTextarea } from "@/components/ui/textarea";
 import { ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-// If Textarea is not exported from @/components/ui/textarea, we use a fallback
 const Textarea = (props) => {
     try {
         return <ShdnTextarea {...props} />;
@@ -30,24 +29,112 @@ const Textarea = (props) => {
 };
 
 const SettingsPage = () => {
+    const [isLoading, setIsLoading] = useState(true);
+    const [isSaving, setIsSaving] = useState(false);
     const [isEditing, setIsEditing] = useState(false);
+    const [showPasswordModal, setShowPasswordModal] = useState(false);
+    
     const [profile, setProfile] = useState({
-        name: initialUserName,
-        email: "harith.keshan@example.com",
-        address: "123 Adventure Lane, Colombo, Sri Lanka",
-        // switched to a male avatar image
-        profilePic: "https://i.pravatar.cc/",
+        name: "",
+        email: "",
+        telephone: "",
+        profileImage: "",
+        nationality: "",
+        preferredLanguage: ""
     });
 
     const [editForm, setEditForm] = useState({ ...profile });
+    const [passwordForm, setPasswordForm] = useState({
+        currentPassword: "",
+        newPassword: "",
+        confirmPassword: ""
+    });
 
-    const handleSave = () => {
-        setProfile({ ...editForm });
-        setIsEditing(false);
-        toast({
-            title: "Profile updated",
-            description: "Your profile changes have been saved successfully.",
-        });
+    useEffect(() => {
+        fetchProfile();
+    }, []);
+
+    const fetchProfile = async () => {
+        try {
+            setIsLoading(true);
+            const token = localStorage.getItem("token");
+            const response = await axios.get("http://localhost:8080/api/users/me", {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            setProfile(response.data);
+            setEditForm(response.data);
+        } catch (error) {
+            console.error("Error fetching profile:", error);
+            toast({
+                title: "Error",
+                description: "Failed to load profile information.",
+                variant: "destructive"
+            });
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const handleSave = async () => {
+        try {
+            setIsSaving(true);
+            const token = localStorage.getItem("token");
+            const response = await axios.put("http://localhost:8080/api/users/profile", editForm, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            setProfile(response.data);
+            setIsEditing(false);
+            toast({
+                title: "Profile updated",
+                description: "Your profile changes have been saved successfully.",
+            });
+        } catch (error) {
+            toast({
+                title: "Error",
+                description: error.response?.data?.message || "Failed to update profile.",
+                variant: "destructive"
+            });
+        } finally {
+            setIsSaving(false);
+        }
+    };
+
+    const handleChangePassword = async (e) => {
+        e.preventDefault();
+        if (passwordForm.newPassword !== passwordForm.confirmPassword) {
+            toast({
+                title: "Error",
+                description: "New passwords do not match.",
+                variant: "destructive"
+            });
+            return;
+        }
+
+        try {
+            setIsSaving(true);
+            const token = localStorage.getItem("token");
+            await axios.post("http://localhost:8080/api/users/change-password", {
+                currentPassword: passwordForm.currentPassword,
+                newPassword: passwordForm.newPassword
+            }, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            
+            toast({
+                title: "Password Changed",
+                description: "Your password has been updated successfully.",
+            });
+            setShowPasswordModal(false);
+            setPasswordForm({ currentPassword: "", newPassword: "", confirmPassword: "" });
+        } catch (error) {
+            toast({
+                title: "Error",
+                description: error.response?.data?.message || "Failed to change password.",
+                variant: "destructive"
+            });
+        } finally {
+            setIsSaving(false);
+        }
     };
 
     const handleCancel = () => {
@@ -55,13 +142,15 @@ const SettingsPage = () => {
         setIsEditing(false);
     };
 
-    const handleImageChange = () => {
-        // Placeholder for image upload logic
-        toast({
-            title: "Image Upload",
-            description: "Image upload functionality will be integrated with the backend.",
-        });
-    };
+    if (isLoading) {
+        return (
+            <DashboardLayout>
+                <div className="flex items-center justify-center h-[60vh]">
+                    <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                </div>
+            </DashboardLayout>
+        );
+    }
 
     return (
         <DashboardLayout>
@@ -78,19 +167,11 @@ const SettingsPage = () => {
                         <div className="flex flex-col md:flex-row md:items-end gap-6 relative">
                             <div className="relative group">
                                 <Avatar className="h-32 w-32 border-4 border-background shadow-elevated">
-                                    <AvatarImage src={editForm.profilePic} alt={editForm.name} />
+                                    <AvatarImage src={editForm.profileImage || "https://i.pravatar.cc/300"} alt={editForm.name} />
                                     <AvatarFallback className="text-3xl gradient-ocean text-white">
-                                        {editForm.name.split(" ").map(n => n[0]).join("")}
+                                        {editForm.name ? editForm.name.split(" ").map(n => n[0]).join("") : "U"}
                                     </AvatarFallback>
                                 </Avatar>
-                                {isEditing && (
-                                    <button
-                                        onClick={handleImageChange}
-                                        className="absolute inset-0 bg-black/40 flex items-center justify-center rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
-                                    >
-                                        <Camera className="h-8 w-8 text-white" />
-                                    </button>
-                                )}
                             </div>
                             <div className="flex-1 space-y-1">
                                 <h2 className="text-2xl font-bold">{profile.name}</h2>
@@ -138,24 +219,34 @@ const SettingsPage = () => {
                                         className="pl-10 h-11 bg-muted/20 border-transparent cursor-not-allowed opacity-70"
                                     />
                                 </div>
-                                <p className="text-xs text-muted-foreground italic">Email cannot be changed for security reasons.</p>
                             </div>
 
-                            <div className="space-y-2 md:col-span-2">
-                                <Label htmlFor="address" className="text-sm font-semibold">Address</Label>
-                                <div className="relative">
-                                    <MapPin className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                                    <Textarea
-                                        id="address"
-                                        value={editForm.address}
-                                        onChange={(e) => setEditForm({ ...editForm, address: e.target.value })}
-                                        disabled={!isEditing}
-                                        className={cn(
-                                            "pl-10 min-h-[100px] bg-background transition-all resize-none",
-                                            isEditing ? "border-primary focus-visible:ring-primary/20" : "border-transparent bg-muted/20"
-                                        )}
-                                    />
-                                </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="telephone" className="text-sm font-semibold">Phone Number</Label>
+                                <Input
+                                    id="telephone"
+                                    value={editForm.telephone || ""}
+                                    onChange={(e) => setEditForm({ ...editForm, telephone: e.target.value })}
+                                    disabled={!isEditing}
+                                    className={cn(
+                                        "h-11 bg-background transition-all",
+                                        isEditing ? "border-primary focus-visible:ring-primary/20" : "border-transparent bg-muted/20"
+                                    )}
+                                />
+                            </div>
+
+                            <div className="space-y-2">
+                                <Label htmlFor="nationality" className="text-sm font-semibold">Nationality</Label>
+                                <Input
+                                    id="nationality"
+                                    value={editForm.nationality || ""}
+                                    onChange={(e) => setEditForm({ ...editForm, nationality: e.target.value })}
+                                    disabled={!isEditing}
+                                    className={cn(
+                                        "h-11 bg-background transition-all",
+                                        isEditing ? "border-primary focus-visible:ring-primary/20" : "border-transparent bg-muted/20"
+                                    )}
+                                />
                             </div>
                         </div>
                     </CardContent>
@@ -164,36 +255,82 @@ const SettingsPage = () => {
                             <Button variant="outline" onClick={handleCancel} className="h-11 px-6">
                                 <X className="h-4 w-4 mr-2" /> Cancel
                             </Button>
-                            <Button onClick={handleSave} className="gradient-ocean h-11 px-8 shadow-glow">
-                                <Save className="h-4 w-4 mr-2" /> Save Changes
+                            <Button onClick={handleSave} disabled={isSaving} className="gradient-ocean h-11 px-8 shadow-glow">
+                                {isSaving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Save className="h-4 w-4 mr-2" />}
+                                Save Changes
                             </Button>
                         </CardFooter>
                     )}
                 </Card>
 
                 <section className="space-y-4 pt-6">
-                    <h3 className="text-xl font-bold">Preferences</h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <Card className="border-border hover:border-primary/20 transition-colors cursor-pointer group">
-                            <CardContent className="p-6 flex items-center justify-between">
-                                <div className="space-y-1">
-                                    <p className="font-semibold group-hover:text-primary transition-colors">Notification Settings</p>
-                                    <p className="text-sm text-muted-foreground">Manage how you receive alerts</p>
+                    <h3 className="text-xl font-bold">Security</h3>
+                    <Card className="border-border hover:border-primary/20 transition-colors cursor-pointer group" onClick={() => setShowPasswordModal(true)}>
+                        <CardContent className="p-6 flex items-center justify-between">
+                            <div className="flex items-center gap-4">
+                                <div className="p-3 rounded-full bg-primary/10 text-primary">
+                                    <Lock className="h-6 w-6" />
                                 </div>
-                                <ChevronRight className="h-5 w-5 text-muted-foreground group-hover:text-primary transition-all" />
-                            </CardContent>
-                        </Card>
-                        <Card className="border-border hover:border-primary/20 transition-colors cursor-pointer group">
-                            <CardContent className="p-6 flex items-center justify-between">
                                 <div className="space-y-1">
                                     <p className="font-semibold group-hover:text-primary transition-colors">Password & Security</p>
-                                    <p className="text-sm text-muted-foreground">Update your security credentials</p>
+                                    <p className="text-sm text-muted-foreground">Update your password and secure your account</p>
                                 </div>
-                                <ChevronRight className="h-5 w-5 text-muted-foreground group-hover:text-primary transition-all" />
-                            </CardContent>
+                            </div>
+                            <ChevronRight className="h-5 w-5 text-muted-foreground group-hover:text-primary transition-all" />
+                        </CardContent>
+                    </Card>
+                </section>
+
+                {showPasswordModal && (
+                    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+                        <Card className="w-full max-w-md animate-in zoom-in-95 duration-200">
+                            <CardHeader>
+                                <h3 className="text-xl font-bold">Change Password</h3>
+                            </CardHeader>
+                            <form onSubmit={handleChangePassword}>
+                                <CardContent className="space-y-4">
+                                    <div className="space-y-2">
+                                        <Label htmlFor="currentPassword">Current Password</Label>
+                                        <Input 
+                                            id="currentPassword" 
+                                            type="password" 
+                                            required 
+                                            value={passwordForm.currentPassword}
+                                            onChange={(e) => setPasswordForm({...passwordForm, currentPassword: e.target.value})}
+                                        />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label htmlFor="newPassword">New Password</Label>
+                                        <Input 
+                                            id="newPassword" 
+                                            type="password" 
+                                            required 
+                                            value={passwordForm.newPassword}
+                                            onChange={(e) => setPasswordForm({...passwordForm, newPassword: e.target.value})}
+                                        />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label htmlFor="confirmPassword">Confirm New Password</Label>
+                                        <Input 
+                                            id="confirmPassword" 
+                                            type="password" 
+                                            required 
+                                            value={passwordForm.confirmPassword}
+                                            onChange={(e) => setPasswordForm({...passwordForm, confirmPassword: e.target.value})}
+                                        />
+                                    </div>
+                                </CardContent>
+                                <CardFooter className="flex justify-end gap-3">
+                                    <Button type="button" variant="outline" onClick={() => setShowPasswordModal(false)}>Cancel</Button>
+                                    <Button type="submit" disabled={isSaving} className="gradient-ocean">
+                                        {isSaving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+                                        Update Password
+                                    </Button>
+                                </CardFooter>
+                            </form>
                         </Card>
                     </div>
-                </section>
+                )}
             </div>
         </DashboardLayout>
     );

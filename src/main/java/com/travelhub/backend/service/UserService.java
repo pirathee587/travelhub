@@ -26,6 +26,18 @@ public class UserService {
         return userRepository.save(user);
     }
 
+    public void changePassword(Long userId, UpdatePasswordRequest request, org.springframework.security.crypto.password.PasswordEncoder passwordEncoder) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User", "id", userId));
+
+        if (!passwordEncoder.matches(request.getCurrentPassword(), user.getPassword())) {
+            throw new com.travelhub.backend.common.BadRequestException("Current password is incorrect");
+        }
+
+        user.setPassword(passwordEncoder.encode(request.getNewPassword()));
+        userRepository.save(user);
+    }
+
     public User getProfile(Long userId) {
         return userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User", "id", userId));

@@ -37,4 +37,17 @@ public class UserController {
         Long userId = Long.valueOf(claims.get("userId").toString());
         return ResponseEntity.ok(userService.updateProfile(userId, request));
     }
+
+    @PostMapping("/change-password")
+    public ResponseEntity<?> changePassword(@RequestBody com.travelhub.backend.dto.request.UpdatePasswordRequest request,
+                                           org.springframework.security.crypto.password.PasswordEncoder passwordEncoder) {
+        Claims claims = SecurityUtils.getCurrentUserClaims();
+        if (claims == null) {
+            return ResponseEntity.status(401).build();
+        }
+
+        Long userId = Long.valueOf(claims.get("userId").toString());
+        userService.changePassword(userId, request, passwordEncoder);
+        return ResponseEntity.ok(new com.travelhub.backend.common.ApiResponse(true, "Password changed successfully"));
+    }
 }
