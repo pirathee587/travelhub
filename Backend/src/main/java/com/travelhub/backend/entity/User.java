@@ -50,20 +50,33 @@ public class User {
     private String preferredLanguage;
 
     // Auth & Status
-    @Column(nullable = true)
+    @Column(name = "is_email_verified", nullable = true)
     private boolean isEmailVerified = false;
 
     private String verificationToken;
     private String passwordResetToken;
+    private LocalDateTime passwordResetExpires;
 
     @Column(nullable = true)
     private String status = "PENDING"; // PENDING, ACTIVE, DEACTIVATED
+
+    // --- Admin Control Fields ---
+    @Column(name = "is_active")
+    @Builder.Default
+    private Boolean isActive = true;
+
+    @Column(name = "agent_approved")
+    @Builder.Default
+    private Boolean agentApproved = false;
 
     @Column(updatable = false)
     private LocalDateTime createdAt;
 
     @PrePersist
     protected void onCreate() {
-        createdAt = LocalDateTime.now();
+        this.createdAt = LocalDateTime.now();
+        // Fallback checks for non-builder instantiation
+        if (this.isActive == null) this.isActive = true;
+        if (this.agentApproved == null) this.agentApproved = false;
     }
 }

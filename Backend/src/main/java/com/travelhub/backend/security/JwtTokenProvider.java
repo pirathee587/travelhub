@@ -1,75 +1,56 @@
 package com.travelhub.backend.security;
 
-import io.jsonwebtoken.Claims;
-import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Component;
-
-import javax.crypto.SecretKey;
-import java.nio.charset.StandardCharsets;
+import java.security.Key;
 import java.util.Date;
 
 @Component
 public class JwtTokenProvider {
 
-    @Value("${jwt.secret}")
+    @Value("${app.jwt.secret:travelhub_secret_key_minimum_32_chars_long}")
     private String jwtSecret;
 
-    @Value("${jwt.expiration}")
-    private long jwtExpirationInMs;
+    @Value("${app.jwt.expiration:86400000}")
+    private long jwtExpiration;
 
-    private SecretKey getSigningKey() {
-        byte[] keyBytes = jwtSecret.getBytes(StandardCharsets.UTF_8);
-        return Keys.hmacShaKeyFor(keyBytes);
+    private Key getSigningKey() {
+        return Keys.hmacShaKeyFor(jwtSecret.getBytes());
     }
 
-    public String generateToken(Authentication authentication) {
-        String username = authentication.getName();
-        Date now = new Date();
-        Date expiryDate = new Date(now.getTime() + jwtExpirationInMs);
-
+    // Generate Token
+    public String generateToken(String email) {
         return Jwts.builder()
-                .subject(username)
-                .issuedAt(new Date())
-                .expiration(expiryDate)
+                .setSubject(email)
+                .setIssuedAt(new Date())
+                .setExpiration(new Date(
+                        System.currentTimeMillis() + jwtExpiration))
                 .signWith(getSigningKey())
                 .compact();
     }
 
-    public String generateTokenFromEmail(String email) {
-        Date now = new Date();
-        Date expiryDate = new Date(now.getTime() + jwtExpirationInMs);
-
-        return Jwts.builder()
-                .subject(email)
-                .issuedAt(new Date())
-                .expiration(expiryDate)
-                .signWith(getSigningKey())
-                .compact();
-    }
-
-    public String getEmailFromJWT(String token) {
-        Claims claims = Jwts.parser()
-                .verifyWith(getSigningKey())
+    // Get Email from Token
+    public String getEmailFromToken(String token) {
+        return Jwts.parserBuilder()
+                .setSigningKey(getSigningKey())
                 .build()
-                .parseSignedClaims(token)
-                .getPayload();
-
-        return claims.getSubject();
+                .parseClaimsJws(token)
+                .getBody()
+                .getSubject();
     }
 
-    public boolean validateToken(String authToken) {
+    // Validate Token
+    public boolean validateToken(String token) {
         try {
-            Jwts.parser()
-                    .verifyWith(getSigningKey())
+            Jwts.parserBuilder()
+                    .setSigningKey(getSigningKey())
                     .build()
-                    .parseSignedClaims(authToken);
+                    .parseClaimsJws(token);
             return true;
-        } catch (Exception ex) {
-            // Log error
+        } catch (Exception e) {
+            return false;
         }
-        return false;
     }
 }
