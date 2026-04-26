@@ -1,12 +1,13 @@
 package com.travelhub.backend.dto.response;
 
+
 public record AdminUserResponse(
         Long id,
         String name,
         String email,
         String role,
-        String phone,
-        boolean isActive,
-        boolean agentApproved,
+        String telephone,
+        Boolean isActive,a
+        Boolean agentApproved,
         String createdAt
 ) {}

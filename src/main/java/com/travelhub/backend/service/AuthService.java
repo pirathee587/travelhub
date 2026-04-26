@@ -62,6 +62,8 @@ public class AuthService {
                 .verificationToken(verificationToken)
                 .isEmailVerified(false)
                 .status("PENDING")
+                .isActive(true)
+                .agentApproved(request.getRole() != Role.AGENT)
                 .build();
 
         // Handle Role-specific profile creation
@@ -111,6 +113,16 @@ public class AuthService {
             throw new UnauthorizedException("Please verify your email first");
         }
 
+        // Account active check from develop
+        if (user.getIsActive() != null && !user.getIsActive()) {
+            throw new UnauthorizedException("Your account has been deactivated. Please contact admin.");
+        }
+
+        // Agent approval check from develop
+        if (user.getRole() == Role.AGENT && user.getAgentApproved() != null && !user.getAgentApproved()) {
+            throw new UnauthorizedException("Your agent account is pending approval. Please wait for admin to approve.");
+        }
+
         String jwt = tokenProvider.generateToken(authentication, user);
 
         return LoginResponse.builder()
@@ -133,9 +145,9 @@ public class AuthService {
         user.setVerificationToken(null);
         
         // Tourists are activated immediately after email verification
-        // Agents and Hotel Owners might need Admin approval (handled in Admin portal)
         if (user.getRole() == Role.TOURIST) {
             user.setStatus("ACTIVE");
+            user.setIsActive(true);
         }
 
         userRepository.save(user);
