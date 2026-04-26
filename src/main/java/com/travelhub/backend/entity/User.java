@@ -71,6 +71,9 @@ public class User {
 
     private Long agentId; // Link to the Agent table
     private Long hotelId; // Link to the Hotel table
+    
+    private String resetPasswordToken;
+    private LocalDateTime resetPasswordExpires;
 
     @Column(updatable = false)
     private LocalDateTime createdAt;
