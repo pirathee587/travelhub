@@ -21,7 +21,8 @@ public class JwtTokenProvider {
     }
 
     // Generate Token
-    public String generateToken(String email) {
+    public String generateTo
+    ken(String email) {
         return Jwts.builder()
                 .setSubject(email)
                 .setIssuedAt(new Date())
