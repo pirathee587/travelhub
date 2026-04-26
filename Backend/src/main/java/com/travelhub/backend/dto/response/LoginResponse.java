@@ -16,4 +16,7 @@ public class LoginResponse {
     private String email;
     private Role role;
     private String profileImage;
+    private Long agentId;
+    private Long hotelId;
+    private Long id; // User ID
 }

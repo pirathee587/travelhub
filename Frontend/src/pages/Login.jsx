@@ -21,10 +21,10 @@ const Login = () => {
     e.preventDefault();
     try {
       const res = await axios.post('http://localhost:8080/api/auth/login', formData);
-      const { token, role, name, id } = res.data;
+      const { token, role, name, id, agentId, hotelId } = res.data;
       
       localStorage.setItem('token', token);
-      localStorage.setItem('user', JSON.stringify({ name, role, id }));
+      localStorage.setItem('user', JSON.stringify({ name, role, id, agentId, hotelId }));
       
       toast.success(t('login_success'));
       

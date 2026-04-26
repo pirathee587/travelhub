@@ -69,6 +69,9 @@ public class User {
     @Builder.Default
     private Boolean agentApproved = false;
 
+    private Long agentId; // Link to the Agent table
+    private Long hotelId; // Link to the Hotel table
+
     @Column(updatable = false)
     private LocalDateTime createdAt;
 

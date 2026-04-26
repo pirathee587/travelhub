@@ -7,8 +7,12 @@ import com.travelhub.backend.common.UnauthorizedException;
 import com.travelhub.backend.dto.request.LoginRequest;
 import com.travelhub.backend.dto.request.RegisterRequest;
 import com.travelhub.backend.dto.response.LoginResponse;
+import com.travelhub.backend.entity.Agent;
+import com.travelhub.backend.entity.Hotel;
 import com.travelhub.backend.entity.User;
 import com.travelhub.backend.enums.Role;
+import com.travelhub.backend.repository.AgentRepository;
+import com.travelhub.backend.repository.HotelRepository;
 import com.travelhub.backend.repository.UserRepository;
 import com.travelhub.backend.security.JwtTokenProvider;
 import lombok.RequiredArgsConstructor;
@@ -30,6 +34,8 @@ public class AuthService {
     private final JwtTokenProvider tokenProvider;
     private final AuthenticationManager authenticationManager;
     private final EmailService emailService;
+    private final AgentRepository agentRepository;
+    private final HotelRepository hotelRepository;
 
     public ApiResponse register(RegisterRequest request) {
         if (userRepository.existsByEmail(request.getEmail())) {
@@ -57,6 +63,26 @@ public class AuthService {
                 .status("PENDING")
                 .build();
 
+        // Handle Role-specific profile creation
+        if (user.getRole() == Role.AGENT) {
+            Agent agent = Agent.builder()
+                    .agentName(user.getName())
+                    .email(user.getEmail())
+                    .phone(user.getTelephone())
+                    .agencyName(user.getAgencyName())
+                    .isActive(true)
+                    .build();
+            agent = agentRepository.save(agent);
+            user.setAgentId(agent.getId());
+        } else if (user.getRole() == Role.HOTEL_OWNER) {
+            Hotel hotel = Hotel.builder()
+                    .hotelName(user.getHotelName() != null ? user.getHotelName() : user.getName() + "'s Hotel")
+                    .district(user.getDistrict())
+                    .build();
+            hotel = hotelRepository.save(hotel);
+            user.setHotelId(hotel.getId());
+        }
+
         userRepository.save(user);
 
         // Send verification email
@@ -76,7 +102,6 @@ public class AuthService {
         );
 
         SecurityContextHolder.getContext().setAuthentication(authentication);
-        String jwt = tokenProvider.generateToken(authentication);
 
         User user = userRepository.findByEmail(request.getEmail())
                 .orElseThrow(() -> new ResourceNotFoundException("User", "email", request.getEmail()));
@@ -85,12 +110,17 @@ public class AuthService {
             throw new UnauthorizedException("Please verify your email first");
         }
 
+        String jwt = tokenProvider.generateToken(authentication, user);
+
         return LoginResponse.builder()
                 .token(jwt)
                 .name(user.getName())
                 .email(user.getEmail())
                 .role(user.getRole())
                 .profileImage(user.getProfileImage())
+                .agentId(user.getAgentId())
+                .hotelId(user.getHotelId())
+                .id(user.getId())
                 .build();
     }
 
