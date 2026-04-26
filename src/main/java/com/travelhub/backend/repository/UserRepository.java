@@ -11,19 +11,24 @@ import java.util.Optional;
 @Repository
 public interface UserRepository extends JpaRepository<User, Long> {
 
-    // Standard Authentication methods
+    // ── Authentication & Security ──────────────────────────
     Optional<User> findByEmail(String email);
+
     Boolean existsByEmail(String email);
 
-    // Admin & Management methods
+    // ── Admin Management Filters ───────────────────────────
+
+    // Returns all users with a specific role (ADMIN, AGENT, USER)
     List<User> findByRole(Role role);
 
-    // Search functionality for user management dashboard
+    // Dynamic search: Checks if name OR email contains the keyword (case-insensitive)
     List<User> findByNameContainingIgnoreCaseOrEmailContainingIgnoreCase(String name, String email);
 
-    // Filter for agents awaiting verification
+    // Specifically for the agent verification workflow
     List<User> findByRoleAndAgentApprovedFalse(Role role);
 
-    // Statistics for admin dashboard
+    // ── Analytics & Dashboards ─────────────────────────────
+
+    // Useful for showing "Total Agents" or "Total Travelers" on the dashboard
     Long countByRole(Role role);
 }
