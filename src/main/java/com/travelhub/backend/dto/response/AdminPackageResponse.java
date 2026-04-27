@@ -12,5 +12,7 @@ public record AdminPackageResponse(
         Integer reviewCount,
         Boolean trending,
         Boolean isActive,
-        String  agentName
+        String  agentName,
+        // Pending, Approved, Rejected
+        String  applicationStatus
 ) {}

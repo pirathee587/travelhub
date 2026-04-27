@@ -49,6 +49,13 @@ public class Package {
     private Boolean isActive = true;
     private String district;
 
+    @Column(columnDefinition = "TEXT")
+    private String inclusions;
+
+    @Column(name = "application_status")
+    @Builder.Default
+    private String applicationStatus = "Pending";
+
     @OneToMany(mappedBy = "pkg", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<PackageItinerary> itinerary;
 
