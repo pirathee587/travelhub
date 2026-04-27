@@ -17,6 +17,8 @@ public interface UserRepository extends JpaRepository<User, Long> {
     Boolean existsByEmail(String email);
     Optional<User> findByVerificationToken(String token);
     Optional<User> findByPasswordResetToken(String token);
+    Optional<User> findByHotelId(Long hotelId);
+    Optional<User> findByAgentId(Long agentId);
 
     // ── Admin Management Filters ───────────────────────────
 
