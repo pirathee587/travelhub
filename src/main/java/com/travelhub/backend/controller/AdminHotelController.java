@@ -33,22 +33,6 @@ public class AdminHotelController {
                         adminHotelService.getHotelById(id)));
     }
 
-    // PATCH /api/admin/hotels/{id}/approve
-    @PatchMapping("/{id}/approve")
-    public ResponseEntity<?> approveHotel(@PathVariable Long id) {
-        return ResponseEntity.ok(
-                new ApiResponse(true, "Hotel approved",
-                        adminHotelService.approveHotel(id)));
-    }
-
-    // PATCH /api/admin/hotels/{id}/reject
-    @PatchMapping("/{id}/reject")
-    public ResponseEntity<?> rejectHotel(@PathVariable Long id, @RequestParam(required = false) String reason) {
-        return ResponseEntity.ok(
-                new ApiResponse(true, "Hotel rejected",
-                        adminHotelService.rejectHotel(id, reason)));
-    }
-
     // DELETE /api/admin/hotels/{id}
     @DeleteMapping("/{id}")
     public ResponseEntity<?> deleteHotel(

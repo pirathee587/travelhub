@@ -1,7 +1,6 @@
 package com.travelhub.backend.service;
 
 import com.travelhub.backend.common.ResourceNotFoundException;
-import com.travelhub.backend.dto.request.UpdatePasswordRequest;
 import com.travelhub.backend.dto.request.UpdateProfileRequest;
 import com.travelhub.backend.entity.User;
 import com.travelhub.backend.repository.UserRepository;

@@ -43,22 +43,6 @@ public class AdminPackageController {
                                 .togglePackageActive(id)));
     }
 
-    // PATCH /api/admin/packages/{id}/approve
-    @PatchMapping("/{id}/approve")
-    public ResponseEntity<?> approvePackage(@PathVariable Long id) {
-        return ResponseEntity.ok(
-                new ApiResponse(true, "Package approved",
-                        adminPackageService.approvePackage(id)));
-    }
-
-    // PATCH /api/admin/packages/{id}/reject
-    @PatchMapping("/{id}/reject")
-    public ResponseEntity<?> rejectPackage(@PathVariable Long id, @RequestParam(required = false) String reason) {
-        return ResponseEntity.ok(
-                new ApiResponse(true, "Package rejected",
-                        adminPackageService.rejectPackage(id, reason)));
-    }
-
     // DELETE /api/admin/packages/{id}
     @DeleteMapping("/{id}")
     public ResponseEntity<?> deletePackage(

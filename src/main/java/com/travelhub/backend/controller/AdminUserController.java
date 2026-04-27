@@ -58,12 +58,6 @@ public class AdminUserController {
                 new ApiResponse(true, "Agent approved", adminUserService.approveAgent(id)));
     }
 
-    @PatchMapping("/agents/{id}/reject")
-    public ResponseEntity<?> rejectAgent(@PathVariable Long id, @RequestParam(required = false) String reason) {
-        return ResponseEntity.ok(
-                new ApiResponse(true, "Agent rejected", adminUserService.rejectAgent(id, reason)));
-    }
-
     @DeleteMapping("/{id}")
     public ResponseEntity<?> deleteUser(@PathVariable Long id) {
         adminUserService.deleteUser(id);
