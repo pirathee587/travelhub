@@ -113,14 +113,16 @@ public class AuthService {
             throw new UnauthorizedException("Please verify your email first");
         }
 
-        // Account active check from develop
         if (user.getIsActive() != null && !user.getIsActive()) {
             throw new UnauthorizedException("Your account has been deactivated. Please contact admin.");
         }
 
-        // Agent approval check from develop
-        if (user.getRole() == Role.AGENT && user.getAgentApproved() != null && !user.getAgentApproved()) {
-            throw new UnauthorizedException("Your agent account is pending approval. Please wait for admin to approve.");
+        if (user.getStatus() == null || !user.getStatus().equals("ACTIVE")) {
+            if (user.getRole() == Role.AGENT || user.getRole() == Role.HOTEL_OWNER) {
+                throw new UnauthorizedException("Your account is pending admin approval. Please wait for the admin to review your registration.");
+            } else {
+                throw new UnauthorizedException("Your account is not active. Please contact support.");
+            }
         }
 
         String jwt = tokenProvider.generateToken(authentication, user);

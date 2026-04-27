@@ -14,9 +14,13 @@ public class HotelOwnerDashboardController {
 
     private final HotelOwnerDashboardService dashboardService;
 
-    // GET /api/owner/dashboard/hotel/{hotelId}
-    @GetMapping("/dashboard/hotel/{hotelId}")
-    public ResponseEntity<HotelDashboardStatsResponse> getHotelDashboardStats(@PathVariable Long hotelId) {
+    // GET /api/owner/dashboard/stats
+    @GetMapping("/dashboard/stats")
+    public ResponseEntity<HotelDashboardStatsResponse> getHotelDashboardStats() {
+        Long hotelId = com.travelhub.backend.util.SecurityUtils.getCurrentHotelId();
+        if (hotelId == null) {
+            throw new com.travelhub.backend.common.UnauthorizedException("Hotel ID not found in token");
+        }
         return ResponseEntity.ok(dashboardService.getDashboardStats(hotelId));
     }
 }

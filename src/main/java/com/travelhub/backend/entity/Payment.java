@@ -44,9 +44,25 @@ public class Payment {
     @Column(nullable = false)
     private Double amount;
 
-    // Completed அல்லது Pending
+    // Completed, Pending, Canceled, Failed
     @Column(nullable = false)
     private String status;
+
+    // PayHere Specific Fields
+    @Column(name = "payhere_amount")
+    private Double payhereAmount;
+
+    @Column(name = "payhere_currency")
+    private String payhereCurrency;
+
+    @Column(name = "method")
+    private String method;
+
+    @Column(name = "status_code")
+    private Integer statusCode;
+
+    @Column(name = "md5sig")
+    private String md5sig;
 
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;

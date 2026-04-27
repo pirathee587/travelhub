@@ -47,6 +47,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/upload/**").permitAll()
                         .requestMatchers("/uploads/**").permitAll()
                         .requestMatchers("/api/tourist/**").permitAll()
+                        .requestMatchers("/api/payments/notify").permitAll()
 
                         // ── Admin Protected Routes ──
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")

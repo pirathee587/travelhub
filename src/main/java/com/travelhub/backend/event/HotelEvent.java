@@ -10,6 +10,10 @@ public class HotelEvent extends ApplicationEvent {
     private final String type; // e.g., "APPROVED", "REJECTED", "DELETED"
     private final String reason;
 
+    public HotelEvent(Object source, Hotel hotel, String type) {
+        this(source, hotel, type, null);
+    }
+
     public HotelEvent(Object source, Hotel hotel, String type, String reason) {
         super(source);
         this.hotel = hotel;

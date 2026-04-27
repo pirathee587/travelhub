@@ -45,4 +45,7 @@ public interface BookingRepository
 
     Long countByStatus(String status);
     List<Booking> findByStatus(String status);
+
+    List<Booking> findByVehicleAgentIdAndStatus(Long agentId, String status);
+    List<Booking> findByVehicleAgentId(Long agentId);
 }

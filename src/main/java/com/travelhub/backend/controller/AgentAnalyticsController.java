@@ -13,10 +13,13 @@ public class AgentAnalyticsController {
 
     private final AgentAnalyticsService agentAnalyticsService;
 
-    @GetMapping("/{agentId}/analytics")
+    @GetMapping("/analytics")
     public ResponseEntity<AnalyticsResponse> getAnalytics(
-            @PathVariable Long agentId,
             @RequestParam(required = false, defaultValue = "monthly") String period) {
+        Long agentId = com.travelhub.backend.util.SecurityUtils.getCurrentAgentId();
+        if (agentId == null) {
+            throw new com.travelhub.backend.common.UnauthorizedException("Agent ID not found in token");
+        }
         return ResponseEntity.ok(agentAnalyticsService.getAnalytics(agentId, period));
     }
 }

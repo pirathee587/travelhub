@@ -13,9 +13,12 @@ public class AgentDashboardController {
 
     private final AgentDashboardService agentDashboardService;
 
-    @GetMapping("/{agentId}/dashboard/stats")
-    public ResponseEntity<AgentDashboardStatsResponse> getStats(
-            @PathVariable Long agentId) {
+    @GetMapping("/dashboard/stats")
+    public ResponseEntity<AgentDashboardStatsResponse> getStats() {
+        Long agentId = com.travelhub.backend.util.SecurityUtils.getCurrentAgentId();
+        if (agentId == null) {
+            throw new com.travelhub.backend.common.UnauthorizedException("Agent ID not found in token");
+        }
         return ResponseEntity.ok(agentDashboardService.getStats(agentId));
     }
 }

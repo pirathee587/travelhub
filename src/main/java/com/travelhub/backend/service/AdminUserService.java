@@ -5,8 +5,10 @@ import com.travelhub.backend.common.ResourceNotFoundException;
 import com.travelhub.backend.dto.response.AdminUserResponse;
 import com.travelhub.backend.entity.User;
 import com.travelhub.backend.enums.Role;
+import com.travelhub.backend.event.UserAccountEvent;
 import com.travelhub.backend.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -17,6 +19,7 @@ import java.util.List;
 public class AdminUserService {
 
     private final UserRepository userRepository;
+    private final ApplicationEventPublisher eventPublisher;
 
     // ── Get All Users ─────────────────────────────────
     public List<AdminUserResponse> getAllUsers() {
@@ -85,7 +88,31 @@ public class AdminUserService {
         }
 
         user.setAgentApproved(true);
-        return mapToResponse(userRepository.save(user));
+        user.setStatus("ACTIVE");
+        User savedUser = userRepository.save(user);
+        
+        eventPublisher.publishEvent(new UserAccountEvent(this, savedUser, "APPROVED"));
+        
+        return mapToResponse(savedUser);
+    }
+
+    // ── Reject Agent ──────────────────────────────────
+    @Transactional
+    public AdminUserResponse rejectAgent(Long id, String reason) {
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("User", "id", id));
+
+        if (user.getRole() != Role.AGENT) {
+            throw new BadRequestException("User is not an Agent");
+        }
+
+        user.setAgentApproved(false);
+        user.setStatus("REJECTED");
+        User savedUser = userRepository.save(user);
+        
+        eventPublisher.publishEvent(new UserAccountEvent(this, savedUser, "REJECTED", reason));
+        
+        return mapToResponse(savedUser);
     }
 
     // ── Delete User ───────────────────────────────────

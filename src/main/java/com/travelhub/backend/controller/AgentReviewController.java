@@ -15,18 +15,24 @@ public class AgentReviewController {
 
     private final AgentReviewService agentReviewService;
 
-    @GetMapping("/{agentId}/reviews")
+    @GetMapping("/reviews")
     public ResponseEntity<List<ReviewResponse>> getReviews(
-            @PathVariable Long agentId,
             @RequestParam(required = false) Integer rating) {
+        Long agentId = com.travelhub.backend.util.SecurityUtils.getCurrentAgentId();
+        if (agentId == null) {
+            throw new com.travelhub.backend.common.UnauthorizedException("Agent ID not found in token");
+        }
         return ResponseEntity.ok(agentReviewService.getReviews(agentId, rating));
     }
 
-    @PostMapping("/{agentId}/reviews/{reviewId}/reply")
+    @PostMapping("/reviews/{reviewId}/reply")
     public ResponseEntity<ReviewResponse> replyToReview(
-            @PathVariable Long agentId,
             @PathVariable Long reviewId,
             @RequestBody ReviewReplyRequest request) {
+        Long agentId = com.travelhub.backend.util.SecurityUtils.getCurrentAgentId();
+        if (agentId == null) {
+            throw new com.travelhub.backend.common.UnauthorizedException("Agent ID not found in token");
+        }
         return ResponseEntity.ok(agentReviewService.replyToReview(agentId, reviewId, request));
     }
 }

@@ -14,16 +14,22 @@ public class AgentSettingsController {
 
     private final AgentSettingsService agentSettingsService;
 
-    @GetMapping("/{agentId}/settings")
-    public ResponseEntity<SettingsResponse> getSettings(
-            @PathVariable Long agentId) {
+    @GetMapping("/settings")
+    public ResponseEntity<SettingsResponse> getSettings() {
+        Long agentId = com.travelhub.backend.util.SecurityUtils.getCurrentAgentId();
+        if (agentId == null) {
+            throw new com.travelhub.backend.common.UnauthorizedException("Agent ID not found in token");
+        }
         return ResponseEntity.ok(agentSettingsService.getSettings(agentId));
     }
 
-    @PutMapping("/{agentId}/settings")
+    @PutMapping("/settings")
     public ResponseEntity<SettingsResponse> updateSettings(
-            @PathVariable Long agentId,
             @RequestBody SettingsRequest request) {
+        Long agentId = com.travelhub.backend.util.SecurityUtils.getCurrentAgentId();
+        if (agentId == null) {
+            throw new com.travelhub.backend.common.UnauthorizedException("Agent ID not found in token");
+        }
         return ResponseEntity.ok(agentSettingsService.updateSettings(agentId, request));
     }
 }

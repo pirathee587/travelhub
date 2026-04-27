@@ -14,29 +14,42 @@ public class AgentNotificationController {
 
     private final AgentNotificationService agentNotificationService;
 
-    @GetMapping("/{agentId}/notifications")
-    public ResponseEntity<List<NotificationResponse>> getNotifications(
-            @PathVariable Long agentId) {
+    @GetMapping("/notifications")
+    public ResponseEntity<List<NotificationResponse>> getNotifications() {
+        Long agentId = com.travelhub.backend.util.SecurityUtils.getCurrentAgentId();
+        if (agentId == null) {
+            throw new com.travelhub.backend.common.UnauthorizedException("Agent ID not found in token");
+        }
         return ResponseEntity.ok(agentNotificationService.getNotifications(agentId));
     }
 
-    @PatchMapping("/{agentId}/notifications/{notificationId}/read")
+    @PatchMapping("/notifications/{notificationId}/read")
     public ResponseEntity<NotificationResponse> markAsRead(
-            @PathVariable Long agentId,
             @PathVariable Long notificationId) {
+        Long agentId = com.travelhub.backend.util.SecurityUtils.getCurrentAgentId();
+        if (agentId == null) {
+            throw new com.travelhub.backend.common.UnauthorizedException("Agent ID not found in token");
+        }
         return ResponseEntity.ok(agentNotificationService.markAsRead(agentId, notificationId));
     }
 
-    @PatchMapping("/{agentId}/notifications/read-all")
-    public ResponseEntity<Void> markAllAsRead(@PathVariable Long agentId) {
+    @PatchMapping("/notifications/read-all")
+    public ResponseEntity<Void> markAllAsRead() {
+        Long agentId = com.travelhub.backend.util.SecurityUtils.getCurrentAgentId();
+        if (agentId == null) {
+            throw new com.travelhub.backend.common.UnauthorizedException("Agent ID not found in token");
+        }
         agentNotificationService.markAllAsRead(agentId);
         return ResponseEntity.ok().build();
     }
 
-    @DeleteMapping("/{agentId}/notifications/{notificationId}")
+    @DeleteMapping("/notifications/{notificationId}")
     public ResponseEntity<Void> deleteNotification(
-            @PathVariable Long agentId,
             @PathVariable Long notificationId) {
+        Long agentId = com.travelhub.backend.util.SecurityUtils.getCurrentAgentId();
+        if (agentId == null) {
+            throw new com.travelhub.backend.common.UnauthorizedException("Agent ID not found in token");
+        }
         agentNotificationService.deleteNotification(agentId, notificationId);
         return ResponseEntity.noContent().build();
     }

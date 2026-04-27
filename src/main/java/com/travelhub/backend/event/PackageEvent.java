@@ -10,6 +10,10 @@ public class PackageEvent extends ApplicationEvent {
     private final String type; // e.g., "APPROVED", "REJECTED", "DELETED"
     private final String reason;
 
+    public PackageEvent(Object source, Package pkg, String type) {
+        this(source, pkg, type, null);
+    }
+
     public PackageEvent(Object source, Package pkg, String type, String reason) {
         super(source);
         this.pkg = pkg;

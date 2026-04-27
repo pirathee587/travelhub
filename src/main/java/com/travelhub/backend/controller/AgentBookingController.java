@@ -15,39 +15,54 @@ public class AgentBookingController {
 
     private final AgentBookingService agentBookingService;
 
-    @GetMapping("/{agentId}/bookings")
+    @GetMapping("/bookings")
     public ResponseEntity<List<BookingResponse>> getAllBookings(
-            @PathVariable Long agentId,
             @RequestParam(required = false) String status) {
+        Long agentId = com.travelhub.backend.util.SecurityUtils.getCurrentAgentId();
+        if (agentId == null) {
+            throw new com.travelhub.backend.common.UnauthorizedException("Agent ID not found in token");
+        }
         return ResponseEntity.ok(agentBookingService.getAllBookings(agentId, status));
     }
 
-    @GetMapping("/{agentId}/bookings/{bookingId}")
+    @GetMapping("/bookings/{bookingId}")
     public ResponseEntity<BookingResponse> getBookingById(
-            @PathVariable Long agentId,
             @PathVariable Long bookingId) {
+        Long agentId = com.travelhub.backend.util.SecurityUtils.getCurrentAgentId();
+        if (agentId == null) {
+            throw new com.travelhub.backend.common.UnauthorizedException("Agent ID not found in token");
+        }
         return ResponseEntity.ok(agentBookingService.getBookingById(agentId, bookingId));
     }
 
-    @PatchMapping("/{agentId}/bookings/{bookingId}/accept")
+    @PatchMapping("/bookings/{bookingId}/accept")
     public ResponseEntity<BookingResponse> acceptBooking(
-            @PathVariable Long agentId,
             @PathVariable Long bookingId) {
+        Long agentId = com.travelhub.backend.util.SecurityUtils.getCurrentAgentId();
+        if (agentId == null) {
+            throw new com.travelhub.backend.common.UnauthorizedException("Agent ID not found in token");
+        }
         return ResponseEntity.ok(agentBookingService.acceptBooking(agentId, bookingId));
     }
 
-    @PatchMapping("/{agentId}/bookings/{bookingId}/decline")
+    @PatchMapping("/bookings/{bookingId}/decline")
     public ResponseEntity<BookingResponse> declineBooking(
-            @PathVariable Long agentId,
             @PathVariable Long bookingId,
             @RequestBody BookingActionRequest request) {
+        Long agentId = com.travelhub.backend.util.SecurityUtils.getCurrentAgentId();
+        if (agentId == null) {
+            throw new com.travelhub.backend.common.UnauthorizedException("Agent ID not found in token");
+        }
         return ResponseEntity.ok(agentBookingService.declineBooking(agentId, bookingId, request));
     }
 
-    @PatchMapping("/{agentId}/bookings/{bookingId}/complete")
+    @PatchMapping("/bookings/{bookingId}/complete")
     public ResponseEntity<BookingResponse> completeBooking(
-            @PathVariable Long agentId,
             @PathVariable Long bookingId) {
+        Long agentId = com.travelhub.backend.util.SecurityUtils.getCurrentAgentId();
+        if (agentId == null) {
+            throw new com.travelhub.backend.common.UnauthorizedException("Agent ID not found in token");
+        }
         return ResponseEntity.ok(agentBookingService.completeBooking(agentId, bookingId));
     }
 }

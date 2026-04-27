@@ -16,55 +16,76 @@ public class AgentVehicleController {
 
     private final AgentVehicleService agentVehicleService;
 
-    @GetMapping("/{agentId}/vehicles")
+    @GetMapping("/vehicles")
     public ResponseEntity<List<VehicleResponse>> getAllVehicles(
-            @PathVariable Long agentId,
             @RequestParam(required = false) String lifecycleStatus) {
+        Long agentId = com.travelhub.backend.util.SecurityUtils.getCurrentAgentId();
+        if (agentId == null) {
+            throw new com.travelhub.backend.common.UnauthorizedException("Agent ID not found in token");
+        }
         return ResponseEntity.ok(agentVehicleService.getAllVehicles(agentId, lifecycleStatus));
     }
 
-    @GetMapping("/{agentId}/vehicles/{vehicleId}")
+    @GetMapping("/vehicles/{vehicleId}")
     public ResponseEntity<VehicleResponse> getVehicleById(
-            @PathVariable Long agentId,
             @PathVariable Long vehicleId) {
+        Long agentId = com.travelhub.backend.util.SecurityUtils.getCurrentAgentId();
+        if (agentId == null) {
+            throw new com.travelhub.backend.common.UnauthorizedException("Agent ID not found in token");
+        }
         return ResponseEntity.ok(agentVehicleService.getVehicleById(agentId, vehicleId));
     }
 
-    @PostMapping("/{agentId}/vehicles")
+    @PostMapping("/vehicles")
     public ResponseEntity<VehicleResponse> createVehicle(
-            @PathVariable Long agentId,
             @RequestBody VehicleRequest request) {
+        Long agentId = com.travelhub.backend.util.SecurityUtils.getCurrentAgentId();
+        if (agentId == null) {
+            throw new com.travelhub.backend.common.UnauthorizedException("Agent ID not found in token");
+        }
         return ResponseEntity.ok(agentVehicleService.createVehicle(agentId, request));
     }
 
-    @PutMapping("/{agentId}/vehicles/{vehicleId}")
+    @PutMapping("/vehicles/{vehicleId}")
     public ResponseEntity<VehicleResponse> updateVehicle(
-            @PathVariable Long agentId,
             @PathVariable Long vehicleId,
             @RequestBody VehicleRequest request) {
+        Long agentId = com.travelhub.backend.util.SecurityUtils.getCurrentAgentId();
+        if (agentId == null) {
+            throw new com.travelhub.backend.common.UnauthorizedException("Agent ID not found in token");
+        }
         return ResponseEntity.ok(agentVehicleService.updateVehicle(agentId, vehicleId, request));
     }
 
-    @PatchMapping("/{agentId}/vehicles/{vehicleId}/status")
+    @PatchMapping("/vehicles/{vehicleId}/status")
     public ResponseEntity<VehicleResponse> updateStatus(
-            @PathVariable Long agentId,
             @PathVariable Long vehicleId,
             @RequestBody Map<String, String> body) {
+        Long agentId = com.travelhub.backend.util.SecurityUtils.getCurrentAgentId();
+        if (agentId == null) {
+            throw new com.travelhub.backend.common.UnauthorizedException("Agent ID not found in token");
+        }
         return ResponseEntity.ok(agentVehicleService.updateStatus(agentId, vehicleId, body.get("status")));
     }
 
-    @PatchMapping("/{agentId}/vehicles/{vehicleId}/lifecycle")
+    @PatchMapping("/vehicles/{vehicleId}/lifecycle")
     public ResponseEntity<VehicleResponse> updateLifecycle(
-            @PathVariable Long agentId,
             @PathVariable Long vehicleId,
             @RequestBody Map<String, String> body) {
+        Long agentId = com.travelhub.backend.util.SecurityUtils.getCurrentAgentId();
+        if (agentId == null) {
+            throw new com.travelhub.backend.common.UnauthorizedException("Agent ID not found in token");
+        }
         return ResponseEntity.ok(agentVehicleService.updateLifecycle(agentId, vehicleId, body.get("lifecycleStatus")));
     }
 
-    @DeleteMapping("/{agentId}/vehicles/{vehicleId}")
+    @DeleteMapping("/vehicles/{vehicleId}")
     public ResponseEntity<Void> deleteVehicle(
-            @PathVariable Long agentId,
             @PathVariable Long vehicleId) {
+        Long agentId = com.travelhub.backend.util.SecurityUtils.getCurrentAgentId();
+        if (agentId == null) {
+            throw new com.travelhub.backend.common.UnauthorizedException("Agent ID not found in token");
+        }
         agentVehicleService.deleteVehicle(agentId, vehicleId);
         return ResponseEntity.noContent().build();
     }
