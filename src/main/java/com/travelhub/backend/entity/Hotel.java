@@ -1,10 +1,8 @@
 package com.travelhub.backend.entity;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
+import java.util.List;
 
 @Entity
 @Table(name = "hotels")
@@ -18,6 +16,7 @@ public class Hotel {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    // ── Basic Info ─────────────────────────────────────
     @Column(nullable = false)
     private String hotelName;
 
@@ -34,8 +33,58 @@ public class Hotel {
     private Double rating;
     private Integer reviewCount;
     private String imageUrl;
+    private String district;
 
+    // ── Location Details ───────────────────────────────
+
+    @Column(name = "number_of_rooms")
+    private Integer numberOfRooms;
+
+    // ── Owner Information ──────────────────────────────
+
+    @Column(name = "owner_name")
+    private String ownerName;
+
+
+    @Column(name = "owner_email")
+    private String ownerEmail;
+
+
+    @Column(name = "owner_nic")
+    private String ownerNic;
+
+
+    @Column(name = "nic_image_url")
+    private String nicImageUrl;
+
+    // ── Contact Information ────────────────────────────
+
+    @Column(name = "phone_number")
+    private String phoneNumber;
+
+
+    @Column(name = "hotline_number")
+    private String hotlineNumber;
+
+    // ── Application Status ─────────────────────────────
+
+    @Column(name = "application_status")
+    @Builder.Default
+    private String applicationStatus = "Pending";
+
+
+    @OneToMany(mappedBy = "hotel",
+            cascade = CascadeType.ALL,
+            fetch = FetchType.LAZY)
+    private List<Amenity> amenityList;
+
+
+    @OneToMany(mappedBy = "hotel",
+            cascade = CascadeType.ALL,
+            fetch = FetchType.LAZY)
+    private List<Room> rooms;
+
+    // ── Old amenities string field keep it ────────────
     @Column(columnDefinition = "TEXT")
     private String amenities;
-    private String district;
 }
