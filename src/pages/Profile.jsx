@@ -30,26 +30,21 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Badge } from '@/components/ui/badge';
 
-const SRI_LANKA_DISTRICTS = [
-  'Ampara', 'Anuradhapura', 'Badulla', 'Batticaloa', 'Colombo', 'Galle', 'Gampaha', 'Hambantota', 
-  'Jaffna', 'Kalutara', 'Kandy', 'Kegalle', 'Kilinochchi', 'Kurunegala', 'Mannar', 'Matale', 
-  'Matara', 'Monaragala', 'Mullaitivu', 'Nuwara Eliya', 'Polonnaruwa', 'Puttalam', 'Ratnapura', 
-  'Trincomalee', 'Vavuniya'
-].sort();
+
+
 
 const initialProfile = {
-  displayName: 'John Smith',
-  email: 'john.smith@travelagent.com',
+  displayName: 'Harith Keshan',
+  agencyName: 'Sri Lanka Travel Experts',
+  email: 'harith.keshan@travelagent.com',
   phone: '+94 77 123 4567',
   secondaryPhone: '',
   whatsappNumber: '+94 77 123 4567',
   location: 'Colombo, Sri Lanka',
   bio: 'Experienced travel agent specializing in Sri Lankan tours, from cultural heritage sites to pristine beaches. Over 8 years of experience creating unforgettable island adventures.',
   languages: 'English, Sinhala',
-  operatingDistricts: ['Colombo', 'Galle', 'Kandy'],
+
   websiteUrl: '',
   memberSince: 'March 2020',
   totalTrips: 156,
@@ -65,7 +60,7 @@ const initialReviews = [
     customer: 'Sarah Johnson',
     rating: 5,
     comment:
-      'Absolutely fantastic service! John organized the perfect Cultural Triangle tour. Sigiriya was breathtaking.',
+      'Absolutely fantastic service! Harith organized the perfect Cultural Triangle tour. Sigiriya was breathtaking.',
     date: '2024-05-15',
     trip: 'Sigiriya, Dambulla',
     package: 'Cultural Triangle Heritage',
@@ -269,6 +264,11 @@ const Profile = () => {
               <h2 className="text-xl font-semibold text-foreground">
                 {profile.displayName}
               </h2>
+              {profile.agencyName && (
+                <p className="text-sm text-muted-foreground mt-0.5">
+                  {profile.agencyName}
+                </p>
+              )}
               <div className="mt-2 flex items-center justify-center gap-1">
                 {Array.from({ length: 5 }).map((_, i) => (
                   <Star
@@ -325,12 +325,6 @@ const Profile = () => {
             </div>
 
             <div className="mt-6 pt-6 border-t border-border">
-              <h4 className="text-sm font-semibold text-foreground mb-3">Operating Districts</h4>
-              <div className="flex flex-wrap gap-2">
-                {profile.operatingDistricts.length > 0 ? profile.operatingDistricts.map(d => (
-                  <Badge key={d} variant="secondary">{d}</Badge>
-                )) : <span className="text-sm text-muted-foreground">Not specified</span>}
-              </div>
               
               <h4 className="text-sm font-semibold text-foreground mt-5 mb-2">Languages</h4>
               <p className="text-sm text-muted-foreground">{profile.languages || 'Not specified'}</p>
@@ -405,14 +399,24 @@ const Profile = () => {
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                     <div className="md:col-span-2 space-y-2">
+                     <div className="space-y-2">
                        <Label>Display Name</Label>
                        <Input
                          value={editForm.displayName}
                          onChange={(e) =>
                            setEditForm({ ...editForm, displayName: e.target.value })
                          }
-                         placeholder="Individual or Agency Name"
+                         placeholder="Your full name"
+                       />
+                     </div>
+                     <div className="space-y-2">
+                       <Label>Agency Name</Label>
+                       <Input
+                         value={editForm.agencyName}
+                         onChange={(e) =>
+                           setEditForm({ ...editForm, agencyName: e.target.value })
+                         }
+                         placeholder="Your agency or company name"
                        />
                      </div>
                      <div className="space-y-2">
@@ -492,27 +496,7 @@ const Profile = () => {
                        />
                      </div>
 
-                     <div className="md:col-span-2 space-y-3 mt-2">
-                       <Label>Operating Districts</Label>
-                       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 pt-2 border rounded-md p-4 bg-muted/20">
-                         {SRI_LANKA_DISTRICTS.map(district => (
-                           <div key={district} className="flex items-center space-x-2">
-                             <Checkbox 
-                               id={`district-${district}`} 
-                               checked={editForm.operatingDistricts.includes(district)}
-                               onCheckedChange={(checked) => {
-                                  if (checked) {
-                                     setEditForm(prev => ({...prev, operatingDistricts: [...prev.operatingDistricts, district]}));
-                                  } else {
-                                     setEditForm(prev => ({...prev, operatingDistricts: prev.operatingDistricts.filter(d => d !== district)}));
-                                  }
-                               }}
-                             />
-                             <Label htmlFor={`district-${district}`} className="text-sm font-normal cursor-pointer text-muted-foreground">{district}</Label>
-                           </div>
-                         ))}
-                       </div>
-                     </div>
+
                   </div>
 
                   <div className="pt-4 flex justify-end gap-3 border-t mt-6">

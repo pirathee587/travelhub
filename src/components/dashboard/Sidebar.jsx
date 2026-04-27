@@ -4,21 +4,36 @@ import {
   LayoutDashboard,
   Car,
   CalendarCheck,
+  Package,
   BarChart3,
   User,
   ChevronLeft,
   ChevronRight,
   Plane,
+  Settings,
+  LogOut,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
 
 const navItems = [
   { icon: LayoutDashboard, label: 'Dashboard', path: '/' },
   { icon: Car, label: 'Vehicles & Drivers', path: '/vehicles' },
   { icon: CalendarCheck, label: 'Bookings', path: '/bookings' },
-  // { icon: Package, label: "Packages", path: "/packages" },
+  { icon: Package, label: 'Packages', path: '/packages' },
   { icon: BarChart3, label: 'Analytics', path: '/analytics' },
   { icon: User, label: 'Profile', path: '/profile' },
+  { icon: Settings, label: 'Settings', path: '/settings' },
 ];
 
 export function Sidebar() {
@@ -63,24 +78,39 @@ export function Sidebar() {
         })}
       </nav>
 
-      {/* Agent Info */}
-      {!collapsed && (
-        <div className="border-t border-sidebar-border p-4 animate-fade-in">
-          <div className="flex items-center gap-3">
-            <div className="h-10 w-10 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center text-sm font-semibold text-primary-foreground">
-              JS
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-sidebar-foreground truncate">
-                John Smith
-              </p>
-              <p className="text-xs text-sidebar-muted truncate">
-                Premium Agent
-              </p>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Sign Out Button */}
+      <div className="border-t border-sidebar-border p-3">
+        <AlertDialog>
+          <AlertDialogTrigger asChild>
+            <button
+              className={cn(
+                'flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors',
+                'text-red-400 hover:bg-red-500/10 hover:text-red-300',
+                collapsed && 'justify-center px-0'
+              )}
+            >
+              <LogOut className="h-5 w-5 shrink-0" />
+              {!collapsed && (
+                <span className="animate-fade-in">Sign Out</span>
+              )}
+            </button>
+          </AlertDialogTrigger>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Sign Out</AlertDialogTitle>
+              <AlertDialogDescription>
+                Are you sure you want to sign out of your account?
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                Sign Out
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      </div>
 
       {/* Collapse Button */}
       <button

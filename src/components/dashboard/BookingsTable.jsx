@@ -1,4 +1,4 @@
-import { Check, X, MapPin, Calendar } from 'lucide-react';
+import { MapPin, Calendar, Eye } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useNavigate } from 'react-router-dom';
@@ -7,9 +7,9 @@ const mockBookings = [
   {
     id: 'BK001',
     customerName: 'Sarah Johnson',
-    destination: 'Bali, Indonesia',
+    destination: 'Sigiriya, Dambulla',
     travelDates: 'Jan 15 - Jan 22',
-    packageType: 'Premium Beach',
+    packageType: 'Cultural Triangle Heritage',
     vehicle: 'Bajaj RE 4S',
     driver: 'Nimal Perera',
     status: 'active',
@@ -17,9 +17,9 @@ const mockBookings = [
   {
     id: 'BK002',
     customerName: 'Michael Chen',
-    destination: 'Paris, France',
+    destination: 'Ella, Badulla',
     travelDates: 'Jan 18 - Jan 25',
-    packageType: 'City Explorer',
+    packageType: 'Hill Country Train Adventure',
     vehicle: 'Mercedes V-Class',
     driver: 'Kavindu Jayasinghe',
     status: 'pending',
@@ -27,19 +27,19 @@ const mockBookings = [
   {
     id: 'BK003',
     customerName: 'Emma Wilson',
-    destination: 'Maldives',
+    destination: 'Mirissa, Matara',
     travelDates: 'Jan 10 - Jan 17',
-    packageType: 'Luxury Resort',
-    vehicle: 'Speedboat Transfer',
-    driver: 'Ahmed Hassan',
+    packageType: 'Southern Coastal Bliss',
+    vehicle: 'Toyota Alphard',
+    driver: 'Tharushi Fernando',
     status: 'completed',
   },
   {
     id: 'BK004',
     customerName: 'James Brown',
-    destination: 'Swiss Alps',
+    destination: 'Yala National Park',
     travelDates: 'Jan 20 - Jan 27',
-    packageType: 'Adventure Plus',
+    packageType: 'Wild Yala Safari',
     vehicle: 'Maruti Suzuki Wagon R',
     driver: 'Saman Kumara',
     status: 'pending',
@@ -47,9 +47,9 @@ const mockBookings = [
   {
     id: 'BK005',
     customerName: 'Lisa Anderson',
-    destination: 'Tokyo, Japan',
+    destination: 'Galle Fort, Galle',
     travelDates: 'Jan 05 - Jan 12',
-    packageType: 'Cultural Tour',
+    packageType: 'Southern Coastal Bliss',
     vehicle: 'Toyota Alphard',
     driver: 'Tharushi Fernando',
     status: 'cancelled',
@@ -138,32 +138,15 @@ export function BookingsTable() {
                   </span>
                 </td>
                 <td className="px-6 py-4 text-right">
-                  {booking.status === 'pending' ? (
-                    <div className="flex items-center justify-end gap-2">
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        className="h-8 w-8 p-0 text-success hover:bg-success/10 hover:text-success"
-                      >
-                        <Check className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        className="h-8 w-8 p-0 text-destructive hover:bg-destructive/10 hover:text-destructive"
-                      >
-                        <X className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  ) : (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => navigate(`/bookings/${booking.id}`)}
-                    >
-                      View Details
-                    </Button>
-                  )}
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="gap-1"
+                    onClick={() => navigate(`/bookings/${booking.id}`)}
+                  >
+                    <Eye className="h-4 w-4" />
+                    View Details
+                  </Button>
                 </td>
               </tr>
             ))}

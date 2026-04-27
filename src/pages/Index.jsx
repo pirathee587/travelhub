@@ -60,10 +60,16 @@ const stats = [
   },
 ];
 
+const dashboardReviews = [
+  { id: 'R001', customerName: 'Sarah Johnson', rating: 5, comment: 'Amazing experience! The driver was professional and the vehicle was spotless. Highly recommend!', date: '2 days ago', trip: 'Sigiriya, Dambulla' },
+  { id: 'R002', customerName: 'Emma Wilson', rating: 5, comment: 'Perfect holiday. Everything was arranged seamlessly. Will definitely book again!', date: '1 week ago', trip: 'Mirissa, Matara' },
+  { id: 'R003', customerName: 'Robert Taylor', rating: 4, comment: 'Great service overall. Minor delay on pickup but the trip was wonderful.', date: '2 weeks ago', trip: 'Yala National Park' },
+];
+
 const Index = () => {
   return (
     <DashboardLayout
-      title="Welcome back, John! 👋"
+      title="Welcome back, Harith! 👋"
       subtitle="Here's what's happening with your travel business today"
       showSearch={false}
     >
@@ -167,7 +173,9 @@ const Index = () => {
             </Button>
           </div>
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            <ReviewCard />
+            {dashboardReviews.map((review) => (
+              <ReviewCard key={review.id} review={review} />
+            ))}
           </div>
         </div>
       </div>

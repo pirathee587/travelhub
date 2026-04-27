@@ -8,7 +8,7 @@ const vehicles = [
     name: 'Mercedes V-Class',
     type: 'Van',
     status: 'booked',
-    driver: 'Pierre Martin',
+    driver: 'Kavindu Jayasinghe',
   },
   {
     id: 'V003',
@@ -21,7 +21,7 @@ const vehicles = [
     name: 'Toyota Alphard',
     type: 'Van',
     status: 'booked',
-    driver: 'Takeshi Yamamoto',
+    driver: 'Tharushi Fernando',
   },
 ];
 

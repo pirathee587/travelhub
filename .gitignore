@@ -35,7 +35,9 @@ build/
 
 ### Node / Vite ###
 node_modules
+node_modules/
 dist
+dist/
 dist-ssr
 *.local
 
@@ -47,6 +49,10 @@ yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
+
+### Environment ###
+.env
+.env.local
 
 ### Misc ###
 .DS_Store

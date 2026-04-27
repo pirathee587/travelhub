@@ -21,7 +21,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import {
   TrendingUp,
   TrendingDown,
@@ -48,10 +48,22 @@ const monthlyRevenue = [
   { month: 'Dec', revenue: 9200, trips: 52 },
 ];
 
-const tripStatusData = [
+const monthlyTripStatus = [
   { name: 'Completed', value: 156, color: 'hsl(152, 60%, 42%)' },
   { name: 'Active', value: 24, color: 'hsl(187, 75%, 35%)' },
   { name: 'Cancelled', value: 12, color: 'hsl(0, 72%, 55%)' },
+];
+
+const quarterlyTripStatus = [
+  { name: 'Completed', value: 340, color: 'hsl(152, 60%, 42%)' },
+  { name: 'Active', value: 42, color: 'hsl(187, 75%, 35%)' },
+  { name: 'Cancelled', value: 28, color: 'hsl(0, 72%, 55%)' },
+];
+
+const yearlyTripStatus = [
+  { name: 'Completed', value: 1180, color: 'hsl(152, 60%, 42%)' },
+  { name: 'Active', value: 120, color: 'hsl(187, 75%, 35%)' },
+  { name: 'Cancelled', value: 120, color: 'hsl(0, 72%, 55%)' },
 ];
 
 const ratingTrend = [
@@ -130,20 +142,137 @@ const Analytics = () => {
     }
   };
 
+  const getTripStatusData = () => {
+    switch (viewMode) {
+      case 'quarterly':
+        return quarterlyTripStatus;
+      case 'yearly':
+        return yearlyTripStatus;
+      default:
+        return monthlyTripStatus;
+    }
+  };
+
   const handleDownload = () => {
-    const data = getRevenueData();
-    const headers = Object.keys(data[0]).join(',');
+    const rows = [];
+
+    // Revenue Data
+    const revenueData = getRevenueData();
+    rows.push('--- Revenue Data ---');
+    rows.push(Object.keys(revenueData[0]).join(','));
+    revenueData.forEach((row) => rows.push(Object.values(row).join(',')));
+    rows.push('');
+
+    // Trip Status Data
+    const tripStatus = getTripStatusData();
+    rows.push('--- Trip Status ---');
+    rows.push('Status,Count');
+    tripStatus.forEach((row) => rows.push(`${row.name},${row.value}`));
+    rows.push('');
+
+    // Top Destinations
+    rows.push('--- Top Destinations ---');
+    rows.push('Destination,Bookings,Revenue');
+    topDestinations.forEach((d) =>
+      rows.push(`${d.name},${d.bookings},${d.revenue}`)
+    );
+    rows.push('');
+
+    // Driver Performance
+    rows.push('--- Driver Performance ---');
+    rows.push('Driver,Trips,Rating');
+    [
+      { name: 'Nimal Perera', trips: 48, rating: 4.8 },
+      { name: 'Kavindu Jayasinghe', trips: 42, rating: 4.5 },
+      { name: 'Tharushi Fernando', trips: 38, rating: 4.9 },
+      { name: 'Saman Kumara', trips: 30, rating: 4.7 },
+      { name: 'Dilshan Silva', trips: 25, rating: 4.6 },
+    ].forEach((d) => rows.push(`${d.name},${d.trips},${d.rating}`));
+    rows.push('');
+
+    // Vehicle Utilization
+    rows.push('--- Vehicle Utilization ---');
+    rows.push('Vehicle,Trips');
+    [
+      { name: 'Toyota Alphard', trips: 52 },
+      { name: 'Mercedes V-Class', trips: 45 },
+      { name: 'Bajaj RE 4S', trips: 38 },
+      { name: 'Suzuki Alto 800', trips: 30 },
+      { name: 'Maruti Suzuki Wagon R', trips: 18 },
+    ].forEach((v) => rows.push(`${v.name},${v.trips}`));
+
     const csvContent =
-      'data:text/csv;charset=utf-8,' +
-      [headers, ...data.map((row) => Object.values(row).join(','))].join('\n');
+      'data:text/csv;charset=utf-8,' + rows.join('\n');
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement('a');
     link.setAttribute('href', encodedUri);
-    link.setAttribute('download', `analytics_${viewMode}.csv`);
+    link.setAttribute('download', `analytics_full_report_${viewMode}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
   };
+
+  const stats = useMemo(() => {
+    let revenueData;
+    let ratingData;
+
+    switch (viewMode) {
+      case 'quarterly':
+        revenueData = quarterlyRevenue;
+        ratingData = quarterlyRatingTrend;
+        break;
+      case 'yearly':
+        revenueData = yearlyRevenue;
+        ratingData = yearlyRatingTrend;
+        break;
+      case 'monthly':
+      default:
+        revenueData = monthlyRevenue;
+        ratingData = ratingTrend;
+    }
+
+    const totalRevenue = revenueData.reduce(
+      (acc, curr) => acc + curr.revenue,
+      0
+    );
+    const totalTrips = revenueData.reduce((acc, curr) => acc + curr.trips, 0);
+    const avgRating = (
+      ratingData.reduce((acc, curr) => acc + curr.rating, 0) /
+      ratingData.length
+    ).toFixed(1);
+
+    const mockTrends = {
+      monthly: {
+        revTrend: '+18%',
+        tripTrend: '+12%',
+        ratingTrend: '+0.3',
+        cancelRate: '6.2%',
+        cancelTrend: '-2%',
+      },
+      quarterly: {
+        revTrend: '+15%',
+        tripTrend: '+8%',
+        ratingTrend: '+0.2',
+        cancelRate: '5.8%',
+        cancelTrend: '-1%',
+      },
+      yearly: {
+        revTrend: '+22%',
+        tripTrend: '+15%',
+        ratingTrend: '+0.4',
+        cancelRate: '4.5%',
+        cancelTrend: '-3%',
+      },
+    };
+
+    return {
+      revenue: `$${totalRevenue.toLocaleString()}`,
+      trips: totalTrips.toLocaleString(),
+      rating: avgRating,
+      ...mockTrends[viewMode],
+    };
+  }, [viewMode]);
+
   return (
     <DashboardLayout
       title="Analytics & Reports"
@@ -160,10 +289,10 @@ const Analytics = () => {
               </div>
               <div className="flex items-center gap-1 text-sm font-medium text-success">
                 <TrendingUp className="h-4 w-4" />
-                +18%
+                {stats.revTrend}
               </div>
             </div>
-            <p className="mt-4 text-2xl font-bold text-foreground">$84,200</p>
+            <p className="mt-4 text-2xl font-bold text-foreground">{stats.revenue}</p>
             <p className="text-sm text-muted-foreground">Total Revenue</p>
           </div>
 
@@ -174,10 +303,10 @@ const Analytics = () => {
               </div>
               <div className="flex items-center gap-1 text-sm font-medium text-success">
                 <TrendingUp className="h-4 w-4" />
-                +12%
+                {stats.tripTrend}
               </div>
             </div>
-            <p className="mt-4 text-2xl font-bold text-foreground">192</p>
+            <p className="mt-4 text-2xl font-bold text-foreground">{stats.trips}</p>
             <p className="text-sm text-muted-foreground">Total Trips</p>
           </div>
 
@@ -188,10 +317,10 @@ const Analytics = () => {
               </div>
               <div className="flex items-center gap-1 text-sm font-medium text-success">
                 <TrendingUp className="h-4 w-4" />
-                +0.3
+                {stats.ratingTrend}
               </div>
             </div>
-            <p className="mt-4 text-2xl font-bold text-foreground">4.8</p>
+            <p className="mt-4 text-2xl font-bold text-foreground">{stats.rating}</p>
             <p className="text-sm text-muted-foreground">Average Rating</p>
           </div>
 
@@ -202,10 +331,10 @@ const Analytics = () => {
               </div>
               <div className="flex items-center gap-1 text-sm font-medium text-destructive">
                 <TrendingDown className="h-4 w-4" />
-                -2%
+                {stats.cancelTrend}
               </div>
             </div>
-            <p className="mt-4 text-2xl font-bold text-foreground">6.2%</p>
+            <p className="mt-4 text-2xl font-bold text-foreground">{stats.cancelRate}</p>
             <p className="text-sm text-muted-foreground">Cancellation Rate</p>
           </div>
         </div>
@@ -293,7 +422,7 @@ const Analytics = () => {
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
                   <Pie
-                    data={tripStatusData}
+                    data={getTripStatusData()}
                     cx="50%"
                     cy="45%"
                     innerRadius={60}
@@ -301,7 +430,7 @@ const Analytics = () => {
                     paddingAngle={4}
                     dataKey="value"
                   >
-                    {tripStatusData.map((entry, index) => (
+                    {getTripStatusData().map((entry, index) => (
                       <Cell key={`cell-${index}`} fill={entry.color} />
                     ))}
                   </Pie>
@@ -394,11 +523,102 @@ const Analytics = () => {
                       <div className="h-2 flex-1 overflow-hidden rounded-full bg-muted">
                         <div
                           className="h-full rounded-full bg-gradient-to-r from-primary to-accent"
-                          style={{ width: `${(dest.bookings / 50) * 100}%` }}
+                          style={{ width: `${(dest.bookings / Math.max(...topDestinations.map(d => d.bookings))) * 100}%` }}
                         />
                       </div>
                       <span className="ml-3 text-sm text-muted-foreground">
                         {dest.bookings} trips
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Driver Performance & Vehicle Utilization */}
+        <div className="grid gap-6 lg:grid-cols-2">
+          <div className="rounded-xl border border-border bg-card p-6">
+            <h3 className="text-lg font-semibold text-foreground">
+              Driver Performance
+            </h3>
+            <p className="text-sm text-muted-foreground">
+              Top 5 drivers by number of trips completed
+            </p>
+            <div className="mt-6 space-y-5">
+              {[
+                { name: 'Nimal Perera', trips: 48, rating: 4.8 },
+                { name: 'Kavindu Jayasinghe', trips: 42, rating: 4.5 },
+                { name: 'Tharushi Fernando', trips: 38, rating: 4.9 },
+                { name: 'Saman Kumara', trips: 30, rating: 4.7 },
+                { name: 'Dilshan Silva', trips: 25, rating: 4.6 },
+              ].map((driver, index) => (
+                <div key={driver.name} className="flex items-center gap-4">
+                  <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-sm font-semibold text-primary">
+                    {index + 1}
+                  </span>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-1.5">
+                      <p className="font-medium text-foreground truncate">{driver.name}</p>
+                      <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-warning/10 px-2 py-0.5 text-xs font-semibold text-warning">
+                        <Star className="h-3 w-3 fill-warning" />
+                        {driver.rating}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <div className="h-2.5 flex-1 overflow-hidden rounded-full bg-muted">
+                        <div
+                          className="h-full rounded-full transition-all duration-500"
+                          style={{
+                            width: `${(driver.trips / 48) * 100}%`,
+                            backgroundColor: 'hsl(187, 75%, 35%)',
+                          }}
+                        />
+                      </div>
+                      <span className="shrink-0 text-sm font-medium text-foreground w-16 text-right">
+                        {driver.trips} trips
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="rounded-xl border border-border bg-card p-6">
+            <h3 className="text-lg font-semibold text-foreground">
+              Vehicle Utilization
+            </h3>
+            <p className="text-sm text-muted-foreground">
+              Trips completed per vehicle
+            </p>
+            <div className="mt-6 space-y-5">
+              {[
+                { name: 'Toyota Alphard', trips: 52 },
+                { name: 'Mercedes V-Class', trips: 45 },
+                { name: 'Bajaj RE 4S', trips: 38 },
+                { name: 'Suzuki Alto 800', trips: 30 },
+                { name: 'Maruti Suzuki Wagon R', trips: 18 },
+              ].map((vehicle, index) => (
+                <div key={vehicle.name} className="flex items-center gap-4">
+                  <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-accent/10 text-sm font-semibold text-accent">
+                    {index + 1}
+                  </span>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium text-foreground truncate mb-1.5">{vehicle.name}</p>
+                    <div className="flex items-center gap-3">
+                      <div className="h-2.5 flex-1 overflow-hidden rounded-full bg-muted">
+                        <div
+                          className="h-full rounded-full transition-all duration-500"
+                          style={{
+                            width: `${(vehicle.trips / 52) * 100}%`,
+                            backgroundColor: 'hsl(16, 85%, 60%)',
+                          }}
+                        />
+                      </div>
+                      <span className="shrink-0 text-sm font-medium text-foreground w-16 text-right">
+                        {vehicle.trips} trips
                       </span>
                     </div>
                   </div>

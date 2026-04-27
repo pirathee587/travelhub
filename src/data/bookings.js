@@ -18,6 +18,7 @@ export const bookings = [
     driver: 'Nimal Perera',
     amount: 450,
     status: 'active',
+    passengers: 2,
   },
   {
     id: 'BK002',
@@ -31,6 +32,7 @@ export const bookings = [
     driver: 'Kavindu Jayasinghe',
     amount: 320,
     status: 'pending',
+    passengers: 3,
   },
   {
     id: 'BK003',
@@ -44,6 +46,7 @@ export const bookings = [
     driver: 'Ahmed Hassan',
     amount: 600,
     status: 'completed',
+    passengers: 4,
   },
   {
     id: 'BK004',
@@ -57,6 +60,7 @@ export const bookings = [
     driver: 'Saman Kumara',
     amount: 250,
     status: 'pending',
+    passengers: 2,
   },
   {
     id: 'BK005',
@@ -70,6 +74,7 @@ export const bookings = [
     driver: 'Tharushi Fernando',
     amount: 600,
     status: 'cancelled',
+    passengers: 5,
   },
   {
     id: 'BK006',
@@ -83,5 +88,6 @@ export const bookings = [
     driver: 'Omar Hassan',
     amount: 400,
     status: 'pending',
+    passengers: 2,
   },
 ];
