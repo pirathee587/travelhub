@@ -6,6 +6,16 @@ import org.springframework.stereotype.Repository;
 import java.util.List;
 
 @Repository
-public interface HotelRepository extends JpaRepository<Hotel, Long> {
-    List<Hotel> findByDestinationIgnoreCase(String destination);
+public interface HotelRepository
+        extends JpaRepository<Hotel, Long> {
+
+    // ── Existing ──────────────────────────────────────
+    List<Hotel> findByDestinationIgnoreCase(
+            String destination);
+
+
+
+    // Pending, Approved, Rejected
+    List<Hotel> findByApplicationStatus(
+            String applicationStatus);
 }

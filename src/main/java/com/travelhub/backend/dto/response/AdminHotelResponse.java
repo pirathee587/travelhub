@@ -11,5 +11,6 @@ public record AdminHotelResponse(
         Double  rating,
         Integer reviewCount,
         String  imageUrl,
-        String  district
+        String  district,
+        String applicationStatus
 ) {}
