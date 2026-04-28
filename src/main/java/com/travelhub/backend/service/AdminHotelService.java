@@ -138,11 +138,15 @@ public class AdminHotelService {
         return new AdminHotelResponse(
                 h.getId(),
                 h.getHotelName(),
-                h.getDistrict(),
+                h.getDestination(),
                 h.getLocation(),
+                h.getDescription(),
+                h.getPriceFrom(),
+                h.getPriceTo(),
                 h.getRating(),
                 h.getReviewCount(),
                 h.getImageUrl(),
+                h.getDistrict(),
                 h.getApplicationStatus()
         );
     }

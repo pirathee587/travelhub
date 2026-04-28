@@ -42,6 +42,20 @@ public interface BookingRepository
             @Param("agentId") Long agentId,
             @Param("status") String status);
 
+    // Vehicle Agent Bookings
+    @Query("SELECT b FROM Booking b " +
+            "JOIN b.vehicle v " +
+            "WHERE v.agent.id = :agentId")
+    List<Booking> findByVehicleAgentId(
+            @Param("agentId") Long agentId);
+
+    @Query("SELECT b FROM Booking b " +
+            "JOIN b.vehicle v " +
+            "WHERE v.agent.id = :agentId " +
+            "AND b.status = :status")
+    List<Booking> findByVehicleAgentIdAndStatus(
+            @Param("agentId") Long agentId,
+            @Param("status") String status);
 
     Long countByStatus(String status);
     List<Booking> findByStatus(String status);

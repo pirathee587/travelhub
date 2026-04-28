@@ -7,7 +7,7 @@ import java.util.List;
 
 @Repository
 public interface RoomRepository
-        extends JpaRepository<Room, Long> {
+        extends JpaRepository<Room, String> {
 
     // Hotel-இன் எல்லா rooms
     List<Room> findByHotelId(Long hotelId);

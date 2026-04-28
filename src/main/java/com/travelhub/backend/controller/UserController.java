@@ -1,5 +1,7 @@
 package com.travelhub.backend.controller;
 
+import com.travelhub.backend.common.ApiResponse;
+import com.travelhub.backend.dto.request.UpdatePasswordRequest;
 import com.travelhub.backend.dto.request.UpdateProfileRequest;
 import com.travelhub.backend.entity.User;
 import com.travelhub.backend.service.UserService;
@@ -7,6 +9,7 @@ import com.travelhub.backend.util.SecurityUtils;
 import io.jsonwebtoken.Claims;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -39,8 +42,8 @@ public class UserController {
     }
 
     @PostMapping("/change-password")
-    public ResponseEntity<?> changePassword(@RequestBody com.travelhub.backend.dto.request.UpdatePasswordRequest request,
-                                           org.springframework.security.crypto.password.PasswordEncoder passwordEncoder) {
+    public ResponseEntity<?> changePassword(@RequestBody UpdatePasswordRequest request,
+                                           PasswordEncoder passwordEncoder) {
         Claims claims = SecurityUtils.getCurrentUserClaims();
         if (claims == null) {
             return ResponseEntity.status(401).build();
@@ -48,6 +51,6 @@ public class UserController {
 
         Long userId = Long.valueOf(claims.get("userId").toString());
         userService.changePassword(userId, request, passwordEncoder);
-        return ResponseEntity.ok(new com.travelhub.backend.common.ApiResponse(true, "Password changed successfully"));
+        return ResponseEntity.ok(new ApiResponse(true, "Password changed successfully"));
     }
 }

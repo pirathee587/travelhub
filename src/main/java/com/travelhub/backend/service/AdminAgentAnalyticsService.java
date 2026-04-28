@@ -145,11 +145,12 @@ public class AdminAgentAnalyticsService {
                 a.getId(),
                 a.getAgentName(),
                 a.getCompanyName(),
+                a.getOwnerName(),
                 a.getEmail(),
                 a.getPhone(),
-                a.getRating(),
-                a.getTotalTrips(),
-                a.getExperienceYears(),
+                a.getLocation(),
+                a.getApplicationStatus(),
+                a.getSubmittedDate() != null ? a.getSubmittedDate().toString() : null,
                 a.getIsActive()
         );
     }
