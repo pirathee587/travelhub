@@ -39,7 +39,11 @@ public class HotelService {
 
     private HotelResponse toHotelResponse(Hotel hotel) {
         List<String> amenityList = null;
-        if (hotel.getAmenities() != null) {
+        if (hotel.getAmenityList() != null && !hotel.getAmenityList().isEmpty()) {
+            amenityList = hotel.getAmenityList().stream()
+                    .map(amenity -> amenity.getName())
+                    .collect(Collectors.toList());
+        } else if (hotel.getAmenities() != null) {
             amenityList = Arrays.asList(hotel.getAmenities().split(","));
         }
 

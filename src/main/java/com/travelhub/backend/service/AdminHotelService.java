@@ -70,14 +70,13 @@ public class AdminHotelService {
         List<String> amenities;
 
         if (!amenityEntities.isEmpty()) {
-
             amenities = amenityEntities.stream()
                     .map(Amenity::getName)
                     .toList();
-        } else if (hotel.getAmenities() != null) {
-
-            amenities = Arrays.asList(
-                    hotel.getAmenities().split(","));
+        } else if (hotel.getAmenityList() != null && !hotel.getAmenityList().isEmpty()) {
+            amenities = hotel.getAmenityList().stream()
+                    .map(Amenity::getName)
+                    .toList();
         } else {
             amenities = List.of();
         }
