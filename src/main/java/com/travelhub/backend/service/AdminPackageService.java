@@ -2,14 +2,14 @@ package com.travelhub.backend.service;
 
 import com.travelhub.backend.common.BadRequestException;
 import com.travelhub.backend.common.ResourceNotFoundException;
-import com.travelhub.backend.dto.response.AdminPackageDetailResponse;
-import com.travelhub.backend.dto.response.AdminPackageResponse;
+import com.travelhub.backend.dto.response
+        .AdminPackageDetailResponse;
+import com.travelhub.backend.dto.response
+        .AdminPackageResponse;
 import com.travelhub.backend.entity.Package;
 import com.travelhub.backend.entity.PackageItinerary;
-import com.travelhub.backend.event.PackageEvent;
 import com.travelhub.backend.repository.PackageRepository;
 import lombok.RequiredArgsConstructor;
-import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import java.util.Arrays;
 import java.util.List;
@@ -18,8 +18,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class AdminPackageService {
 
-    private final PackageRepository          packageRepository;
-    private final ApplicationEventPublisher  eventPublisher; // ← சேர்க்கணும்
+    private final PackageRepository packageRepository;
 
     // ── Get All Packages ──────────────────────────────
     public List<AdminPackageResponse> getAllPackages() {
@@ -40,13 +39,16 @@ public class AdminPackageService {
     }
 
     // ── Get Package Detail ────────────────────────────
+
     public AdminPackageDetailResponse getPackageDetail(
             Long id) {
+
         Package pkg = packageRepository.findById(id)
                 .orElseThrow(() ->
                         new ResourceNotFoundException(
                                 "Package", "id", id));
 
+        // Images list
         List<String> imageUrls = List.of();
         if (pkg.getImages() != null) {
             imageUrls = pkg.getImages().stream()
@@ -59,14 +61,19 @@ public class AdminPackageService {
                     .toList();
         }
 
+        // Inclusions list
+        // "Accommodation,Meals,Transportation"
+        // → ["Accommodation", "Meals", "Transportation"]
         List<String> inclusions = List.of();
         if (pkg.getInclusions() != null
                 && !pkg.getInclusions().isEmpty()) {
             inclusions = Arrays.stream(
                             pkg.getInclusions().split(","))
-                    .map(String::trim).toList();
+                    .map(String::trim)
+                    .toList();
         }
 
+        // Itinerary days
         List<AdminPackageDetailResponse
                 .ItineraryDayDetail> itinerary = List.of();
         if (pkg.getItinerary() != null) {
@@ -79,6 +86,8 @@ public class AdminPackageService {
                     .map(this::mapToItineraryDetail)
                     .toList();
         }
+
+        // Provider name
 
         String providerName = "";
         if (pkg.getAgent() != null) {
@@ -122,29 +131,18 @@ public class AdminPackageService {
                                 "Package", "id", id));
         pkg.setApplicationStatus("Approved");
         packageRepository.save(pkg);
-
-
-        eventPublisher.publishEvent(
-                new PackageEvent(this, pkg, "APPROVED"));
-
         return getPackageDetail(id);
     }
 
     // ── Reject Package ────────────────────────────────
     public AdminPackageDetailResponse rejectPackage(
-            Long id, String reason) {
+            Long id) {
         Package pkg = packageRepository.findById(id)
                 .orElseThrow(() ->
                         new ResourceNotFoundException(
                                 "Package", "id", id));
         pkg.setApplicationStatus("Rejected");
         packageRepository.save(pkg);
-
-
-        eventPublisher.publishEvent(
-                new PackageEvent(
-                        this, pkg, "REJECTED", reason));
-
         return getPackageDetail(id);
     }
 
@@ -162,15 +160,10 @@ public class AdminPackageService {
 
     // ── Delete Package ────────────────────────────────
     public void deletePackage(Long id) {
-        Package pkg = packageRepository.findById(id)
+        packageRepository.findById(id)
                 .orElseThrow(() ->
                         new ResourceNotFoundException(
                                 "Package", "id", id));
-
-
-        eventPublisher.publishEvent(
-                new PackageEvent(this, pkg, "DELETED"));
-
         packageRepository.deleteById(id);
     }
 
@@ -178,12 +171,15 @@ public class AdminPackageService {
     private AdminPackageDetailResponse
             .ItineraryDayDetail mapToItineraryDetail(
             PackageItinerary day) {
+
         List<String> activities = List.of();
         if (day.getActivities() != null) {
             activities = Arrays.stream(
                             day.getActivities().split(","))
-                    .map(String::trim).toList();
+                    .map(String::trim)
+                    .toList();
         }
+
         return new AdminPackageDetailResponse
                 .ItineraryDayDetail(
                 day.getDayNumber(),
@@ -193,7 +189,8 @@ public class AdminPackageService {
     }
 
     // ── Map Entity → List Response ────────────────────
-    private AdminPackageResponse mapToResponse(Package p) {
+    private AdminPackageResponse mapToResponse(
+            Package p) {
         return new AdminPackageResponse(
                 p.getId(),
                 p.getPackageName(),
