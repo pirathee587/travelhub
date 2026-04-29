@@ -6,6 +6,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/admin/users")
@@ -63,5 +64,18 @@ public class AdminUserController {
         adminUserService.deleteUser(id);
         return ResponseEntity.ok(
                 new ApiResponse(true, "User deleted", null));
+    }
+    @PatchMapping("/agents/{id}/reject")
+    public ResponseEntity<?> rejectAgent(
+            @PathVariable Long id,
+            @RequestBody(required = false)
+            Map<String, String> body) {
+        String reason = body != null
+                ? body.getOrDefault("reason", null)
+                : null;
+        return ResponseEntity.ok(
+                new ApiResponse(true, "Agent rejected",
+                        adminUserService
+                                .rejectAgent(id, reason)));
     }
 }
