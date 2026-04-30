@@ -8,7 +8,6 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
-import java.util.Map;
 
 @RestController
 @RequestMapping("/api/admin/hotels")
@@ -19,23 +18,35 @@ public class AdminHotelController {
 
     private final AdminHotelService adminHotelService;
 
+    // ── GET /api/admin/hotels ─────────────────────────
+    // All hotels list
     @GetMapping
     public ResponseEntity<?> getAllHotels(
-            @AuthenticationPrincipal UserDetails userDetails) {
+            @AuthenticationPrincipal
+            UserDetails userDetails) {
+        // Admin email verify
+        // Admin role check already in @PreAuthorize
         return ResponseEntity.ok(
                 new ApiResponse(true, "Hotels found",
                         adminHotelService.getAllHotels()));
     }
 
+    // ── GET /api/admin/hotels/status?status=Pending ───
+    // Filter by status
     @GetMapping("/status")
     public ResponseEntity<?> getHotelsByStatus(
             @RequestParam String status) {
         return ResponseEntity.ok(
                 new ApiResponse(true, "Hotels found",
-                        adminHotelService.getHotelsByStatus(status)));
+                        adminHotelService
+                                .getHotelsByStatus(status)));
     }
 
+    // ── GET /api/admin/hotels/{id} ────────────────────
+    // View Button click → Full detail
+
     @GetMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<?> getHotelDetail(
             @PathVariable Long id) {
         return ResponseEntity.ok(
@@ -43,30 +54,35 @@ public class AdminHotelController {
                         adminHotelService.getHotelDetail(id)));
     }
 
+    // ── PATCH /api/admin/hotels/{id}/approve ──────────
+    // Approve Button click
     @PatchMapping("/{id}/approve")
     public ResponseEntity<?> approveHotel(
             @PathVariable Long id) {
         return ResponseEntity.ok(
                 new ApiResponse(true, "Hotel approved",
-                        adminHotelService.approveHotel(id)));
+                        adminHotelService
+                                .approveHotel(id)));
     }
 
     // ── PATCH /api/admin/hotels/{id}/reject ───────────
+    // Reject Button click
     @PatchMapping("/{id}/reject")
     public ResponseEntity<?> rejectHotel(
-            @PathVariable Long id,
-            @RequestBody(required = false) Map<String, String> body) {
-        String reason = body != null ? body.getOrDefault("reason", null) : null;
+            @PathVariable Long id) {
         return ResponseEntity.ok(
                 new ApiResponse(true, "Hotel rejected",
-                        adminHotelService.rejectHotel(id, reason)));
+                        adminHotelService
+                                .rejectHotel(id)));
     }
 
+    // ── DELETE /api/admin/hotels/{id} ─────────────────
     @DeleteMapping("/{id}")
     public ResponseEntity<?> deleteHotel(
             @PathVariable Long id) {
         adminHotelService.deleteHotel(id);
         return ResponseEntity.ok(
-                new ApiResponse(true, "Hotel deleted", null));
+                new ApiResponse(true,
+                        "Hotel deleted", null));
     }
 }

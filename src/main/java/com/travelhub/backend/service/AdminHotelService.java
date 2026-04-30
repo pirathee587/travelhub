@@ -6,12 +6,10 @@ import com.travelhub.backend.dto.response.AdminHotelResponse;
 import com.travelhub.backend.entity.Amenity;
 import com.travelhub.backend.entity.Hotel;
 import com.travelhub.backend.entity.Room;
-import com.travelhub.backend.event.HotelEvent;
 import com.travelhub.backend.repository.AmenityRepository;
 import com.travelhub.backend.repository.HotelRepository;
 import com.travelhub.backend.repository.RoomRepository;
 import lombok.RequiredArgsConstructor;
-import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import java.util.Arrays;
 import java.util.List;
@@ -20,10 +18,9 @@ import java.util.List;
 @RequiredArgsConstructor
 public class AdminHotelService {
 
-    private final HotelRepository            hotelRepository;
-    private final RoomRepository             roomRepository;
-    private final AmenityRepository          amenityRepository;
-    private final ApplicationEventPublisher  eventPublisher; // ← சேர்க்கணும்
+    private final HotelRepository   hotelRepository;
+    private final RoomRepository    roomRepository;
+    private final AmenityRepository amenityRepository;
 
     // ── Get All Hotels ────────────────────────────────
     public List<AdminHotelResponse> getAllHotels() {
@@ -34,6 +31,7 @@ public class AdminHotelService {
     }
 
     // ── Get Hotels By Status ──────────────────────────
+    // status = Pending, Approved, Rejected
     public List<AdminHotelResponse> getHotelsByStatus(
             String status) {
         return hotelRepository
@@ -43,15 +41,20 @@ public class AdminHotelService {
                 .toList();
     }
 
-    // ── Get Hotel Detail ──────────────────────────────
+
     public AdminHotelDetailResponse getHotelDetail(
             Long id) {
+
         Hotel hotel = hotelRepository.findById(id)
                 .orElseThrow(() ->
                         new ResourceNotFoundException(
                                 "Hotel", "id", id));
 
-        List<Room> rooms = roomRepository.findByHotelId(id);
+
+        List<Room> rooms = roomRepository
+                .findByHotelId(id);
+
+        // Room types map
         List<AdminHotelDetailResponse.RoomTypeResponse>
                 roomTypes = rooms.stream()
                 .map(r -> new AdminHotelDetailResponse
@@ -60,16 +63,20 @@ public class AdminHotelService {
                         r.getDescription()))
                 .toList();
 
+
         List<Amenity> amenityEntities =
                 amenityRepository.findByHotelId(id);
+
         List<String> amenities;
+
         if (!amenityEntities.isEmpty()) {
             amenities = amenityEntities.stream()
-                    .map(Amenity::getName).toList();
-        } else if (hotel.getAmenityList() != null
-                && !hotel.getAmenityList().isEmpty()) {
+                    .map(Amenity::getName)
+                    .toList();
+        } else if (hotel.getAmenityList() != null && !hotel.getAmenityList().isEmpty()) {
             amenities = hotel.getAmenityList().stream()
-                    .map(Amenity::getName).toList();
+                    .map(Amenity::getName)
+                    .toList();
         } else {
             amenities = List.of();
         }
@@ -102,45 +109,26 @@ public class AdminHotelService {
                                 "Hotel", "id", id));
         hotel.setApplicationStatus("Approved");
         hotelRepository.save(hotel);
-
-
-        eventPublisher.publishEvent(
-                new HotelEvent(this, hotel, "APPROVED"));
-
         return getHotelDetail(id);
     }
 
     // ── Reject Hotel ──────────────────────────────────
-    public AdminHotelDetailResponse rejectHotel(
-            Long id, String reason) {
+    public AdminHotelDetailResponse rejectHotel(Long id) {
         Hotel hotel = hotelRepository.findById(id)
                 .orElseThrow(() ->
                         new ResourceNotFoundException(
                                 "Hotel", "id", id));
         hotel.setApplicationStatus("Rejected");
         hotelRepository.save(hotel);
-
-
-        eventPublisher.publishEvent(
-                new HotelEvent(
-                        this, hotel, "REJECTED", reason));
-
         return getHotelDetail(id);
     }
 
     // ── Delete Hotel ──────────────────────────────────
     public void deleteHotel(Long id) {
-        Hotel hotel = hotelRepository.findById(id)
+        hotelRepository.findById(id)
                 .orElseThrow(() ->
                         new ResourceNotFoundException(
                                 "Hotel", "id", id));
-
-
-        eventPublisher.publishEvent(
-                new HotelEvent(
-                        this, hotel, "DELETED",
-                        "Removed by admin"));
-
         hotelRepository.deleteById(id);
     }
 
