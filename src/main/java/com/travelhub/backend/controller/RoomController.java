@@ -47,4 +47,22 @@ public class RoomController {
     public ResponseEntity<Room> updateRoomAvailability(@PathVariable String id, @RequestParam boolean availability) {
         return ResponseEntity.ok(roomService.updateRoomAvailability(id, availability));
     }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<Room> updateRoom(@PathVariable String id,
+                                           @RequestParam String name,
+                                           @RequestParam String type,
+                                           @RequestParam double price,
+                                           @RequestParam(required = false) String description,
+                                           @RequestParam(required = false) MultipartFile image,
+                                           @RequestParam(defaultValue = "true") boolean availability) {
+        Room room = roomService.updateRoom(id, name, type, price, description, image, availability);
+        return ResponseEntity.ok(room);
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteRoom(@PathVariable String id) {
+        roomService.deleteRoom(id);
+        return ResponseEntity.noContent().build();
+    }
 }
