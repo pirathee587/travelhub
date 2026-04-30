@@ -44,4 +44,17 @@ public class AmenityService {
         return amenityRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Amenity", "id", id));
     }
+
+    public Amenity updateAmenity(Long id, AmenityRequest request) {
+        Amenity amenity = getAmenityById(id);
+        amenity.setName(request.getName());
+        amenity.setDescription(request.getDescription());
+        amenity.setIconName(request.getIconName());
+        return amenityRepository.save(amenity);
+    }
+
+    public void deleteAmenity(Long id) {
+        Amenity amenity = getAmenityById(id);
+        amenityRepository.delete(amenity);
+    }
 }
