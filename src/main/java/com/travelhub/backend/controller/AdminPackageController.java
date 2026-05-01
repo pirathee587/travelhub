@@ -6,6 +6,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/admin/packages")
@@ -16,7 +17,6 @@ public class AdminPackageController {
 
     private final AdminPackageService adminPackageService;
 
-    // GET /api/admin/packages
     @GetMapping
     public ResponseEntity<?> getAllPackages() {
         return ResponseEntity.ok(
@@ -24,32 +24,53 @@ public class AdminPackageController {
                         adminPackageService.getAllPackages()));
     }
 
-    // GET /api/admin/packages/{id}
-    @GetMapping("/{id}")
-    public ResponseEntity<?> getPackageById(
-            @PathVariable Long id) {
+    @GetMapping("/status")
+    public ResponseEntity<?> getByStatus(
+            @RequestParam String status) {
         return ResponseEntity.ok(
-                new ApiResponse(true, "Package found",
-                        adminPackageService.getPackageById(id)));
+                new ApiResponse(true, "Packages found",
+                        adminPackageService.getByStatus(status)));
     }
 
-    // PATCH /api/admin/packages/{id}/toggle-active
+    @GetMapping("/{id}")
+    public ResponseEntity<?> getPackageDetail(
+            @PathVariable Long id) {
+        return ResponseEntity.ok(
+                new ApiResponse(true, "Package detail",
+                        adminPackageService.getPackageDetail(id)));
+    }
+
+    @PatchMapping("/{id}/approve")
+    public ResponseEntity<?> approvePackage(
+            @PathVariable Long id) {
+        return ResponseEntity.ok(
+                new ApiResponse(true, "Package approved",
+                        adminPackageService.approvePackage(id)));
+    }
+
+    @PatchMapping("/{id}/reject")
+    public ResponseEntity<?> rejectPackage(
+            @PathVariable Long id,
+            @RequestBody(required = false) Map<String, String> body) {
+        String reason = body != null ? body.getOrDefault("reason", null) : null;
+        return ResponseEntity.ok(
+                new ApiResponse(true, "Package rejected",
+                        adminPackageService.rejectPackage(id, reason)));
+    }
+
     @PatchMapping("/{id}/toggle-active")
-    public ResponseEntity<?> togglePackageActive(
+    public ResponseEntity<?> toggleActive(
             @PathVariable Long id) {
         return ResponseEntity.ok(
                 new ApiResponse(true, "Package updated",
-                        adminPackageService
-                                .togglePackageActive(id)));
+                        adminPackageService.toggleActive(id)));
     }
 
-    // DELETE /api/admin/packages/{id}
     @DeleteMapping("/{id}")
     public ResponseEntity<?> deletePackage(
             @PathVariable Long id) {
         adminPackageService.deletePackage(id);
         return ResponseEntity.ok(
-                new ApiResponse(true, "Package deleted",
-                        null));
+                new ApiResponse(true, "Package deleted", null));
     }
 }

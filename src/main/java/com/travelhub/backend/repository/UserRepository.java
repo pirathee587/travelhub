@@ -17,8 +17,6 @@ public interface UserRepository extends JpaRepository<User, Long> {
     Boolean existsByEmail(String email);
     Optional<User> findByVerificationToken(String token);
     Optional<User> findByPasswordResetToken(String token);
-    Optional<User> findByHotelId(Long hotelId);
-    Optional<User> findByAgentId(Long agentId);
 
     // ── Admin Management Filters ───────────────────────────
 
@@ -35,4 +33,6 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
     // Useful for showing "Total Agents" or "Total Travelers" on the dashboard
     Long countByRole(Role role);
+    Optional<User> findByHotelId(Long hotelId);
+    Optional<User> findByAgentId(Long agentId);
 }

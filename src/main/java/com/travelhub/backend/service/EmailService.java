@@ -9,7 +9,6 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
-
 import com.travelhub.backend.entity.Booking;
 import com.travelhub.backend.entity.User;
 
@@ -30,7 +29,6 @@ public class EmailService {
 
         sendEmail(email, "Verify your email - TravelHub", message);
     }
-
     public void sendBookingConfirmation(Booking booking) {
         String message = "<h3>Booking Confirmation</h3>"
                 + "<p>Dear Customer, your booking for <b>" + booking.getPkg().getPackageName() + "</b> has been received.</p>"

@@ -11,4 +11,7 @@ public interface PackageRepository extends JpaRepository<Package, Long> {
     List<Package> findByCategory(String category);
     List<Package> findByTrendingTrue();
     List<Package> findByAgentId(Long agentId);
+
+    List<Package> findByApplicationStatus(
+            String applicationStatus);
 }

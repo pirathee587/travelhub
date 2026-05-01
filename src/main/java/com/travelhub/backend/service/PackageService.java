@@ -12,8 +12,11 @@ import java.util.List;
 import java.util.stream.Collectors;
 import com.travelhub.backend.repository.ReviewRepository;
 
+import org.springframework.transaction.annotation.Transactional;
+
 @Service
 @RequiredArgsConstructor
+@Transactional(readOnly = true)
 public class PackageService {
 
     private final PackageRepository packageRepository;

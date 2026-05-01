@@ -10,8 +10,11 @@ import java.util.List;
 import java.util.stream.Collectors;
 import com.travelhub.backend.repository.ReviewRepository;
 
+import org.springframework.transaction.annotation.Transactional;
+
 @Service
 @RequiredArgsConstructor
+@Transactional(readOnly = true)
 public class HotelService {
 
     private final HotelRepository hotelRepository;
@@ -39,7 +42,11 @@ public class HotelService {
 
     private HotelResponse toHotelResponse(Hotel hotel) {
         List<String> amenityList = null;
-        if (hotel.getAmenities() != null) {
+        if (hotel.getAmenityList() != null && !hotel.getAmenityList().isEmpty()) {
+            amenityList = hotel.getAmenityList().stream()
+                    .map(amenity -> amenity.getName())
+                    .collect(Collectors.toList());
+        } else if (hotel.getAmenities() != null) {
             amenityList = Arrays.asList(hotel.getAmenities().split(","));
         }
 

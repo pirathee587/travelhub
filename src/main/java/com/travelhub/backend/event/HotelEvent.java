@@ -6,18 +6,27 @@ import org.springframework.context.ApplicationEvent;
 
 @Getter
 public class HotelEvent extends ApplicationEvent {
-    private final Hotel hotel;
-    private final String type; // e.g., "APPROVED", "REJECTED", "DELETED"
+
+    private final Hotel  hotel;
+    private final String type;
     private final String reason;
 
+    // ✅ Without reason — APPROVED
     public HotelEvent(Object source, Hotel hotel, String type) {
-        this(source, hotel, type, null);
+        super(source);
+        this.hotel  = hotel;
+        this.type   = type;
+        this.reason = null;
     }
 
-    public HotelEvent(Object source, Hotel hotel, String type, String reason) {
+
+    public HotelEvent(Object source,
+                      Hotel hotel,
+                      String type,
+                      String reason) {
         super(source);
-        this.hotel = hotel;
-        this.type = type;
+        this.hotel  = hotel;
+        this.type   = type;
         this.reason = reason;
     }
 }

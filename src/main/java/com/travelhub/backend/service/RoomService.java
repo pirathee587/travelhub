@@ -1,16 +1,17 @@
 package com.travelhub.backend.service;
 
-import com.travelhub.backend.entity.Hotel;
-import com.travelhub.backend.entity.Room;
-import com.travelhub.backend.repository.HotelRepository;
-import com.travelhub.backend.repository.RoomRepository;
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
+import com.travelhub.backend.entity.Hotel;
+import com.travelhub.backend.entity.Room;
+import com.travelhub.backend.repository.HotelRepository;
+import com.travelhub.backend.repository.RoomRepository;
 
 @Service
 public class RoomService {

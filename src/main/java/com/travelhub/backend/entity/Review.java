@@ -1,11 +1,21 @@
 package com.travelhub.backend.entity;
 
-import jakarta.persistence.*;
+import java.time.LocalDateTime;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.PrePersist;
+import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "reviews")
@@ -19,9 +29,8 @@ public class Review {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    // Teammate's existing relationships — keep these!
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "pkg_id")
+    @JoinColumn(name = "package_id")   // ✅ FIXED: DB column is package_id, not pkg_id
     private Package pkg;
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -32,7 +41,6 @@ public class Review {
     @JoinColumn(name = "user_id")
     private User user;
 
-    // Your new relationships
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "agent_id")
     private Agent agent;
@@ -47,14 +55,19 @@ public class Review {
     @Column(columnDefinition = "TEXT")
     private String comment;
 
-    // Your new field
+    // ✅ NEW: title field — frontend sends this and displays it
+    private String title;
+
+    // ✅ NEW: stored username for cases where user entity lookup fails
+    private String userName;
+
     private String reply;
 
-    @Column(updatable = false)
-    private LocalDateTime createdAt;
+    @Column(name = "review_date", updatable = false)
+    private LocalDateTime reviewDate;   // ✅ FIXED: DB column is review_date, not created_at
 
     @PrePersist
     protected void onCreate() {
-        createdAt = LocalDateTime.now();
+        reviewDate = LocalDateTime.now();
     }
 }

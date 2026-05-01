@@ -24,7 +24,7 @@ public class NotificationListener {
     @EventListener
     public void handleBookingEvent(BookingEvent event) {
         log.info("Handling booking event: {} for booking ID: {}", event.getType(), event.getBooking().getId());
-        
+
         switch (event.getType()) {
             case "CREATED":
                 emailService.sendBookingConfirmation(event.getBooking());
@@ -42,7 +42,7 @@ public class NotificationListener {
     @EventListener
     public void handleUserAccountEvent(UserAccountEvent event) {
         log.info("Handling user account event: {} for user: {}", event.getType(), event.getUser().getEmail());
-        
+
         switch (event.getType()) {
             case "APPROVED":
                 emailService.sendAccountApprovalNotification(event.getUser());
@@ -63,7 +63,7 @@ public class NotificationListener {
     @EventListener
     public void handleHotelEvent(HotelEvent event) {
         log.info("Handling hotel event: {} for hotel: {}", event.getType(), event.getHotel().getHotelName());
-        
+
         userRepository.findByHotelId(event.getHotel().getId()).ifPresent(user -> {
             emailService.sendHotelStatusNotification(user.getEmail(), event.getHotel().getHotelName(), event.getType(), event.getReason());
         });
@@ -73,7 +73,7 @@ public class NotificationListener {
     @EventListener
     public void handlePackageEvent(PackageEvent event) {
         log.info("Handling package event: {} for package: {}", event.getType(), event.getPkg().getPackageName());
-        
+
         if (event.getPkg().getAgent() != null) {
             emailService.sendPackageStatusNotification(event.getPkg().getAgent().getEmail(), event.getPkg().getPackageName(), event.getType(), event.getReason());
         }
