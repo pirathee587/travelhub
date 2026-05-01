@@ -8,6 +8,7 @@ import io.jsonwebtoken.Claims;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 @RestController
 @RequestMapping("/api/v1/owner/profile")
@@ -37,5 +38,16 @@ public class OwnerProfileController {
 
         Long userId = Long.valueOf(claims.get("userId").toString());
         return ResponseEntity.ok(ownerProfileService.updateProfile(userId, request));
+    }
+
+    @PostMapping("/image")
+    public ResponseEntity<OwnerProfileResponse> uploadProfileImage(@RequestParam("file") MultipartFile file) {
+        Claims claims = SecurityUtils.getCurrentUserClaims();
+        if (claims == null) {
+            return ResponseEntity.status(401).build();
+        }
+
+        Long userId = Long.valueOf(claims.get("userId").toString());
+        return ResponseEntity.ok(ownerProfileService.uploadProfileImage(userId, file));
     }
 }

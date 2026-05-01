@@ -6,12 +6,14 @@ import com.travelhub.backend.entity.User;
 import com.travelhub.backend.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
 @Service
 @RequiredArgsConstructor
 public class OwnerProfileService {
 
     private final UserRepository userRepository;
+    private final ImageUploadService imageUploadService;
 
     public OwnerProfileResponse getProfile(Long userId) {
         User user = userRepository.findById(userId)
@@ -31,6 +33,17 @@ public class OwnerProfileService {
         user.setBusinessAddress(request.getBusinessAddress());
         user.setDistrict(request.getDistrict());
 
+        user = userRepository.save(user);
+
+        return toResponse(user);
+    }
+
+    public OwnerProfileResponse uploadProfileImage(Long userId, MultipartFile file) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("Owner not found with id: " + userId));
+
+        String imageUrl = imageUploadService.uploadProfileImage(file).getImageUrl();
+        user.setProfileImage(imageUrl);
         user = userRepository.save(user);
 
         return toResponse(user);
