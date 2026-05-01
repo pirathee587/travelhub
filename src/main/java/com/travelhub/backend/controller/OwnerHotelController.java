@@ -6,6 +6,7 @@ import com.travelhub.backend.service.OwnerHotelService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
@@ -23,15 +24,18 @@ public class OwnerHotelController {
     }
 
     @PostMapping
-    public ResponseEntity<HotelResponse> createHotel(@RequestBody OwnerHotelRequest request) {
-        return ResponseEntity.ok(ownerHotelService.createHotel(request));
+    public ResponseEntity<HotelResponse> createHotel(
+            @ModelAttribute OwnerHotelRequest request,
+            @RequestParam(value = "hotelImage", required = false) MultipartFile hotelImage) {
+        return ResponseEntity.ok(ownerHotelService.createHotel(request, hotelImage));
     }
 
     @PutMapping("/{id}")
     public ResponseEntity<HotelResponse> updateHotel(
             @PathVariable Long id,
-            @RequestBody OwnerHotelRequest request) {
-        return ResponseEntity.ok(ownerHotelService.updateHotel(id, request));
+            @ModelAttribute OwnerHotelRequest request,
+            @RequestParam(value = "hotelImage", required = false) MultipartFile hotelImage) {
+        return ResponseEntity.ok(ownerHotelService.updateHotel(id, request, hotelImage));
     }
 
     @DeleteMapping("/{id}")

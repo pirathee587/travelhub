@@ -18,6 +18,7 @@ public class OwnerHotelService {
 
     private final HotelRepository hotelRepository;
     private final ReviewRepository reviewRepository;
+    private final ImageUploadService imageUploadService;
 
     public List<HotelResponse> getOwnerHotels() {
         // For now, returning all hotels, or implement owner filtering if user context exists.
@@ -26,7 +27,12 @@ public class OwnerHotelService {
                 .collect(Collectors.toList());
     }
 
-    public HotelResponse createHotel(OwnerHotelRequest request) {
+    public HotelResponse createHotel(OwnerHotelRequest request, MultipartFile hotelImage) {
+        String imageUrl = request.getImageUrl();
+        if (hotelImage != null && !hotelImage.isEmpty()) {
+            imageUrl = imageUploadService.uploadHotelImage(hotelImage).getImageUrl();
+        }
+
         Hotel hotel = Hotel.builder()
                 .hotelName(request.getHotelName())
                 .destination(request.getDestination())
@@ -34,7 +40,7 @@ public class OwnerHotelService {
                 .description(request.getDescription())
                 .priceFrom(request.getPriceFrom())
                 .priceTo(request.getPriceTo())
-                .imageUrl(request.getImageUrl())
+                .imageUrl(imageUrl)
                 .district(request.getDistrict())
                 .phoneNumber(request.getPhoneNumber())
                 .hotlineNumber(request.getHotlineNumber())
@@ -48,9 +54,15 @@ public class OwnerHotelService {
         return toHotelResponse(hotel);
     }
 
-    public HotelResponse updateHotel(Long id, OwnerHotelRequest request) {
+    public HotelResponse updateHotel(Long id, OwnerHotelRequest request, MultipartFile hotelImage) {
         Hotel hotel = hotelRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Hotel not found with id: " + id));
+
+        String imageUrl = request.getImageUrl();
+        if (hotelImage != null && !hotelImage.isEmpty()) {
+            imageUrl = imageUploadService.uploadHotelImage(hotelImage).getImageUrl();
+            hotel.setImageUrl(imageUrl);
+        }
 
         hotel.setHotelName(request.getHotelName());
         hotel.setDestination(request.getDestination());
@@ -58,7 +70,6 @@ public class OwnerHotelService {
         hotel.setDescription(request.getDescription());
         hotel.setPriceFrom(request.getPriceFrom());
         hotel.setPriceTo(request.getPriceTo());
-        hotel.setImageUrl(request.getImageUrl());
         hotel.setDistrict(request.getDistrict());
         hotel.setPhoneNumber(request.getPhoneNumber());
         hotel.setHotlineNumber(request.getHotlineNumber());
