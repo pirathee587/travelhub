@@ -2,6 +2,7 @@ package com.travelhub.backend.repository;
 
 import java.util.List;
 
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -13,11 +14,14 @@ import com.travelhub.backend.entity.Review;
 public interface ReviewRepository extends JpaRepository<Review, Long> {
 
     // ✅ FIXED: was findByPkgId — but the entity field is `pkg`, so it must be findByPkg_Id
+    @EntityGraph(attributePaths = {"pkg", "user"})
     List<Review> findByPkg_Id(Long packageId);
 
-    List<Review> findByHotelId(Long hotelId);
+    @EntityGraph(attributePaths = {"pkg", "user"})
+    List<Review> findByHotel_Id(Long hotelId);
 
-    List<Review> findByUserId(Long userId);
+    @EntityGraph(attributePaths = {"pkg", "user"})
+    List<Review> findByUser_Id(Long userId);
 
     // ✅ FIXED: JPQL references entity field `pkg`, not column `package_id`
     @Query("SELECT AVG(r.rating) FROM Review r WHERE r.pkg.id = :packageId")

@@ -1,16 +1,21 @@
 package com.travelhub.backend.service;
 
-import com.travelhub.backend.dto.response.ImageUploadResponse;
+import java.io.IOException;
+import java.util.List;
+import java.util.UUID;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.*;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.IOException;
-import java.util.List;
-import java.util.UUID;
+import com.travelhub.backend.dto.response.ImageUploadResponse;
 
 @Service
 public class ImageUploadService {
@@ -21,7 +26,7 @@ public class ImageUploadService {
     @Value("${supabase.key}")
     private String supabaseKey;
 
-    @Value("${supabase.bucket}")
+    @Value("${supabase.review-bucket}")
     private String supabaseBucket;
 
     @Autowired
