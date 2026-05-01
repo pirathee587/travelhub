@@ -7,7 +7,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/api/owner")
+@RequestMapping("/api/v1/owner")
 @RequiredArgsConstructor
 @CrossOrigin(origins = "*")
 public class HotelOwnerDashboardController {

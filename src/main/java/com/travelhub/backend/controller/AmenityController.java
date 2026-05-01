@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/amenities")
+@RequestMapping("/api/v1/amenities")
 public class AmenityController {
 
     @Autowired
@@ -39,5 +39,19 @@ public class AmenityController {
     public ResponseEntity<ApiResponse> getAmenityById(@PathVariable Long id) {
         Amenity amenity = amenityService.getAmenityById(id);
         return ResponseEntity.ok(new ApiResponse(true, "Amenity fetched successfully", amenity));
+    }
+
+    // PUT /api/amenities/{id}
+    @PutMapping("/{id}")
+    public ResponseEntity<ApiResponse> updateAmenity(@PathVariable Long id, @RequestBody AmenityRequest request) {
+        Amenity amenity = amenityService.updateAmenity(id, request);
+        return ResponseEntity.ok(new ApiResponse(true, "Amenity updated successfully", amenity));
+    }
+
+    // DELETE /api/amenities/{id}
+    @DeleteMapping("/{id}")
+    public ResponseEntity<ApiResponse> deleteAmenity(@PathVariable Long id) {
+        amenityService.deleteAmenity(id);
+        return ResponseEntity.ok(new ApiResponse(true, "Amenity deleted successfully", null));
     }
 }

@@ -24,6 +24,12 @@ public class ImageUploadService {
     @Value("${supabase.bucket}")
     private String supabaseBucket;
 
+    @Value("${supabase.hotel-bucket}")
+    private String hotelBucket;
+
+    @Value("${supabase.user-bucket}")
+    private String userBucket;
+
     @Autowired
     private RestTemplate restTemplate;
 
@@ -40,12 +46,21 @@ public class ImageUploadService {
     private static final long MAX_SIZE_BYTES = 5 * 1024 * 1024L;
 
     /**
-     * Accepts a MultipartFile, validates it, saves it, and returns the public URL.
-     *
-     * @param file the image file sent from the frontend (form-data key: "file")
-     * @return ImageUploadResponse containing imageUrl and fileName
+     * Accepts a MultipartFile, validates it, saves it to the specified bucket, and returns the public URL.
      */
     public ImageUploadResponse uploadRoomImage(MultipartFile file) {
+        return uploadToBucket(file, supabaseBucket);
+    }
+
+    public ImageUploadResponse uploadHotelImage(MultipartFile file) {
+        return uploadToBucket(file, hotelBucket);
+    }
+
+    public ImageUploadResponse uploadProfileImage(MultipartFile file) {
+        return uploadToBucket(file, userBucket);
+    }
+
+    private ImageUploadResponse uploadToBucket(MultipartFile file, String bucketName) {
 
         // ── Step 1: Validate ──────────────────────────────────────────────────
 
@@ -80,7 +95,7 @@ public class ImageUploadService {
         // ── Step 3 & 4: Upload to Supabase ──────────────────────────────────
 
         try {
-            String uploadUrl = String.format("%s/storage/v1/object/%s/%s", supabaseUrl, supabaseBucket, uniqueFileName);
+            String uploadUrl = String.format("%s/storage/v1/object/%s/%s", supabaseUrl, bucketName, uniqueFileName);
 
             HttpHeaders headers = new HttpHeaders();
             headers.set("Authorization", "Bearer " + supabaseKey);
@@ -103,7 +118,7 @@ public class ImageUploadService {
 
         // ── Step 5: Build and return response ────────────────────────────────
 
-        String publicUrl = String.format("%s/storage/v1/object/public/%s/%s", supabaseUrl, supabaseBucket, uniqueFileName);
+        String publicUrl = String.format("%s/storage/v1/object/public/%s/%s", supabaseUrl, bucketName, uniqueFileName);
 
         return ImageUploadResponse.builder()
                 .imageUrl(publicUrl)
