@@ -55,30 +55,32 @@ public class ReviewController {
         }
 
     // POST /api/tourist/reviews/package/1
-    @PostMapping("/tourist/reviews/package/{packageId}")
+    @PostMapping(value = "/tourist/reviews/package/{packageId}", consumes = {"multipart/form-data"})
     public ResponseEntity<ReviewResponse> addPackageReview(
             @PathVariable Long packageId,
-            @RequestBody ReviewRequest request) {
-        return ResponseEntity.ok(reviewService.addPackageReview(packageId, request));
+            @RequestPart("review") String reviewJson,
+            @RequestPart(value = "images", required = false) List<org.springframework.web.multipart.MultipartFile> images) {
+        try {
+            com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
+            ReviewRequest request = mapper.readValue(reviewJson, ReviewRequest.class);
+            return ResponseEntity.ok(reviewService.addPackageReview(packageId, request, images));
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to parse review data: " + e.getMessage(), e);
+        }
     }
 
     // POST /api/tourist/reviews/hotel/1
-    @PostMapping("/tourist/reviews/hotel/{hotelId}")
+    @PostMapping(value = "/tourist/reviews/hotel/{hotelId}", consumes = {"multipart/form-data"})
     public ResponseEntity<ReviewResponse> addHotelReview(
             @PathVariable Long hotelId,
-            @RequestBody ReviewRequest request) {
-        return ResponseEntity.ok(reviewService.addHotelReview(hotelId, request));
-    }
-    
-    // ✅ FIXED: Image upload endpoint — now uploads to Supabase via ImageUploadService
-    @PostMapping("/tourist/reviews/upload-image")
-    public ResponseEntity<String> uploadReviewImage(
-            @RequestParam("file") org.springframework.web.multipart.MultipartFile file) {
+            @RequestPart("review") String reviewJson,
+            @RequestPart(value = "images", required = false) List<org.springframework.web.multipart.MultipartFile> images) {
         try {
-            ImageUploadResponse response = imageUploadService.uploadRoomImage(file);
-            return ResponseEntity.ok(response.getImageUrl());
+            com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
+            ReviewRequest request = mapper.readValue(reviewJson, ReviewRequest.class);
+            return ResponseEntity.ok(reviewService.addHotelReview(hotelId, request, images));
         } catch (Exception e) {
-            return ResponseEntity.status(500).body("Upload failed: " + e.getMessage());
+            throw new RuntimeException("Failed to parse review data: " + e.getMessage(), e);
         }
     }
 }

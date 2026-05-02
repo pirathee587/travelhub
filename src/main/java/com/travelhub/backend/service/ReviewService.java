@@ -31,7 +31,8 @@ public class ReviewService {
     private final UserRepository userRepository;
     private final PackageRepository packageRepository;
     private final HotelRepository hotelRepository;
-    private final ReviewImageRepository reviewImageRepository;  // ✅ NEW
+    private final ReviewImageRepository reviewImageRepository;
+    private final ImageUploadService imageUploadService;  // ✅ NEW: Injected for backend orchestration
 
     // ─────────────────────────────────────────────────────────────────────────
     // GET reviews
@@ -62,7 +63,7 @@ public class ReviewService {
 
     /** Submit a review for a package */
     @Transactional
-    public ReviewResponse addPackageReview(Long packageId, ReviewRequest request) {
+    public ReviewResponse addPackageReview(Long packageId, ReviewRequest request, List<org.springframework.web.multipart.MultipartFile> images) {
 
         // ✅ FIXED: removed mandatory "completed booking" check that was
         //    blocking ALL reviews because booking status is "CONFIRMED" / "PENDING"
@@ -88,19 +89,24 @@ public class ReviewService {
                 .build();
 
         Review saved = reviewRepository.save(review);
-        
-        // ✅ NEW: Save images if provided
-        if (request.getImageUrls() != null && !request.getImageUrls().isEmpty()) {
-            log.info("[DEBUG] Saving {} images for package review {}", request.getImageUrls().size(), saved.getId());
-            for (String imageUrl : request.getImageUrls()) {
-                if (imageUrl != null && !imageUrl.isBlank()) {
-                    ReviewImage img = ReviewImage.builder()
-                            .review(saved)
-                            .imageUrl(imageUrl)
-                            .build();
-                    reviewImageRepository.save(img);
-                    saved.getImages().add(img);  // ✅ FIXED: sync in-memory list for response
-                    log.info("[DEBUG] Saved image: {}", imageUrl);
+        // ✅ NEW: Save images if provided (from MultipartFile list)
+        if (images != null && !images.isEmpty()) {
+            log.info("[DEBUG] Saving {} images for package review {}", images.size(), saved.getId());
+            for (org.springframework.web.multipart.MultipartFile file : images) {
+                if (file != null && !file.isEmpty()) {
+                    try {
+                        String imageUrl = imageUploadService.uploadReviewImage(file).getImageUrl();
+                        ReviewImage img = ReviewImage.builder()
+                                .review(saved)
+                                .imageUrl(imageUrl)
+                                .build();
+                        reviewImageRepository.save(img);
+                        saved.getImages().add(img);  // ✅ FIXED: sync in-memory list for response
+                        log.info("[DEBUG] Saved image: {}", imageUrl);
+                    } catch (Exception e) {
+                        log.error("[DEBUG] Failed to upload image for review {}", saved.getId(), e);
+                        throw new RuntimeException("Image upload failed: " + e.getMessage(), e);
+                    }
                 }
             }
         } else {
@@ -112,7 +118,7 @@ public class ReviewService {
 
     /** Submit a review for a hotel */
     @Transactional
-    public ReviewResponse addHotelReview(Long hotelId, ReviewRequest request) {
+    public ReviewResponse addHotelReview(Long hotelId, ReviewRequest request, List<org.springframework.web.multipart.MultipartFile> images) {
 
         // ✅ FIXED: same — removed blocking booking-completion check
         Hotel hotel = hotelRepository.findById(hotelId)
@@ -133,19 +139,24 @@ public class ReviewService {
                 .build();
 
         Review saved = reviewRepository.save(review);
-        
-        // ✅ NEW: Save images if provided
-        if (request.getImageUrls() != null && !request.getImageUrls().isEmpty()) {
-            log.info("[DEBUG] Saving {} images for hotel review {}", request.getImageUrls().size(), saved.getId());
-            for (String imageUrl : request.getImageUrls()) {
-                if (imageUrl != null && !imageUrl.isBlank()) {
-                    ReviewImage img = ReviewImage.builder()
-                            .review(saved)
-                            .imageUrl(imageUrl)
-                            .build();
-                    reviewImageRepository.save(img);
-                    saved.getImages().add(img);  // ✅ FIXED: sync in-memory list for response
-                    log.info("[DEBUG] Saved image: {}", imageUrl);
+        // ✅ NEW: Save images if provided (from MultipartFile list)
+        if (images != null && !images.isEmpty()) {
+            log.info("[DEBUG] Saving {} images for hotel review {}", images.size(), saved.getId());
+            for (org.springframework.web.multipart.MultipartFile file : images) {
+                if (file != null && !file.isEmpty()) {
+                    try {
+                        String imageUrl = imageUploadService.uploadReviewImage(file).getImageUrl();
+                        ReviewImage img = ReviewImage.builder()
+                                .review(saved)
+                                .imageUrl(imageUrl)
+                                .build();
+                        reviewImageRepository.save(img);
+                        saved.getImages().add(img);  // ✅ FIXED: sync in-memory list for response
+                        log.info("[DEBUG] Saved image: {}", imageUrl);
+                    } catch (Exception e) {
+                        log.error("[DEBUG] Failed to upload image for hotel review {}", saved.getId(), e);
+                        throw new RuntimeException("Image upload failed: " + e.getMessage(), e);
+                    }
                 }
             }
         } else {

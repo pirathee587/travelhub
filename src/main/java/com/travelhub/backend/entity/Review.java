@@ -18,7 +18,7 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
-import jakarta.persistence.Transient;
+
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -65,7 +65,8 @@ public class Review {
     @Column(nullable = true, length = 255)
     private String title;
 
-    @Transient
+    // ✅ FIXED: was @Transient — userName must be persisted to DB so it survives round-trips
+    @Column(name = "user_name")
     private String userName;
 
     private String reply;
