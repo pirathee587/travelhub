@@ -8,7 +8,6 @@ import com.travelhub.backend.repository.ReviewRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
-
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -22,6 +21,7 @@ public class OwnerHotelService {
     private final ImageUploadService imageUploadService;
 
     public List<HotelResponse> getOwnerHotels() {
+        // For now, returning all hotels, or implement owner filtering if user context exists.
         return hotelRepository.findAll().stream()
                 .map(this::toHotelResponse)
                 .collect(Collectors.toList());
