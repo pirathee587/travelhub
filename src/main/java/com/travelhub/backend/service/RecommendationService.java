@@ -24,90 +24,55 @@ public class RecommendationService {
         List<Booking> completedBookings = bookingRepository
                 .findByUserIdAndStatus(userId, "completed");
 
-        // Step 2 — No bookings → top 5 trending by rating
-        if (completedBookings.isEmpty()) {
-            return packageService.getTrendingPackages()
-                    .stream()
-                    .sorted((a, b) -> Double.compare(
-                            b.getRating() != null ? b.getRating() : 0,
-                            a.getRating() != null ? a.getRating() : 0))
-                    .limit(5)
-                    .collect(Collectors.toList());
-        }
+        // Step 2 — Identify categories from completed bookings
+        Set<String> categories = completedBookings.stream()
+                .map(b -> b.getPkg().getCategory())
+                .filter(Objects::nonNull)
+                .collect(Collectors.toSet());
 
-        // Step 3 — Count bookings per category
-        Map<String, Long> categoryCount = completedBookings.stream()
-                .collect(Collectors.groupingBy(
-                        b -> b.getPkg().getCategory(),
-                        Collectors.counting()
-                ));
-
-        long totalBookings = completedBookings.size();
-        int totalRecommendations = 5;
-
-        // Step 4 — Top 5 categories only (sorted by booking count)
-        List<Map.Entry<String, Long>> sortedCategories = categoryCount.entrySet()
-                .stream()
-                .sorted((a, b) -> Long.compare(b.getValue(), a.getValue()))
-                .limit(totalRecommendations)
-                .collect(Collectors.toList());
-
-        // Step 5 — Give 1 slot to each category first
-        Map<String, Integer> categorySlots = new LinkedHashMap<>();
-        for (Map.Entry<String, Long> entry : sortedCategories) {
-            categorySlots.put(entry.getKey(), 1);
-        }
-
-        // Step 6 — Distribute remaining slots by proportion
-        int remainingSlots = totalRecommendations - sortedCategories.size();
-        for (int i = 0; i < sortedCategories.size() && remainingSlots > 0; i++) {
-            Map.Entry<String, Long> entry = sortedCategories.get(i);
-            int extraSlots = (int) Math.round(
-                    (double) entry.getValue() / totalBookings * remainingSlots
-            );
-            extraSlots = Math.min(extraSlots, remainingSlots);
-            categorySlots.put(entry.getKey(),
-                    categorySlots.get(entry.getKey()) + extraSlots);
-            remainingSlots -= extraSlots;
-        }
-
-        // Step 7 — Give leftover slots to top category
-        if (remainingSlots > 0) {
-            String topCategory = sortedCategories.get(0).getKey();
-            categorySlots.put(topCategory,
-                    categorySlots.get(topCategory) + remainingSlots);
-        }
-
-        // Step 8 — Pick highest rated packages per category
         List<PackageResponse> recommendations = new ArrayList<>();
-        for (Map.Entry<String, Integer> slot : categorySlots.entrySet()) {
-            String category = slot.getKey();
-            int count = slot.getValue();
 
-            List<PackageResponse> categoryPackages = packageService
-                    .getPackagesByCategory(category)
+        if (!categories.isEmpty()) {
+            // Step 3 — Find all packages in those categories
+            for (String category : categories) {
+                recommendations.addAll(packageService.getPackagesByCategory(category));
+            }
+
+            // Step 4 — Sort by rating DESC (highest first)
+            recommendations.sort((a, b) -> Double.compare(
+                    b.getRating() != null ? b.getRating() : 0.0,
+                    a.getRating() != null ? a.getRating() : 0.0
+            ));
+
+            // Remove duplicates just in case
+            recommendations = recommendations.stream()
+                    .distinct()
+                    .limit(5) // Step 5 — Return top 5 packages
+                    .collect(Collectors.toList());
+        }
+
+        // Fallback: Fill remaining slots with top trending packages if less than 5
+        if (recommendations.size() < 5) {
+            List<PackageResponse> trending = packageService.getTrendingPackages()
                     .stream()
                     .sorted((a, b) -> Double.compare(
-                            b.getRating() != null ? b.getRating() : 0,
-                            a.getRating() != null ? a.getRating() : 0))
-                    .limit(count)
+                            b.getRating() != null ? b.getRating() : 0.0,
+                            a.getRating() != null ? a.getRating() : 0.0))
                     .collect(Collectors.toList());
 
-            recommendations.addAll(categoryPackages);
+            for (PackageResponse pkg : trending) {
+                if (recommendations.size() >= 5) break;
+                if (recommendations.stream().noneMatch(r -> r.getId().equals(pkg.getId()))) {
+                    recommendations.add(pkg);
+                }
+            }
         }
 
-        // Step 9 — Fill remaining with trending if less than 5
-        if (recommendations.size() < totalRecommendations) {
-            packageService.getTrendingPackages()
-                    .stream()
-                    .sorted((a, b) -> Double.compare(
-                            b.getRating() != null ? b.getRating() : 0,
-                            a.getRating() != null ? a.getRating() : 0))
-                    .filter(t -> recommendations.stream()
-                            .noneMatch(r -> r.getId().equals(t.getId())))
-                    .limit(totalRecommendations - recommendations.size())
-                    .forEach(recommendations::add);
-        }
+        // Sort the final combined list to ensure strict descending rating order
+        recommendations.sort((a, b) -> Double.compare(
+                b.getRating() != null ? b.getRating() : 0.0,
+                a.getRating() != null ? a.getRating() : 0.0
+        ));
 
         return recommendations;
     }
