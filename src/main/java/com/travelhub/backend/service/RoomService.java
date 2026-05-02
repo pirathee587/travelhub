@@ -65,4 +65,25 @@ public class RoomService {
         room.setAvailability(availability);
         return roomRepository.save(room);
     }
+
+    public Room updateRoom(String id, String name, String type, double price, String description, MultipartFile image, boolean availability) {
+        Room room = getRoomById(id);
+        room.setName(name);
+        room.setType(type);
+        room.setPrice(price);
+        room.setDescription(description);
+        room.setAvailability(availability);
+        
+        if (image != null && !image.isEmpty()) {
+            String imageUrl = imageUploadService.uploadRoomImage(image).getImageUrl();
+            room.setImageUrl(imageUrl);
+        }
+        
+        return roomRepository.save(room);
+    }
+
+    public void deleteRoom(String id) {
+        Room room = getRoomById(id);
+        roomRepository.delete(room);
+    }
 }
