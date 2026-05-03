@@ -82,19 +82,26 @@ public class DriverService {
         Driver driver = driverRepository.findById(driverId)
                 .orElseThrow(() -> new ResourceNotFoundException("Driver", "id", driverId));
         if (!driver.getAgent().getId().equals(agentId)) {
-            throw new ResourceNotFoundException("Driver", "agentId", agentId);
+            throw new ResourceNotFoundException("Driver", "id", driverId);
         }
 
-        // Only update non-locked fields
+        // Newly unlocked —editable
+        driver.setFirstName(request.getFirstName());
+        driver.setLastName(request.getLastName());
+        if (request.getProfileImage() != null) {
+            driver.setProfileImage(request.getProfileImage());
+        }
+
+        // Always editable
         driver.setEmail(request.getEmail());
         driver.setMobileNumber(request.getMobileNumber());
         driver.setSecondaryMobileNumber(request.getSecondaryMobileNumber());
         driver.setAddressLine1(request.getAddressLine1());
         driver.setAddressLine2(request.getAddressLine2());
         driver.setVehicleTypes(request.getVehicleTypes());
-        if (request.getProfileImage() != null) {
-            driver.setProfileImage(request.getProfileImage());
-        }
+
+        // Still locked — NOT updated
+        // nic, nicImages, licenseNumber, licenseImages
 
         return toResponse(driverRepository.save(driver));
     }

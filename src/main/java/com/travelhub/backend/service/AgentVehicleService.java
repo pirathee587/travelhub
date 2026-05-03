@@ -81,10 +81,17 @@ public class AgentVehicleService {
         Vehicle vehicle = vehicleRepository.findById(vehicleId)
                 .orElseThrow(() -> new ResourceNotFoundException("Vehicle", "id", vehicleId));
         if (!vehicle.getAgent().getId().equals(agentId)) {
-            throw new ResourceNotFoundException("Vehicle", "agentId", agentId);
+            throw new ResourceNotFoundException("Vehicle", "id", vehicleId);
         }
 
-        // Only update editable fields
+        // Newly unlocked — now editable
+        vehicle.setOwnerFirstName(request.getOwnerFirstName());
+        vehicle.setOwnerLastName(request.getOwnerLastName());
+        vehicle.setVehicleType(request.getVehicleType());
+        vehicle.setBrand(request.getBrand());
+        vehicle.setModel(request.getModel());
+
+        // Always editable
         vehicle.setColor(request.getColor());
         vehicle.setCapacity(request.getCapacity());
         vehicle.setInsuranceCardFront(request.getInsuranceCardFront());
@@ -94,6 +101,9 @@ public class AgentVehicleService {
         vehicle.setVehicleImageBack(request.getVehicleImageBack());
         vehicle.setVehicleImageSide(request.getVehicleImageSide());
         vehicle.setVehicleImageInside(request.getVehicleImageInside());
+
+        // Still locked
+        // nicNumber, registration, yearOfManufacture
 
         return toResponse(vehicleRepository.save(vehicle));
     }
