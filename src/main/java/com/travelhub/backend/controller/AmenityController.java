@@ -34,6 +34,13 @@ public class AmenityController {
         return ResponseEntity.ok(new ApiResponse(true, "Amenities fetched successfully", amenities));
     }
 
+    // GET /api/v1/amenities/hotel/{hotelId}
+    @GetMapping("/hotel/{hotelId}")
+    public ResponseEntity<ApiResponse> getAmenitiesByHotelId(@PathVariable Long hotelId) {
+        List<Amenity> amenities = amenityService.getAmenitiesByHotelId(hotelId);
+        return ResponseEntity.ok(new ApiResponse(true, "Amenities fetched successfully", amenities));
+    }
+
     // GET /api/amenities/{id}
     @GetMapping("/{id}")
     public ResponseEntity<ApiResponse> getAmenityById(@PathVariable Long id) {
