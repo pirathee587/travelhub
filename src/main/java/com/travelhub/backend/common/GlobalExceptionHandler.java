@@ -56,12 +56,12 @@ public class GlobalExceptionHandler {
                 .body(new ApiResponse(false, "Validation failed: " + errors));
     }
 
-    // ── General Exception ─────────────────────────────────────
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiResponse> handleGeneral(Exception ex) {
+        ex.printStackTrace(); // Log it too
         return ResponseEntity
                 .status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(new ApiResponse(false, "Something went wrong"));
+                .body(new ApiResponse(false, "Error: " + ex.getMessage()));
     }
 
     // ══════════════════════════════════════════════════════════
