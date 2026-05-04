@@ -34,38 +34,14 @@ public class RoomController {
                                         @RequestParam double price,
                                         @RequestParam(required = false) String description,
                                         @RequestParam(required = false) MultipartFile image,
-                                        @RequestParam(defaultValue = "true") boolean availability,
-                                        @RequestParam Long hotelId) {
-        Room room = roomService.addRoom(name, type, price, description, image, availability, hotelId);
+                                        @RequestParam(defaultValue = "true") boolean availability) {
+        Room room = roomService.addRoom(name, type, price, description, image, availability);
         return ResponseEntity.ok(room);
     }
 
     @GetMapping
     public ResponseEntity<List<Room>> getAllRooms() {
         return ResponseEntity.ok(roomService.getAllRooms());
-    }
-
-    @GetMapping({"/hotel/{hotelId}", "/hotels/{hotelId}"})
-    public ResponseEntity<List<RoomResponse>> getRoomsByHotelId(@PathVariable Long hotelId) {
-        System.out.println("[RoomController] GET /api/rooms/hotel/" + hotelId);
-        List<Room> rooms = roomService.getRoomsByHotelId(hotelId);
-        System.out.println("[RoomController] Found " + rooms.size() + " rooms for hotel " + hotelId);
-
-        List<RoomResponse> response = rooms.stream()
-                .map(r -> new RoomResponse(
-                        r.getId(),
-                        r.getName(),
-                        r.getType(),
-                        r.getPrice(),
-                        r.getDescription(),
-                        r.getImageUrl(),
-                        r.getAvailability(),
-                        r.getHotel() != null ? r.getHotel().getId() : null
-                ))
-                .toList();
-
-        System.out.println("[RoomController] Returning " + response.size() + " room DTOs for hotel " + hotelId);
-        return ResponseEntity.ok(response);
     }
 
     @GetMapping("/{id}")
@@ -76,23 +52,5 @@ public class RoomController {
     @PatchMapping("/{id}/availability")
     public ResponseEntity<Room> updateRoomAvailability(@PathVariable String id, @RequestParam boolean availability) {
         return ResponseEntity.ok(roomService.updateRoomAvailability(id, availability));
-    }
-
-    @PutMapping("/{id}")
-    public ResponseEntity<Room> updateRoom(@PathVariable String id,
-                                           @RequestParam String name,
-                                           @RequestParam String type,
-                                           @RequestParam double price,
-                                           @RequestParam(required = false) String description,
-                                           @RequestParam(required = false) MultipartFile image,
-                                           @RequestParam(defaultValue = "true") boolean availability) {
-        Room room = roomService.updateRoom(id, name, type, price, description, image, availability);
-        return ResponseEntity.ok(room);
-    }
-
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteRoom(@PathVariable String id) {
-        roomService.deleteRoom(id);
-        return ResponseEntity.noContent().build();
     }
 }
