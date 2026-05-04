@@ -23,7 +23,6 @@ public class HotelOwnerDashboardService {
         // Fetch data scoped strictly to this specific hotel
         List<Room> rooms = roomRepository.findByHotelId(hotelId);
         long totalRooms = rooms.size();
-        long availableRooms = rooms.stream().filter(Room::isAvailability).count();
 
         long totalAmenities = amenityRepository.findByHotelId(hotelId).size();
 
@@ -43,7 +42,6 @@ public class HotelOwnerDashboardService {
 
         return HotelDashboardStatsResponse.builder()
                 .totalRooms(totalRooms)
-                .availableRooms(availableRooms)
                 .totalAmenities(totalAmenities)
                 .totalReviews(totalReviews)
                 .averageRating(averageRating)
