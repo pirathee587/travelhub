@@ -21,6 +21,7 @@ public class ReviewController {
     private final ImageUploadService imageUploadService;
 
     // GET /api/reviews/package/1
+    //GET package reviews by package id
     @GetMapping("/reviews/package/{packageId}")
     public ResponseEntity<List<ReviewResponse>> getPackageReviews(
             @PathVariable Long packageId) {
@@ -28,6 +29,7 @@ public class ReviewController {
     }
 
     // GET /api/reviews/hotel/1
+    //GET HOtel reviews by hotel id
     @GetMapping("/reviews/hotel/{hotelId}")
     public ResponseEntity<List<ReviewResponse>> getHotelReviews(
             @PathVariable Long hotelId) {
@@ -35,6 +37,7 @@ public class ReviewController {
     }
 
         // GET /api/reviews/package/1/rating
+        //GET package review count and average rating by package id
         @GetMapping("/reviews/package/{packageId}/rating")
         public ResponseEntity<ReviewSummaryResponse> getPackageRatingSummary(
             @PathVariable Long packageId) {
@@ -45,6 +48,7 @@ public class ReviewController {
         }
 
         // GET /api/reviews/hotel/1/rating
+        //GET hotel review count and average rating by hotel id
         @GetMapping("/reviews/hotel/{hotelId}/rating")
         public ResponseEntity<ReviewSummaryResponse> getHotelRatingSummary(
             @PathVariable Long hotelId) {
@@ -55,6 +59,7 @@ public class ReviewController {
         }
 
     // POST /api/tourist/reviews/package/1
+    //Insert package review with image upload
     @PostMapping(value = "/tourist/reviews/package/{packageId}", consumes = {"multipart/form-data"})
     public ResponseEntity<ReviewResponse> addPackageReview(
             @PathVariable Long packageId,
@@ -70,6 +75,7 @@ public class ReviewController {
     }
 
     // POST /api/tourist/reviews/hotel/1
+    //Insert hotel review with image upload
     @PostMapping(value = "/tourist/reviews/hotel/{hotelId}", consumes = {"multipart/form-data"})
     public ResponseEntity<ReviewResponse> addHotelReview(
             @PathVariable Long hotelId,

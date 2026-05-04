@@ -1,16 +1,28 @@
 package com.travelhub.backend.controller;
 
-import com.travelhub.backend.entity.Room;
-import com.travelhub.backend.service.RoomService;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
-import org.springframework.web.multipart.MultipartFile;
-
 import java.util.List;
 
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
+
+import com.travelhub.backend.dto.response.RoomResponse;
+import com.travelhub.backend.entity.Room;
+import com.travelhub.backend.service.RoomService;
+
 @RestController
-@RequestMapping("/api/v1/rooms")
+@RequestMapping("/api/rooms")
+@CrossOrigin(origins = "*")
 public class RoomController {
 
     @Autowired
@@ -33,9 +45,27 @@ public class RoomController {
         return ResponseEntity.ok(roomService.getAllRooms());
     }
 
-    @GetMapping("/hotel/{hotelId}")
-    public ResponseEntity<List<Room>> getRoomsByHotelId(@PathVariable Long hotelId) {
-        return ResponseEntity.ok(roomService.getRoomsByHotelId(hotelId));
+    @GetMapping({"/hotel/{hotelId}", "/hotels/{hotelId}"})
+    public ResponseEntity<List<RoomResponse>> getRoomsByHotelId(@PathVariable Long hotelId) {
+        System.out.println("[RoomController] GET /api/rooms/hotel/" + hotelId);
+        List<Room> rooms = roomService.getRoomsByHotelId(hotelId);
+        System.out.println("[RoomController] Found " + rooms.size() + " rooms for hotel " + hotelId);
+
+        List<RoomResponse> response = rooms.stream()
+                .map(r -> new RoomResponse(
+                        r.getId(),
+                        r.getName(),
+                        r.getType(),
+                        r.getPrice(),
+                        r.getDescription(),
+                        r.getImageUrl(),
+                        r.getAvailability(),
+                        r.getHotel() != null ? r.getHotel().getId() : null
+                ))
+                .toList();
+
+        System.out.println("[RoomController] Returning " + response.size() + " room DTOs for hotel " + hotelId);
+        return ResponseEntity.ok(response);
     }
 
     @GetMapping("/{id}")

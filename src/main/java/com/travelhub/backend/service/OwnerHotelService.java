@@ -1,24 +1,26 @@
 package com.travelhub.backend.service;
 
+import java.util.List;
+import java.util.stream.Collectors;
+
+import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
+
 import com.travelhub.backend.dto.request.OwnerHotelRequest;
 import com.travelhub.backend.dto.response.HotelResponse;
 import com.travelhub.backend.entity.Hotel;
 import com.travelhub.backend.repository.HotelRepository;
-import com.travelhub.backend.repository.ReviewRepository;
+import com.travelhub.backend.service.HotelPricingService.PriceRange;
+
 import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Service;
-import org.springframework.web.multipart.MultipartFile;
-import java.util.Arrays;
-import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
 public class OwnerHotelService {
 
     private final HotelRepository hotelRepository;
-    private final ReviewRepository reviewRepository;
     private final ImageUploadService imageUploadService;
+    private final HotelPricingService hotelPricingService;
 
     public List<HotelResponse> getOwnerHotels() {
         // For now, returning all hotels, or implement owner filtering if user context exists.
@@ -38,8 +40,6 @@ public class OwnerHotelService {
                 .destination(request.getDestination())
                 .location(request.getLocation())
                 .description(request.getDescription())
-                .priceFrom(request.getPriceFrom())
-                .priceTo(request.getPriceTo())
                 .imageUrl(imageUrl)
                 .district(request.getDistrict())
                 .phoneNumber(request.getPhoneNumber())
@@ -58,18 +58,16 @@ public class OwnerHotelService {
         Hotel hotel = hotelRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Hotel not found with id: " + id));
 
-        String imageUrl = request.getImageUrl();
         if (hotelImage != null && !hotelImage.isEmpty()) {
-            imageUrl = imageUploadService.uploadHotelImage(hotelImage).getImageUrl();
-            hotel.setImageUrl(imageUrl);
+            hotel.setImageUrl(imageUploadService.uploadHotelImage(hotelImage).getImageUrl());
+        } else if (request.getImageUrl() != null) {
+            hotel.setImageUrl(request.getImageUrl());
         }
 
         hotel.setHotelName(request.getHotelName());
         hotel.setDestination(request.getDestination());
         hotel.setLocation(request.getLocation());
         hotel.setDescription(request.getDescription());
-        hotel.setPriceFrom(request.getPriceFrom());
-        hotel.setPriceTo(request.getPriceTo());
         hotel.setDistrict(request.getDistrict());
         hotel.setPhoneNumber(request.getPhoneNumber());
         hotel.setHotlineNumber(request.getHotlineNumber());
@@ -93,9 +91,9 @@ public class OwnerHotelService {
             amenityList = hotel.getAmenityList().stream()
                     .map(amenity -> amenity.getName())
                     .collect(Collectors.toList());
-        } else if (hotel.getAmenities() != null) {
-            amenityList = Arrays.asList(hotel.getAmenities().split(","));
         }
+
+        PriceRange priceRange = hotelPricingService.getPriceRangeByHotelId(hotel.getId());
 
         return HotelResponse.builder()
                 .id(hotel.getId())
@@ -103,12 +101,10 @@ public class OwnerHotelService {
                 .destination(hotel.getDestination())
                 .location(hotel.getLocation())
                 .description(hotel.getDescription())
-                .priceFrom(hotel.getPriceFrom())
-                .priceTo(hotel.getPriceTo())
-                .rating(reviewRepository.getAverageRatingByHotelId(hotel.getId()) != null ?
-                        Math.round(reviewRepository.getAverageRatingByHotelId(hotel.getId()) * 10.0) / 10.0 : 0.0)
-                .reviewCount(reviewRepository.getReviewCountByHotelId(hotel.getId()) != null ?
-                        reviewRepository.getReviewCountByHotelId(hotel.getId()).intValue() : 0)
+            .priceFrom(priceRange != null ? priceRange.priceFrom() : null)
+            .priceTo(priceRange != null ? priceRange.priceTo() : null)
+                .rating(0.0) // Handled by list optimization if needed, or fetch specifically
+                .reviewCount(0)
                 .imageUrl(hotel.getImageUrl())
                 .amenities(amenityList)
                 .district(hotel.getDistrict())

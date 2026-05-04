@@ -57,6 +57,7 @@ public class Package {
     private String applicationStatus = "Pending";
 
     @OneToMany(mappedBy = "pkg", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OrderBy("dayNumber ASC")
     private List<PackageItinerary> itinerary;
 
     @OneToMany(mappedBy = "pkg", cascade = CascadeType.ALL, orphanRemoval = true)

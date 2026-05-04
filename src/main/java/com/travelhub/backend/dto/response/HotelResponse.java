@@ -23,4 +23,5 @@ public class HotelResponse {
     private String imageUrl;
     private List<String> amenities;
     private String district;
+    private String applicationStatus;
 }

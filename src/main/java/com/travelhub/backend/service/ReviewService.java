@@ -170,21 +170,26 @@ public class ReviewService {
     // Average rating helpers (used by PackageService / HotelService)
     // ─────────────────────────────────────────────────────────────────────────
 
+
+    //Get Package Average Rating
     public double getAveragePackageRating(Long packageId) {
         Double avg = reviewRepository.getAverageRatingByPackageId(packageId);
         return avg != null ? Math.round(avg * 10.0) / 10.0 : 0.0;
     }
 
+    //Get Package Review Count
     public long getPackageReviewCount(Long packageId) {
         Long count = reviewRepository.getReviewCountByPackageId(packageId);
         return count != null ? count : 0L;
     }
 
+    //Get Hotel Average Rating
     public double getAverageHotelRating(Long hotelId) {
         Double avg = reviewRepository.getAverageRatingByHotelId(hotelId);
         return avg != null ? Math.round(avg * 10.0) / 10.0 : 0.0;
     }
 
+    //Get Hotel Review Count
     public long getHotelReviewCount(Long hotelId) {
         Long count = reviewRepository.getReviewCountByHotelId(hotelId);
         return count != null ? count : 0L;
@@ -195,7 +200,6 @@ public class ReviewService {
     // ─────────────────────────────────────────────────────────────────────────
 
     private ReviewResponse toReviewResponse(Review review) {
-        // ✅ FIXED: resolve display name correctly:
         //    1. try the User entity name
         //    2. fall back to stored userName from request
         //    3. final fallback "Anonymous"

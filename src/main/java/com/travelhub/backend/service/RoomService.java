@@ -52,7 +52,10 @@ public class RoomService {
     }
 
     public List<Room> getRoomsByHotelId(Long hotelId) {
-        return roomRepository.findByHotelId(hotelId);
+        System.out.println("[RoomService] Fetching rooms for hotel ID: " + hotelId);
+        List<Room> rooms = roomRepository.findByHotelId(hotelId);
+        System.out.println("[RoomService] Found " + rooms.size() + " rooms for hotel ID: " + hotelId);
+        return rooms;
     }
 
     public Room getRoomById(String id) {

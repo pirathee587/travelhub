@@ -13,7 +13,6 @@ public record AdminHotelDetailResponse(
         // ── Location Details ───────────────────────────
         String  district,
         String  location,
-        Integer numberOfRooms,
 
         // Room Types list
         List<RoomTypeResponse> roomTypes,
@@ -23,10 +22,13 @@ public record AdminHotelDetailResponse(
         String ownerEmail,
         String ownerNic,
         String nicImageUrl,
+        Long   ownerId,
 
         // ── Contact Information ────────────────────────
         String phoneNumber,
         String hotlineNumber,
+        String hotelEmail,
+        String hotelContactNumber,
 
         // ── Amenities ──────────────────────────────────
 
