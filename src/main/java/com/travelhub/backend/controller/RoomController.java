@@ -10,7 +10,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/v1/rooms")
+@RequestMapping("/api/rooms")
 public class RoomController {
 
     @Autowired
@@ -22,20 +22,14 @@ public class RoomController {
                                         @RequestParam double price,
                                         @RequestParam(required = false) String description,
                                         @RequestParam(required = false) MultipartFile image,
-                                        @RequestParam(defaultValue = "true") boolean availability,
-                                        @RequestParam Long hotelId) {
-        Room room = roomService.addRoom(name, type, price, description, image, availability, hotelId);
+                                        @RequestParam(defaultValue = "true") boolean availability) {
+        Room room = roomService.addRoom(name, type, price, description, image, availability);
         return ResponseEntity.ok(room);
     }
 
     @GetMapping
     public ResponseEntity<List<Room>> getAllRooms() {
         return ResponseEntity.ok(roomService.getAllRooms());
-    }
-
-    @GetMapping("/hotel/{hotelId}")
-    public ResponseEntity<List<Room>> getRoomsByHotelId(@PathVariable Long hotelId) {
-        return ResponseEntity.ok(roomService.getRoomsByHotelId(hotelId));
     }
 
     @GetMapping("/{id}")
@@ -46,23 +40,5 @@ public class RoomController {
     @PatchMapping("/{id}/availability")
     public ResponseEntity<Room> updateRoomAvailability(@PathVariable String id, @RequestParam boolean availability) {
         return ResponseEntity.ok(roomService.updateRoomAvailability(id, availability));
-    }
-
-    @PutMapping("/{id}")
-    public ResponseEntity<Room> updateRoom(@PathVariable String id,
-                                           @RequestParam String name,
-                                           @RequestParam String type,
-                                           @RequestParam double price,
-                                           @RequestParam(required = false) String description,
-                                           @RequestParam(required = false) MultipartFile image,
-                                           @RequestParam(defaultValue = "true") boolean availability) {
-        Room room = roomService.updateRoom(id, name, type, price, description, image, availability);
-        return ResponseEntity.ok(room);
-    }
-
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteRoom(@PathVariable String id) {
-        roomService.deleteRoom(id);
-        return ResponseEntity.noContent().build();
     }
 }
