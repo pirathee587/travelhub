@@ -46,7 +46,7 @@ public class Hotel {
     @Column(name = "nic_image_url")
     private String nicImageUrl;
 
-    @Column(name = "owner_id")
+    @Column(name = "owner_id", insertable = false, updatable = false)
     private Long ownerId;
 
     // ── Contact Information ────────────────────────────
@@ -61,12 +61,6 @@ public class Hotel {
 
     @Column(name = "hotline_number")
     private String hotlineNumber;
-
-    @Column(name = "hotel_email")
-    private String hotelEmail;
-
-    @Column(name = "hotel_contact_number")
-    private String hotelContactNumber;
 
     // ── Application Status ─────────────────────────────
     // Pending, Approved, Rejected

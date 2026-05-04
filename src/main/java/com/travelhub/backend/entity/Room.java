@@ -1,7 +1,11 @@
 package com.travelhub.backend.entity;
 
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Positive;
 
@@ -25,6 +29,10 @@ public class Room {
     @Column(name = "image_url")
     private String imageUrl;
     private boolean availability;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "hotel_id")
+    private Hotel hotel;
 
     // Getters and Setters
     public String getId() {
@@ -81,5 +89,13 @@ public class Room {
 
     public void setAvailability(boolean availability) {
         this.availability = availability;
+    }
+
+    public Hotel getHotel() {
+        return hotel;
+    }
+
+    public void setHotel(Hotel hotel) {
+        this.hotel = hotel;
     }
 }

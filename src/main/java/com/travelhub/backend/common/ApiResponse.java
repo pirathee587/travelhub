@@ -8,7 +8,6 @@ import org.springframework.http.ResponseEntity;
 
 @Data
 @NoArgsConstructor
-@AllArgsConstructor
 public class ApiResponse<T> {
 
     private boolean success;
@@ -20,6 +19,12 @@ public class ApiResponse<T> {
         this.success = success;
         this.message = message;
         this.data = null;
+    }
+
+    public ApiResponse(boolean success, String message, T data) {
+        this.success = success;
+        this.message = message;
+        this.data = data;
     }
 
     // ─── Static Factory Methods ───────────────────────────────────────────────
