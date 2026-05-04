@@ -21,7 +21,11 @@ public class Room {
     private double price;
 
     private String description;
+
+    @Column(name = "image_url")
     private String imageUrl;
+
+    @Column(name = "availability")
     private Boolean availability;
 
     @ManyToOne(fetch = FetchType.LAZY)
