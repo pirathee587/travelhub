@@ -21,12 +21,17 @@ import com.travelhub.backend.entity.Room;
 import com.travelhub.backend.service.RoomService;
 
 @RestController
-@RequestMapping("/api/rooms")
+@RequestMapping("/api/v1/rooms")
 @CrossOrigin(origins = "*")
 public class RoomController {
 
     @Autowired
     private RoomService roomService;
+
+    @GetMapping("/hotel/{hotelId}")
+    public ResponseEntity<List<Room>> getRoomsByHotelId(@PathVariable Long hotelId) {
+        return ResponseEntity.ok(roomService.getRoomsByHotelId(hotelId));
+    }
 
     @PostMapping
     public ResponseEntity<Room> addRoom(@RequestParam String name,
@@ -47,6 +52,23 @@ public class RoomController {
     @GetMapping("/{id}")
     public ResponseEntity<Room> getRoomById(@PathVariable String id) {
         return ResponseEntity.ok(roomService.getRoomById(id));
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<Room> updateRoom(@PathVariable String id,
+                                           @RequestParam String name,
+                                           @RequestParam String type,
+                                           @RequestParam Double price,
+                                           @RequestParam(required = false) String description,
+                                           @RequestParam(required = false) MultipartFile image) {
+        Room room = roomService.updateRoom(id, name, type, price, description, image);
+        return ResponseEntity.ok(room);
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteRoom(@PathVariable String id) {
+        roomService.deleteRoom(id);
+        return ResponseEntity.noContent().build();
     }
 
     @PatchMapping("/{id}/availability")

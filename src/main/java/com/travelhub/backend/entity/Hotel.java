@@ -1,5 +1,7 @@
 package com.travelhub.backend.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.*;
 import java.util.List;
@@ -10,6 +12,7 @@ import java.util.List;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler", "amenityList", "rooms", "owner"})
 public class Hotel {
 
     @Id
@@ -68,7 +71,6 @@ public class Hotel {
     @Builder.Default
     private String applicationStatus = "Pending";
 
-    // ── Amenities (Amenity entity-உடன் relationship) ──
     @OneToMany(mappedBy = "hotel",
             cascade = CascadeType.ALL,
             fetch = FetchType.LAZY)

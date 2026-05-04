@@ -29,10 +29,17 @@ public class OwnerHotelService {
     private final ApplicationEventPublisher eventPublisher;
 
     public List<HotelResponse> getOwnerHotels(String status) {
-        // Fetch all hotels matching the status (Global View requirement)
-        String targetStatus = "Pending";
-        if ("Approved".equalsIgnoreCase(status)) targetStatus = "Approved";
-        if ("Rejected".equalsIgnoreCase(status)) targetStatus = "Rejected";
+        // Fetch all hotels matching the status (Global View)
+        // Ensure the status matches the database values: "Approved", "Pending", "Rejected"
+        String targetStatus = "Approved"; // Default to Approved
+        
+        if ("Pending".equalsIgnoreCase(status)) {
+            targetStatus = "Pending";
+        } else if ("Rejected".equalsIgnoreCase(status)) {
+            targetStatus = "Rejected";
+        } else if ("Approved".equalsIgnoreCase(status)) {
+            targetStatus = "Approved";
+        }
 
         return hotelRepository.findByApplicationStatus(targetStatus).stream()
                 .map(this::toHotelResponse)
@@ -47,7 +54,15 @@ public class OwnerHotelService {
 
         String imageUrl = request.getImageUrl();
         if (hotelImage != null && !hotelImage.isEmpty()) {
-            imageUrl = imageUploadService.uploadHotelImage(hotelImage).getImageUrl();
+            try {
+                imageUrl = imageUploadService.uploadHotelImage(hotelImage).getImageUrl();
+            } catch (Exception e) {
+                System.err.println("Warning: Hotel image upload failed: " + e.getMessage());
+                // Fallback to placeholder if upload fails
+                if (imageUrl == null || imageUrl.isBlank()) {
+                    imageUrl = "https://images.unsplash.com/photo-1566073771259-6a8506099945?q=80&w=2070&auto=format&fit=crop";
+                }
+            }
         }
 
         Hotel hotel = Hotel.builder()
@@ -82,8 +97,12 @@ public class OwnerHotelService {
 
         String imageUrl = request.getImageUrl();
         if (hotelImage != null && !hotelImage.isEmpty()) {
-            imageUrl = imageUploadService.uploadHotelImage(hotelImage).getImageUrl();
-            hotel.setImageUrl(imageUrl);
+            try {
+                imageUrl = imageUploadService.uploadHotelImage(hotelImage).getImageUrl();
+                hotel.setImageUrl(imageUrl);
+            } catch (Exception e) {
+                System.err.println("Warning: Hotel image update failed: " + e.getMessage());
+            }
         }
 
         hotel.setHotelName(request.getHotelName());

@@ -47,6 +47,30 @@ public class RoomService {
         return room.orElseThrow(() -> new RuntimeException("Room not found"));
     }
 
+    public List<Room> getRoomsByHotelId(Long hotelId) {
+        return roomRepository.findByHotelId(hotelId);
+    }
+
+    public Room updateRoom(String id, String name, String type, Double price, String description, MultipartFile image) {
+        Room room = getRoomById(id);
+        room.setName(name);
+        room.setType(type);
+        room.setPrice(price);
+        room.setDescription(description);
+
+        if (image != null && !image.isEmpty()) {
+            String imageUrl = imageUploadService.uploadRoomImage(image).getImageUrl();
+            room.setImageUrl(imageUrl);
+        }
+
+        return roomRepository.save(room);
+    }
+
+    public void deleteRoom(String id) {
+        Room room = getRoomById(id);
+        roomRepository.delete(room);
+    }
+
     public Room updateRoomAvailability(String id, boolean availability) {
         Room room = getRoomById(id);
         room.setAvailability(availability);

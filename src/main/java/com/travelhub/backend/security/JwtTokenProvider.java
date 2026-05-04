@@ -14,7 +14,7 @@ import java.util.Map;
 @Component
 public class JwtTokenProvider {
 
-    @Value("${app.jwt.secret:travelhub_secret_key_minimum_32_chars_long}")
+    @Value("${jwt.secret:travelhub_secret_key_minimum_32_chars_long}")
     private String jwtSecret;
 
     @Value("${app.jwt.expiration:86400000}")
