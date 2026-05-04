@@ -30,14 +30,9 @@ public class Hotel {
 
     private Double priceFrom;
     private Double priceTo;
-    private Double rating;
-    private Integer reviewCount;
     private String imageUrl;
     private String district;
 
-    // ── Location Details ───────────────────────────────
-    @Column(name = "number_of_rooms")
-    private Integer numberOfRooms;
 
     // ── Owner Information ──────────────────────────────
     @Column(name = "owner_name")
@@ -55,10 +50,14 @@ public class Hotel {
     private String nicImageUrl;
 
     // ── Contact Information ────────────────────────────
+    @Column(name = "hotel_email")
+    private String hotelEmail;
+
+    @Column(name = "hotel_contact_number")
+    private String hotelContactNumber;
 
     @Column(name = "phone_number")
     private String phoneNumber;
-
 
     @Column(name = "hotline_number")
     private String hotlineNumber;
@@ -81,7 +80,9 @@ public class Hotel {
             fetch = FetchType.LAZY)
     private List<Room> rooms;
 
-    // ── Old amenities string field keep it ────────────
-    @Column(columnDefinition = "TEXT")
-    private String amenities;
+
+    // ── Link to Owner (User entity) ──
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "owner_id")
+    private User owner;
 }
