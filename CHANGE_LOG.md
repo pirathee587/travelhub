@@ -6,6 +6,7 @@ This file tracks all modifications made to teammate-owned code or shared configu
 |------|------|--------------------|--------|-----------|
 | 2026-04-25 | `application.properties` | Updated supabase buckets to match team agreement and added Gmail SMTP/JWT configs. | Antigravity | Syncing with team storage agreement and preparing Auth. |
 | 2026-04-25 | `SecurityConfig.java` | Implemented JWT-based stateless authentication and RBAC. | Antigravity | Implementing secure Auth module. |
+| 2026-05-04 | `Backend Stabilization` | Integrated Flyway, tracked missing migrations, and removed manual DB fix logic. | Antigravity | Stabilizing repository after major feature merges. |
 
 ---
 
