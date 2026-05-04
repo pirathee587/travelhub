@@ -4,34 +4,42 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.travelhub.backend.dto.request.ReviewRequest;
 import com.travelhub.backend.dto.response.ReviewResponse;
 import com.travelhub.backend.entity.Hotel;
 import com.travelhub.backend.entity.Package;
 import com.travelhub.backend.entity.Review;
+import com.travelhub.backend.entity.ReviewImage;
 import com.travelhub.backend.entity.User;
 import com.travelhub.backend.repository.HotelRepository;
 import com.travelhub.backend.repository.PackageRepository;
+import com.travelhub.backend.repository.ReviewImageRepository;
 import com.travelhub.backend.repository.ReviewRepository;
 import com.travelhub.backend.repository.UserRepository;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class ReviewService {
 
     private final ReviewRepository reviewRepository;
     private final UserRepository userRepository;
     private final PackageRepository packageRepository;
     private final HotelRepository hotelRepository;
+    private final ReviewImageRepository reviewImageRepository;
+    private final ImageUploadService imageUploadService;  // ✅ NEW: Injected for backend orchestration
 
     // ─────────────────────────────────────────────────────────────────────────
     // GET reviews
     // ─────────────────────────────────────────────────────────────────────────
 
     /** Returns all reviews for a package */
+    @Transactional(readOnly = true)
     public List<ReviewResponse> getPackageReviews(Long packageId) {
         // ✅ FIXED: was findByPkgId → now findByPkg_Id (matches entity field name)
         return reviewRepository.findByPkg_Id(packageId)
@@ -41,8 +49,9 @@ public class ReviewService {
     }
 
     /** Returns all reviews for a hotel */
+    @Transactional(readOnly = true)
     public List<ReviewResponse> getHotelReviews(Long hotelId) {
-        return reviewRepository.findByHotelId(hotelId)
+        return reviewRepository.findByHotel_Id(hotelId)
                 .stream()
                 .map(this::toReviewResponse)
                 .collect(Collectors.toList());
@@ -53,7 +62,8 @@ public class ReviewService {
     // ─────────────────────────────────────────────────────────────────────────
 
     /** Submit a review for a package */
-    public ReviewResponse addPackageReview(Long packageId, ReviewRequest request) {
+    @Transactional
+    public ReviewResponse addPackageReview(Long packageId, ReviewRequest request, List<org.springframework.web.multipart.MultipartFile> images) {
 
         // ✅ FIXED: removed mandatory "completed booking" check that was
         //    blocking ALL reviews because booking status is "CONFIRMED" / "PENDING"
@@ -79,11 +89,36 @@ public class ReviewService {
                 .build();
 
         Review saved = reviewRepository.save(review);
+        // ✅ NEW: Save images if provided (from MultipartFile list)
+        if (images != null && !images.isEmpty()) {
+            log.info("[DEBUG] Saving {} images for package review {}", images.size(), saved.getId());
+            for (org.springframework.web.multipart.MultipartFile file : images) {
+                if (file != null && !file.isEmpty()) {
+                    try {
+                        String imageUrl = imageUploadService.uploadReviewImage(file).getImageUrl();
+                        ReviewImage img = ReviewImage.builder()
+                                .review(saved)
+                                .imageUrl(imageUrl)
+                                .build();
+                        reviewImageRepository.save(img);
+                        saved.getImages().add(img);  // ✅ FIXED: sync in-memory list for response
+                        log.info("[DEBUG] Saved image: {}", imageUrl);
+                    } catch (Exception e) {
+                        log.error("[DEBUG] Failed to upload image for review {}", saved.getId(), e);
+                        throw new RuntimeException("Image upload failed: " + e.getMessage(), e);
+                    }
+                }
+            }
+        } else {
+            log.info("[DEBUG] No images provided for package review {}", saved.getId());
+        }
+        
         return toReviewResponse(saved);
     }
 
     /** Submit a review for a hotel */
-    public ReviewResponse addHotelReview(Long hotelId, ReviewRequest request) {
+    @Transactional
+    public ReviewResponse addHotelReview(Long hotelId, ReviewRequest request, List<org.springframework.web.multipart.MultipartFile> images) {
 
         // ✅ FIXED: same — removed blocking booking-completion check
         Hotel hotel = hotelRepository.findById(hotelId)
@@ -104,6 +139,30 @@ public class ReviewService {
                 .build();
 
         Review saved = reviewRepository.save(review);
+        // ✅ NEW: Save images if provided (from MultipartFile list)
+        if (images != null && !images.isEmpty()) {
+            log.info("[DEBUG] Saving {} images for hotel review {}", images.size(), saved.getId());
+            for (org.springframework.web.multipart.MultipartFile file : images) {
+                if (file != null && !file.isEmpty()) {
+                    try {
+                        String imageUrl = imageUploadService.uploadReviewImage(file).getImageUrl();
+                        ReviewImage img = ReviewImage.builder()
+                                .review(saved)
+                                .imageUrl(imageUrl)
+                                .build();
+                        reviewImageRepository.save(img);
+                        saved.getImages().add(img);  // ✅ FIXED: sync in-memory list for response
+                        log.info("[DEBUG] Saved image: {}", imageUrl);
+                    } catch (Exception e) {
+                        log.error("[DEBUG] Failed to upload image for hotel review {}", saved.getId(), e);
+                        throw new RuntimeException("Image upload failed: " + e.getMessage(), e);
+                    }
+                }
+            }
+        } else {
+            log.info("[DEBUG] No images provided for hotel review {}", saved.getId());
+        }
+        
         return toReviewResponse(saved);
     }
 
@@ -111,21 +170,26 @@ public class ReviewService {
     // Average rating helpers (used by PackageService / HotelService)
     // ─────────────────────────────────────────────────────────────────────────
 
+
+    //Get Package Average Rating
     public double getAveragePackageRating(Long packageId) {
         Double avg = reviewRepository.getAverageRatingByPackageId(packageId);
         return avg != null ? Math.round(avg * 10.0) / 10.0 : 0.0;
     }
 
+    //Get Package Review Count
     public long getPackageReviewCount(Long packageId) {
         Long count = reviewRepository.getReviewCountByPackageId(packageId);
         return count != null ? count : 0L;
     }
 
+    //Get Hotel Average Rating
     public double getAverageHotelRating(Long hotelId) {
         Double avg = reviewRepository.getAverageRatingByHotelId(hotelId);
         return avg != null ? Math.round(avg * 10.0) / 10.0 : 0.0;
     }
 
+    //Get Hotel Review Count
     public long getHotelReviewCount(Long hotelId) {
         Long count = reviewRepository.getReviewCountByHotelId(hotelId);
         return count != null ? count : 0L;
@@ -136,7 +200,6 @@ public class ReviewService {
     // ─────────────────────────────────────────────────────────────────────────
 
     private ReviewResponse toReviewResponse(Review review) {
-        // ✅ FIXED: resolve display name correctly:
         //    1. try the User entity name
         //    2. fall back to stored userName from request
         //    3. final fallback "Anonymous"
@@ -152,6 +215,15 @@ public class ReviewService {
                 ? review.getReviewDate().toLocalDate().toString()
                 : null;
 
+        // ✅ NEW: Extract imageUrls from the relationship
+        List<String> imageUrls = review.getImages() != null
+                ? review.getImages().stream()
+                    .map(ReviewImage::getImageUrl)
+                    .collect(Collectors.toList())
+                : null;
+        
+        log.info("[DEBUG] Review {} has {} images", review.getId(), imageUrls != null ? imageUrls.size() : 0);
+
         return ReviewResponse.builder()
                 .id(review.getId())
                 // ✅ Frontend reads `userName` and `reviewDate`
@@ -161,6 +233,8 @@ public class ReviewService {
                 // ✅ Frontend reads `title`
                 .title(review.getTitle())
                 .comment(review.getComment())
+                // ✅ NEW: Include imageUrls for frontend display
+                .imageUrls(imageUrls)
                 // For backward-compat with agent dashboard
                 .customerName(displayName)
                 .date(dateStr)

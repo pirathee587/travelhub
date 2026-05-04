@@ -19,15 +19,18 @@ public class OwnerHotelController {
     private final OwnerHotelService ownerHotelService;
 
     @GetMapping
-    public ResponseEntity<List<HotelResponse>> getOwnerHotels() {
-        return ResponseEntity.ok(ownerHotelService.getOwnerHotels());
+    public ResponseEntity<List<HotelResponse>> getOwnerHotels(
+            @RequestParam(defaultValue = "Approved") String status) {
+        return ResponseEntity.ok(ownerHotelService.getOwnerHotels(status));
     }
 
     @PostMapping
     public ResponseEntity<HotelResponse> createHotel(
             @ModelAttribute OwnerHotelRequest request,
-            @RequestParam(value = "hotelImage", required = false) MultipartFile hotelImage) {
-        return ResponseEntity.ok(ownerHotelService.createHotel(request, hotelImage));
+            @RequestParam(value = "hotelImage", required = false) MultipartFile hotelImage,
+            java.security.Principal principal) {
+        String email = principal != null ? principal.getName() : request.getOwnerEmail();
+        return ResponseEntity.ok(ownerHotelService.createHotel(request, hotelImage, email));
     }
 
     @PutMapping("/{id}")

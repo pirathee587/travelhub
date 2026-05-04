@@ -47,6 +47,9 @@ public class SecurityConfig {
                         .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/packages/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/hotels/**").permitAll()
+                        .requestMatchers("/api/v1/owner/hotels/**").permitAll()
+                        .requestMatchers("/api/v1/rooms/**").permitAll()
+                        .requestMatchers("/api/v1/amenities/**").permitAll()
                         .requestMatchers("/api/reviews/**").permitAll()
                         .requestMatchers("/api/upload/**").permitAll()
                         .requestMatchers("/uploads/**").permitAll()
@@ -67,7 +70,7 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(List.of("http://localhost:5173"));
+        configuration.setAllowedOrigins(List.of("http://localhost:5173", "http://localhost:8082", "http://localhost:3000"));
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("Authorization", "Content-Type"));
         configuration.setAllowCredentials(true);

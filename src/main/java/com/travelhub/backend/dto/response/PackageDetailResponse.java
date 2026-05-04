@@ -1,10 +1,11 @@
 package com.travelhub.backend.dto.response;
 
+import java.util.List;
+
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import java.util.List;
 
 @Data
 @Builder
@@ -14,6 +15,7 @@ public class PackageDetailResponse {
     private Long id;
     private String packageName;
     private String destination;
+    private String district;
     private String startPlace;
     private String endPlace;
     private Double priceFrom;
@@ -31,8 +33,7 @@ public class PackageDetailResponse {
     private Double agentRating;
     private List<ItineraryDayResponse> itinerary;
     private List<String> images;
-    private String district;
-
+    
     @Data
     @Builder
     @NoArgsConstructor

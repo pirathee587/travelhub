@@ -1,16 +1,19 @@
 package com.travelhub.backend.service;
 
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
 import com.travelhub.backend.dto.response.HotelResponse;
 import com.travelhub.backend.entity.Hotel;
 import com.travelhub.backend.repository.HotelRepository;
-import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Service;
-import java.util.Arrays;
-import java.util.List;
-import java.util.stream.Collectors;
 import com.travelhub.backend.repository.ReviewRepository;
+import com.travelhub.backend.service.HotelPricingService.PriceRange;
 
-import org.springframework.transaction.annotation.Transactional;
+import lombok.RequiredArgsConstructor;
 
 @Service
 @RequiredArgsConstructor
@@ -19,35 +22,68 @@ public class HotelService {
 
     private final HotelRepository hotelRepository;
     private final ReviewRepository reviewRepository;
+    private final HotelPricingService hotelPricingService;
 
     public List<HotelResponse> getAllHotels() {
-        return hotelRepository.findAll()
-                .stream()
-                .map(this::toHotelResponse)
-                .collect(Collectors.toList());
+        List<Hotel> hotels = hotelRepository.findByApplicationStatus("Approved");
+        return toHotelResponses(hotels);
     }
 
     public List<HotelResponse> getHotelsByDestination(String destination) {
-        return hotelRepository.findByDestinationIgnoreCase(destination)
-                .stream()
-                .map(this::toHotelResponse)
-                .collect(Collectors.toList());
+        List<Hotel> hotels = hotelRepository.findByDestinationIgnoreCase(destination);
+        return toHotelResponses(hotels);
+    }
+
+    public List<HotelResponse> getHotelsByDistrict(String district) {
+        List<Hotel> hotels = hotelRepository.findByApplicationStatusAndDistrictIgnoreCase("Approved", district);
+        return toHotelResponses(hotels);
     }
 
     public HotelResponse getHotelById(Long id) {
         Hotel hotel = hotelRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Hotel not found with id: " + id));
-        return toHotelResponse(hotel);
+        return toSingleHotelResponse(hotel);
     }
 
-    private HotelResponse toHotelResponse(Hotel hotel) {
+    /**
+     * ✅ OPTIMIZED: Batch rating lookup — 2 queries total instead of 2N.
+     * Fetches all ratings and counts in bulk, then maps them to responses.
+     */
+    private List<HotelResponse> toHotelResponses(List<Hotel> hotels) {
+        if (hotels.isEmpty()) return List.of();
+
+        List<Long> hotelIds = hotels.stream().map(Hotel::getId).collect(Collectors.toList());
+
+        // 2 bulk queries instead of 2 per hotel
+        Map<Long, Double> avgRatings = reviewRepository.getAverageRatingsByHotelIds(hotelIds);
+        Map<Long, Long> reviewCounts = reviewRepository.getReviewCountsByHotelIds(hotelIds);
+        Map<Long, PriceRange> priceRanges = hotelPricingService.getPriceRangesByHotelIds(hotelIds);
+
+        return hotels.stream()
+                .map(hotel -> toHotelResponse(hotel,
+                        avgRatings.getOrDefault(hotel.getId(), 0.0),
+                reviewCounts.getOrDefault(hotel.getId(), 0L).intValue(),
+                priceRanges.get(hotel.getId())))
+                .collect(Collectors.toList());
+    }
+
+    /** Single hotel fetch — 2 individual queries is acceptable for detail pages */
+    private HotelResponse toSingleHotelResponse(Hotel hotel) {
+        Double avgRating = reviewRepository.getAverageRatingByHotelId(hotel.getId());
+        Long count = reviewRepository.getReviewCountByHotelId(hotel.getId());
+        PriceRange priceRange = hotelPricingService.getPriceRangeByHotelId(hotel.getId());
+        return toHotelResponse(hotel,
+                avgRating != null ? avgRating : 0.0,
+            count != null ? count.intValue() : 0,
+            priceRange);
+    }
+
+        private HotelResponse toHotelResponse(Hotel hotel, double rating, int reviewCount, PriceRange priceRange) {
         List<String> amenityList = null;
         if (hotel.getAmenityList() != null && !hotel.getAmenityList().isEmpty()) {
             amenityList = hotel.getAmenityList().stream()
                     .map(amenity -> amenity.getName())
                     .collect(Collectors.toList());
-        } else if (hotel.getAmenities() != null) {
-            amenityList = Arrays.asList(hotel.getAmenities().split(","));
         }
 
         return HotelResponse.builder()
@@ -56,15 +92,14 @@ public class HotelService {
                 .destination(hotel.getDestination())
                 .location(hotel.getLocation())
                 .description(hotel.getDescription())
-                .priceFrom(hotel.getPriceFrom())
-                .priceTo(hotel.getPriceTo())
-                .rating(reviewRepository.getAverageRatingByHotelId(hotel.getId()) != null ?
-                        Math.round(reviewRepository.getAverageRatingByHotelId(hotel.getId()) * 10.0) / 10.0 : 0.0)
-                .reviewCount(reviewRepository.getReviewCountByHotelId(hotel.getId()) != null ?
-                        reviewRepository.getReviewCountByHotelId(hotel.getId()).intValue() : 0)
+                .priceFrom(priceRange != null ? priceRange.priceFrom() : null)
+                .priceTo(priceRange != null ? priceRange.priceTo() : null)
+                .rating(Math.round(rating * 10.0) / 10.0)
+                .reviewCount(reviewCount)
                 .imageUrl(hotel.getImageUrl())
                 .amenities(amenityList)
                 .district(hotel.getDistrict())
+                .applicationStatus(hotel.getApplicationStatus())
                 .build();
     }
 }

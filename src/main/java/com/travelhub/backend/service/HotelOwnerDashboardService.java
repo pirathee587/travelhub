@@ -1,15 +1,17 @@
 package com.travelhub.backend.service;
 
+import java.util.List;
+
+import org.springframework.stereotype.Service;
+
 import com.travelhub.backend.dto.response.HotelDashboardStatsResponse;
 import com.travelhub.backend.entity.Review;
 import com.travelhub.backend.entity.Room;
 import com.travelhub.backend.repository.AmenityRepository;
 import com.travelhub.backend.repository.ReviewRepository;
 import com.travelhub.backend.repository.RoomRepository;
-import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Service;
 
-import java.util.List;
+import lombok.RequiredArgsConstructor;
 
 @Service
 @RequiredArgsConstructor
@@ -23,11 +25,13 @@ public class HotelOwnerDashboardService {
         // Fetch data scoped strictly to this specific hotel
         List<Room> rooms = roomRepository.findByHotelId(hotelId);
         long totalRooms = rooms.size();
-        long availableRooms = rooms.stream().filter(Room::getAvailability).count();
+        long availableRooms = rooms.stream()
+                .filter(r -> Boolean.TRUE.equals(r.getAvailability()))
+                .count();
 
         long totalAmenities = amenityRepository.findByHotelId(hotelId).size();
 
-        List<Review> reviews = reviewRepository.findByHotelId(hotelId);
+        List<Review> reviews = reviewRepository.findByHotel_Id(hotelId);
         long totalReviews = reviews.size();
         double averageRating = 0.0;
         

@@ -40,9 +40,11 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
 
                 SecurityContextHolder.getContext().setAuthentication(authentication);
+            } else {
+                System.out.println("[JWT] No valid token found for: " + request.getRequestURI());
             }
         } catch (Exception ex) {
-            // Log error
+            System.out.println("[JWT] Authentication error: " + ex.getMessage());
         }
 
         filterChain.doFilter(request, response);

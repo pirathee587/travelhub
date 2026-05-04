@@ -41,9 +41,22 @@ public class BookingCreationService {
                 .orElseThrow(() -> new RuntimeException("Vehicle not found"));
 
         Hotel hotel = null;
-        if (request.getHotelId() != null) {
-            hotel = hotelRepository.findById(request.getHotelId())
+        Long primaryHotelId = request.getHotelId();
+        
+        // Fallback to first hotel in hotelIds list if hotelId is null
+        if (primaryHotelId == null && request.getHotelIds() != null && !request.getHotelIds().isEmpty()) {
+            primaryHotelId = request.getHotelIds().get(0);
+        }
+
+        if (primaryHotelId != null) {
+            hotel = hotelRepository.findById(primaryHotelId)
                     .orElseThrow(() -> new RuntimeException("Hotel not found"));
+            
+            // District Matching Validation
+            if (hotel.getDistrict() != null && pkg.getDistrict() != null 
+                && !hotel.getDistrict().equalsIgnoreCase(pkg.getDistrict())) {
+                throw new RuntimeException("Selected hotel's district does not match package's district");
+            }
         }
 
         Booking booking = Booking.builder()
