@@ -50,6 +50,11 @@ public class Hotel {
     private Long ownerId;
 
     // ── Contact Information ────────────────────────────
+    @Column(name = "hotel_email")
+    private String hotelEmail;
+
+    @Column(name = "hotel_contact_number")
+    private String hotelContactNumber;
 
     @Column(name = "phone_number")
     private String phoneNumber;
@@ -80,4 +85,10 @@ public class Hotel {
             cascade = CascadeType.ALL,
             fetch = FetchType.LAZY)
     private List<Room> rooms;
+
+
+    // ── Link to Owner (User entity) ──
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "owner_id")
+    private User owner;
 }

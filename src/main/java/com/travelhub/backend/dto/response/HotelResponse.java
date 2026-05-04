@@ -18,10 +18,10 @@ public class HotelResponse {
     private String description;
     private Double priceFrom;
     private Double priceTo;
-    private Double rating;
-    private Integer reviewCount;
     private String imageUrl;
     private List<String> amenities;
     private String district;
     private String applicationStatus;
+    private String hotelEmail;
+    private String hotelContactNumber;
 }

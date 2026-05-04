@@ -1,35 +1,50 @@
 package com.travelhub.backend.service;
 
-import java.util.List;
-import java.util.stream.Collectors;
-
-import org.springframework.stereotype.Service;
-import org.springframework.web.multipart.MultipartFile;
-
 import com.travelhub.backend.dto.request.OwnerHotelRequest;
 import com.travelhub.backend.dto.response.HotelResponse;
 import com.travelhub.backend.entity.Hotel;
+import com.travelhub.backend.entity.User;
+import com.travelhub.backend.event.HotelEvent;
 import com.travelhub.backend.repository.HotelRepository;
-import com.travelhub.backend.service.HotelPricingService.PriceRange;
-
+import com.travelhub.backend.repository.ReviewRepository;
+import com.travelhub.backend.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+@Transactional(readOnly = true)
 public class OwnerHotelService {
 
     private final HotelRepository hotelRepository;
+    private final UserRepository userRepository;
+    private final ReviewRepository reviewRepository;
     private final ImageUploadService imageUploadService;
-    private final HotelPricingService hotelPricingService;
+    private final ApplicationEventPublisher eventPublisher;
 
-    public List<HotelResponse> getOwnerHotels() {
-        // For now, returning all hotels, or implement owner filtering if user context exists.
-        return hotelRepository.findAll().stream()
+    public List<HotelResponse> getOwnerHotels(String status) {
+        // Fetch all hotels matching the status (Global View requirement)
+        String targetStatus = "Pending";
+        if ("Approved".equalsIgnoreCase(status)) targetStatus = "Approved";
+        if ("Rejected".equalsIgnoreCase(status)) targetStatus = "Rejected";
+
+        return hotelRepository.findByApplicationStatus(targetStatus).stream()
                 .map(this::toHotelResponse)
                 .collect(Collectors.toList());
     }
 
-    public HotelResponse createHotel(OwnerHotelRequest request, MultipartFile hotelImage) {
+    @Transactional
+    public HotelResponse createHotel(OwnerHotelRequest request, MultipartFile hotelImage, String email) {
+        User owner = (email != null && !email.isBlank())
+                ? userRepository.findByEmail(email).orElse(null)
+                : null;
+
         String imageUrl = request.getImageUrl();
         if (hotelImage != null && !hotelImage.isEmpty()) {
             imageUrl = imageUploadService.uploadHotelImage(hotelImage).getImageUrl();
@@ -40,45 +55,55 @@ public class OwnerHotelService {
                 .destination(request.getDestination())
                 .location(request.getLocation())
                 .description(request.getDescription())
+                .priceFrom(request.getPriceFrom())
+                .priceTo(request.getPriceTo())
                 .imageUrl(imageUrl)
                 .district(request.getDistrict())
+                .hotelEmail(request.getOwnerEmail())
+                .hotelContactNumber(request.getPhoneNumber())
                 .phoneNumber(request.getPhoneNumber())
                 .hotlineNumber(request.getHotlineNumber())
                 .ownerName(request.getOwnerName())
-                .ownerEmail(request.getOwnerEmail())
+                .ownerEmail(email)
                 .ownerNic(request.getOwnerNic())
                 .applicationStatus("Pending")
+                .owner(owner)
                 .build();
 
         hotel = hotelRepository.save(hotel);
+        eventPublisher.publishEvent(new HotelEvent(this, hotel, "CREATED"));
         return toHotelResponse(hotel);
     }
 
+    @Transactional
     public HotelResponse updateHotel(Long id, OwnerHotelRequest request, MultipartFile hotelImage) {
         Hotel hotel = hotelRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Hotel not found with id: " + id));
 
+        String imageUrl = request.getImageUrl();
         if (hotelImage != null && !hotelImage.isEmpty()) {
-            hotel.setImageUrl(imageUploadService.uploadHotelImage(hotelImage).getImageUrl());
-        } else if (request.getImageUrl() != null) {
-            hotel.setImageUrl(request.getImageUrl());
+            imageUrl = imageUploadService.uploadHotelImage(hotelImage).getImageUrl();
+            hotel.setImageUrl(imageUrl);
         }
 
         hotel.setHotelName(request.getHotelName());
         hotel.setDestination(request.getDestination());
         hotel.setLocation(request.getLocation());
         hotel.setDescription(request.getDescription());
+        hotel.setPriceFrom(request.getPriceFrom());
+        hotel.setPriceTo(request.getPriceTo());
         hotel.setDistrict(request.getDistrict());
         hotel.setPhoneNumber(request.getPhoneNumber());
         hotel.setHotlineNumber(request.getHotlineNumber());
         hotel.setOwnerName(request.getOwnerName());
-        hotel.setOwnerEmail(request.getOwnerEmail());
+        hotel.setHotelEmail(request.getOwnerEmail());
         hotel.setOwnerNic(request.getOwnerNic());
 
         hotel = hotelRepository.save(hotel);
         return toHotelResponse(hotel);
     }
 
+    @Transactional
     public void deleteHotel(Long id) {
         Hotel hotel = hotelRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Hotel not found with id: " + id));
@@ -86,14 +111,11 @@ public class OwnerHotelService {
     }
 
     private HotelResponse toHotelResponse(Hotel hotel) {
-        List<String> amenityList = null;
-        if (hotel.getAmenityList() != null && !hotel.getAmenityList().isEmpty()) {
-            amenityList = hotel.getAmenityList().stream()
+        List<String> amenityList = (hotel.getAmenityList() != null)
+                ? hotel.getAmenityList().stream()
                     .map(amenity -> amenity.getName())
-                    .collect(Collectors.toList());
-        }
-
-        PriceRange priceRange = hotelPricingService.getPriceRangeByHotelId(hotel.getId());
+                    .collect(Collectors.toList())
+                : List.of();
 
         return HotelResponse.builder()
                 .id(hotel.getId())
@@ -101,13 +123,14 @@ public class OwnerHotelService {
                 .destination(hotel.getDestination())
                 .location(hotel.getLocation())
                 .description(hotel.getDescription())
-            .priceFrom(priceRange != null ? priceRange.priceFrom() : null)
-            .priceTo(priceRange != null ? priceRange.priceTo() : null)
-                .rating(0.0) // Handled by list optimization if needed, or fetch specifically
-                .reviewCount(0)
+                .priceFrom(hotel.getPriceFrom())
+                .priceTo(hotel.getPriceTo())
                 .imageUrl(hotel.getImageUrl())
                 .amenities(amenityList)
                 .district(hotel.getDistrict())
+                .applicationStatus(hotel.getApplicationStatus())
+                .hotelEmail(hotel.getHotelEmail())
+                .hotelContactNumber(hotel.getHotelContactNumber())
                 .build();
     }
 }
