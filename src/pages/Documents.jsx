@@ -10,6 +10,7 @@ import {
     MapPinned,
 } from "lucide-react";
 import { api } from "@/services/api";
+import { DocumentsPageSkeleton } from "@/components/ui/skeletons";
 
 const Documents = () => {
     const [allDocuments, setAllDocuments] = useState([]);
@@ -29,16 +30,14 @@ const Documents = () => {
 
     if (loading) {
         return (
-            <DashboardLayout showSearch={false}>
-                <div className="flex items-center justify-center h-64">
-                    <p className="text-muted-foreground">Loading documents...</p>
-                </div>
+            <DashboardLayout>
+                <DocumentsPageSkeleton />
             </DashboardLayout>
         );
     }
 
     return (
-        <DashboardLayout showSearch={false}>
+        <DashboardLayout>
             {/* Page Header */}
             <section className="animate-slide-up">
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -58,61 +57,61 @@ const Documents = () => {
 
             {/* Stats Cards */}
             <section
-                className="grid grid-cols-2 lg:grid-cols-4 gap-4 animate-slide-up"
+                className="grid grid-cols-2 lg:grid-cols-4 gap-4 animate-slide-up py-8"
                 style={{ animationDelay: "0.1s" }}
             >
-                <div className="bg-card rounded-xl p-4 border border-border/50 flex items-center gap-3">
-                    <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
-                        <Receipt className="h-5 w-5 text-primary" />
+                <div className="bg-card rounded-2xl p-5 border border-border/50 flex items-center gap-4 shadow-soft transition-all duration-300 hover:shadow-card hover:-translate-y-1">
+                    <div className="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center">
+                        <Receipt className="h-6 w-6 text-primary" />
                     </div>
                     <div>
-                        <p className="text-2xl font-bold">{invoices.length}</p>
-                        <p className="text-sm text-muted-foreground">Invoices</p>
+                        <p className="text-3xl font-bold tracking-tight">{invoices.length}</p>
+                        <p className="text-sm font-medium text-muted-foreground">Invoices</p>
                     </div>
                 </div>
-                <div className="bg-card rounded-xl p-4 border border-border/50 flex items-center gap-3">
-                    <div className="h-10 w-10 rounded-lg bg-accent/10 flex items-center justify-center">
-                        <FileCheck className="h-5 w-5 text-accent" />
+                <div className="bg-card rounded-2xl p-5 border border-border/50 flex items-center gap-4 shadow-soft transition-all duration-300 hover:shadow-card hover:-translate-y-1">
+                    <div className="h-12 w-12 rounded-xl bg-accent/10 flex items-center justify-center">
+                        <FileCheck className="h-6 w-6 text-accent" />
                     </div>
                     <div>
-                        <p className="text-2xl font-bold">{receipts.length}</p>
-                        <p className="text-sm text-muted-foreground">Receipts</p>
+                        <p className="text-3xl font-bold tracking-tight">{receipts.length}</p>
+                        <p className="text-sm font-medium text-muted-foreground">Receipts</p>
                     </div>
                 </div>
-                <div className="bg-card rounded-xl p-4 border border-border/50 flex items-center gap-3">
-                    <div className="h-10 w-10 rounded-lg bg-emerald-500/10 flex items-center justify-center">
-                        <MapPinned className="h-5 w-5 text-emerald-500" />
+                <div className="bg-card rounded-2xl p-5 border border-border/50 flex items-center gap-4 shadow-soft transition-all duration-300 hover:shadow-card hover:-translate-y-1">
+                    <div className="h-12 w-12 rounded-xl bg-emerald-500/10 flex items-center justify-center">
+                        <MapPinned className="h-6 w-6 text-emerald-500" />
                     </div>
                     <div>
-                        <p className="text-2xl font-bold">{itineraries.length}</p>
-                        <p className="text-sm text-muted-foreground">Itineraries</p>
+                        <p className="text-3xl font-bold tracking-tight">{itineraries.length}</p>
+                        <p className="text-sm font-medium text-muted-foreground">Itineraries</p>
                     </div>
                 </div>
-                <div className="bg-card rounded-xl p-4 border border-border/50 flex items-center gap-3">
-                    <div className="h-10 w-10 rounded-lg bg-amber-500/10 flex items-center justify-center">
-                        <FolderOpen className="h-5 w-5 text-amber-500" />
+                <div className="bg-card rounded-2xl p-5 border border-border/50 flex items-center gap-4 shadow-soft transition-all duration-300 hover:shadow-card hover:-translate-y-1">
+                    <div className="h-12 w-12 rounded-xl bg-amber-500/10 flex items-center justify-center">
+                        <FolderOpen className="h-6 w-6 text-amber-500" />
                     </div>
                     <div>
-                        <p className="text-2xl font-bold">{allDocuments.length}</p>
-                        <p className="text-sm text-muted-foreground">Total</p>
+                        <p className="text-3xl font-bold tracking-tight">{allDocuments.length}</p>
+                        <p className="text-sm font-medium text-muted-foreground">Total</p>
                     </div>
                 </div>
             </section>
 
             {/* Documents Tabs */}
-            <section className="animate-slide-up" style={{ animationDelay: "0.2s" }}>
+            <section className="animate-slide-up py-1" style={{ animationDelay: "0.2s" }}>
                 <Tabs defaultValue="all" className="space-y-4">
-                    <TabsList className="bg-secondary">
-                        <TabsTrigger value="all" className="data-[state=active]:bg-card data-[state=active]:shadow-soft">
+                    <TabsList className="bg-secondary p-1.5 rounded-xl h-auto">
+                        <TabsTrigger value="all" className="rounded-lg py-2 px-4 data-[state=active]:bg-white data-[state=active]:shadow-soft font-medium">
                             All ({allDocuments.length})
                         </TabsTrigger>
-                        <TabsTrigger value="invoices" className="data-[state=active]:bg-card data-[state=active]:shadow-soft">
+                        <TabsTrigger value="invoices" className="rounded-lg py-2 px-4 data-[state=active]:bg-white data-[state=active]:shadow-soft font-medium">
                             Invoices ({invoices.length})
                         </TabsTrigger>
-                        <TabsTrigger value="receipts" className="data-[state=active]:bg-card data-[state=active]:shadow-soft">
+                        <TabsTrigger value="receipts" className="rounded-lg py-2 px-4 data-[state=active]:bg-white data-[state=active]:shadow-soft font-medium">
                             Receipts ({receipts.length})
                         </TabsTrigger>
-                        <TabsTrigger value="itineraries" className="data-[state=active]:bg-card data-[state=active]:shadow-soft">
+                        <TabsTrigger value="itineraries" className="rounded-lg py-2 px-4 data-[state=active]:bg-white data-[state=active]:shadow-soft font-medium">
                             Itineraries ({itineraries.length})
                         </TabsTrigger>
                     </TabsList>

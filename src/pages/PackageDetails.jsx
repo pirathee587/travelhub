@@ -12,42 +12,39 @@ import {
     Star,
 } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { useState, useEffect } from "react";
+import { useState, useMemo } from "react";
 import { cn } from "@/lib/utils";
-import { api } from "@/services/api";
+import { usePackageById, usePackageReviews, usePackageRating } from "@/hooks/useApi";
+import { DetailSkeleton } from "@/components/ui/skeletons";
 
 const PackageDetails = () => {
     const { id } = useParams();
     const navigate = useNavigate();
     const [activeImage, setActiveImage] = useState(0);
     const [reviewFilter, setReviewFilter] = useState("all");
-    const [pkg, setPkg] = useState(null);
-    const [reviews, setReviews] = useState([]);
-    const [loading, setLoading] = useState(true);
     const [selectedImage, setSelectedImage] = useState(null);
-    // ✅ NEW: live average rating from backend (calculated from review table)
-    const [ratingInfo, setRatingInfo] = useState({ averageRating: 0, reviewCount: 0 });
 
-    useEffect(() => {
-        Promise.all([
-            api.getPackageById(id),
-            api.getPackageReviews(id),
-            // ✅ FIXED: fetch calculated average rating from backend
-            api.getPackageAverageRating(id),
-        ]).then(([pkgData, reviewsData, ratingData]) => {
-            setPkg(pkgData);
-            setReviews(reviewsData || []);
-            setRatingInfo(ratingData || { averageRating: 0, reviewCount: 0 });
-            setLoading(false);
-        });
-    }, [id]);
+    // SWR hooks — parallel fetching with caching
+    const { data: pkg, isLoading: pkgLoading } = usePackageById(id);
+    const { data: reviews = [] } = usePackageReviews(id);
+    const { data: ratingInfo = { averageRating: 0, reviewCount: 0 } } = usePackageRating(id);
 
-    if (loading) {
+    // Memoize sorted itinerary
+    const sortedItinerary = useMemo(() =>
+        pkg?.itinerary?.slice().sort((a, b) => a.dayNumber - b.dayNumber) || [],
+        [pkg?.itinerary]
+    );
+
+    // Memoize filtered reviews
+    const filteredReviews = useMemo(() =>
+        reviews.filter(review => reviewFilter === "all" || review.rating === reviewFilter),
+        [reviews, reviewFilter]
+    );
+
+    if (pkgLoading) {
         return (
             <DashboardLayout>
-                <div className="flex items-center justify-center h-64">
-                    <p className="text-muted-foreground">Loading package...</p>
-                </div>
+                <DetailSkeleton />
             </DashboardLayout>
         );
     }
@@ -90,7 +87,7 @@ const PackageDetails = () => {
                             <Badge variant="outline" className="border-primary/20 text-primary bg-primary/5">
                                 {pkg.category ? pkg.category.charAt(0).toUpperCase() + pkg.category.slice(1) : "Package"}
                             </Badge>
-                            {/* ✅ FIXED: show live-calculated rating from review table */}
+                            {/* show live-calculated rating from review  */}
                             <div className="flex items-center text-sm text-yellow-500">
                                 <span className="font-bold mr-1">★ {ratingInfo.averageRating || 0}</span>
                                 <span className="text-muted-foreground">({ratingInfo.reviewCount || 0} reviews)</span>
@@ -131,6 +128,7 @@ const PackageDetails = () => {
                             src={galleryImages[0]}
                             alt={`${pkg.packageName} main view`}
                             className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                            loading="eager"
                         />
                         <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent" />
                     </div>
@@ -151,6 +149,7 @@ const PackageDetails = () => {
                                         src={img}
                                         alt={`${pkg.packageName} ${imageIndex + 1}`}
                                         className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                                        loading="lazy"
                                     />
                                     <div className="absolute inset-0 bg-gradient-to-t from-black/25 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                                 </div>
@@ -202,7 +201,8 @@ const PackageDetails = () => {
                             Day-by-Day Itinerary
                         </h3>
                         <div className="space-y-8 relative before:absolute before:left-[17px] before:top-2 before:bottom-2 before:w-[2px] before:bg-border/60">
-                            {pkg.itinerary?.map((item, idx) => (
+                        {/* Order by Day number */}
+                            {sortedItinerary.map((item, idx) => (
                                 <div key={idx} className="relative pl-12">
                                     <div className="absolute left-0 top-1 h-9 w-9 rounded-full bg-background border-2 border-primary flex items-center justify-center z-10 shadow-sm">
                                         <span className="text-primary font-bold text-sm">{item.dayNumber}</span>
@@ -212,9 +212,12 @@ const PackageDetails = () => {
                                             <h4 className="text-xl font-bold">
                                                 Day {item.dayNumber}: {item.title}
                                             </h4>
+
+                                            {/*Activities Count*/}
                                             <Badge variant="secondary" className="w-fit bg-primary/5 text-primary border-primary/10">
                                                 {item.activities?.length || 0} Activities
                                             </Badge>
+                                            
                                         </div>
                                         <p className="text-muted-foreground leading-relaxed mb-6 italic">
                                             {item.description}
@@ -230,7 +233,7 @@ const PackageDetails = () => {
                                     </div>
                                 </div>
                             ))}
-                            {!pkg.itinerary && (
+                            {sortedItinerary.length === 0 && (
                                 <div className="bg-muted/20 rounded-xl p-8 border border-dashed text-center">
                                     <p className="text-muted-foreground">Detailed itinerary arriving soon.</p>
                                 </div>
@@ -250,8 +253,9 @@ const PackageDetails = () => {
                     {/* Reviews Section */}
                     <section className="space-y-6">
                         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                            <h3 className="text-xl font-semibold">Customer Reviews</h3>
-                            {/* ✅ FIXED: show live average rating from backend */}
+                            <h3 className="text-2xl font-bold flex items-center gap-3">
+                                <User className="h-6 w-6 text-primary" /> Customer Reviews
+                            </h3>
                             <div className="flex items-center gap-1 text-yellow-500 font-bold">
                                 <Star className="h-5 w-5 fill-yellow-500" />
                                 <span>{ratingInfo.averageRating || 0}</span>
@@ -273,29 +277,24 @@ const PackageDetails = () => {
                                             : "bg-background text-muted-foreground border-border hover:border-primary/50 hover:text-primary"
                                     )}
                                 >
-                                    {rating === "all" ? "All Reviews" : `${rating} ★`}
+                                    {rating === "all" ? "All Reviews" : `${rating } ★`}
                                 </button>
                             ))}
                         </div>
 
                         <div className="space-y-4">
-                            {reviews.length > 0 ? (
-                                reviews
-                                    .filter(review => reviewFilter === "all" || review.rating === reviewFilter)
-                                    .map((review) => (
+                            {filteredReviews.length > 0 ? (
+                                filteredReviews.map((review) => (
                                         <div key={review.id} className="bg-card rounded-xl p-6 border shadow-sm space-y-4">
                                             <div className="flex justify-between items-start">
                                                 <div className="flex items-center gap-3">
                                                     <Avatar className="h-10 w-10 border border-primary/10">
-                                                        {/* ✅ FIXED: field is `userName` from backend */}
                                                         <AvatarFallback>
                                                             {review.userName ? review.userName.charAt(0).toUpperCase() : "?"}
                                                         </AvatarFallback>
                                                     </Avatar>
                                                     <div>
-                                                        {/* ✅ FIXED: field is `userName` (not `customerName`) */}
                                                         <p className="font-semibold text-sm">{review.userName}</p>
-                                                        {/* ✅ FIXED: field is `reviewDate` (not `date`) */}
                                                         <p className="text-xs text-muted-foreground">{review.reviewDate}</p>
                                                     </div>
                                                 </div>
@@ -325,6 +324,7 @@ const PackageDetails = () => {
                                                                 alt={`Review image ${idx + 1}`}
                                                                 className="h-20 w-20 rounded-lg object-cover border border-border cursor-pointer"
                                                                 onClick={() => setSelectedImage(url)}
+                                                                loading="lazy"
                                                             />
                                                         ))}
                                                     </div>

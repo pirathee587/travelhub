@@ -33,7 +33,7 @@ export function DocumentCard({ title, type, date, size, onDownload }) {
     };
 
     return (
-        <div className="flex items-center gap-4 p-4 rounded-lg bg-card border border-border hover:shadow-soft transition-all">
+        <div className="flex items-center gap-4 p-4 rounded-2xl bg-card border border-border/50 shadow-soft hover:shadow-card hover:-translate-y-0.5 transition-all duration-300">
             <div className={cn("rounded-lg p-3", config.color)}>
                 <FileText className="h-5 w-5" />
             </div>

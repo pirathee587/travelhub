@@ -44,8 +44,8 @@ export function DashboardSidebar() {
         <>
             {/* Logo */}
             <div className="p-4 flex items-center gap-3">
-                <div className="h-10 w-10 rounded-xl gradient-ocean flex items-center justify-center shadow-glow">
-                    <Plane className="h-5 w-5 text-primary-foreground" />
+                <div className="h-12 w-12 rounded-xl bg-primary flex items-center justify-center shadow-glow">
+                    <Plane className="h-7 w-7 text-white" />
                 </div>
                 {!collapsed && (
                     <div className="animate-fade-in">
@@ -63,19 +63,19 @@ export function DashboardSidebar() {
                         to={item.path}
                         onClick={() => setMobileOpen(false)}
                         className={cn(
-                            "flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all",
-                            "text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-sidebar-accent",
-                            isActive(item.path) && "bg-sidebar-primary text-sidebar-primary-foreground shadow-glow"
+                            "flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300",
+                            "text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-sidebar-accent hover:translate-x-1",
+                            isActive(item.path) && "bg-sidebar-primary text-sidebar-primary-foreground shadow-glow translate-x-1"
                         )}
                     >
                         <item.icon className="h-5 w-5 flex-shrink-0" />
-                        {!collapsed && <span className="font-medium">{item.label}</span>}
+                        {!collapsed && <span className="font-semibold">{item.label}</span>}
                     </NavLink>
                 ))}
             </nav>
 
             {/* Notifications */}
-            {!collapsed && (
+            {/* {!collapsed && (
                 <div className="mx-3 p-4 rounded-xl bg-sidebar-accent/50 border border-sidebar-border animate-fade-in">
                     <div className="flex items-center gap-2 mb-2">
                         <Bell className="h-4 w-4 text-sidebar-primary" />
@@ -84,7 +84,7 @@ export function DashboardSidebar() {
                     </div>
                     <p className="text-xs text-sidebar-foreground/60">You have 3 new updates</p>
                 </div>
-            )}
+            )} */}
 
             {/* Bottom Navigation */}
             <nav className="px-3 py-4 border-t border-sidebar-border space-y-1">
@@ -105,12 +105,12 @@ export function DashboardSidebar() {
                 ))}
                 <button
                     className={cn(
-                        "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all",
-                        "text-sidebar-foreground/70 hover:text-destructive hover:bg-destructive/10"
+                        "w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300",
+                        "text-sidebar-foreground/70 hover:text-destructive hover:bg-destructive/10 hover:translate-x-1"
                     )}
                 >
                     <LogOut className="h-5 w-5 flex-shrink-0" />
-                    {!collapsed && <span className="font-medium">Log Out</span>}
+                    {!collapsed && <span className="font-semibold">Log Out</span>}
                 </button>
             </nav>
 

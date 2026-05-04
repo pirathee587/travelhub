@@ -7,6 +7,7 @@ import { ReviewDialog } from "@/components/dashboard/ReviewDialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Map, Plane } from "lucide-react";
+import { MyTripsSkeleton, TripListSkeleton } from "@/components/ui/skeletons";
 import { api } from "@/services/api";
 
 const MyTrips = () => {
@@ -92,22 +93,20 @@ const MyTrips = () => {
 
     if (loading) {
         return (
-            <DashboardLayout showSearch={false}>
-                <div className="flex items-center justify-center h-64">
-                    <p className="text-muted-foreground">Loading trips...</p>
-                </div>
+            <DashboardLayout>
+                <MyTripsSkeleton />
             </DashboardLayout>
         );
     }
 
     return (
-        <DashboardLayout showSearch={false}>
+        <DashboardLayout>
             {/* Page Header */}
             <section className="animate-slide-up">
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                     <div className="flex items-center gap-3">
-                        <div className="h-12 w-12 rounded-xl gradient-ocean flex items-center justify-center shadow-glow">
-                            <Map className="h-6 w-6 text-primary-foreground" />
+                        <div className="h-12 w-12 rounded-xl bg-secondary flex items-center justify-center">
+                            <Map className="h-6 w-6 text-foreground"  />
                         </div>
                         <div>
                             <h1 className="text-2xl lg:text-3xl font-bold">My Trips</h1>
@@ -126,7 +125,7 @@ const MyTrips = () => {
             </section>
 
             {/* Trips Tabs */}
-            <section className="animate-slide-up" style={{ animationDelay: "0.2s" }}>
+            <section className="animate-slide-up py-8" style={{ animationDelay: "0.2s" }}>
                 <Tabs defaultValue="ongoing" className="space-y-4">
                     <TabsList className="bg-secondary">
                         <TabsTrigger

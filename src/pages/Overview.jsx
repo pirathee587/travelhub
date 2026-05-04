@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useRef, useCallback, memo } from "react";
 import { Plane, CheckCircle, Calendar, TrendingUp, ChevronRight, ChevronLeft, Sparkles,} from "lucide-react";
 import { DashboardLayout } from "@/components/dashboard/DashboardLayout";
 import { StatsCard } from "@/components/dashboard/StatsCard";
@@ -11,18 +11,12 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { api } from "@/services/api";
+import { useStats, useTrips, useDocuments, useRecommendations } from "@/hooks/useApi";
+import { StatsSkeleton, RecommendationSkeleton } from "@/components/ui/skeletons";
+
+const MemoizedTravelCard = memo(TravelCard);
 
 const Overview = () => {
-    const [trips, setTrips] = useState([]);
-    const [stats, setStats] = useState({
-        totalTrips: 0,
-        ongoingTrips: 0,
-        completedTrips: 0,
-        upcomingTrips: 0,
-    });
-    const [recentDocs, setRecentDocs] = useState([]);
-    const [recommendations, setRecommendations] = useState([]);
-    const [loading, setLoading] = useState(true);
     const [selectedTrip, setSelectedTrip] = useState(null);
     const [sheetOpen, setSheetOpen] = useState(false);
     const [reviewDialogOpen, setReviewDialogOpen] = useState(false);
@@ -32,43 +26,34 @@ const Overview = () => {
     const [selectedPackageId, setSelectedPackageId] = useState(null);
     const [selectedHotelId, setSelectedHotelId] = useState(null);
 
-    useEffect(() => {
-        Promise.all([
-            api.getStats(1),
-            api.getTrips(1),
-            api.getDocuments(1),
-            api.getRecommendations(1),
-        ]).then(([statsData, tripsData, docsData, recsData]) => {
-            setStats(statsData || {});
-            setTrips(Array.isArray(tripsData) ? tripsData : []);
-            setRecentDocs(Array.isArray(docsData) ? docsData.slice(0, 4) : []);
-            setRecommendations(Array.isArray(recsData) ? recsData : []);
-            setLoading(false);
-        }).catch(() => {
-            setLoading(false);
-        });
-    }, []);
+    // SWR hooks — parallel fetching with caching
+    const { data: stats = { totalTrips: 0, ongoingTrips: 0, completedTrips: 0, upcomingTrips: 0 }, isLoading: statsLoading } = useStats(1);
+    const { data: trips = [], isLoading: tripsLoading } = useTrips(1);
+    const { data: allDocs = [] } = useDocuments(1);
+    const { data: recommendations = [], isLoading: recsLoading } = useRecommendations(1);
+
+    const recentDocs = allDocs.slice(0, 4);
 
     const ongoingTrips = trips.filter(
         (t) => t.status === "in_progress" || t.status === "confirmed"
     );
     const completedTrips = trips.filter((t) => t.status === "completed");
 
-    const handleTripClick = async (trip) => {
-    const bookingDetail = await api.getBookingById(trip.id);
-    setSelectedTrip(bookingDetail);
-    setSheetOpen(true);
-    };
+    const handleTripClick = useCallback(async (trip) => {
+        const bookingDetail = await api.getBookingById(trip.id);
+        setSelectedTrip(bookingDetail);
+        setSheetOpen(true);
+    }, []);
 
-    const handleReviewClick = (trip) => {
+    const handleReviewClick = useCallback((trip) => {
         setTargetReviewName(trip.destination);
         setShowDriverRating(true);
         setSelectedPackageId(trip.packageId);
         setSelectedHotelId(null);
         setReviewDialogOpen(true);
-    };
+    }, []);
 
-    const handleHotelReviewClick = (trip) => {
+    const handleHotelReviewClick = useCallback((trip) => {
         if (trip.hotelName) {
             setTargetReviewName(trip.hotelName);
             setShowDriverRating(false);
@@ -76,27 +61,19 @@ const Overview = () => {
             setSelectedHotelId(trip.hotelId);
             setReviewDialogOpen(true);
         }
-    };
+    }, []);
 
-    const scrollRecommendations = (direction) => {
+    const scrollRecommendations = useCallback((direction) => {
         if (scrollContainerRef.current) {
             const scrollAmount = direction === "left" ? -300 : 300;
             scrollContainerRef.current.scrollBy({ left: scrollAmount, behavior: "smooth" });
         }
-    };
+    }, []);
 
-    if (loading) {
-        return (
-            <DashboardLayout showSearch={false}>
-                <div className="flex items-center justify-center h-64">
-                    <p className="text-muted-foreground">Loading dashboard...</p>
-                </div>
-            </DashboardLayout>
-        );
-    }
+    const isLoading = statsLoading && tripsLoading;
 
     return (
-        <DashboardLayout showSearch={false}>
+        <DashboardLayout>
             {/* Welcome Section */}
             <section className="animate-slide-up">
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -118,38 +95,44 @@ const Overview = () => {
             </section>
 
             {/* Stats Grid */}
-            <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 animate-slide-up" style={{ animationDelay: "0.1s" }}>
-                <StatsCard
-                    title="Ongoing Trips"
-                    value={stats.ongoingTrips}
-                    subtitle="Currently traveling"
-                    icon={Plane}
-                    variant="primary"
-                />
-                <StatsCard
-                    title="Completed Trips"
-                    value={stats.completedTrips}
-                    subtitle="Memories made"
-                    icon={CheckCircle}
-                    trend={{ value: 25, isPositive: true }}
-                />
-                <StatsCard
-                    title="Upcoming Bookings"
-                    value={stats.upcomingTrips}
-                    subtitle="Adventures await"
-                    icon={Calendar}
-                    variant="accent"
-                />
-                <StatsCard
-                    title="Total Trips"
-                    value={stats.totalTrips}
-                    subtitle="All time"
-                    icon={TrendingUp}
-                />
-            </section>
+            {statsLoading ? (
+                <StatsSkeleton />
+            ) : (
+                <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 animate-slide-up py-4" style={{ animationDelay: "0.1s" }}>
+                    <StatsCard
+                        title="Ongoing Trips"
+                        value={stats.ongoingTrips}
+                        subtitle="Currently traveling"
+                        icon={Plane}
+                        variant="blue"
+                    />
+                    <StatsCard
+                        title="Completed Trips"
+                        value={stats.completedTrips}
+                        subtitle="Memories made"
+                        icon={CheckCircle}
+                        variant="green"
+                        trend={{ value: 25, isPositive: true }}
+                    />
+                    <StatsCard
+                        title="Upcoming Bookings"
+                        value={stats.upcomingTrips}
+                        subtitle="Adventures await"
+                        icon={Calendar}
+                        variant="orange"
+                    />
+                    <StatsCard
+                        title="Total Trips"
+                        value={stats.totalTrips}
+                        subtitle="All time"
+                        icon={TrendingUp}
+                        variant="purple"
+                    />
+                </section>
+            )}
 
             {/* Trips Management */}
-            <section className="animate-slide-up" style={{ animationDelay: "0.2s" }}>
+            <section className="animate-slide-up py-8" style={{ animationDelay: "0.2s" }}>
                 <Tabs defaultValue="ongoing" className="space-y-4">
                     <div className="flex items-center justify-between">
                         <TabsList className="bg-secondary">
@@ -209,7 +192,7 @@ const Overview = () => {
             </section>
 
             {/* Documents Section */}
-            <section className="animate-slide-up" style={{ animationDelay: "0.3s" }}>
+            <section className="animate-slide-up py-8" style={{ animationDelay: "0.3s" }}>
                 <div className="flex items-center justify-between mb-4">
                     <h2 className="text-xl font-semibold">Recent Documents</h2>
                     <Link to="/documents">
@@ -233,7 +216,7 @@ const Overview = () => {
             </section>
 
             {/* Recommendations Section */}
-            <section className="animate-slide-up" style={{ animationDelay: "0.4s" }}>
+            <section className="animate-slide-up py-8" style={{ animationDelay: "0.4s" }}>
                 <div className="flex items-center justify-between mb-4">
                     <div className="flex items-center gap-2">
                         <Sparkles className="h-5 w-5 text-accent" />
@@ -258,18 +241,24 @@ const Overview = () => {
                         </Button>
                     </div>
                 </div>
-                <div
-                    ref={scrollContainerRef}
-                    className="flex gap-4 overflow-x-auto pb-4 -mx-4 px-4 scrollbar-hide"
-                    style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
-                >
-                    {recommendations.map((rec) => (
-                        <TravelCard
-                            key={rec.id}
-                            recommendation={rec}
-                        />
-                    ))}
-                </div>
+                {recsLoading ? (
+                    <RecommendationSkeleton count={5} />
+                ) : (
+                    <div
+                        ref={scrollContainerRef}
+                        className="flex gap-4 overflow-x-auto pb-4 -mx-4 px-4 scrollbar-hide"
+                        style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
+                    >
+                        {recommendations.map((rec) => (
+                            <div key={rec.id} className="w-72 flex-shrink-0 flex">
+                                <MemoizedTravelCard
+                                    recommendation={rec}
+                                    className="w-full"
+                                />
+                            </div>
+                        ))}
+                    </div>
+                )}
             </section>
 
             <TripDetailsSheet

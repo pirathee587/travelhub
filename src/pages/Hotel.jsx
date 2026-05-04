@@ -8,79 +8,124 @@ import {
     SelectValue,
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
-import { Building2, MapPin, Search, ArrowLeft } from "lucide-react";
+import { Building2, MapPin, Search, ArrowLeft, SlidersHorizontal } from "lucide-react";
 
 import { useNavigate, useSearchParams } from "react-router-dom";
 
-import { useState, useEffect } from "react";
-import { api } from "@/services/api";
+import { useState, useMemo, useCallback, memo } from "react";
+import { useAllHotels, useHotelPriceRanges } from "@/hooks/useApi";
 
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { CardGridSkeleton } from "@/components/ui/skeletons";
 
-
+const MemoizedTravelCard = memo(TravelCard);
 
 const Hotel = () => {
     const navigate = useNavigate();
     const [searchParams] = useSearchParams();
     const [selectedDistrict, setSelectedDistrict] = useState("all");
     const [searchQuery, setSearchQuery] = useState("");
+    const [sortBy, setSortBy] = useState("rating");
     const districtParam = searchParams.get("district");
 
     // Check if we're in selection mode
     const isSelectionMode = searchParams.get("mode") === "select";
     const preferenceNumber = searchParams.get("preference");
     const returnTo = searchParams.get("returnTo");
-    const [hotels, setHotels] = useState([]);
 
-    const dynamicDistricts = Array.from(
-        new Set(
-            hotels
-                .map((hotel) => hotel.district)
-                .filter(Boolean)
-        )
-    ).sort();
+    // SWR hook — cached, deduplicated
+    const fetchDistrict = isSelectionMode && districtParam ? districtParam : null;
+    const { data: hotels = [], isLoading } = useAllHotels(fetchDistrict);
+    const hotelIds = useMemo(() => hotels.map((hotel) => hotel.id).filter(Boolean), [hotels]);
+    const { data: roomPriceRanges = {} } = useHotelPriceRanges(hotelIds);
 
-    useEffect(() => {
-        api.getAllHotels().then(data => {
-            setHotels(data);
-        });
-    }, []);
-
-    useEffect(() => {
-        if (districtParam) {
-            setSelectedDistrict(districtParam);
-        }
-    }, [districtParam]);
-
-    const filteredHotels = hotels.filter((hotel) => {
-        const matchesDistrict = selectedDistrict === "all" || hotel.district === selectedDistrict;
-        const matchesSearch = hotel.hotelName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            hotel.destination.toLowerCase().includes(searchQuery.toLowerCase());
-        return matchesDistrict && matchesSearch;
+    // Sync district param to local state
+    useState(() => {
+        if (districtParam) setSelectedDistrict(districtParam);
     });
 
-    const handleHotelClick = (hotelId) => {
-        // Always navigate to hotel details when clicking the card
+    const dynamicDistricts = useMemo(() =>
+        Array.from(
+            new Set(hotels.map((hotel) => hotel.district).filter(Boolean))
+        ).sort(),
+        [hotels]
+    );
+  
+    // Combine hotel data with price ranges from rooms
+    const hotelsWithRoomPrice = useMemo(() =>
+        hotels.map((hotel) => {
+            const roomRange = roomPriceRanges[hotel.id];
+            if (!roomRange) {
+                return {
+                    ...hotel,
+                    priceFrom: null,
+                    priceTo: null,
+                };
+            }
+
+            return {
+                ...hotel,
+                priceFrom: roomRange.priceFrom, // Minimum price among rooms
+                priceTo: roomRange.priceTo,     // Maximum price among rooms
+            };
+        }),
+        [hotels, roomPriceRanges] //Exported to TravelCard for display in hotel Price Range
+    );
+
+    const filteredHotels = useMemo(() =>
+        hotelsWithRoomPrice
+            .filter((hotel) => {
+                const matchesApproved = hotel.applicationStatus === "Approved";
+                const matchesDistrict = selectedDistrict === "all" || hotel.district === selectedDistrict;
+                const matchesSearch = hotel.hotelName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                    hotel.destination?.toLowerCase().includes(searchQuery.toLowerCase());
+                return matchesApproved && matchesDistrict && matchesSearch;
+            })
+            .sort((a, b) => {
+                const getPrice = (hotel) => Number.isFinite(hotel?.priceFrom) ? hotel.priceFrom : null;
+                const aPrice = getPrice(a);
+                const bPrice = getPrice(b);
+
+                if (sortBy === "price-low") {
+                    if (aPrice == null && bPrice == null) return 0;
+                    if (aPrice == null) return 1;
+                    if (bPrice == null) return -1;
+                    return aPrice - bPrice;
+                }
+                if (sortBy === "price-high") {
+                    if (aPrice == null && bPrice == null) return 0;
+                    if (aPrice == null) return 1;
+                    if (bPrice == null) return -1;
+                    return bPrice - aPrice;
+                }
+                if (sortBy === "rating") return (b.rating || 0) - (a.rating || 0);
+                if (sortBy === "rating-low") return (a.rating || 0) - (b.rating || 0);
+                return 0;
+            }),
+        [hotelsWithRoomPrice, selectedDistrict, searchQuery, sortBy]
+    );
+
+    const handleHotelClick = useCallback((hotelId) => {
         if (isSelectionMode && returnTo && preferenceNumber) {
-            // Pass selection context to hotel details page
             navigate(`/hotels/${hotelId}?mode=select&preference=${preferenceNumber}&returnTo=${encodeURIComponent(returnTo)}`);
         } else {
-            // Normal navigation to hotel details
             navigate(`/hotels/${hotelId}`);
         }
-    };
+    }, [isSelectionMode, returnTo, preferenceNumber, navigate]);
 
-    const handleSelectHotel = (hotelId, e) => {
+    const handleSelectHotel = useCallback((hotelId, e) => {
         e.stopPropagation();
         if (isSelectionMode && returnTo && preferenceNumber) {
-            // Navigate back to reservation page with selected hotel
             navigate(`${returnTo}?selectedHotel=${hotelId}&preference=${preferenceNumber}`);
         }
-    };
+    }, [isSelectionMode, returnTo, preferenceNumber, navigate]);
+
+    const handleDistrictChange = useCallback((val) => setSelectedDistrict(val), []);
+    const handleSortChange = useCallback((val) => setSortBy(val), []);
 
     return (
-        <DashboardLayout showSearch={false}>
+        <DashboardLayout>
             <div className="space-y-6 animate-slide-up">
                 {isSelectionMode && returnTo && (
                     <Button
@@ -96,7 +141,7 @@ const Hotel = () => {
                 <section className="animate-slide-up">
                     <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                         <div className="flex items-center gap-3">
-                            <div className="h-12 w-12 rounded-xl gradient-ocean flex items-center justify-center shadow-glow">
+                        <div className="h-12 w-12 rounded-xl bg-secondary flex items-center justify-center">
                                 <Building2 className="h-6 w-6 text-primary-foreground" />
                             </div>
                             <div>
@@ -129,7 +174,7 @@ const Hotel = () => {
                             onChange={(e) => setSearchQuery(e.target.value)}
                         />
                     </div>
-                    <Select value={selectedDistrict} onValueChange={setSelectedDistrict}>
+                    <Select value={selectedDistrict} onValueChange={handleDistrictChange} disabled={isSelectionMode}>
                         <SelectTrigger className="w-full sm:w-[200px] bg-card">
                             <Building2 className="mr-2 h-4 w-4" />
                             <SelectValue placeholder="Select District" />
@@ -143,31 +188,48 @@ const Hotel = () => {
                             ))}
                         </SelectContent>
                     </Select>
+
+                    <Select value={sortBy} onValueChange={handleSortChange}>
+                        <SelectTrigger className="w-full sm:w-[200px] bg-card">
+                            <SlidersHorizontal className="mr-2 h-4 w-4" />
+                            <SelectValue placeholder="Sort by Rating" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="rating">Highest Rated</SelectItem>
+                            <SelectItem value="rating-low">Lowest Rating</SelectItem>
+                            <SelectItem value="price-low">Price: Low to High</SelectItem>
+                            <SelectItem value="price-high">Price: High to Low</SelectItem>
+                        </SelectContent>
+                    </Select>
                 </div>
 
-                {/* Hotels result display here */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                    {filteredHotels.map((hotel) => (
-                        <TravelCard
-                            key={hotel.id}
-                            recommendation={hotel}
-                            className="w-full"
-                            onClick={() => handleHotelClick(hotel.id)}
-                            showHotelHeader
-                        >
-                            {isSelectionMode && (
-                                <Button
-                                    className="w-full gradient-ocean text-white shadow-lg mt-2"
-                                    onClick={(e) => handleSelectHotel(hotel.id, e)}
-                                >
-                                    Select This Hotel
-                                </Button>
-                            )}
-                        </TravelCard>
-                    ))}
+                {/* Hotels grid */}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
+                    {isLoading ? (
+                        <CardGridSkeleton count={10} showHotelHeader />
+                    ) : (
+                        filteredHotels.map((hotel) => (
+                            <MemoizedTravelCard
+                                key={hotel.id}
+                                recommendation={hotel}
+                                className="w-full"
+                                onClick={() => handleHotelClick(hotel.id)}
+                                showHotelHeader
+                            >
+                                {isSelectionMode && (
+                                    <Button
+                                        className="w-full gradient-ocean text-white shadow-lg mt-2"
+                                        onClick={(e) => handleSelectHotel(hotel.id, e)}
+                                    >
+                                        Select This Hotel
+                                    </Button>
+                                )}
+                            </MemoizedTravelCard>
+                        ))
+                    )}
                 </div>
 
-                {filteredHotels.length === 0 && (
+                {!isLoading && filteredHotels.length === 0 && (
                     <div className="text-center py-12">
                         <MapPin className="mx-auto h-12 w-12 text-muted-foreground/50" />
                         <p className="mt-4 text-lg font-medium text-muted-foreground">No hotels found</p>

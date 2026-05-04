@@ -39,14 +39,26 @@ const PackageReservation = () => {
     const [submitting, setSubmitting] = useState(false);
 
     const [startDate, setStartDate] = useState("");
-    const [adults, setAdults] = useState(2);
+    const [adults, setAdults] = useState(1);
     const [children, setChildren] = useState(0);
     const [specialRequests, setSpecialRequests] = useState("");
 
-    const [hotelPreferences, setHotelPreferences] = useState([
-        { id: "pref-1", preferenceNumber: 1, hotel: null, isMandatory: false },
-        { id: "pref-2", preferenceNumber: 2, hotel: null, isMandatory: false },
-    ]);
+    const [hotelPreferences, setHotelPreferences] = useState(() => {
+        const saved = sessionStorage.getItem(`hotelPrefs_${id}`);
+        if (saved) {
+            try {
+                return JSON.parse(saved);
+            } catch (e) {}
+        }
+        return [
+            { id: "pref-1", preferenceNumber: 1, hotel: null, isMandatory: false },
+            { id: "pref-2", preferenceNumber: 2, hotel: null, isMandatory: false },
+        ];
+    });
+
+    useEffect(() => {
+        sessionStorage.setItem(`hotelPrefs_${id}`, JSON.stringify(hotelPreferences));
+    }, [hotelPreferences, id]);
 
     useEffect(() => {
         api.getPackageById(id).then(data => {
@@ -98,10 +110,6 @@ const PackageReservation = () => {
         setHotelPreferences((prev) => prev.filter((pref) => pref.id !== prefId));
     };
 
-    const mandatoryHotelsSelected = hotelPreferences
-        .filter((pref) => pref.isMandatory)
-        .every((pref) => pref.hotel !== null);
-
     const calculateTotalPrice = () => {
         const basePrice = pkg?.priceFrom || 0;
         const hotelTotal = hotelPreferences.reduce((sum, pref) => {
@@ -114,16 +122,18 @@ const PackageReservation = () => {
     };
 
     const handleConfirmReservation = async () => {
-        if (!mandatoryHotelsSelected || !startDate) return;
+        if (!startDate) return;
 
         setSubmitting(true);
 
-        const selectedHotel = hotelPreferences.find(p => p.hotel)?.hotel;
+        const selectedHotels = hotelPreferences.filter(p => p.hotel).map(p => p.hotel.id);
+        const primaryHotelId = selectedHotels.length > 0 ? selectedHotels[0] : null;
 
         const bookingData = {
             userId: 1,
             packageId: parseInt(id),
-            hotelId: selectedHotel ? selectedHotel.id : null,
+            hotelId: primaryHotelId,
+            hotelIds: selectedHotels,
             vehicleId: 1,
             startDate: startDate,
             endDate: startDate,
@@ -133,6 +143,7 @@ const PackageReservation = () => {
         try {
             const booking = await api.createBooking(bookingData);
             if (booking && booking.id) {
+                sessionStorage.removeItem(`hotelPrefs_${id}`);
                 alert(`Booking confirmed! Booking ID: BK${String(booking.id).padStart(5, "0")}`);
                 navigate("/trips");
             }
@@ -356,25 +367,14 @@ const PackageReservation = () => {
                                     </div>
                                 ))}
 
-                                {mandatoryHotelsSelected && (
-                                    <Button
-                                        variant="outline"
-                                        className="w-full border-dashed"
-                                        onClick={handleAddOptionalHotel}
-                                    >
-                                        <Plus className="mr-2 h-4 w-4" />
-                                        Add Optional Hotel
-                                    </Button>
-                                )}
-
-                                {!mandatoryHotelsSelected && (
-                                    <div className="flex items-center gap-2 p-3 bg-amber-500/10 border border-amber-500/20 rounded-lg">
-                                        <AlertCircle className="h-4 w-4 text-amber-600" />
-                                        <p className="text-sm text-amber-600">
-                                            Please select both required hotels to continue
-                                        </p>
-                                    </div>
-                                )}
+                                <Button
+                                    variant="outline"
+                                    className="w-full border-dashed"
+                                    onClick={handleAddOptionalHotel}
+                                >
+                                    <Plus className="mr-2 h-4 w-4" />
+                                    Add Optional Hotel
+                                </Button>
                             </CardContent>
                         </Card>
                     </div>
@@ -430,7 +430,7 @@ const PackageReservation = () => {
                                     <Button
                                         className="w-full gradient-ocean text-white shadow-lg"
                                         size="lg"
-                                        disabled={!mandatoryHotelsSelected || !startDate || submitting}
+                                        disabled={!startDate || submitting}
                                         onClick={handleConfirmReservation}
                                     >
                                         <DollarSign className="mr-2 h-4 w-4" />

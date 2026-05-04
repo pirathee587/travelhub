@@ -34,8 +34,8 @@ export function TripCard({ trip, onClick, onReview, onHotelReview }) {
         <div
             onClick={onClick}
             className={cn(
-                "group relative overflow-hidden rounded-xl bg-card border border-border",
-                "shadow-card transition-all duration-300 hover:shadow-elevated hover:-translate-y-1 cursor-pointer"
+                "group relative overflow-hidden rounded-2xl bg-card border border-border/50",
+                "shadow-soft transition-all duration-500 hover:shadow-elevated hover:-translate-y-1 cursor-pointer"
             )}
         >
             {/* Image */}
@@ -52,10 +52,9 @@ export function TripCard({ trip, onClick, onReview, onHotelReview }) {
                             <h3 className="text-lg font-semibold text-primary-foreground">{trip.destination}</h3>
                             <p className="text-sm text-primary-foreground/80">{trip.packageName}</p>
                         </div>
-                        <div className="flex items-center gap-1 rounded-full bg-black/35 px-2 py-1 backdrop-blur-sm">
+                        <div className="flex items-center gap-1 rounded-full bg-white/20 px-2 py-1 backdrop-blur-md border border-white/30">
                             <Star className="h-3.5 w-3.5 fill-yellow-400 text-yellow-400" />
-                            <span className="text-xs font-semibold text-white">{averageRating}</span>
-                            <span className="text-[11px] text-white/80">({trip.reviewCount ?? 0})</span>
+                            <span className="text-xs font-bold text-white">{averageRating}</span>
                         </div>
                     </div>
                 </div>

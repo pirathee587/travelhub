@@ -24,14 +24,75 @@ export const api = {
         fetch(`${BASE_URL}/packages/${id}`).then(handleResponse).catch(() => null),
 
     // Hotels
-    getAllHotels: () =>
-        fetch(`${BASE_URL}/hotels`).then(handleResponse).catch(() => []),
+    getAllHotels: (district = null) => {
+        const url = district && district !== "all" 
+            ? `${BASE_URL}/hotels?district=${encodeURIComponent(district)}` 
+            : `${BASE_URL}/hotels`;
+        return fetch(url).then(handleResponse).catch(() => []);
+    },
 
     getHotelsByDestination: (destination) =>
         fetch(`${BASE_URL}/hotels?destination=${destination}`).then(handleResponse).catch(() => []),
 
     getHotelById: (id) =>
         fetch(`${BASE_URL}/hotels/${id}`).then(handleResponse).catch(() => null),
+
+    getAllRooms: () =>
+        fetch(`${BASE_URL}/rooms`).then(handleResponse).catch(() => []),
+
+    // Hotel Rooms — fetched from Spring Boot backend
+    getHotelRooms: (hotelId) =>
+        fetch(`${BASE_URL}/rooms/hotel/${hotelId}`)
+            .then(res => {
+                console.log(`[API] GET /rooms/hotel/${hotelId} -> ${res.status}`);
+                return handleResponse(res);
+            })
+            .then(data => {
+                console.log(`[API] Rooms response for hotel ${hotelId}:`, data);
+                return data;
+            })
+            .catch(err => {
+                console.error(`[API] Error fetching rooms for hotel ${hotelId}:`, err);
+                return [];
+            }),
+
+    getHotelPriceRanges: async (hotelIds = []) => {
+        if (!Array.isArray(hotelIds) || hotelIds.length === 0) {
+            return {};
+        }
+
+        const ranges = {};
+
+        const settled = await Promise.allSettled(
+            hotelIds.map(async (hotelId) => {
+                const rooms = await api.getHotelRooms(hotelId);
+                const validPrices = (Array.isArray(rooms) ? rooms : [])
+                    .map((room) => Number(room?.price))
+                    .filter((price) => Number.isFinite(price) && price > 0);
+
+                if (validPrices.length === 0) {
+                    return [hotelId, { priceFrom: null, priceTo: null }];
+                }
+
+                return [
+                    hotelId,
+                    {
+                        priceFrom: Math.min(...validPrices),
+                        priceTo: Math.max(...validPrices),
+                    },
+                ];
+            })
+        );
+
+        settled.forEach((result) => {
+            if (result.status === "fulfilled") {
+                const [hotelId, range] = result.value;
+                ranges[hotelId] = range;
+            }
+        });
+
+        return ranges;
+    },
 
     // Tourist — Stats & Trips
     getStats: (userId) =>

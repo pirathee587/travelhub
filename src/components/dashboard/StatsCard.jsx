@@ -2,16 +2,24 @@ import { cn } from "@/lib/utils";
 
 const variantStyles = {
     default: "bg-card border border-border",
-    primary: "gradient-ocean text-primary-foreground",
-    accent: "gradient-sunset text-accent-foreground",
-    success: "bg-success text-success-foreground",
+    primary: "gradient-ocean text-primary-foreground border-none",
+    accent: "gradient-sunset text-accent-foreground border-none",
+    success: "bg-emerald-50 border-emerald-100 text-emerald-900",
+    blue: "bg-blue-50 border-blue-100 text-blue-900",
+    green: "bg-emerald-50 border-emerald-100 text-emerald-900",
+    orange: "bg-orange-50 border-orange-100 text-orange-900",
+    purple: "bg-purple-50 border-purple-100 text-purple-900",
 };
 
 const iconVariantStyles = {
     default: "bg-primary/10 text-primary",
     primary: "bg-primary-foreground/20 text-primary-foreground",
     accent: "bg-accent-foreground/20 text-accent-foreground",
-    success: "bg-success-foreground/20 text-success-foreground",
+    success: "bg-emerald-500/20 text-emerald-600",
+    blue: "bg-blue-500/20 text-blue-600",
+    green: "bg-emerald-500/20 text-emerald-600",
+    orange: "bg-orange-500/20 text-orange-600",
+    purple: "bg-purple-500/20 text-purple-600",
 };
 
 export function StatsCard({
@@ -26,7 +34,7 @@ export function StatsCard({
     return (
         <div
             className={cn(
-                "relative overflow-hidden rounded-xl p-5 shadow-card transition-all duration-300 hover:shadow-elevated hover:-translate-y-1",
+                "relative overflow-hidden rounded-2xl p-6 shadow-soft border border-border/50 transition-all duration-500 hover:shadow-elevated hover:-translate-y-1",
                 variantStyles[variant],
                 className
             )}
