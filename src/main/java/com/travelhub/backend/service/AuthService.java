@@ -21,6 +21,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
@@ -35,8 +36,9 @@ public class AuthService {
     private final EmailService emailService;
     private final AgentRepository agentRepository;
     private final HotelRepository hotelRepository;
+    private final org.springframework.context.ApplicationEventPublisher eventPublisher;
 
-    public AuthService(UserRepository userRepository, PasswordEncoder passwordEncoder, JwtTokenProvider tokenProvider, AuthenticationManager authenticationManager, EmailService emailService, AgentRepository agentRepository, HotelRepository hotelRepository) {
+    public AuthService(UserRepository userRepository, PasswordEncoder passwordEncoder, JwtTokenProvider tokenProvider, AuthenticationManager authenticationManager, EmailService emailService, AgentRepository agentRepository, HotelRepository hotelRepository, org.springframework.context.ApplicationEventPublisher eventPublisher) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.tokenProvider = tokenProvider;
@@ -44,11 +46,17 @@ public class AuthService {
         this.emailService = emailService;
         this.agentRepository = agentRepository;
         this.hotelRepository = hotelRepository;
+        this.eventPublisher = eventPublisher;
     }
 
+    @Transactional
     public ApiResponse register(RegisterRequest request) {
         if (userRepository.existsByEmail(request.getEmail())) {
             throw new BadRequestException("Email already in use");
+        }
+
+        if (request.getRole() == Role.ADMIN) {
+            throw new BadRequestException("Public registration for ADMIN role is not allowed");
         }
 
         String verificationToken = UUID.randomUUID().toString();
@@ -67,27 +75,31 @@ public class AuthService {
         user.setIsActive(true);
         user.setAgentApproved(request.getRole() != Role.AGENT);
 
-        // Save User first to generate ID
-        user = userRepository.save(user);
-
-        // Handle Role-specific profile creation
+        // Link Role-specific profile before saving
         if (user.getRole() == Role.AGENT) {
             Agent agent = new Agent();
-            agent.setUser(user); // Link to User (MapsId will use user's ID)
+            agent.setUser(user);
             agent.setAgencyName(request.getAgencyName());
             agent.setLicenseNumber(request.getLicenseNumber());
-            agent.setCompanyName(request.getAgencyName()); // Fallback
+            agent.setCompanyName(request.getAgencyName());
             agent.setIsActive(true);
-            agentRepository.save(agent);
+            user.setAgentProfile(agent);
         } else if (user.getRole() == Role.HOTEL_OWNER) {
             Hotel hotel = new Hotel();
-            hotel.setOwner(user); // Link to User
+            hotel.setOwner(user);
             hotel.setHotelName(request.getHotelName() != null ? request.getHotelName() : user.getName() + "'s Hotel");
             hotel.setDistrict(request.getDistrict());
             hotel.setHotelEmail(user.getEmail());
             hotel.setHotelContactNumber(user.getTelephone());
-            hotelRepository.save(hotel);
+            
+            if (user.getOwnedHotels() == null) {
+                user.setOwnedHotels(new java.util.ArrayList<>());
+            }
+            user.getOwnedHotels().add(hotel);
         }
+
+        // Save User (this will cascade and save the Agent/Hotel as well)
+        user = userRepository.save(user);
 
         // Send verification email
         try {
@@ -156,6 +168,10 @@ public class AuthService {
         }
 
         userRepository.save(user);
+
+        // Notify about successful verification and pending status if applicable
+        eventPublisher.publishEvent(new com.travelhub.backend.event.UserAccountEvent(this, user, "VERIFIED"));
+
         return new ApiResponse(true, "Email verified successfully. You can now login.");
     }
 

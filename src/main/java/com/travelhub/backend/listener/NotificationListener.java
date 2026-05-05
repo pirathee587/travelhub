@@ -57,6 +57,13 @@ public class NotificationListener {
             case "PASSWORD_RESET":
                 emailService.sendPasswordResetEmail(event.getUser().getEmail(), event.getToken());
                 break;
+            case "VERIFIED":
+                if (event.getUser().getRole() == com.travelhub.backend.enums.Role.AGENT || 
+                    event.getUser().getRole() == com.travelhub.backend.enums.Role.HOTEL_OWNER) {
+                    emailService.sendPendingApprovalNotification(event.getUser());
+                    emailService.sendAdminReviewNotification(event.getUser());
+                }
+                break;
         }
     }
 

@@ -5,7 +5,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "agents")
+@Table(name = "agents", schema = "public")
 public class Agent {
     @Id
     private Long id;

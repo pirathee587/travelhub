@@ -6,7 +6,7 @@ import jakarta.persistence.*;
 import java.util.List;
 
 @Entity
-@Table(name = "hotels")
+@Table(name = "hotels", schema = "public")
 @JsonIgnoreProperties({"hibernateLazyInitializer", "handler", "amenityList", "rooms", "owner"})
 public class Hotel {
     public Hotel() {}

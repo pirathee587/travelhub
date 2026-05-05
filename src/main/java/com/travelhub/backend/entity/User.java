@@ -6,7 +6,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 @Entity
-@Table(name = "users")
+@Table(name = "users", schema = "public")
 public class User {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -39,6 +39,7 @@ public class User {
     @Column(name = "is_email_verified")
     private boolean isEmailVerified = false;
 
+    @Column(name = "verification_token")
     private String verificationToken;
     private String passwordResetToken;
     private LocalDateTime passwordResetExpires;

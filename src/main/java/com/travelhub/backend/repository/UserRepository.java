@@ -33,6 +33,4 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
     // Useful for showing "Total Agents" or "Total Travelers" on the dashboard
     Long countByRole(Role role);
-    Optional<User> findByHotelId(Long hotelId);
-    Optional<User> findByAgentId(Long agentId);
 }

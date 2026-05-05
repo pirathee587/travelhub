@@ -22,6 +22,7 @@ public class RegisterRequest {
     private String password;
 
     @NotBlank(message = "Telephone is required")
+    @jakarta.validation.constraints.Pattern(regexp = "^[0-9]+$", message = "Telephone must contain only digits")
     private String telephone;
 
     @NotNull(message = "Role is required")

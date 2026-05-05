@@ -24,6 +24,9 @@ public class EmailService {
     @Value("${app.base-url:http://localhost:5173}")
     private String baseUrl;
 
+    @Value("${app.admin-email:admin@travelhub.com}")
+    private String adminEmail;
+
     public void sendVerificationEmail(String email, String token) {
         String verificationUrl = "http://localhost:5173/verify?token=" + token;
         String message = "<h3>Welcome to TravelHub!</h3>"
@@ -98,6 +101,25 @@ public class EmailService {
                 + "<a href=\"" + resetUrl + "\">Reset Password</a>";
 
         sendEmail(email, "Reset your password - TravelHub", message);
+    }
+
+    public void sendPendingApprovalNotification(User user) {
+        String message = "<h3>Registration Received!</h3>"
+                + "<p>Dear " + user.getName() + ",</p>"
+                + "<p>Thank you for registering as a <b>" + user.getRole() + "</b>. Your email has been verified successfully.</p>"
+                + "<p>Status: <b>PENDING APPROVAL</b></p>"
+                + "<p>Our administration team is currently reviewing your documents. We will notify you via email once your account is activated.</p>";
+        sendEmail(user.getEmail(), "Account Pending Approval - TravelHub", message);
+    }
+
+    public void sendAdminReviewNotification(User user) {
+        String message = "<h3>New Account Review Required</h3>"
+                + "<p>A new <b>" + user.getRole() + "</b> account has been created and is waiting for your review.</p>"
+                + "<p>Name: " + user.getName() + "</p>"
+                + "<p>Email: " + user.getEmail() + "</p>"
+                + "<p>Please log in to the admin dashboard to review and approve the application.</p>";
+        // Using the configured admin email
+        sendEmail(adminEmail, "Review Required: New " + user.getRole() + " - TravelHub", message);
     }
 
     private void sendEmail(String to, String subject, String content) {
