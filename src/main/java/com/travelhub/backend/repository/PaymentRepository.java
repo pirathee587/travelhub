@@ -2,6 +2,7 @@ package com.travelhub.backend.repository;
 
 
 
+import com.travelhub.backend.entity.Booking;
 import com.travelhub.backend.entity.Payment;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -54,4 +55,5 @@ public interface PaymentRepository
 
     // User-ஆல் தேடு
     List<Payment> findByUserId(Long userId);
+    Optional<Payment> findFirstByBookingOrderByCreatedAtDesc(Booking booking);
 }
