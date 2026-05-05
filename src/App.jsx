@@ -6,7 +6,7 @@ export default function App() {
   return (
     <div className="app-root" style={{display:'flex',minHeight:'100vh',fontFamily:'Inter, ui-sans-serif'}}>
       <Sidebar />
-      <div style={{flex:1,background:'#f6f7f9'}}>
+      <div style={{flex:1,banckground:'#f6f7f9'}}>
         <Header />
         <main style={{padding:24}}>
           <section style={{background:'white',padding:24,borderRadius:8}}>
