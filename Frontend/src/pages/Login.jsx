@@ -1,17 +1,16 @@
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import api from '../services/api';
+import toast from 'react-hot-toast';
 import { useNavigate, Link } from 'react-router-dom';
-import axios from 'axios';
-import { toast } from 'react-hot-toast';
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 
 const Login = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const [formData, setFormData] = useState({ email: '', password: '' });
+  const [formData, setFormData] = useState({
+    email: '',
+    password: '',
+  });
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -20,72 +19,45 @@ const Login = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const res = await axios.post('http://localhost:8080/api/auth/login', formData);
-      const { token, role, name, id, agentId, hotelId } = res.data;
-      
-      localStorage.setItem('token', token);
-      localStorage.setItem('user', JSON.stringify({ name, role, id, agentId, hotelId }));
-      
+      const response = await api.post('/auth/login', formData);
+      localStorage.setItem('token', response.data.token);
+      localStorage.setItem('user', JSON.stringify(response.data));
       toast.success(t('login_success'));
-      
-      // Redirect based on role
-      switch (role.toUpperCase()) {
-        case 'TOURIST':
-          navigate('/overview');
-          break;
-        case 'AGENT':
-          navigate('/agent-dashboard');
-          break;
-        case 'HOTEL_OWNER':
-          navigate('/hotel-dashboard');
-          break;
-        case 'ADMIN':
-          navigate('/admin-dashboard');
-          break;
-        default:
-          navigate('/overview');
-      }
-    } catch (err) {
-      toast.error(err.response?.data?.message || t('login_failed'));
+      navigate('/dashboard');
+    } catch (error) {
+      toast.error(error.response?.data?.message || t('login_failed'));
     }
   };
 
   return (
-    <div className="min-vh-100 flex items-center justify-center bg-gradient-to-br from-blue-500 to-indigo-700 p-4">
-      <Card className="w-full max-w-md shadow-2xl">
-        <CardHeader className="text-center">
-          <CardTitle className="text-3xl font-bold text-indigo-900">{t('login')}</CardTitle>
-          <CardDescription>Enter your credentials to access your account</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="email">{t('email')}</Label>
-              <Input id="email" name="email" type="email" onChange={handleChange} required placeholder="john@example.com" />
+    <div className="container mt-5">
+      <div className="row justify-content-center">
+        <div className="col-md-5">
+          <div className="card shadow-lg border-0 rounded-lg">
+            <div className="card-header bg-success text-white text-center py-4">
+              <h2>{t('login')}</h2>
             </div>
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <Label htmlFor="password">{t('password')}</Label>
-                <Link to="/forgot-password" name="forgotPasswordLink" className="text-xs text-indigo-600 hover:underline">
-                  Forgot Password?
-                </Link>
-              </div>
-              <Input id="password" name="password" type="password" onChange={handleChange} required />
+            <div className="card-body p-5">
+              <form onSubmit={handleSubmit}>
+                <div className="mb-3">
+                  <label className="form-label">{t('email')}</label>
+                  <input type="email" name="email" className="form-control" onChange={handleChange} required />
+                </div>
+                <div className="mb-3">
+                  <label className="form-label">{t('password')}</label>
+                  <input type="password" name="password" className="form-control" onChange={handleChange} required />
+                </div>
+                <div className="text-end mb-3">
+                  <Link to="/forgot-password" style={{ textDecoration: 'none' }}>Forgot Password?</Link>
+                </div>
+                <div className="d-grid gap-2 mt-4">
+                  <button type="submit" className="btn btn-success btn-lg">{t('login')}</button>
+                </div>
+              </form>
             </div>
-            <Button type="submit" className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 mt-4">
-              {t('submit_login')}
-            </Button>
-          </form>
-        </CardContent>
-        <CardFooter className="justify-center">
-          <p className="text-sm text-gray-600">
-            {t('dont_have_account')}{' '}
-            <Link to="/signup" className="text-indigo-600 font-bold hover:underline">
-              {t('submit_signup')}
-            </Link>
-          </p>
-        </CardFooter>
-      </Card>
+          </div>
+        </div>
+      </div>
     </div>
   );
 };

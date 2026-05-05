@@ -9,8 +9,8 @@ i18n
   .init({
     resources: {
       en: { translation: enTranslation },
-      si: { translation: {} },
-      ta: { translation: {} }
+      si: { translation: {} }, // To be filled
+      ta: { translation: {} }  // To be filled
     },
     fallbackLng: 'en',
     interpolation: {

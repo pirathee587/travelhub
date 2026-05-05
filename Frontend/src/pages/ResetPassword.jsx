@@ -1,87 +1,102 @@
-import React, { useState } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { toast } from "react-hot-toast";
-import axios from "axios";
+import React, { useState } from 'react';
+import { useSearchParams, useNavigate } from 'react-router-dom';
+import api from '../services/api';
+import toast from 'react-hot-toast';
 
 const ResetPassword = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const token = searchParams.get("token");
+  const token = searchParams.get('token');
 
-  const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
+  const [formData, setFormData] = useState({
+    newPassword: '',
+    confirmPassword: '',
+  });
   const [loading, setLoading] = useState(false);
+
+  const handleChange = (e) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
-    if (password !== confirmPassword) {
-      toast.error("Passwords do not match!");
-      return;
-    }
-
-    if (!token) {
-      toast.error("Invalid or missing reset token.");
-      return;
+    if (formData.newPassword !== formData.confirmPassword) {
+      return toast.error('Passwords do not match');
     }
 
     setLoading(true);
     try {
-      const response = await axios.post("http://localhost:8080/api/auth/reset-password", {
+      const response = await api.post('/auth/reset-password', {
         token,
-        newPassword: password
+        newPassword: formData.newPassword,
       });
-      toast.success(response.data.message || "Password reset successful!");
-      setTimeout(() => navigate("/login"), 2000);
+      toast.success(response.data.message || 'Password reset successfully');
+      navigate('/login');
     } catch (error) {
-      toast.error(error.response?.data?.message || "Failed to reset password.");
+      toast.error(error.response?.data?.message || 'Failed to reset password');
     } finally {
       setLoading(false);
     }
   };
 
+  if (!token) {
+    return (
+      <div className="container mt-5 text-center">
+        <div className="alert alert-danger">
+          <h3>Invalid Reset Link</h3>
+          <p>The password reset token is missing. Please request a new link.</p>
+          <button className="btn btn-primary" onClick={() => navigate('/forgot-password')}>
+            Request New Link
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gray-100 px-4">
-      <Card className="w-full max-w-md">
-        <CardHeader className="space-y-1">
-          <CardTitle className="text-2xl font-bold text-center">Reset Password</CardTitle>
-          <CardDescription className="text-center">
-            Enter your new password below.
-          </CardDescription>
-        </CardHeader>
-        <form onSubmit={handleSubmit}>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <label htmlFor="password" name="password" className="text-sm font-medium leading-none">New Password</label>
-              <Input
-                id="password"
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-              />
+    <div className="container mt-5">
+      <div className="row justify-content-center">
+        <div className="col-md-5">
+          <div className="card shadow-lg border-0 rounded-lg">
+            <div className="card-header bg-primary text-white text-center py-4">
+              <h2>Reset Password</h2>
             </div>
-            <div className="space-y-2">
-              <label htmlFor="confirmPassword" name="confirmPassword" className="text-sm font-medium leading-none">Confirm Password</label>
-              <Input
-                id="confirmPassword"
-                type="password"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                required
-              />
+            <div className="card-body p-5">
+              <form onSubmit={handleSubmit}>
+                <div className="mb-3">
+                  <label className="form-label">New Password</label>
+                  <input
+                    type="password"
+                    name="newPassword"
+                    className="form-control"
+                    placeholder="Enter new password"
+                    value={formData.newPassword}
+                    onChange={handleChange}
+                    required
+                  />
+                </div>
+                <div className="mb-3">
+                  <label className="form-label">Confirm New Password</label>
+                  <input
+                    type="password"
+                    name="confirmPassword"
+                    className="form-control"
+                    placeholder="Confirm new password"
+                    value={formData.confirmPassword}
+                    onChange={handleChange}
+                    required
+                  />
+                </div>
+                <div className="d-grid gap-2 mt-4">
+                  <button type="submit" className="btn btn-primary btn-lg" disabled={loading}>
+                    {loading ? 'Resetting...' : 'Reset Password'}
+                  </button>
+                </div>
+              </form>
             </div>
-          </CardContent>
-          <CardFooter>
-            <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? "Resetting..." : "Reset Password"}
-            </Button>
-          </CardFooter>
-        </form>
-      </Card>
+          </div>
+        </div>
+      </div>
     </div>
   );
 };
