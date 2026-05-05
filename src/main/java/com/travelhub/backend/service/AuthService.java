@@ -4,6 +4,8 @@ import com.travelhub.backend.common.ApiResponse;
 import com.travelhub.backend.common.BadRequestException;
 import com.travelhub.backend.common.ResourceNotFoundException;
 import com.travelhub.backend.common.UnauthorizedException;
+import com.travelhub.backend.dto.request.ChangePasswordRequest;
+import com.travelhub.backend.dto.request.ForgotPasswordRequest;
 import com.travelhub.backend.dto.request.LoginRequest;
 import com.travelhub.backend.dto.request.RegisterRequest;
 import com.travelhub.backend.dto.response.LoginResponse;
@@ -112,6 +114,7 @@ public class AuthService {
         return new ApiResponse(true, "User registered successfully. Please check your email for verification.");
     }
 
+    @Transactional(readOnly = true)
     public LoginResponse login(LoginRequest request) {
         Authentication authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword())
@@ -203,5 +206,24 @@ public class AuthService {
         userRepository.save(user);
 
         return new ApiResponse(true, "Password reset successfully. You can now login with your new password.");
+    }
+
+    @Transactional
+    public ApiResponse changePassword(String email, ChangePasswordRequest request) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new ResourceNotFoundException("User", "email", email));
+
+        if (!passwordEncoder.matches(request.getCurrentPassword(), user.getPassword())) {
+            throw new BadRequestException("Current password is incorrect");
+        }
+
+        if (!request.getNewPassword().equals(request.getConfirmPassword())) {
+            throw new BadRequestException("Passwords do not match");
+        }
+
+        user.setPassword(passwordEncoder.encode(request.getNewPassword()));
+        userRepository.save(user);
+
+        return new ApiResponse(true, "Password changed successfully");
     }
 }

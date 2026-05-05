@@ -1,6 +1,7 @@
 package com.travelhub.backend.controller;
 
 import com.travelhub.backend.common.ApiResponse;
+import com.travelhub.backend.dto.request.ChangePasswordRequest;
 import com.travelhub.backend.dto.request.ForgotPasswordRequest;
 import com.travelhub.backend.dto.request.LoginRequest;
 import com.travelhub.backend.dto.request.RegisterRequest;
@@ -10,6 +11,7 @@ import com.travelhub.backend.service.AuthService;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import java.security.Principal;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -49,6 +51,12 @@ public class AuthController {
     @PostMapping("/reset-password")
     public ResponseEntity<ApiResponse> resetPassword(@Valid @RequestBody ResetPasswordRequest request) {
         ApiResponse response = authService.resetPassword(request.getToken(), request.getNewPassword());
+        return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/change-password")
+    public ResponseEntity<ApiResponse> changePassword(@Valid @RequestBody ChangePasswordRequest request, Principal principal) {
+        ApiResponse response = authService.changePassword(principal.getName(), request);
         return ResponseEntity.ok(response);
     }
 }
