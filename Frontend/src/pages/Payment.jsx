@@ -76,7 +76,7 @@ const Payment = () => {
                             {checkoutData && (
                                 <form method="post" action="https://sandbox.payhere.lk/pay/checkout">
                                     <input type="hidden" name="merchant_id" value={checkoutData.merchant_id} />
-                                    <input type="hidden" name="return_url" value="http://localhost:5173/payment-success" />
+                                    <input type="hidden" name="return_url" value={`http://localhost:5173/payment-success?bookingId=${id}`} />
                                     <input type="hidden" name="cancel_url" value="http://localhost:5173/payment-cancel" />
                                     <input type="hidden" name="notify_url" value="http://localhost:8080/api/payments/notify" />
                                     <input type="hidden" name="order_id" value={checkoutData.order_id} />
