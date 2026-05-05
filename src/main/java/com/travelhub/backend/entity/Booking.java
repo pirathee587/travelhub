@@ -7,6 +7,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Entity
 @Table(name = "bookings")
@@ -33,7 +34,7 @@ public class Booking {
     private Hotel hotel;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "vehicle_id", nullable = false)
+    @JoinColumn(name = "vehicle_id")
     private Vehicle vehicle;
 
     @Column(nullable = false)
@@ -47,6 +48,20 @@ public class Booking {
 
     private Double totalPrice;
     private Integer progress = 0;
+    
+    private Integer adults;
+    private Integer children;
+    
+    @Column(columnDefinition = "TEXT")
+    private String specialRequests;
+    
+    private String duration;
+    
+    @Column(columnDefinition = "TEXT")
+    private String hotelIdsWithPreference;
+    
+    @OneToMany(mappedBy = "booking", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    private List<BookingHotelPreference> hotelPreferences;
 
     @Column(updatable = false)
     private LocalDateTime createdAt;
@@ -54,5 +69,8 @@ public class Booking {
     @PrePersist
     protected void onCreate() {
         createdAt = LocalDateTime.now();
+        if (status == null) {
+            status = "pending";
+        }
     }
 }
