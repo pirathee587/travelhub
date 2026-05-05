@@ -1,31 +1,31 @@
 package com.travelhub.backend.common;
 
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
-@Data
-@NoArgsConstructor
 public class ApiResponse<T> {
-
     private boolean success;
     private String message;
     private T data;
-
-    // ✅ Public 2-arg constructor - used in AuthService, GlobalExceptionHandler, UserController
-    public ApiResponse(boolean success, String message) {
-        this.success = success;
-        this.message = message;
-        this.data = null;
-    }
 
     public ApiResponse(boolean success, String message, T data) {
         this.success = success;
         this.message = message;
         this.data = data;
     }
+
+    public ApiResponse(boolean success, String message) {
+        this.success = success;
+        this.message = message;
+        this.data = null;
+    }
+
+    public boolean isSuccess() { return success; }
+    public void setSuccess(boolean success) { this.success = success; }
+    public String getMessage() { return message; }
+    public void setMessage(String message) { this.message = message; }
+    public T getData() { return data; }
+    public void setData(T data) { this.data = data; }
 
     // ─── Static Factory Methods ───────────────────────────────────────────────
 

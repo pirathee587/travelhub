@@ -7,17 +7,20 @@ import com.travelhub.backend.entity.Agent;
 import com.travelhub.backend.entity.AgentSettings;
 import com.travelhub.backend.repository.AgentRepository;
 import com.travelhub.backend.repository.AgentSettingsRepository;
-import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
 @Service
-@RequiredArgsConstructor
 public class AgentSettingsService {
 
     private final AgentSettingsRepository agentSettingsRepository;
     private final AgentRepository agentRepository;
+    public AgentSettingsService(AgentSettingsRepository agentSettingsRepository, AgentRepository agentRepository) {
+        this.agentSettingsRepository = agentSettingsRepository;
+        this.agentRepository = agentRepository;
+    }
+
 
     public SettingsResponse getSettings(Long agentId) {
         AgentSettings settings = getOrCreateSettings(agentId);

@@ -6,15 +6,17 @@ import com.travelhub.backend.dto.response.AdminPaymentResponse;
 import com.travelhub.backend.dto.response.AdminPaymentStatsResponse;
 import com.travelhub.backend.entity.Payment;
 import com.travelhub.backend.repository.PaymentRepository;
-import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import java.util.List;
 
 @Service
-@RequiredArgsConstructor
 public class AdminPaymentService {
 
     private final PaymentRepository paymentRepository;
+    public AdminPaymentService(PaymentRepository paymentRepository) {
+        this.paymentRepository = paymentRepository;
+    }
+
 
     // ── Get Stats ─────────────────────────────────────
     // Total Revenue, Pending, Refunds
@@ -142,7 +144,7 @@ public class AdminPaymentService {
                 // Agent/Company name
                 // உதாரணம்: Pinnacle Tours
                 p.getAgent() != null
-                        ? p.getAgent().getAgentName()
+                        ? p.getAgent().getUser().getName()
                         : "",
 
                 // Payment or Refund

@@ -5,18 +5,22 @@ import com.travelhub.backend.dto.response.StatsResponse;
 import com.travelhub.backend.dto.response.TripResponse;
 import com.travelhub.backend.repository.BookingRepository;
 import com.travelhub.backend.repository.DocumentRepository;
-import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import java.util.List;
 import java.util.stream.Collectors;
 
 @Service
-@RequiredArgsConstructor
 public class DashboardService {
 
     private final BookingRepository bookingRepository;
     private final DocumentRepository documentRepository;
     private final BookingService bookingService;
+    public DashboardService(BookingRepository bookingRepository, DocumentRepository documentRepository, BookingService bookingService) {
+        this.bookingRepository = bookingRepository;
+        this.documentRepository = documentRepository;
+        this.bookingService = bookingService;
+    }
+
 
     // Get stats for dashboard
     public StatsResponse getStats(Long userId) {

@@ -12,13 +12,15 @@ import com.travelhub.backend.dto.response.ReviewResponse;
 import com.travelhub.backend.entity.Review;
 import com.travelhub.backend.repository.ReviewRepository;
 
-import lombok.RequiredArgsConstructor;
 
 @Service
-@RequiredArgsConstructor
 public class AgentReviewService {
 
     private final ReviewRepository reviewRepository;
+    public AgentReviewService(ReviewRepository reviewRepository) {
+        this.reviewRepository = reviewRepository;
+    }
+
 
     @Transactional(readOnly = true)
     public List<ReviewResponse> getReviews(Long agentId, Integer rating) {

@@ -5,18 +5,20 @@ import com.travelhub.backend.dto.response.OwnerProfileResponse;
 import com.travelhub.backend.service.OwnerProfileService;
 import com.travelhub.backend.util.SecurityUtils;
 import io.jsonwebtoken.Claims;
-import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 @RestController
 @RequestMapping("/api/v1/owner/profile")
-@RequiredArgsConstructor
 @CrossOrigin(origins = "*")
 public class OwnerProfileController {
 
     private final OwnerProfileService ownerProfileService;
+    public OwnerProfileController(OwnerProfileService ownerProfileService) {
+        this.ownerProfileService = ownerProfileService;
+    }
+
 
     @GetMapping
     public ResponseEntity<OwnerProfileResponse> getProfile() {

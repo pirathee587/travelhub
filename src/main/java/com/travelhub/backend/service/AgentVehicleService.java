@@ -8,17 +8,20 @@ import com.travelhub.backend.entity.Agent;
 import com.travelhub.backend.entity.Vehicle;
 import com.travelhub.backend.repository.AgentRepository;
 import com.travelhub.backend.repository.VehicleRepository;
-import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import java.util.List;
 import java.util.stream.Collectors;
 
 @Service
-@RequiredArgsConstructor
 public class AgentVehicleService {
 
     private final VehicleRepository vehicleRepository;
     private final AgentRepository agentRepository;
+    public AgentVehicleService(VehicleRepository vehicleRepository, AgentRepository agentRepository) {
+        this.vehicleRepository = vehicleRepository;
+        this.agentRepository = agentRepository;
+    }
+
 
     public List<VehicleResponse> getAllVehicles(Long agentId, String lifecycleStatus) {
         List<Vehicle> vehicles;

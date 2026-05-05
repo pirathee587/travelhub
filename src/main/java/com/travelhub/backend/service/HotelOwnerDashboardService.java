@@ -11,15 +11,21 @@ import com.travelhub.backend.repository.AmenityRepository;
 import com.travelhub.backend.repository.ReviewRepository;
 import com.travelhub.backend.repository.RoomRepository;
 
-import lombok.RequiredArgsConstructor;
-
 @Service
-@RequiredArgsConstructor
 public class HotelOwnerDashboardService {
 
     private final RoomRepository roomRepository;
     private final AmenityRepository amenityRepository;
     private final ReviewRepository reviewRepository;
+
+    public HotelOwnerDashboardService(
+            RoomRepository roomRepository,
+            AmenityRepository amenityRepository,
+            ReviewRepository reviewRepository) {
+        this.roomRepository = roomRepository;
+        this.amenityRepository = amenityRepository;
+        this.reviewRepository = reviewRepository;
+    }
 
     public HotelDashboardStatsResponse getDashboardStats(Long hotelId) {
         // Fetch data scoped strictly to this specific hotel
@@ -45,12 +51,12 @@ public class HotelOwnerDashboardService {
             averageRating = Math.round(averageRating * 10.0) / 10.0;
         }
 
-        return HotelDashboardStatsResponse.builder()
-                .totalRooms(totalRooms)
-                .availableRooms(availableRooms)
-                .totalAmenities(totalAmenities)
-                .totalReviews(totalReviews)
-                .averageRating(averageRating)
-                .build();
+        HotelDashboardStatsResponse response = new HotelDashboardStatsResponse();
+        response.setTotalRooms(totalRooms);
+        response.setAvailableRooms(availableRooms);
+        response.setTotalAmenities(totalAmenities);
+        response.setTotalReviews(totalReviews);
+        response.setAverageRating(averageRating);
+        return response;
     }
 }

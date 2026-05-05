@@ -16,6 +16,7 @@ import jakarta.validation.constraints.Positive;
 @Table(name = "rooms")
 @JsonIgnoreProperties({"hibernateLazyInitializer", "handler", "hotel"})
 public class Room {
+    public Room() {}
 
     @Id
     private String id;

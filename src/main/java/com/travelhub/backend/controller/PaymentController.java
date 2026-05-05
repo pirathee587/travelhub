@@ -1,7 +1,6 @@
 package com.travelhub.backend.controller;
 
 import com.travelhub.backend.service.PaymentService;
-import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -9,10 +8,12 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/payments")
-@RequiredArgsConstructor
 public class PaymentController {
-
     private final PaymentService paymentService;
+
+    public PaymentController(PaymentService paymentService) {
+        this.paymentService = paymentService;
+    }
 
     /**
      * Endpoint for frontend to get PayHere parameters for a booking

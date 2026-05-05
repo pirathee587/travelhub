@@ -3,18 +3,21 @@ package com.travelhub.backend.controller;
 import com.travelhub.backend.dto.response.PackageDetailResponse;
 import com.travelhub.backend.dto.response.PackageResponse;
 import com.travelhub.backend.service.PackageService;
-import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
 @RequestMapping("/api/packages")
-@RequiredArgsConstructor
+
 @CrossOrigin(origins = "*")
 public class PackageController {
 
     private final PackageService packageService;
+
+    public PackageController(PackageService packageService) {
+        this.packageService = packageService;
+    }
 
     @GetMapping
     public ResponseEntity<List<PackageResponse>> getAllPackages(

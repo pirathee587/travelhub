@@ -2,8 +2,6 @@ package com.travelhub.backend.service;
 
 import com.travelhub.backend.entity.Room;
 import com.travelhub.backend.repository.RoomRepository;
-import com.travelhub.backend.service.ImageUploadService;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -14,11 +12,13 @@ import java.util.UUID;
 @Service
 public class RoomService {
 
-    @Autowired
-    private RoomRepository roomRepository;
+    private final RoomRepository roomRepository;
+    private final ImageUploadService imageUploadService;
 
-    @Autowired
-    private ImageUploadService imageUploadService;
+    public RoomService(RoomRepository roomRepository, ImageUploadService imageUploadService) {
+        this.roomRepository = roomRepository;
+        this.imageUploadService = imageUploadService;
+    }
 
     public Room addRoom(String name, String type, double price, String description, MultipartFile image, boolean availability) {
         String imageUrl = null;

@@ -4,16 +4,19 @@ import com.travelhub.backend.dto.request.OwnerProfileRequest;
 import com.travelhub.backend.dto.response.OwnerProfileResponse;
 import com.travelhub.backend.entity.User;
 import com.travelhub.backend.repository.UserRepository;
-import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 @Service
-@RequiredArgsConstructor
 public class OwnerProfileService {
 
     private final UserRepository userRepository;
     private final ImageUploadService imageUploadService;
+    public OwnerProfileService(UserRepository userRepository, ImageUploadService imageUploadService) {
+        this.userRepository = userRepository;
+        this.imageUploadService = imageUploadService;
+    }
+
 
     public OwnerProfileResponse getProfile(Long userId) {
         User user = userRepository.findById(userId)

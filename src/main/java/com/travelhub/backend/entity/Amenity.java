@@ -1,19 +1,27 @@
 package com.travelhub.backend.entity;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
-@Data
-@Builder
-@NoArgsConstructor
-@AllArgsConstructor
+
+
+
+
 @Entity
 @Table(name = "amenities")
 public class Amenity {
+    public Amenity() {}
+    
+    public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
+    public String getName() { return name; }
+    public void setName(String name) { this.name = name; }
+    public String getDescription() { return description; }
+    public void setDescription(String description) { this.description = description; }
+    public String getIconName() { return iconName; }
+    public void setIconName(String iconName) { this.iconName = iconName; }
+    public Hotel getHotel() { return hotel; }
+    public void setHotel(Hotel hotel) { this.hotel = hotel; }
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

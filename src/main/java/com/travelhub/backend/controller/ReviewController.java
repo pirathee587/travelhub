@@ -3,25 +3,26 @@ package com.travelhub.backend.controller;
 import com.travelhub.backend.dto.request.ReviewRequest;
 import com.travelhub.backend.dto.response.ReviewResponse;
 import com.travelhub.backend.dto.response.ReviewSummaryResponse;
-import com.travelhub.backend.dto.response.ImageUploadResponse;
 import com.travelhub.backend.service.ReviewService;
 import com.travelhub.backend.service.ImageUploadService;
-import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
 @RequestMapping("/api")
-@RequiredArgsConstructor
 @CrossOrigin(origins = "*")
 public class ReviewController {
 
     private final ReviewService reviewService;
     private final ImageUploadService imageUploadService;
 
+    public ReviewController(ReviewService reviewService, ImageUploadService imageUploadService) {
+        this.reviewService = reviewService;
+        this.imageUploadService = imageUploadService;
+    }
+
     // GET /api/reviews/package/1
-    //GET package reviews by package id
     @GetMapping("/reviews/package/{packageId}")
     public ResponseEntity<List<ReviewResponse>> getPackageReviews(
             @PathVariable Long packageId) {
@@ -29,37 +30,33 @@ public class ReviewController {
     }
 
     // GET /api/reviews/hotel/1
-    //GET HOtel reviews by hotel id
     @GetMapping("/reviews/hotel/{hotelId}")
     public ResponseEntity<List<ReviewResponse>> getHotelReviews(
             @PathVariable Long hotelId) {
         return ResponseEntity.ok(reviewService.getHotelReviews(hotelId));
     }
 
-        // GET /api/reviews/package/1/rating
-        //GET package review count and average rating by package id
-        @GetMapping("/reviews/package/{packageId}/rating")
-        public ResponseEntity<ReviewSummaryResponse> getPackageRatingSummary(
+    // GET /api/reviews/package/1/rating
+    @GetMapping("/reviews/package/{packageId}/rating")
+    public ResponseEntity<ReviewSummaryResponse> getPackageRatingSummary(
             @PathVariable Long packageId) {
-        return ResponseEntity.ok(ReviewSummaryResponse.builder()
-            .averageRating(reviewService.getAveragePackageRating(packageId))
-            .reviewCount(reviewService.getPackageReviewCount(packageId))
-            .build());
-        }
+        ReviewSummaryResponse summary = new ReviewSummaryResponse();
+        summary.setAverageRating(reviewService.getAveragePackageRating(packageId));
+        summary.setReviewCount(reviewService.getPackageReviewCount(packageId));
+        return ResponseEntity.ok(summary);
+    }
 
-        // GET /api/reviews/hotel/1/rating
-        //GET hotel review count and average rating by hotel id
-        @GetMapping("/reviews/hotel/{hotelId}/rating")
-        public ResponseEntity<ReviewSummaryResponse> getHotelRatingSummary(
+    // GET /api/reviews/hotel/1/rating
+    @GetMapping("/reviews/hotel/{hotelId}/rating")
+    public ResponseEntity<ReviewSummaryResponse> getHotelRatingSummary(
             @PathVariable Long hotelId) {
-        return ResponseEntity.ok(ReviewSummaryResponse.builder()
-            .averageRating(reviewService.getAverageHotelRating(hotelId))
-            .reviewCount(reviewService.getHotelReviewCount(hotelId))
-            .build());
-        }
+        ReviewSummaryResponse summary = new ReviewSummaryResponse();
+        summary.setAverageRating(reviewService.getAverageHotelRating(hotelId));
+        summary.setReviewCount(reviewService.getHotelReviewCount(hotelId));
+        return ResponseEntity.ok(summary);
+    }
 
     // POST /api/tourist/reviews/package/1
-    //Insert package review with image upload
     @PostMapping(value = "/tourist/reviews/package/{packageId}", consumes = {"multipart/form-data"})
     public ResponseEntity<ReviewResponse> addPackageReview(
             @PathVariable Long packageId,
@@ -75,7 +72,6 @@ public class ReviewController {
     }
 
     // POST /api/tourist/reviews/hotel/1
-    //Insert hotel review with image upload
     @PostMapping(value = "/tourist/reviews/hotel/{hotelId}", consumes = {"multipart/form-data"})
     public ResponseEntity<ReviewResponse> addHotelReview(
             @PathVariable Long hotelId,

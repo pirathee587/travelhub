@@ -1,18 +1,20 @@
 package com.travelhub.backend.entity;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
 
 @Entity
 @Table(name = "package_images")
-@Data
-@Builder
-@NoArgsConstructor
-@AllArgsConstructor
+
+
+
+
 public class PackageImage {
+    public PackageImage() {}
+    
+    public String getImageUrl() { return imageUrl; }
+    public void setImageUrl(String imageUrl) { this.imageUrl = imageUrl; }
+    public Integer getDisplayOrder() { return displayOrder; }
+    public void setDisplayOrder(Integer displayOrder) { this.displayOrder = displayOrder; }
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

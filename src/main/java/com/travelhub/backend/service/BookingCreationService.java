@@ -12,13 +12,12 @@ import com.travelhub.backend.repository.HotelRepository;
 import com.travelhub.backend.repository.PackageRepository;
 import com.travelhub.backend.repository.UserRepository;
 import com.travelhub.backend.repository.VehicleRepository;
-import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
-@RequiredArgsConstructor
+
 @Transactional
 public class BookingCreationService {
 
@@ -28,6 +27,15 @@ public class BookingCreationService {
     private final HotelRepository hotelRepository;
     private final VehicleRepository vehicleRepository;
     private final BookingService bookingService;
+
+    public BookingCreationService(BookingRepository bookingRepository, UserRepository userRepository, PackageRepository packageRepository, HotelRepository hotelRepository, VehicleRepository vehicleRepository, BookingService bookingService) {
+        this.bookingRepository = bookingRepository;
+        this.userRepository = userRepository;
+        this.packageRepository = packageRepository;
+        this.hotelRepository = hotelRepository;
+        this.vehicleRepository = vehicleRepository;
+        this.bookingService = bookingService;
+    }
 
     public BookingResponse createBooking(BookingRequest request) {
 
@@ -59,17 +67,16 @@ public class BookingCreationService {
             }
         }
 
-        Booking booking = Booking.builder()
-                .user(user)
-                .pkg(pkg)
-                .hotel(hotel)
-                .vehicle(vehicle)
-                .status("confirmed")
-                .startDate(request.getStartDate())
-                .endDate(request.getEndDate())
-                .totalPrice(request.getTotalPrice())
-                .progress(0)
-                .build();
+        Booking booking = new Booking();
+        booking.setUser(user);
+        booking.setPkg(pkg);
+        booking.setHotel(hotel);
+        booking.setVehicle(vehicle);
+        booking.setStatus("confirmed");
+        booking.setStartDate(request.getStartDate());
+        booking.setEndDate(request.getEndDate());
+        booking.setTotalPrice(request.getTotalPrice());
+        booking.setProgress(0);
 
         Booking saved = bookingRepository.save(booking);
         return bookingService.getBookingById(saved.getId());

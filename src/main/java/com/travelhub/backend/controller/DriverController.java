@@ -3,7 +3,6 @@ package com.travelhub.backend.controller;
 import com.travelhub.backend.dto.request.DriverRequest;
 import com.travelhub.backend.dto.response.DriverResponse;
 import com.travelhub.backend.service.DriverService;
-import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
@@ -11,10 +10,13 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/v1/agent")
-@RequiredArgsConstructor
 public class DriverController {
 
     private final DriverService driverService;
+    public DriverController(DriverService driverService) {
+        this.driverService = driverService;
+    }
+
 
     @GetMapping("/{agentId}/drivers")
     public ResponseEntity<List<DriverResponse>> getAllDrivers(

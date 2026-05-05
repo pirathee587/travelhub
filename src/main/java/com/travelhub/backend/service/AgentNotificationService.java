@@ -4,7 +4,6 @@ import com.travelhub.backend.common.ResourceNotFoundException;
 import com.travelhub.backend.dto.response.NotificationResponse;
 import com.travelhub.backend.entity.Notification;
 import com.travelhub.backend.repository.NotificationRepository;
-import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import java.time.Duration;
 import java.time.LocalDateTime;
@@ -12,10 +11,13 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 @Service
-@RequiredArgsConstructor
 public class AgentNotificationService {
 
     private final NotificationRepository notificationRepository;
+    public AgentNotificationService(NotificationRepository notificationRepository) {
+        this.notificationRepository = notificationRepository;
+    }
+
 
     public List<NotificationResponse> getNotifications(Long agentId) {
         return notificationRepository

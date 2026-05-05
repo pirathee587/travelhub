@@ -6,19 +6,20 @@ import com.travelhub.backend.event.PackageEvent;
 import com.travelhub.backend.event.UserAccountEvent;
 import com.travelhub.backend.repository.UserRepository;
 import com.travelhub.backend.service.EmailService;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.event.EventListener;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 
 @Component
-@Slf4j
-@RequiredArgsConstructor
 public class NotificationListener {
-
+    private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(NotificationListener.class);
     private final EmailService emailService;
     private final UserRepository userRepository;
+
+    public NotificationListener(EmailService emailService, UserRepository userRepository) {
+        this.emailService = emailService;
+        this.userRepository = userRepository;
+    }
 
     @Async
     @EventListener
@@ -64,9 +65,9 @@ public class NotificationListener {
     public void handleHotelEvent(HotelEvent event) {
         log.info("Handling hotel event: {} for hotel: {}", event.getType(), event.getHotel().getHotelName());
 
-        userRepository.findByHotelId(event.getHotel().getId()).ifPresent(user -> {
-            emailService.sendHotelStatusNotification(user.getEmail(), event.getHotel().getHotelName(), event.getType(), event.getReason());
-        });
+        if (event.getHotel().getOwner() != null) {
+            emailService.sendHotelStatusNotification(event.getHotel().getOwner().getEmail(), event.getHotel().getHotelName(), event.getType(), event.getReason());
+        }
     }
 
     @Async
@@ -75,7 +76,7 @@ public class NotificationListener {
         log.info("Handling package event: {} for package: {}", event.getType(), event.getPkg().getPackageName());
 
         if (event.getPkg().getAgent() != null) {
-            emailService.sendPackageStatusNotification(event.getPkg().getAgent().getEmail(), event.getPkg().getPackageName(), event.getType(), event.getReason());
+            emailService.sendPackageStatusNotification(event.getPkg().getAgent().getUser().getEmail(), event.getPkg().getPackageName(), event.getType(), event.getReason());
         }
     }
 }

@@ -1,11 +1,14 @@
 package com.travelhub.backend.event;
 
 import com.travelhub.backend.entity.Booking;
-import lombok.Getter;
 import org.springframework.context.ApplicationEvent;
 
-@Getter
+
 public class BookingEvent extends ApplicationEvent {
+    
+    public Booking getBooking() { return booking; }
+    public String getType() { return type; }
+    public String getReason() { return reason; }
 
     private final Booking booking;
     private final String  type;

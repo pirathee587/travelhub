@@ -6,11 +6,9 @@ import com.travelhub.backend.repository.BookingRepository;
 import com.travelhub.backend.repository.DriverRepository;
 import com.travelhub.backend.repository.VehicleRepository;
 import com.travelhub.backend.repository.PackageRepository;
-import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 @Service
-@RequiredArgsConstructor
 public class AgentDashboardService {
 
     private final BookingRepository bookingRepository;
@@ -18,6 +16,14 @@ public class AgentDashboardService {
     private final DriverRepository driverRepository;
     private final PackageRepository packageRepository;
     private final AgentRepository agentRepository;
+    public AgentDashboardService(BookingRepository bookingRepository, VehicleRepository vehicleRepository, DriverRepository driverRepository, PackageRepository packageRepository, AgentRepository agentRepository) {
+        this.bookingRepository = bookingRepository;
+        this.vehicleRepository = vehicleRepository;
+        this.driverRepository = driverRepository;
+        this.packageRepository = packageRepository;
+        this.agentRepository = agentRepository;
+    }
+
 
     public AgentDashboardStatsResponse getStats(Long agentId) {
 

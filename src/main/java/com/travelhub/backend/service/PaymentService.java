@@ -5,7 +5,6 @@ import com.travelhub.backend.entity.Booking;
 import com.travelhub.backend.entity.Payment;
 import com.travelhub.backend.repository.BookingRepository;
 import com.travelhub.backend.repository.PaymentRepository;
-import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -17,11 +16,14 @@ import java.util.Map;
 import java.util.Optional;
 
 @Service
-@RequiredArgsConstructor
 public class PaymentService {
-
     private final PaymentRepository paymentRepository;
     private final BookingRepository bookingRepository;
+
+    public PaymentService(PaymentRepository paymentRepository, BookingRepository bookingRepository) {
+        this.paymentRepository = paymentRepository;
+        this.bookingRepository = bookingRepository;
+    }
 
     @Value("${payhere.merchant.id}")
     private String merchantId;

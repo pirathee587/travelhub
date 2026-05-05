@@ -8,18 +8,21 @@ import com.travelhub.backend.entity.Agent;
 import com.travelhub.backend.entity.Driver;
 import com.travelhub.backend.repository.AgentRepository;
 import com.travelhub.backend.repository.DriverRepository;
-import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.stream.Collectors;
 
 @Service
-@RequiredArgsConstructor
 public class DriverService {
 
     private final DriverRepository driverRepository;
     private final AgentRepository agentRepository;
+    public DriverService(DriverRepository driverRepository, AgentRepository agentRepository) {
+        this.driverRepository = driverRepository;
+        this.agentRepository = agentRepository;
+    }
+
 
     public List<DriverResponse> getAllDrivers(Long agentId, String lifecycleStatus) {
         List<Driver> drivers;

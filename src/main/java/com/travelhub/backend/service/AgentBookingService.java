@@ -7,17 +7,20 @@ import com.travelhub.backend.dto.response.BookingResponse;
 import com.travelhub.backend.entity.Booking;
 import com.travelhub.backend.repository.BookingRepository;
 import com.travelhub.backend.repository.VehicleRepository;
-import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import java.util.List;
 import java.util.stream.Collectors;
 
 @Service
-@RequiredArgsConstructor
 public class AgentBookingService {
 
     private final BookingRepository bookingRepository;
     private final VehicleRepository vehicleRepository;
+    public AgentBookingService(BookingRepository bookingRepository, VehicleRepository vehicleRepository) {
+        this.bookingRepository = bookingRepository;
+        this.vehicleRepository = vehicleRepository;
+    }
+
 
     public List<BookingResponse> getAllBookings(Long agentId, String status) {
         List<Booking> bookings;

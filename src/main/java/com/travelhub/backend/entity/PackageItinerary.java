@@ -1,18 +1,28 @@
 package com.travelhub.backend.entity;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
 
 @Entity
 @Table(name = "package_itinerary")
-@Data
-@Builder
-@NoArgsConstructor
-@AllArgsConstructor
+
+
+
+
 public class PackageItinerary {
+    public PackageItinerary() {}
+    
+    public Integer getDayNumber() { return dayNumber; }
+    public void setDayNumber(Integer dayNumber) { this.dayNumber = dayNumber; }
+    public String getTitle() { return title; }
+    public void setTitle(String title) { this.title = title; }
+    public String getDescription() { return description; }
+    public void setDescription(String description) { this.description = description; }
+    public String getActivities() { return activities; }
+    public void setActivities(String activities) { this.activities = activities; }
+    public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
+    public Package getPkg() { return pkg; }
+    public void setPkg(Package pkg) { this.pkg = pkg; }
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

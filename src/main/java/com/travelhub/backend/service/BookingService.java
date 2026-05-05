@@ -5,20 +5,22 @@ import com.travelhub.backend.dto.response.TripResponse;
 import com.travelhub.backend.entity.Booking;
 import com.travelhub.backend.repository.BookingRepository;
 import com.travelhub.backend.repository.ReviewRepository;
-import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import org.springframework.transaction.annotation.Transactional;
-
 @Service
-@RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class BookingService {
 
     private final BookingRepository bookingRepository;
     private final ReviewRepository reviewRepository;
+
+    public BookingService(BookingRepository bookingRepository, ReviewRepository reviewRepository) {
+        this.bookingRepository = bookingRepository;
+        this.reviewRepository = reviewRepository;
+    }
 
     // Get all trips for a user
     public List<TripResponse> getTripsByUserId(Long userId) {
@@ -66,53 +68,53 @@ public class BookingService {
                 averageRating = 0.0;
             }
         }
-        
-        return TripResponse.builder()
-                .id(booking.getId())
-                .packageId(booking.getPkg() != null ? booking.getPkg().getId() : null)
-                .hotelId(booking.getHotel() != null ? booking.getHotel().getId() : null)
-                .packageName(booking.getPkg() != null ? booking.getPkg().getPackageName() : null)
-                .destination(booking.getPkg() != null ? booking.getPkg().getDestination() : null)
-                .startDate(booking.getStartDate())
-                .endDate(booking.getEndDate())
-                .status(booking.getStatus())
-                .progress(booking.getProgress())
-                .imageUrl(booking.getPkg() != null ? booking.getPkg().getImageUrl() : null)
-                .price(booking.getTotalPrice())
-                .category(booking.getPkg() != null ? booking.getPkg().getCategory() : null)
-                .hotelName(booking.getHotel() != null ? booking.getHotel().getHotelName() : null)
-                .rating(averageRating)
-                .reviewCount(reviewCount)
-                .build();
+
+        TripResponse response = new TripResponse();
+        response.setId(booking.getId());
+        response.setPackageId(booking.getPkg() != null ? booking.getPkg().getId() : null);
+        response.setHotelId(booking.getHotel() != null ? booking.getHotel().getId() : null);
+        response.setPackageName(booking.getPkg() != null ? booking.getPkg().getPackageName() : null);
+        response.setDestination(booking.getPkg() != null ? booking.getPkg().getDestination() : null);
+        response.setStartDate(booking.getStartDate());
+        response.setEndDate(booking.getEndDate());
+        response.setStatus(booking.getStatus());
+        response.setProgress(booking.getProgress());
+        response.setImageUrl(booking.getPkg() != null ? booking.getPkg().getImageUrl() : null);
+        response.setPrice(booking.getTotalPrice());
+        response.setCategory(booking.getPkg() != null ? booking.getPkg().getCategory() : null);
+        response.setHotelName(booking.getHotel() != null ? booking.getHotel().getHotelName() : null);
+        response.setRating(averageRating);
+        response.setReviewCount(reviewCount);
+        return response;
     }
 
     // Map Booking → BookingResponse
     private BookingResponse toBookingResponse(Booking booking) {
-        return BookingResponse.builder()
-                .id(booking.getId())
-                .bookingId(String.format("BK%05d", booking.getId()))
-                .packageName(booking.getPkg() != null ? booking.getPkg().getPackageName() : null)
-                .destination(booking.getPkg() != null ? booking.getPkg().getDestination() : null)
-                .startDate(booking.getStartDate())
-                .endDate(booking.getEndDate())
-                .status(booking.getStatus())
-                .totalPrice(booking.getTotalPrice())
-                .progress(booking.getProgress())
-                .imageUrl(booking.getPkg() != null ? booking.getPkg().getImageUrl() : null)
-                .category(booking.getPkg() != null ? booking.getPkg().getCategory() : null)
-                .bookedOn(booking.getCreatedAt())
-                .hotelName(booking.getHotel() != null ? booking.getHotel().getHotelName() : null)
-                .hotelLocation(booking.getHotel() != null ? booking.getHotel().getLocation() : null)
-                .driverName(booking.getVehicle() != null ? booking.getVehicle().getDriverName() : null)
-                .driverPhone(booking.getVehicle() != null ? booking.getVehicle().getDriverPhone() : null)
-                .driverRating(booking.getVehicle() != null ? booking.getVehicle().getDriverRating() : null)
-                .driverTrips(booking.getVehicle() != null ? booking.getVehicle().getDriverTrips() : null)
-                .vehicleType(booking.getVehicle() != null ? booking.getVehicle().getVehicleType() : null)
-                .vehicleModel(booking.getVehicle() != null ? booking.getVehicle().getModel() : null)
-                .vehicleRegistration(booking.getVehicle() != null ? booking.getVehicle().getRegistration() : null)
-                .vehicleCapacity(booking.getVehicle() != null && booking.getVehicle().getCapacity() != null
-                        ? booking.getVehicle().getCapacity().toString()
-                        : null)
-                .build();
+        BookingResponse response = new BookingResponse();
+        response.setId(booking.getId());
+        response.setBookingId(String.format("BK%05d", booking.getId()));
+        response.setPackageName(booking.getPkg() != null ? booking.getPkg().getPackageName() : null);
+        response.setDestination(booking.getPkg() != null ? booking.getPkg().getDestination() : null);
+        response.setStartDate(booking.getStartDate());
+        response.setEndDate(booking.getEndDate());
+        response.setStatus(booking.getStatus());
+        response.setTotalPrice(booking.getTotalPrice());
+        response.setProgress(booking.getProgress());
+        response.setImageUrl(booking.getPkg() != null ? booking.getPkg().getImageUrl() : null);
+        response.setCategory(booking.getPkg() != null ? booking.getPkg().getCategory() : null);
+        response.setBookedOn(booking.getCreatedAt());
+        response.setHotelName(booking.getHotel() != null ? booking.getHotel().getHotelName() : null);
+        response.setHotelLocation(booking.getHotel() != null ? booking.getHotel().getLocation() : null);
+        response.setDriverName(booking.getVehicle() != null ? booking.getVehicle().getDriverName() : null);
+        response.setDriverPhone(booking.getVehicle() != null ? booking.getVehicle().getDriverPhone() : null);
+        response.setDriverRating(booking.getVehicle() != null ? booking.getVehicle().getDriverRating() : null);
+        response.setDriverTrips(booking.getVehicle() != null ? booking.getVehicle().getDriverTrips() : null);
+        response.setVehicleType(booking.getVehicle() != null ? booking.getVehicle().getVehicleType() : null);
+        response.setVehicleModel(booking.getVehicle() != null ? booking.getVehicle().getModel() : null);
+        response.setVehicleRegistration(booking.getVehicle() != null ? booking.getVehicle().getRegistration() : null);
+        response.setVehicleCapacity(booking.getVehicle() != null && booking.getVehicle().getCapacity() != null
+                ? booking.getVehicle().getCapacity().toString()
+                : null);
+        return response;
     }
 }

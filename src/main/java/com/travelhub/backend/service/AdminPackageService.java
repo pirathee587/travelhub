@@ -8,18 +8,21 @@ import com.travelhub.backend.entity.Package;
 import com.travelhub.backend.entity.PackageItinerary;
 import com.travelhub.backend.event.PackageEvent;
 import com.travelhub.backend.repository.PackageRepository;
-import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import java.util.Arrays;
 import java.util.List;
 
 @Service
-@RequiredArgsConstructor
 public class AdminPackageService {
 
     private final PackageRepository          packageRepository;
-    private final ApplicationEventPublisher  eventPublisher; // ← சேர்க்கணும்
+    private final ApplicationEventPublisher  eventPublisher;
+    public AdminPackageService(PackageRepository          packageRepository, ApplicationEventPublisher  eventPublisher) {
+        this.packageRepository = packageRepository;
+        this.eventPublisher = eventPublisher;
+    }
+ // ← சேர்க்கணும்
 
     // ── Get All Packages ──────────────────────────────
     public List<AdminPackageResponse> getAllPackages() {
@@ -85,7 +88,7 @@ public class AdminPackageService {
             providerName =
                     pkg.getAgent().getCompanyName() != null
                             ? pkg.getAgent().getCompanyName()
-                            : pkg.getAgent().getAgentName();
+                            : pkg.getAgent().getUser().getName();
         }
 
         return new AdminPackageDetailResponse(
@@ -207,7 +210,7 @@ public class AdminPackageService {
                 p.getTrending(),
                 p.getIsActive(),
                 p.getAgent() != null
-                        ? p.getAgent().getAgentName()
+                        ? p.getAgent().getUser().getName()
                         : "",
                 p.getApplicationStatus() != null
                         ? p.getApplicationStatus()

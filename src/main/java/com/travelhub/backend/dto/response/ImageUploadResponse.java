@@ -1,23 +1,34 @@
 package com.travelhub.backend.dto.response;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-
-/**
- * ImageUploadResponse — returned after a successful image upload.
- *
- * imageUrl  → the full public URL to access the image
- *             e.g. http://localhost:8080/uploads/room-images/abc123.jpg
- * fileName  → the unique saved file name (UUID-based)
- *             e.g. 3f4a2b1c-9e87-4a12-b345-abc123456789.jpg
- */
-@Data
-@Builder
-@NoArgsConstructor
-@AllArgsConstructor
 public class ImageUploadResponse {
     private String imageUrl;
     private String fileName;
+
+    public ImageUploadResponse() {}
+
+    public ImageUploadResponse(String imageUrl, String fileName) {
+        this.imageUrl = imageUrl;
+        this.fileName = fileName;
+    }
+
+    public String getImageUrl() { return imageUrl; }
+    public void setImageUrl(String imageUrl) { this.imageUrl = imageUrl; }
+    public String getFileName() { return fileName; }
+    public void setFileName(String fileName) { this.fileName = fileName; }
+
+    // Helper for easier instantiation similar to builder
+    public static class Builder {
+        private String imageUrl;
+        private String fileName;
+
+        public Builder imageUrl(String imageUrl) { this.imageUrl = imageUrl; return this; }
+        public Builder fileName(String fileName) { this.fileName = fileName; return this; }
+        public ImageUploadResponse build() {
+            return new ImageUploadResponse(imageUrl, fileName);
+        }
+    }
+
+    public static Builder builder() {
+        return new Builder();
+    }
 }

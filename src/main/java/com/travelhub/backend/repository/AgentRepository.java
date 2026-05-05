@@ -12,15 +12,18 @@ import java.util.List;
 public interface AgentRepository extends JpaRepository<Agent, Long> {
 
     // ── Basic Checks ──────────────────────────────────
-    Boolean existsByEmail(String email);
 
     // ── Agent Filters ─────────────────────────────────
     List<Agent> findByIsActiveTrue();
 
     List<Agent> findByApplicationStatus(String applicationStatus);
 
-    List<Agent> findByAgentNameContainingIgnoreCaseOrEmailContainingIgnoreCase(
-            String name, String email);
+    @Query("SELECT a FROM Agent a JOIN a.user u WHERE " +
+            "LOWER(u.name) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
+            "LOWER(u.email) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
+            "LOWER(a.companyName) LIKE LOWER(CONCAT('%', :keyword, '%'))")
+    List<Agent> searchAgents(@Param("keyword") String keyword);
+
 
     // ── Analytics Queries ─────────────────────────────
     @Query("SELECT COALESCE(SUM(b.totalPrice), 0) " +

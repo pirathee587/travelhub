@@ -3,7 +3,6 @@ package com.travelhub.backend.service;
 import com.travelhub.backend.dto.response.DocumentResponse;
 import com.travelhub.backend.entity.Document;
 import com.travelhub.backend.repository.DocumentRepository;
-import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -11,11 +10,14 @@ import java.util.stream.Collectors;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
-@RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class DocumentService {
 
     private final DocumentRepository documentRepository;
+    public DocumentService(DocumentRepository documentRepository) {
+        this.documentRepository = documentRepository;
+    }
+
 
     // Get all documents for a user
     public List<DocumentResponse> getDocumentsByUserId(Long userId) {

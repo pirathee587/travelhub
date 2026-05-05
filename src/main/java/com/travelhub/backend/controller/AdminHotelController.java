@@ -2,7 +2,6 @@ package com.travelhub.backend.controller;
 
 import com.travelhub.backend.common.ApiResponse;
 import com.travelhub.backend.service.AdminHotelService;
-import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -12,12 +11,15 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/admin/hotels")
-@RequiredArgsConstructor
 @CrossOrigin(origins = "*")
 @PreAuthorize("hasRole('ADMIN')")
 public class AdminHotelController {
 
     private final AdminHotelService adminHotelService;
+    public AdminHotelController(AdminHotelService adminHotelService) {
+        this.adminHotelService = adminHotelService;
+    }
+
 
     @GetMapping
     public ResponseEntity<?> getAllHotels(

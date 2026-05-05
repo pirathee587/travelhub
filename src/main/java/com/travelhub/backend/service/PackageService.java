@@ -15,15 +15,17 @@ import com.travelhub.backend.entity.PackageItinerary;
 import com.travelhub.backend.repository.PackageRepository;
 import com.travelhub.backend.repository.ReviewRepository;
 
-import lombok.RequiredArgsConstructor;
-
 @Service
-@RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class PackageService {
 
     private final PackageRepository packageRepository;
     private final ReviewRepository reviewRepository;
+
+    public PackageService(PackageRepository packageRepository, ReviewRepository reviewRepository) {
+        this.packageRepository = packageRepository;
+        this.reviewRepository = reviewRepository;
+    }
 
     public List<PackageResponse> getAllPackages() {
         List<Package> packages = packageRepository.findByIsActiveTrue();
@@ -48,14 +50,13 @@ public class PackageService {
 
     /**
      * ✅ OPTIMIZED: Batch rating lookup — 2 queries total instead of 2N.
-     * For a list of 10 packages, this saves 18 DB roundtrips.
      */
     private List<PackageResponse> toPackageResponses(List<Package> packages) {
         if (packages.isEmpty()) return List.of();
 
         List<Long> packageIds = packages.stream().map(Package::getId).collect(Collectors.toList());
 
-        // 2 bulk queries instead of 2 per package
+        // bulk queries
         Map<Long, Double> avgRatings = reviewRepository.getAverageRatingsByPackageIds(packageIds);
         Map<Long, Long> reviewCounts = reviewRepository.getReviewCountsByPackageIds(packageIds);
 
@@ -67,24 +68,24 @@ public class PackageService {
     }
 
     private PackageResponse toPackageResponse(Package pkg, double rating, int reviewCount) {
-        return PackageResponse.builder()
-                .id(pkg.getId())
-                .packageName(pkg.getPackageName())
-                .destination(pkg.getDestination())
-                .startPlace(pkg.getStartPlace())
-                .endPlace(pkg.getEndPlace())
-                .priceFrom(pkg.getPriceFrom())
-                .priceTo(pkg.getPriceTo())
-                .duration(pkg.getDuration())
-                .category(pkg.getCategory())
-                .imageUrl(pkg.getImageUrl())
-                .rating(Math.round(rating * 10.0) / 10.0)
-                .reviewCount(reviewCount)
-                .festivalDetails(pkg.getFestivalDetails())
-                .trending(pkg.getTrending())
-                .agentName(pkg.getAgent() != null ? pkg.getAgent().getAgentName() : null)
-                .district(pkg.getDistrict())
-                .build();
+        PackageResponse response = new PackageResponse();
+        response.setId(pkg.getId());
+        response.setPackageName(pkg.getPackageName());
+        response.setDestination(pkg.getDestination());
+        response.setStartPlace(pkg.getStartPlace());
+        response.setEndPlace(pkg.getEndPlace());
+        response.setPriceFrom(pkg.getPriceFrom());
+        response.setPriceTo(pkg.getPriceTo());
+        response.setDuration(pkg.getDuration());
+        response.setCategory(pkg.getCategory());
+        response.setImageUrl(pkg.getImageUrl());
+        response.setRating(Math.round(rating * 10.0) / 10.0);
+        response.setReviewCount(reviewCount);
+        response.setFestivalDetails(pkg.getFestivalDetails());
+        response.setTrending(pkg.getTrending());
+        response.setAgentName(pkg.getAgent() != null ? pkg.getAgent().getUser().getName() : null);
+        response.setDistrict(pkg.getDistrict());
+        return response;
     }
 
     private PackageDetailResponse toPackageDetailResponse(Package pkg) {
@@ -104,41 +105,39 @@ public class PackageService {
                     .collect(Collectors.toList());
         }
 
-        // Single detail page — 2 individual queries is fine here
+        // Single detail page fetch
         Double avgRating = reviewRepository.getAverageRatingByPackageId(pkg.getId());
         Long count = reviewRepository.getReviewCountByPackageId(pkg.getId());
 
-        return PackageDetailResponse.builder()
-                .id(pkg.getId())
-                .packageName(pkg.getPackageName())
-                .destination(pkg.getDestination())
-                .startPlace(pkg.getStartPlace())
-                .endPlace(pkg.getEndPlace())
-                .priceFrom(pkg.getPriceFrom())
-                .priceTo(pkg.getPriceTo())
-                .duration(pkg.getDuration())
-                .category(pkg.getCategory())
-                .imageUrl(pkg.getImageUrl())
-                .rating(avgRating != null ? Math.round(avgRating * 10.0) / 10.0 : 0.0)
-                .reviewCount(count != null ? count.intValue() : 0)
-                .festivalDetails(pkg.getFestivalDetails())
-                .trending(pkg.getTrending())
-                .agentId(pkg.getAgent() != null ? pkg.getAgent().getId() : null)
-                .agentName(pkg.getAgent() != null ? pkg.getAgent().getAgentName() : null)
-                .agentPhone(pkg.getAgent() != null ? pkg.getAgent().getPhone() : null)
-                .agentRating(pkg.getAgent() != null ? pkg.getAgent().getRating() : null)
-                .itinerary(itineraryDays)
-                .images(imageUrls)
-                .district(pkg.getDistrict())
-                .build();
+        PackageDetailResponse response = new PackageDetailResponse();
+        response.setId(pkg.getId());
+        response.setPackageName(pkg.getPackageName());
+        response.setDestination(pkg.getDestination());
+        response.setStartPlace(pkg.getStartPlace());
+        response.setEndPlace(pkg.getEndPlace());
+        response.setPriceFrom(pkg.getPriceFrom());
+        response.setPriceTo(pkg.getPriceTo());
+        response.setDuration(pkg.getDuration());
+        response.setCategory(pkg.getCategory());
+        response.setImageUrl(pkg.getImageUrl());
+        response.setRating(avgRating != null ? Math.round(avgRating * 10.0) / 10.0 : 0.0);
+        response.setReviewCount(count != null ? count.intValue() : 0);
+        response.setFestivalDetails(pkg.getFestivalDetails());
+        response.setTrending(pkg.getTrending());
+        response.setAgentId(pkg.getAgent() != null ? pkg.getAgent().getId() : null);
+        response.setAgentName(pkg.getAgent() != null ? pkg.getAgent().getUser().getName() : null);
+        response.setAgentPhone(pkg.getAgent() != null ? pkg.getAgent().getUser().getTelephone() : null);
+        response.setAgentRating(pkg.getAgent() != null ? pkg.getAgent().getRating() : null);
+        response.setItinerary(itineraryDays);
+        response.setImages(imageUrls);
+        response.setDistrict(pkg.getDistrict());
+        return response;
     }
 
     private PackageDetailResponse.ItineraryDayResponse toItineraryDayResponse(PackageItinerary day) {
         List<String> activities = null;
         if (day.getActivities() != null) {
             String raw = day.getActivities().trim();
-            // ✅ FIXED: DB stores JSON array ["activity1","activity2"]
-            // Remove [ ] brackets, split by comma, clean quotes and whitespace
             if (raw.startsWith("[")) {
                 raw = raw.substring(1, raw.length() - 1);
             }
@@ -147,11 +146,11 @@ public class PackageService {
                     .filter(s -> !s.isEmpty())
                     .collect(Collectors.toList());
         }
-        return PackageDetailResponse.ItineraryDayResponse.builder()
-                .dayNumber(day.getDayNumber())
-                .title(day.getTitle())
-                .description(day.getDescription())
-                .activities(activities)
-                .build();
+        PackageDetailResponse.ItineraryDayResponse response = new PackageDetailResponse.ItineraryDayResponse();
+        response.setDayNumber(day.getDayNumber());
+        response.setTitle(day.getTitle());
+        response.setDescription(day.getDescription());
+        response.setActivities(activities);
+        return response;
     }
 }

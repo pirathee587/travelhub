@@ -4,15 +4,23 @@ import com.travelhub.backend.common.ResourceNotFoundException;
 import com.travelhub.backend.dto.request.AgentProfileRequest;
 import com.travelhub.backend.dto.response.AgentProfileResponse;
 import com.travelhub.backend.entity.Agent;
+import com.travelhub.backend.entity.User;
 import com.travelhub.backend.repository.AgentRepository;
-import lombok.RequiredArgsConstructor;
+import com.travelhub.backend.repository.UserRepository;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
-@RequiredArgsConstructor
+@Transactional
 public class AgentProfileService {
 
     private final AgentRepository agentRepository;
+    private final UserRepository userRepository;
+
+    public AgentProfileService(AgentRepository agentRepository, UserRepository userRepository) {
+        this.agentRepository = agentRepository;
+        this.userRepository = userRepository;
+    }
 
     public AgentProfileResponse getProfile(Long agentId) {
         Agent agent = agentRepository.findById(agentId)
@@ -24,8 +32,12 @@ public class AgentProfileService {
         Agent agent = agentRepository.findById(agentId)
                 .orElseThrow(() -> new ResourceNotFoundException("Agent", "id", agentId));
 
-        agent.setAgentName(request.getAgentName());
-        agent.setPhone(request.getPhone());
+        User user = agent.getUser();
+        if (request.getAgentName() != null) user.setName(request.getAgentName());
+        if (request.getPhone() != null) user.setTelephone(request.getPhone());
+        if (request.getProfileImage() != null) user.setProfileImage(request.getProfileImage());
+        userRepository.save(user);
+
         agent.setSecondaryPhone(request.getSecondaryPhone());
         agent.setWhatsappNumber(request.getWhatsappNumber());
         agent.setLocation(request.getLocation());
@@ -36,10 +48,6 @@ public class AgentProfileService {
         agent.setCompanyName(request.getCompanyName());
         agent.setAgencyName(request.getAgencyName() != null ? request.getAgencyName().trim() : null);
 
-        if (request.getProfileImage() != null) {
-            agent.setProfileImage(request.getProfileImage());
-        }
-
         Agent saved = agentRepository.save(agent);
         return toResponse(saved);
     }
@@ -47,9 +55,9 @@ public class AgentProfileService {
     private AgentProfileResponse toResponse(Agent agent) {
         return AgentProfileResponse.builder()
                 .id(agent.getId())
-                .agentName(agent.getAgentName())
-                .email(agent.getEmail())
-                .phone(agent.getPhone())
+                .agentName(agent.getUser().getName())
+                .email(agent.getUser().getEmail())
+                .phone(agent.getUser().getTelephone())
                 .secondaryPhone(agent.getSecondaryPhone())
                 .whatsappNumber(agent.getWhatsappNumber())
                 .companyName(agent.getCompanyName())
@@ -59,7 +67,7 @@ public class AgentProfileService {
                 .languages(agent.getLanguages())
                 .operatingDistricts(agent.getOperatingDistricts())
                 .websiteUrl(agent.getWebsiteUrl())
-                .profileImage(agent.getProfileImage())
+                .profileImage(agent.getUser().getProfileImage())
                 .memberSince(agent.getMemberSince() != null ? agent.getMemberSince().toString() : null)
                 .rating(agent.getRating())
                 .totalTrips(agent.getTotalTrips())

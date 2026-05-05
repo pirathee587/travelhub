@@ -2,7 +2,6 @@ package com.travelhub.backend.controller;
 
 import com.travelhub.backend.common.ApiResponse;
 import com.travelhub.backend.service.AdminPaymentService;
-import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -10,12 +9,15 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/admin/payments")
-@RequiredArgsConstructor
 @CrossOrigin(origins = "*")
 @PreAuthorize("hasRole('ADMIN')")
 public class AdminPaymentController {
 
     private final AdminPaymentService adminPaymentService;
+
+    public AdminPaymentController(AdminPaymentService adminPaymentService) {
+        this.adminPaymentService = adminPaymentService;
+    }
 
     // GET /api/admin/payments/stats
     @GetMapping("/stats")
@@ -26,7 +28,6 @@ public class AdminPaymentController {
     }
 
     // GET /api/admin/payments
-    // ?type=Payment&status=Completed
     @GetMapping
     public ResponseEntity<?> getAllPayments(
             @RequestParam(required = false) String type,
@@ -94,7 +95,6 @@ public class AdminPaymentController {
     }
 
     // PATCH /api/admin/payments/{id}/status
-    // Body: { "status": "Completed" }
     @PatchMapping("/{id}/status")
     public ResponseEntity<?> updateStatus(
             @PathVariable Long id,

@@ -3,7 +3,6 @@ package com.travelhub.backend.service;
 import com.travelhub.backend.dto.response.PackageResponse;
 import com.travelhub.backend.entity.Booking;
 import com.travelhub.backend.repository.BookingRepository;
-import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -11,12 +10,16 @@ import java.util.stream.Collectors;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
-@RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class RecommendationService {
 
     private final BookingRepository bookingRepository;
     private final PackageService packageService;
+
+    public RecommendationService(BookingRepository bookingRepository, PackageService packageService) {
+        this.bookingRepository = bookingRepository;
+        this.packageService = packageService;
+    }
 
     public List<PackageResponse> getRecommendations(Long userId) {
 
@@ -38,20 +41,19 @@ public class RecommendationService {
                 recommendations.addAll(packageService.getPackagesByCategory(category));
             }
 
-            // Step 4 — Sort by rating DESC (highest first)
+            // Step 4 — Sort by rating DESC
             recommendations.sort((a, b) -> Double.compare(
                     b.getRating() != null ? b.getRating() : 0.0,
                     a.getRating() != null ? a.getRating() : 0.0
             ));
 
-            // Remove duplicates just in case
             recommendations = recommendations.stream()
                     .distinct()
-                    .limit(5) // Step 5 — Return top 5 packages
+                    .limit(5)
                     .collect(Collectors.toList());
         }
 
-        // Fallback: Fill remaining slots with top trending packages if less than 5
+        // Fallback: Fill remaining slots with top trending packages
         if (recommendations.size() < 5) {
             List<PackageResponse> trending = packageService.getTrendingPackages()
                     .stream()
@@ -68,7 +70,6 @@ public class RecommendationService {
             }
         }
 
-        // Sort the final combined list to ensure strict descending rating order
         recommendations.sort((a, b) -> Double.compare(
                 b.getRating() != null ? b.getRating() : 0.0,
                 a.getRating() != null ? a.getRating() : 0.0

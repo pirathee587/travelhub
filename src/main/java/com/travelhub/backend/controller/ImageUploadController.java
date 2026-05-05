@@ -3,7 +3,6 @@ package com.travelhub.backend.controller;
 import com.travelhub.backend.common.ApiResponse;
 import com.travelhub.backend.dto.response.ImageUploadResponse;
 import com.travelhub.backend.service.ImageUploadService;
-import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -17,11 +16,14 @@ import org.springframework.web.multipart.MultipartFile;
  */
 @RestController
 @RequestMapping("/api/upload")
-@RequiredArgsConstructor
 @CrossOrigin(origins = "*")
 public class ImageUploadController {
 
     private final ImageUploadService imageUploadService;
+    public ImageUploadController(ImageUploadService imageUploadService) {
+        this.imageUploadService = imageUploadService;
+    }
+
 
     /**
      * POST /api/upload/image

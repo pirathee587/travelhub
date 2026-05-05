@@ -7,18 +7,22 @@ import com.travelhub.backend.entity.User;
 import com.travelhub.backend.enums.Role;
 import com.travelhub.backend.event.UserAccountEvent;
 import com.travelhub.backend.repository.UserRepository;
-import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 
 @Service
-@RequiredArgsConstructor
+
 public class AdminUserService {
 
     private final UserRepository         userRepository;
     private final ApplicationEventPublisher eventPublisher; // ← சேர்க்கணும்
+
+    public AdminUserService(UserRepository userRepository, ApplicationEventPublisher eventPublisher) {
+        this.userRepository = userRepository;
+        this.eventPublisher = eventPublisher;
+    }
 
     // ── Get All Users ─────────────────────────────────
     public List<AdminUserResponse> getAllUsers() {

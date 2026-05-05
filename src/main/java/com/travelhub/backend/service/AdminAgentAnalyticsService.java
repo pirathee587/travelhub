@@ -5,18 +5,21 @@ import com.travelhub.backend.dto.response.*;
 import com.travelhub.backend.entity.Agent;
 import com.travelhub.backend.repository.AgentRepository;
 import com.travelhub.backend.repository.BookingRepository;
-import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
 @Service
-@RequiredArgsConstructor
 public class AdminAgentAnalyticsService {
 
     private final AgentRepository   agentRepository;
     private final BookingRepository bookingRepository;
+    public AdminAgentAnalyticsService(AgentRepository   agentRepository, BookingRepository bookingRepository) {
+        this.agentRepository = agentRepository;
+        this.bookingRepository = bookingRepository;
+    }
+
 
     // ── Get All Agents List ───────────────────────────
     // Admin portal-ல் எல்லா agents பட்டியல்
@@ -67,7 +70,7 @@ public class AdminAgentAnalyticsService {
 
         return new AdminAgentStatsResponse(
                 agent.getId(),
-                agent.getAgentName(),
+                agent.getUser().getName(),
                 agent.getCompanyName(),
                 agent.getRating(),
                 totalRevenue  != null ? totalRevenue  : 0.0,
@@ -143,11 +146,11 @@ public class AdminAgentAnalyticsService {
             Agent a) {
         return new AdminAgentListResponse(
                 a.getId(),
-                a.getAgentName(),
+                a.getUser().getName(),
                 a.getCompanyName(),
                 a.getOwnerName(),
-                a.getEmail(),
-                a.getPhone(),
+                a.getUser().getEmail(),
+                a.getUser().getTelephone(),
                 a.getLocation(),
                 a.getApplicationStatus(),
                 a.getSubmittedDate() != null ? a.getSubmittedDate().toString() : null,

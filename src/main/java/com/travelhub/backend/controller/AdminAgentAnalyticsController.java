@@ -3,7 +3,6 @@ package com.travelhub.backend.controller;
 import com.travelhub.backend.common.ApiResponse;
 import com.travelhub.backend.service
         .AdminAgentAnalyticsService;
-import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost
         .PreAuthorize;
@@ -12,13 +11,15 @@ import java.time.LocalDateTime;
 
 @RestController
 @RequestMapping("/api/admin/analytics")
-@RequiredArgsConstructor
 @CrossOrigin(origins = "*")
 @PreAuthorize("hasRole('ADMIN')")
 public class AdminAgentAnalyticsController {
 
-    private final AdminAgentAnalyticsService
-            adminAgentAnalyticsService;
+    private final AdminAgentAnalyticsService adminAgentAnalyticsService;
+
+    public AdminAgentAnalyticsController(AdminAgentAnalyticsService adminAgentAnalyticsService) {
+        this.adminAgentAnalyticsService = adminAgentAnalyticsService;
+    }
 
     // ── GET /api/admin/agents ─────────────────────────
     // எல்லா agents பட்டியல்

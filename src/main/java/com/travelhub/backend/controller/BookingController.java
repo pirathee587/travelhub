@@ -5,19 +5,23 @@ import com.travelhub.backend.dto.response.BookingResponse;
 import com.travelhub.backend.dto.response.TripResponse;
 import com.travelhub.backend.service.BookingCreationService;
 import com.travelhub.backend.service.BookingService;
-import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
 @RequestMapping("/api/tourist")
-@RequiredArgsConstructor
+
 @CrossOrigin(origins = "*")
 public class BookingController {
 
     private final BookingService bookingService;
     private final BookingCreationService bookingCreationService;
+
+    public BookingController(BookingService bookingService, BookingCreationService bookingCreationService) {
+        this.bookingService = bookingService;
+        this.bookingCreationService = bookingCreationService;
+    }
 
     // GET /api/tourist/trips?userId=1
     @GetMapping("/trips")

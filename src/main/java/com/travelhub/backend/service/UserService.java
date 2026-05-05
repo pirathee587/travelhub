@@ -6,15 +6,18 @@ import com.travelhub.backend.dto.request.UpdatePasswordRequest;
 import com.travelhub.backend.dto.request.UpdateProfileRequest;
 import com.travelhub.backend.entity.User;
 import com.travelhub.backend.repository.UserRepository;
-import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 @Service
-@RequiredArgsConstructor
+
 public class UserService {
 
     private final UserRepository userRepository;
+
+    public UserService(UserRepository userRepository) {
+        this.userRepository = userRepository;
+    }
 
     public User updateProfile(Long userId, UpdateProfileRequest request) {
         User user = userRepository.findById(userId)

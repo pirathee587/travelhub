@@ -6,7 +6,6 @@ import com.travelhub.backend.repository.AgentRepository;
 import com.travelhub.backend.repository.BookingRepository;
 import com.travelhub.backend.repository.DriverRepository;
 import com.travelhub.backend.repository.VehicleRepository;
-import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
@@ -14,13 +13,19 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
-@RequiredArgsConstructor
 public class AgentAnalyticsService {
 
     private final BookingRepository bookingRepository;
     private final DriverRepository driverRepository;
     private final VehicleRepository vehicleRepository;
     private final AgentRepository agentRepository;
+    public AgentAnalyticsService(BookingRepository bookingRepository, DriverRepository driverRepository, VehicleRepository vehicleRepository, AgentRepository agentRepository) {
+        this.bookingRepository = bookingRepository;
+        this.driverRepository = driverRepository;
+        this.vehicleRepository = vehicleRepository;
+        this.agentRepository = agentRepository;
+    }
+
 
     public AnalyticsResponse getAnalytics(Long agentId, String period) {
         List<Booking> allBookings = bookingRepository.findByVehicleAgentId(agentId);

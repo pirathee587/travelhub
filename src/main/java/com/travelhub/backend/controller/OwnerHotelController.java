@@ -3,7 +3,6 @@ package com.travelhub.backend.controller;
 import com.travelhub.backend.dto.request.OwnerHotelRequest;
 import com.travelhub.backend.dto.response.HotelResponse;
 import com.travelhub.backend.service.OwnerHotelService;
-import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -12,11 +11,14 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/v1/owner/hotels")
-@RequiredArgsConstructor
 @CrossOrigin(origins = "*")
 public class OwnerHotelController {
 
     private final OwnerHotelService ownerHotelService;
+
+    public OwnerHotelController(OwnerHotelService ownerHotelService) {
+        this.ownerHotelService = ownerHotelService;
+    }
 
     @GetMapping
     public ResponseEntity<List<HotelResponse>> getOwnerHotels(

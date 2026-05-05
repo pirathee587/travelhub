@@ -2,7 +2,6 @@ package com.travelhub.backend.controller;
 
 import com.travelhub.backend.common.ApiResponse;
 import com.travelhub.backend.service.AdminAgentService;
-import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost
         .PreAuthorize;
@@ -10,12 +9,15 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/admin/agents")
-@RequiredArgsConstructor
 @CrossOrigin(origins = "*")
 @PreAuthorize("hasRole('ADMIN')")
 public class AdminAgentController {
 
     private final AdminAgentService adminAgentService;
+    public AdminAgentController(AdminAgentService adminAgentService) {
+        this.adminAgentService = adminAgentService;
+    }
+
 
     // ── GET /api/admin/agents ─────────────────────────
     // All agents list

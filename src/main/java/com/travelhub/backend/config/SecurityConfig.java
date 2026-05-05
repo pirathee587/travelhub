@@ -1,7 +1,6 @@
 package com.travelhub.backend.config;
 
 import com.travelhub.backend.security.JwtAuthenticationFilter;
-import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -24,7 +23,7 @@ import java.util.List;
 @Configuration
 @EnableWebSecurity
 @EnableMethodSecurity
-@RequiredArgsConstructor
+
 public class SecurityConfig {
 
     @Bean
@@ -33,6 +32,10 @@ public class SecurityConfig {
     }
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
+
+    public SecurityConfig(JwtAuthenticationFilter jwtAuthenticationFilter) {
+        this.jwtAuthenticationFilter = jwtAuthenticationFilter;
+    }
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
@@ -45,6 +48,8 @@ public class SecurityConfig {
 
                         // ── Public Access (No Login Required) ──
                         .requestMatchers("/api/auth/**").permitAll()
+                        .requestMatchers("/api/payments/notify").permitAll()
+                        .requestMatchers("/api/demo/notifications/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/packages/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/hotels/**").permitAll()
                         .requestMatchers("/api/v1/owner/hotels/**").permitAll()
@@ -60,7 +65,7 @@ public class SecurityConfig {
 
                         // ── Secured Routes (Authentication Required) ──
                         .requestMatchers("/api/v1/**").authenticated()
-                        .anyRequest().authenticated()
+                        .anyRequest().permitAll()
                 )
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 

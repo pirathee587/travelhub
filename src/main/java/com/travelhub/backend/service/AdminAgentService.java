@@ -9,18 +9,21 @@ import com.travelhub.backend.entity.Agent;
 import com.travelhub.backend.entity.Package;
 import com.travelhub.backend.repository.AgentRepository;
 import com.travelhub.backend.repository.PackageRepository;
-import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Locale;
 
 @Service
-@RequiredArgsConstructor
 public class AdminAgentService {
 
     private final AgentRepository   agentRepository;
     private final PackageRepository packageRepository;
+    public AdminAgentService(AgentRepository   agentRepository, PackageRepository packageRepository) {
+        this.agentRepository = agentRepository;
+        this.packageRepository = packageRepository;
+    }
+
 
     // ── Get All Agents ────────────────────────────────
     public List<AdminAgentListResponse> getAllAgents() {
@@ -44,8 +47,7 @@ public class AdminAgentService {
     public List<AdminAgentListResponse> searchAgents(
             String keyword) {
         return agentRepository
-                .findByAgentNameContainingIgnoreCaseOrEmailContainingIgnoreCase(
-                        keyword, keyword)
+                .searchAgents(keyword)
                 .stream()
                 .map(this::mapToListResponse)
                 .toList();
@@ -63,7 +65,7 @@ public class AdminAgentService {
 
 
         String initials = generateInitials(
-                agent.getAgentName());
+                agent.getUser().getName());
 
         // Member Since format
         // LocalDateTime → "March 2020"
@@ -86,12 +88,12 @@ public class AdminAgentService {
         return new AdminAgentDetailResponse(
                 agent.getId(),
                 initials,
-                agent.getAgentName(),
+                agent.getUser().getName(),
                 agent.getCompanyName(),
-                agent.getProfileImage(),
+                agent.getUser().getProfileImage(),
                 agent.getOwnerName(),
-                agent.getEmail(),
-                agent.getPhone(),
+                agent.getUser().getEmail(),
+                agent.getUser().getTelephone(),
                 agent.getLocation(),
                 memberSince,
                 agent.getApplicationStatus() != null
@@ -201,11 +203,11 @@ public class AdminAgentService {
 
         return new AdminAgentListResponse(
                 a.getId(),
-                a.getAgentName(),
+                a.getUser().getName(),
                 a.getCompanyName(),
                 a.getOwnerName(),
-                a.getEmail(),
-                a.getPhone(),
+                a.getUser().getEmail(),
+                a.getUser().getTelephone(),
                 a.getLocation(),
                 a.getApplicationStatus() != null
                         ? a.getApplicationStatus()

@@ -9,17 +9,9 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
 
 @Entity
 @Table(name = "review_images")
-@Data
-@Builder
-@NoArgsConstructor
-@AllArgsConstructor
 public class ReviewImage {
 
     @Id
@@ -31,5 +23,14 @@ public class ReviewImage {
     private Review review;
 
     @Column(name = "image_url", nullable = false, columnDefinition = "TEXT")
-    private String imageUrl;  // ✅ Stores Supabase public URL
+    private String imageUrl;
+
+    public ReviewImage() {}
+
+    public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
+    public Review getReview() { return review; }
+    public void setReview(Review review) { this.review = review; }
+    public String getImageUrl() { return imageUrl; }
+    public void setImageUrl(String imageUrl) { this.imageUrl = imageUrl; }
 }

@@ -15,7 +15,6 @@ import com.travelhub.backend.repository.AgentRepository;
 import com.travelhub.backend.repository.HotelRepository;
 import com.travelhub.backend.repository.UserRepository;
 import com.travelhub.backend.security.JwtTokenProvider;
-import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -27,7 +26,6 @@ import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Service
-@RequiredArgsConstructor
 public class AuthService {
 
     private final UserRepository userRepository;
@@ -38,6 +36,16 @@ public class AuthService {
     private final AgentRepository agentRepository;
     private final HotelRepository hotelRepository;
 
+    public AuthService(UserRepository userRepository, PasswordEncoder passwordEncoder, JwtTokenProvider tokenProvider, AuthenticationManager authenticationManager, EmailService emailService, AgentRepository agentRepository, HotelRepository hotelRepository) {
+        this.userRepository = userRepository;
+        this.passwordEncoder = passwordEncoder;
+        this.tokenProvider = tokenProvider;
+        this.authenticationManager = authenticationManager;
+        this.emailService = emailService;
+        this.agentRepository = agentRepository;
+        this.hotelRepository = hotelRepository;
+    }
+
     public ApiResponse register(RegisterRequest request) {
         if (userRepository.existsByEmail(request.getEmail())) {
             throw new BadRequestException("Email already in use");
@@ -45,48 +53,41 @@ public class AuthService {
 
         String verificationToken = UUID.randomUUID().toString();
 
-        User user = User.builder()
-                .name(request.getName())
-                .email(request.getEmail())
-                .password(passwordEncoder.encode(request.getPassword()))
-                .telephone(request.getTelephone())
-                .role(request.getRole())
-                .preferredLanguage(request.getPreferredLanguage())
-                .nationality(request.getNationality())
-                .agencyName(request.getAgencyName())
-                .licenseNumber(request.getLicenseNumber())
-                .hotelName(request.getHotelName())
-                .businessRegistrationId(request.getBusinessRegistrationId())
-                .businessAddress(request.getBusinessAddress())
-                .district(request.getDistrict())
-                .verificationToken(verificationToken)
-                .isEmailVerified(false)
-                .status("PENDING")
-                .isActive(true)
-                .agentApproved(request.getRole() != Role.AGENT)
-                .build();
+        User user = new User();
+        user.setName(request.getName());
+        user.setEmail(request.getEmail());
+        user.setPassword(passwordEncoder.encode(request.getPassword()));
+        user.setTelephone(request.getTelephone());
+        user.setRole(request.getRole());
+        user.setPreferredLanguage(request.getPreferredLanguage());
+        user.setNationality(request.getNationality());
+        user.setVerificationToken(verificationToken);
+        user.setEmailVerified(false);
+        user.setStatus("PENDING");
+        user.setIsActive(true);
+        user.setAgentApproved(request.getRole() != Role.AGENT);
+
+        // Save User first to generate ID
+        user = userRepository.save(user);
 
         // Handle Role-specific profile creation
         if (user.getRole() == Role.AGENT) {
-            Agent agent = Agent.builder()
-                    .agentName(user.getName())
-                    .email(user.getEmail())
-                    .phone(user.getTelephone())
-                    .agencyName(user.getAgencyName())
-                    .isActive(true)
-                    .build();
-            agent = agentRepository.save(agent);
-            user.setAgentId(agent.getId());
+            Agent agent = new Agent();
+            agent.setUser(user); // Link to User (MapsId will use user's ID)
+            agent.setAgencyName(request.getAgencyName());
+            agent.setLicenseNumber(request.getLicenseNumber());
+            agent.setCompanyName(request.getAgencyName()); // Fallback
+            agent.setIsActive(true);
+            agentRepository.save(agent);
         } else if (user.getRole() == Role.HOTEL_OWNER) {
-            Hotel hotel = Hotel.builder()
-                    .hotelName(user.getHotelName() != null ? user.getHotelName() : user.getName() + "'s Hotel")
-                    .district(user.getDistrict())
-                    .build();
-            hotel = hotelRepository.save(hotel);
-            user.setHotelId(hotel.getId());
+            Hotel hotel = new Hotel();
+            hotel.setOwner(user); // Link to User
+            hotel.setHotelName(request.getHotelName() != null ? request.getHotelName() : user.getName() + "'s Hotel");
+            hotel.setDistrict(request.getDistrict());
+            hotel.setHotelEmail(user.getEmail());
+            hotel.setHotelContactNumber(user.getTelephone());
+            hotelRepository.save(hotel);
         }
-
-        userRepository.save(user);
 
         // Send verification email
         try {
@@ -113,28 +114,33 @@ public class AuthService {
             throw new UnauthorizedException("Please verify your email first");
         }
 
-        // Account active check from develop
         if (user.getIsActive() != null && !user.getIsActive()) {
             throw new UnauthorizedException("Your account has been deactivated. Please contact admin.");
         }
 
-        // Agent approval check from develop
         if (user.getRole() == Role.AGENT && user.getAgentApproved() != null && !user.getAgentApproved()) {
             throw new UnauthorizedException("Your agent account is pending approval. Please wait for admin to approve.");
         }
 
         String jwt = tokenProvider.generateToken(authentication, user);
 
-        return LoginResponse.builder()
-                .token(jwt)
-                .name(user.getName())
-                .email(user.getEmail())
-                .role(user.getRole())
-                .profileImage(user.getProfileImage())
-                .agentId(user.getAgentId())
-                .hotelId(user.getHotelId())
-                .id(user.getId())
-                .build();
+        LoginResponse response = new LoginResponse();
+        response.setToken(jwt);
+        response.setName(user.getName());
+        response.setEmail(user.getEmail());
+        response.setRole(user.getRole());
+        response.setProfileImage(user.getProfileImage());
+        response.setId(user.getId());
+        
+        // Return IDs if profiles exist
+        if (user.getAgentProfile() != null) {
+            response.setAgentId(user.getAgentProfile().getId());
+        }
+        if (user.getOwnedHotels() != null && !user.getOwnedHotels().isEmpty()) {
+            response.setHotelId(user.getOwnedHotels().get(0).getId());
+        }
+        
+        return response;
     }
 
     public ApiResponse verifyEmail(String token) {
@@ -144,7 +150,6 @@ public class AuthService {
         user.setEmailVerified(true);
         user.setVerificationToken(null);
         
-        // Tourists are activated immediately after email verification
         if (user.getRole() == Role.TOURIST) {
             user.setStatus("ACTIVE");
             user.setIsActive(true);

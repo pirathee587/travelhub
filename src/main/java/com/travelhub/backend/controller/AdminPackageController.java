@@ -2,7 +2,6 @@ package com.travelhub.backend.controller;
 
 import com.travelhub.backend.common.ApiResponse;
 import com.travelhub.backend.service.AdminPackageService;
-import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -10,12 +9,15 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/admin/packages")
-@RequiredArgsConstructor
 @CrossOrigin(origins = "*")
 @PreAuthorize("hasRole('ADMIN')")
 public class AdminPackageController {
 
     private final AdminPackageService adminPackageService;
+    public AdminPackageController(AdminPackageService adminPackageService) {
+        this.adminPackageService = adminPackageService;
+    }
+
 
     @GetMapping
     public ResponseEntity<?> getAllPackages() {

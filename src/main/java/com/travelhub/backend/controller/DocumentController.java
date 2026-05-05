@@ -2,18 +2,20 @@ package com.travelhub.backend.controller;
 
 import com.travelhub.backend.dto.response.DocumentResponse;
 import com.travelhub.backend.service.DocumentService;
-import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
 @RequestMapping("/api/tourist")
-@RequiredArgsConstructor
 @CrossOrigin(origins = "*")
 public class DocumentController {
 
     private final DocumentService documentService;
+    public DocumentController(DocumentService documentService) {
+        this.documentService = documentService;
+    }
+
 
     // GET /api/tourist/documents?userId=1
     @GetMapping("/documents")

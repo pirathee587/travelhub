@@ -19,18 +19,30 @@ import com.travelhub.backend.repository.ReviewRepository;
 import com.travelhub.backend.repository.RoomRepository;
 import com.travelhub.backend.service.HotelPricingService.PriceRange;
 
-import lombok.RequiredArgsConstructor;
-
 @Service
-@RequiredArgsConstructor
 public class AdminHotelService {
 
     private final HotelRepository            hotelRepository;
     private final RoomRepository             roomRepository;
     private final AmenityRepository          amenityRepository;
     private final ReviewRepository           reviewRepository;
-        private final HotelPricingService        hotelPricingService;
-    private final ApplicationEventPublisher  eventPublisher; // ← சேர்க்கணும்
+    private final HotelPricingService        hotelPricingService;
+    private final ApplicationEventPublisher  eventPublisher;
+
+    public AdminHotelService(
+            HotelRepository hotelRepository,
+            RoomRepository roomRepository,
+            AmenityRepository amenityRepository,
+            ReviewRepository reviewRepository,
+            HotelPricingService hotelPricingService,
+            ApplicationEventPublisher eventPublisher) {
+        this.hotelRepository = hotelRepository;
+        this.roomRepository = roomRepository;
+        this.amenityRepository = amenityRepository;
+        this.reviewRepository = reviewRepository;
+        this.hotelPricingService = hotelPricingService;
+        this.eventPublisher = eventPublisher;
+    }
 
     // ── Get All Hotels ────────────────────────────────
     public List<AdminHotelResponse> getAllHotels() {

@@ -13,16 +13,19 @@ import com.travelhub.backend.repository.HotelRepository;
 import com.travelhub.backend.repository.ReviewRepository;
 import com.travelhub.backend.service.HotelPricingService.PriceRange;
 
-import lombok.RequiredArgsConstructor;
-
 @Service
-@RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class HotelService {
 
     private final HotelRepository hotelRepository;
     private final ReviewRepository reviewRepository;
     private final HotelPricingService hotelPricingService;
+
+    public HotelService(HotelRepository hotelRepository, ReviewRepository reviewRepository, HotelPricingService hotelPricingService) {
+        this.hotelRepository = hotelRepository;
+        this.reviewRepository = reviewRepository;
+        this.hotelPricingService = hotelPricingService;
+    }
 
     public List<HotelResponse> getAllHotels() {
         List<Hotel> hotels = hotelRepository.findByApplicationStatus("Approved");
@@ -54,7 +57,7 @@ public class HotelService {
 
         List<Long> hotelIds = hotels.stream().map(Hotel::getId).collect(Collectors.toList());
 
-        // 2 bulk queries instead of 2 per hotel
+        // bulk queries
         Map<Long, Double> avgRatings = reviewRepository.getAverageRatingsByHotelIds(hotelIds);
         Map<Long, Long> reviewCounts = reviewRepository.getReviewCountsByHotelIds(hotelIds);
         Map<Long, PriceRange> priceRanges = hotelPricingService.getPriceRangesByHotelIds(hotelIds);
@@ -62,23 +65,23 @@ public class HotelService {
         return hotels.stream()
                 .map(hotel -> toHotelResponse(hotel,
                         avgRatings.getOrDefault(hotel.getId(), 0.0),
-                reviewCounts.getOrDefault(hotel.getId(), 0L).intValue(),
-                priceRanges.get(hotel.getId())))
+                        reviewCounts.getOrDefault(hotel.getId(), 0L).intValue(),
+                        priceRanges.get(hotel.getId())))
                 .collect(Collectors.toList());
     }
 
-    /** Single hotel fetch — 2 individual queries is acceptable for detail pages */
+    /** Single hotel fetch — individual queries for detail pages */
     private HotelResponse toSingleHotelResponse(Hotel hotel) {
         Double avgRating = reviewRepository.getAverageRatingByHotelId(hotel.getId());
         Long count = reviewRepository.getReviewCountByHotelId(hotel.getId());
         PriceRange priceRange = hotelPricingService.getPriceRangeByHotelId(hotel.getId());
         return toHotelResponse(hotel,
                 avgRating != null ? avgRating : 0.0,
-            count != null ? count.intValue() : 0,
-            priceRange);
+                count != null ? count.intValue() : 0,
+                priceRange);
     }
 
-        private HotelResponse toHotelResponse(Hotel hotel, double rating, int reviewCount, PriceRange priceRange) {
+    private HotelResponse toHotelResponse(Hotel hotel, double rating, int reviewCount, PriceRange priceRange) {
         List<String> amenityList = null;
         if (hotel.getAmenityList() != null && !hotel.getAmenityList().isEmpty()) {
             amenityList = hotel.getAmenityList().stream()
@@ -86,20 +89,22 @@ public class HotelService {
                     .collect(Collectors.toList());
         }
 
-        return HotelResponse.builder()
-                .id(hotel.getId())
-                .hotelName(hotel.getHotelName())
-                .destination(hotel.getDestination())
-                .location(hotel.getLocation())
-                .description(hotel.getDescription())
-                .priceFrom(priceRange != null ? priceRange.priceFrom() : null)
-                .priceTo(priceRange != null ? priceRange.priceTo() : null)
-                .rating(Math.round(rating * 10.0) / 10.0)
-                .reviewCount(reviewCount)
-                .imageUrl(hotel.getImageUrl())
-                .amenities(amenityList)
-                .district(hotel.getDistrict())
-                .applicationStatus(hotel.getApplicationStatus())
-                .build();
+        HotelResponse response = new HotelResponse();
+        response.setId(hotel.getId());
+        response.setHotelName(hotel.getHotelName());
+        response.setDestination(hotel.getDestination());
+        response.setLocation(hotel.getLocation());
+        response.setDescription(hotel.getDescription());
+        response.setPriceFrom(priceRange != null ? priceRange.priceFrom() : null);
+        response.setPriceTo(priceRange != null ? priceRange.priceTo() : null);
+        response.setRating(Math.round(rating * 10.0) / 10.0);
+        response.setReviewCount(reviewCount);
+        response.setImageUrl(hotel.getImageUrl());
+        response.setAmenities(amenityList);
+        response.setDistrict(hotel.getDistrict());
+        response.setApplicationStatus(hotel.getApplicationStatus());
+        response.setHotelEmail(hotel.getHotelEmail());
+        response.setHotelContactNumber(hotel.getHotelContactNumber());
+        return response;
     }
 }

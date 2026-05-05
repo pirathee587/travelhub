@@ -2,7 +2,6 @@ package com.travelhub.backend.controller;
 
 import com.travelhub.backend.common.ApiResponse;
 import com.travelhub.backend.service.AdminUserService;
-import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -10,12 +9,16 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/admin/users")
-@RequiredArgsConstructor
+
 @CrossOrigin(origins = "*") // Note: Replace "*" with your Vercel URL in production
 @PreAuthorize("hasRole('ADMIN')")
 public class AdminUserController {
 
     private final AdminUserService adminUserService;
+
+    public AdminUserController(AdminUserService adminUserService) {
+        this.adminUserService = adminUserService;
+    }
 
     @GetMapping
     public ResponseEntity<?> getAllUsers() {

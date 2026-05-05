@@ -7,11 +7,9 @@ import com.travelhub.backend.repository.HotelRepository;
 import com.travelhub.backend.repository.PackageRepository;
 import com.travelhub.backend.repository.ReviewRepository;
 import com.travelhub.backend.repository.UserRepository;
-import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 @Service
-@RequiredArgsConstructor
 public class AdminDashboardService {
 
     private final UserRepository    userRepository;
@@ -19,6 +17,14 @@ public class AdminDashboardService {
     private final PackageRepository packageRepository;
     private final BookingRepository bookingRepository;
     private final ReviewRepository  reviewRepository;
+    public AdminDashboardService(UserRepository    userRepository, HotelRepository   hotelRepository, PackageRepository packageRepository, BookingRepository bookingRepository, ReviewRepository  reviewRepository) {
+        this.userRepository = userRepository;
+        this.hotelRepository = hotelRepository;
+        this.packageRepository = packageRepository;
+        this.bookingRepository = bookingRepository;
+        this.reviewRepository = reviewRepository;
+    }
+
 
     public AdminDashboardResponse getDashboardStats() {
 

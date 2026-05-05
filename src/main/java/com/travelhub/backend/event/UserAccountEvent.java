@@ -1,11 +1,15 @@
 package com.travelhub.backend.event;
 
 import com.travelhub.backend.entity.User;
-import lombok.Getter;
 import org.springframework.context.ApplicationEvent;
 
-@Getter
+
 public class UserAccountEvent extends ApplicationEvent {
+    
+    public User getUser() { return user; }
+    public String getType() { return type; }
+    public String getToken() { return token; }
+    public String getReason() { return reason; }
     private final User user;
     private final String type; // e.g., "REGISTERED", "APPROVED", "REJECTED", "PASSWORD_RESET"
     private final String token; // Optional token for verification/reset

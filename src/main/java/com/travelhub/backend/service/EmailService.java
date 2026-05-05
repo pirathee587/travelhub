@@ -4,7 +4,6 @@ import org.springframework.stereotype.Service;
 
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
-import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
@@ -13,10 +12,14 @@ import com.travelhub.backend.entity.Booking;
 import com.travelhub.backend.entity.User;
 
 @Service
-@RequiredArgsConstructor
+
 public class EmailService {
 
     private final JavaMailSender mailSender;
+
+    public EmailService(JavaMailSender mailSender) {
+        this.mailSender = mailSender;
+    }
 
     @Value("${app.base-url:http://localhost:5173}")
     private String baseUrl;

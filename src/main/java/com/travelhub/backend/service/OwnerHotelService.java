@@ -8,7 +8,6 @@ import com.travelhub.backend.event.HotelEvent;
 import com.travelhub.backend.repository.HotelRepository;
 import com.travelhub.backend.repository.ReviewRepository;
 import com.travelhub.backend.repository.UserRepository;
-import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -18,7 +17,6 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 @Service
-@RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class OwnerHotelService {
 
@@ -28,10 +26,21 @@ public class OwnerHotelService {
     private final ImageUploadService imageUploadService;
     private final ApplicationEventPublisher eventPublisher;
 
+    public OwnerHotelService(
+            HotelRepository hotelRepository,
+            UserRepository userRepository,
+            ReviewRepository reviewRepository,
+            ImageUploadService imageUploadService,
+            ApplicationEventPublisher eventPublisher) {
+        this.hotelRepository = hotelRepository;
+        this.userRepository = userRepository;
+        this.reviewRepository = reviewRepository;
+        this.imageUploadService = imageUploadService;
+        this.eventPublisher = eventPublisher;
+    }
+
     public List<HotelResponse> getOwnerHotels(String status) {
-        // Fetch all hotels matching the status (Global View)
-        // Ensure the status matches the database values: "Approved", "Pending", "Rejected"
-        String targetStatus = "Approved"; // Default to Approved
+        String targetStatus = "Approved";
         
         if ("Pending".equalsIgnoreCase(status)) {
             targetStatus = "Pending";
@@ -58,32 +67,30 @@ public class OwnerHotelService {
                 imageUrl = imageUploadService.uploadHotelImage(hotelImage).getImageUrl();
             } catch (Exception e) {
                 System.err.println("Warning: Hotel image upload failed: " + e.getMessage());
-                // Fallback to placeholder if upload fails
                 if (imageUrl == null || imageUrl.isBlank()) {
                     imageUrl = "https://images.unsplash.com/photo-1566073771259-6a8506099945?q=80&w=2070&auto=format&fit=crop";
                 }
             }
         }
 
-        Hotel hotel = Hotel.builder()
-                .hotelName(request.getHotelName())
-                .destination(request.getDestination())
-                .location(request.getLocation())
-                .description(request.getDescription())
-                .priceFrom(request.getPriceFrom())
-                .priceTo(request.getPriceTo())
-                .imageUrl(imageUrl)
-                .district(request.getDistrict())
-                .hotelEmail(request.getOwnerEmail())
-                .hotelContactNumber(request.getPhoneNumber())
-                .phoneNumber(request.getPhoneNumber())
-                .hotlineNumber(request.getHotlineNumber())
-                .ownerName(request.getOwnerName())
-                .ownerEmail(email)
-                .ownerNic(request.getOwnerNic())
-                .applicationStatus("Pending")
-                .owner(owner)
-                .build();
+        Hotel hotel = new Hotel();
+        hotel.setHotelName(request.getHotelName());
+        hotel.setDestination(request.getDestination());
+        hotel.setLocation(request.getLocation());
+        hotel.setDescription(request.getDescription());
+        hotel.setPriceFrom(request.getPriceFrom());
+        hotel.setPriceTo(request.getPriceTo());
+        hotel.setImageUrl(imageUrl);
+        hotel.setDistrict(request.getDistrict());
+        hotel.setHotelEmail(request.getOwnerEmail());
+        hotel.setHotelContactNumber(request.getPhoneNumber());
+        hotel.setPhoneNumber(request.getPhoneNumber());
+        hotel.setHotlineNumber(request.getHotlineNumber());
+        hotel.setOwnerName(request.getOwnerName());
+        hotel.setOwnerEmail(email);
+        hotel.setOwnerNic(request.getOwnerNic());
+        hotel.setApplicationStatus("Pending");
+        hotel.setOwner(owner);
 
         hotel = hotelRepository.save(hotel);
         eventPublisher.publishEvent(new HotelEvent(this, hotel, "CREATED"));
@@ -136,20 +143,20 @@ public class OwnerHotelService {
                     .collect(Collectors.toList())
                 : List.of();
 
-        return HotelResponse.builder()
-                .id(hotel.getId())
-                .hotelName(hotel.getHotelName())
-                .destination(hotel.getDestination())
-                .location(hotel.getLocation())
-                .description(hotel.getDescription())
-                .priceFrom(hotel.getPriceFrom())
-                .priceTo(hotel.getPriceTo())
-                .imageUrl(hotel.getImageUrl())
-                .amenities(amenityList)
-                .district(hotel.getDistrict())
-                .applicationStatus(hotel.getApplicationStatus())
-                .hotelEmail(hotel.getHotelEmail())
-                .hotelContactNumber(hotel.getHotelContactNumber())
-                .build();
+        HotelResponse response = new HotelResponse();
+        response.setId(hotel.getId());
+        response.setHotelName(hotel.getHotelName());
+        response.setDestination(hotel.getDestination());
+        response.setLocation(hotel.getLocation());
+        response.setDescription(hotel.getDescription());
+        response.setPriceFrom(hotel.getPriceFrom());
+        response.setPriceTo(hotel.getPriceTo());
+        response.setImageUrl(hotel.getImageUrl());
+        response.setAmenities(amenityList);
+        response.setDistrict(hotel.getDistrict());
+        response.setApplicationStatus(hotel.getApplicationStatus());
+        response.setHotelEmail(hotel.getHotelEmail());
+        response.setHotelContactNumber(hotel.getHotelContactNumber());
+        return response;
     }
 }

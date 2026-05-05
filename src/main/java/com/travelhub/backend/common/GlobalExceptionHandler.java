@@ -50,6 +50,7 @@ public class GlobalExceptionHandler {
                 .getFieldErrors()
                 .stream()
                 .map(e -> e.getField() + ": " + e.getDefaultMessage())
+                .map(Object::toString)
                 .toList();
         return ResponseEntity
                 .status(HttpStatus.BAD_REQUEST)

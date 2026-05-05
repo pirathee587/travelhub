@@ -8,13 +8,14 @@ import org.springframework.stereotype.Service;
 
 import com.travelhub.backend.repository.RoomRepository;
 
-import lombok.RequiredArgsConstructor;
-
 @Service
-@RequiredArgsConstructor
 public class HotelPricingService {
 
     private final RoomRepository roomRepository;
+
+    public HotelPricingService(RoomRepository roomRepository) {
+        this.roomRepository = roomRepository;
+    }
 
     public Map<Long, PriceRange> getPriceRangesByHotelIds(List<Long> hotelIds) {
         if (hotelIds == null || hotelIds.isEmpty()) {
