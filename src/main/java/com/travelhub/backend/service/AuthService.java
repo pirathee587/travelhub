@@ -69,7 +69,7 @@ public class AuthService {
         // Handle Role-specific profile creation
         if (user.getRole() == Role.AGENT) {
             Agent agent = Agent.builder()
-                    .agentName(user.getName())
+                    .agencyName(user.getName())
                     .email(user.getEmail())
                     .phone(user.getTelephone())
                     .agencyName(user.getAgencyName())

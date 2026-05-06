@@ -44,8 +44,7 @@ public class AdminAgentService {
     public List<AdminAgentListResponse> searchAgents(
             String keyword) {
         return agentRepository
-                .findByAgentNameContainingIgnoreCaseOrEmailContainingIgnoreCase(
-                        keyword, keyword)
+                .findByAgencyNameContainingIgnoreCase(keyword)
                 .stream()
                 .map(this::mapToListResponse)
                 .toList();
@@ -63,7 +62,7 @@ public class AdminAgentService {
 
 
         String initials = generateInitials(
-                agent.getAgentName());
+                agent.getAgencyName());
 
         // Member Since format
         // LocalDateTime → "March 2020"
@@ -86,7 +85,7 @@ public class AdminAgentService {
         return new AdminAgentDetailResponse(
                 agent.getId(),
                 initials,
-                agent.getAgentName(),
+                agent.getAgencyName(),
                 agent.getCompanyName(),
                 agent.getProfileImage(),
                 agent.getOwnerName(),
@@ -201,7 +200,7 @@ public class AdminAgentService {
 
         return new AdminAgentListResponse(
                 a.getId(),
-                a.getAgentName(),
+                a.getAgencyName(),
                 a.getCompanyName(),
                 a.getOwnerName(),
                 a.getEmail(),

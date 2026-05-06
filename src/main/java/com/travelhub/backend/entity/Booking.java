@@ -33,7 +33,7 @@ public class Booking {
     private Hotel hotel;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "vehicle_id", nullable = false)
+    @JoinColumn(name = "vehicle_id", nullable = true)
     private Vehicle vehicle;
 
     @Column(nullable = false)
@@ -50,6 +50,14 @@ public class Booking {
 
     @Column(updatable = false)
     private LocalDateTime createdAt;
+
+    private Integer adults;
+    private Integer children;
+
+    @Column(columnDefinition = "TEXT")
+    private String specialRequests;
+
+    private String duration;
 
     @PrePersist
     protected void onCreate() {

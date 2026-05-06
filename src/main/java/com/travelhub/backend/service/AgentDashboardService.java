@@ -8,6 +8,7 @@ import com.travelhub.backend.repository.VehicleRepository;
 import com.travelhub.backend.repository.PackageRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
@@ -19,14 +20,20 @@ public class AgentDashboardService {
     private final PackageRepository packageRepository;
     private final AgentRepository agentRepository;
 
+    @Transactional
     public AgentDashboardStatsResponse getStats(Long agentId) {
 
-        long activeTrips = bookingRepository
-                .findByVehicleAgentIdAndStatus(agentId, "active").size();
+        long activeTrips = bookingRepository.findByAgentId(agentId)
+                .stream()
+                .filter(b -> b.getStatus().equals("active") ||
+                        b.getStatus().equals("confirmed") ||
+                        b.getStatus().equals("in_progress") ||
+                        b.getStatus().equals("In_progress"))
+                .count();
         long completedTrips = bookingRepository
-                .findByVehicleAgentIdAndStatus(agentId, "completed").size();
+                .findByAgentIdAndStatus(agentId, "completed").size();
         long pendingRequests = bookingRepository
-                .findByVehicleAgentIdAndStatus(agentId, "pending").size();
+                .findByAgentIdAndStatus(agentId, "pending").size();
         long totalVehicles = vehicleRepository
                 .findByAgentId(agentId).size();
         long totalDrivers = driverRepository
@@ -34,7 +41,7 @@ public class AgentDashboardService {
         long totalPackages = packageRepository.count();
 
         Double totalRevenue = bookingRepository
-                .findByVehicleAgentIdAndStatus(agentId, "completed")
+                .findByAgentIdAndStatus(agentId, "completed")
                 .stream()
                 .mapToDouble(b -> b.getTotalPrice() != null ? b.getTotalPrice() : 0)
                 .sum();

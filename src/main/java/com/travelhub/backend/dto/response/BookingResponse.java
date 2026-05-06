@@ -24,6 +24,10 @@ public class BookingResponse {
     private String imageUrl;
     private String category;
     private LocalDateTime bookedOn;
+    private Integer adults;
+    private Integer children;
+    private String specialRequests;
+    private String duration;
 
     // Hotel info
     private String hotelName;

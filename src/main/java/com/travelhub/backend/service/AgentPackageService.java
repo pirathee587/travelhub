@@ -98,7 +98,7 @@ public class AgentPackageService {
         if (imageFiles != null && !imageFiles.isEmpty()) {
             int order = 0;
             for (MultipartFile file : imageFiles) {
-                String url = imageUploadService.uploadRoomImage(file).getImageUrl();
+                String url = imageUploadService.uploadRoomImage(file, "packages").getImageUrl();
                 PackageImage image = PackageImage.builder()
                         .pkg(pkg)
                         .imageUrl(url)
@@ -153,7 +153,7 @@ public class AgentPackageService {
 
         if (imageFiles != null && !imageFiles.isEmpty()) {
             for (MultipartFile file : imageFiles) {
-                String url = imageUploadService.uploadRoomImage(file).getImageUrl();
+                String url = imageUploadService.uploadRoomImage(file, "packages").getImageUrl();
                 pkg.getImages().add(PackageImage.builder()
                         .pkg(pkg)
                         .imageUrl(url)

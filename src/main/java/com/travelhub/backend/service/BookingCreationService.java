@@ -51,7 +51,7 @@ public class BookingCreationService {
                 .pkg(pkg)
                 .hotel(hotel)
                 .vehicle(vehicle)
-                .status("confirmed")
+                .status("pending")
                 .startDate(request.getStartDate())
                 .endDate(request.getEndDate())
                 .totalPrice(request.getTotalPrice())

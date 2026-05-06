@@ -45,7 +45,12 @@ public class ImageUploadService {
      * @param file the image file sent from the frontend (form-data key: "file")
      * @return ImageUploadResponse containing imageUrl and fileName
      */
+    // Old method — keeps working for teammates
     public ImageUploadResponse uploadRoomImage(MultipartFile file) {
+        return uploadRoomImage(file, "general");
+    }
+
+    public ImageUploadResponse uploadRoomImage(MultipartFile file, String folder) {
 
         // ── Step 1: Validate ──────────────────────────────────────────────────
 
@@ -75,10 +80,10 @@ public class ImageUploadService {
 
         // ── Step 2: Generate unique filename ─────────────────────────────────
 
+        // ── Step 2: Generate unique filename ─────────────────────────────────
         String uniqueFileName = UUID.randomUUID().toString() + extension;
 
-        // ── Step 3 & 4: Upload to Supabase ──────────────────────────────────
-
+// ── Step 3 & 4: Upload to Supabase ──────────────────────────────────
         try {
             String uploadUrl = String.format("%s/storage/v1/object/%s/%s", supabaseUrl, supabaseBucket, uniqueFileName);
 
@@ -94,17 +99,14 @@ public class ImageUploadService {
             if (!response.getStatusCode().is2xxSuccessful()) {
                 throw new RuntimeException("Failed to upload to Supabase: " + response.getBody());
             }
-
         } catch (IOException ex) {
             throw new RuntimeException("Failed to read image file: " + ex.getMessage());
         } catch (Exception ex) {
             throw new RuntimeException("Supabase Upload Error: " + ex.getMessage());
         }
 
-        // ── Step 5: Build and return response ────────────────────────────────
-
+// ── Step 5: Build and return response ────────────────────────────────
         String publicUrl = String.format("%s/storage/v1/object/public/%s/%s", supabaseUrl, supabaseBucket, uniqueFileName);
-
         return ImageUploadResponse.builder()
                 .imageUrl(publicUrl)
                 .fileName(uniqueFileName)

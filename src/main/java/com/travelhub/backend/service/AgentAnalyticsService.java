@@ -12,6 +12,7 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDate;
 import java.util.*;
 import java.util.stream.Collectors;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
@@ -22,8 +23,9 @@ public class AgentAnalyticsService {
     private final VehicleRepository vehicleRepository;
     private final AgentRepository agentRepository;
 
+    @Transactional
     public AnalyticsResponse getAnalytics(Long agentId, String period) {
-        List<Booking> allBookings = bookingRepository.findByVehicleAgentId(agentId);
+        List<Booking> allBookings = bookingRepository.findByAgentId(agentId);
         List<Booking> filtered = filterByPeriod(allBookings, period);
 
         // Stat cards
@@ -59,7 +61,10 @@ public class AgentAnalyticsService {
 
         // Top destinations
         List<Map<String, Object>> topDestinations = filtered.stream()
-                .filter(b -> b.getPkg() != null && b.getPkg().getDestination() != null)
+                .filter(b -> {
+                    try { return b.getPkg() != null && b.getPkg().getDestination() != null; }
+                    catch (Exception e) { return false; }
+                })
                 .collect(Collectors.groupingBy(b -> b.getPkg().getDestination(), Collectors.counting()))
                 .entrySet().stream()
                 .sorted(Map.Entry.<String, Long>comparingByValue().reversed())
