@@ -1,5 +1,11 @@
 package com.travelhub.backend.service;
 
+import java.util.List;
+import java.util.Map;
+
+import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.stereotype.Service;
+
 import com.travelhub.backend.common.ResourceNotFoundException;
 import com.travelhub.backend.dto.response.AdminHotelDetailResponse;
 import com.travelhub.backend.dto.response.AdminHotelResponse;
@@ -9,12 +15,11 @@ import com.travelhub.backend.entity.Room;
 import com.travelhub.backend.event.HotelEvent;
 import com.travelhub.backend.repository.AmenityRepository;
 import com.travelhub.backend.repository.HotelRepository;
+import com.travelhub.backend.repository.ReviewRepository;
 import com.travelhub.backend.repository.RoomRepository;
+import com.travelhub.backend.service.HotelPricingService.PriceRange;
+
 import lombok.RequiredArgsConstructor;
-import org.springframework.context.ApplicationEventPublisher;
-import org.springframework.stereotype.Service;
-import java.util.Arrays;
-import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -23,23 +28,43 @@ public class AdminHotelService {
     private final HotelRepository            hotelRepository;
     private final RoomRepository             roomRepository;
     private final AmenityRepository          amenityRepository;
+    private final ReviewRepository           reviewRepository;
+        private final HotelPricingService        hotelPricingService;
     private final ApplicationEventPublisher  eventPublisher; // ← சேர்க்கணும்
 
     // ── Get All Hotels ────────────────────────────────
     public List<AdminHotelResponse> getAllHotels() {
-        return hotelRepository.findAll()
-                .stream()
-                .map(this::mapToResponse)
+        List<Hotel> hotels = hotelRepository.findAll();
+        if (hotels.isEmpty()) return List.of();
+
+        List<Long> hotelIds = hotels.stream().map(Hotel::getId).toList();
+        Map<Long, Double> avgRatings = reviewRepository.getAverageRatingsByHotelIds(hotelIds);
+        Map<Long, Long> reviewCounts = reviewRepository.getReviewCountsByHotelIds(hotelIds);
+                Map<Long, PriceRange> priceRanges = hotelPricingService.getPriceRangesByHotelIds(hotelIds);
+
+        return hotels.stream()
+                .map(h -> mapToResponse(h, 
+                    avgRatings.getOrDefault(h.getId(), 0.0), 
+                                        reviewCounts.getOrDefault(h.getId(), 0L).intValue(),
+                                        priceRanges.get(h.getId())))
                 .toList();
     }
 
     // ── Get Hotels By Status ──────────────────────────
-    public List<AdminHotelResponse> getHotelsByStatus(
-            String status) {
-        return hotelRepository
-                .findByApplicationStatus(status)
-                .stream()
-                .map(this::mapToResponse)
+    public List<AdminHotelResponse> getHotelsByStatus(String status) {
+        List<Hotel> hotels = hotelRepository.findByApplicationStatus(status);
+        if (hotels.isEmpty()) return List.of();
+
+        List<Long> hotelIds = hotels.stream().map(Hotel::getId).toList();
+        Map<Long, Double> avgRatings = reviewRepository.getAverageRatingsByHotelIds(hotelIds);
+        Map<Long, Long> reviewCounts = reviewRepository.getReviewCountsByHotelIds(hotelIds);
+        Map<Long, PriceRange> priceRanges = hotelPricingService.getPriceRangesByHotelIds(hotelIds);
+
+        return hotels.stream()
+                .map(h -> mapToResponse(h,
+                        avgRatings.getOrDefault(h.getId(), 0.0),
+                        reviewCounts.getOrDefault(h.getId(), 0L).intValue(),
+                        priceRanges.get(h.getId())))
                 .toList();
     }
 
@@ -74,21 +99,25 @@ public class AdminHotelService {
             amenities = List.of();
         }
 
+        Double avgRating = reviewRepository.getAverageRatingByHotelId(id);
+        
         return new AdminHotelDetailResponse(
                 hotel.getId(),
                 hotel.getHotelName(),
-                hotel.getRating(),
+                avgRating != null ? Math.round(avgRating * 10.0) / 10.0 : 0.0,
                 hotel.getImageUrl(),
                 hotel.getDistrict(),
                 hotel.getLocation(),
-                hotel.getNumberOfRooms(),
                 roomTypes,
                 hotel.getOwnerName(),
                 hotel.getOwnerEmail(),
                 hotel.getOwnerNic(),
                 hotel.getNicImageUrl(),
+                hotel.getOwnerId(),
                 hotel.getPhoneNumber(),
                 hotel.getHotlineNumber(),
+                hotel.getHotelEmail(),
+                hotel.getHotelContactNumber(),
                 amenities,
                 hotel.getApplicationStatus()
         );
@@ -145,17 +174,17 @@ public class AdminHotelService {
     }
 
     // ── Map Entity → Response ─────────────────────────
-    private AdminHotelResponse mapToResponse(Hotel h) {
+        private AdminHotelResponse mapToResponse(Hotel h, double rating, int reviewCount, PriceRange priceRange) {
         return new AdminHotelResponse(
                 h.getId(),
                 h.getHotelName(),
                 h.getDestination(),
                 h.getLocation(),
                 h.getDescription(),
-                h.getPriceFrom(),
-                h.getPriceTo(),
-                h.getRating(),
-                h.getReviewCount(),
+                                priceRange != null ? priceRange.priceFrom() : null,
+                                priceRange != null ? priceRange.priceTo() : null,
+                Math.round(rating * 10.0) / 10.0,
+                reviewCount,
                 h.getImageUrl(),
                 h.getDistrict(),
                 h.getApplicationStatus()

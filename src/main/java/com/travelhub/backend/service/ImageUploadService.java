@@ -1,18 +1,27 @@
 package com.travelhub.backend.service;
 
-import com.travelhub.backend.dto.response.ImageUploadResponse;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.*;
-import org.springframework.stereotype.Service;
-import org.springframework.web.client.RestTemplate;
-import org.springframework.web.multipart.MultipartFile;
-
 import java.io.IOException;
 import java.util.List;
 import java.util.UUID;
 
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+import org.springframework.stereotype.Service;
+import org.springframework.web.client.HttpClientErrorException;
+import org.springframework.web.client.RestTemplate;
+import org.springframework.web.multipart.MultipartFile;
+
+import com.travelhub.backend.dto.response.ImageUploadResponse;
+
+import lombok.extern.slf4j.Slf4j;
+
 @Service
+@Slf4j
 public class ImageUploadService {
 
     @Value("${supabase.url}")
@@ -22,12 +31,20 @@ public class ImageUploadService {
     private String supabaseKey;
 
     @Value("${supabase.bucket}")
-    private String supabaseBucket;
+    private String roomBucket;
+
+    @Value("${supabase.hotel-bucket}")
+    private String hotelBucket;
+
+    @Value("${supabase.review-bucket}")
+    private String reviewBucket;
+
+    @Value("${supabase.user-bucket}")
+    private String userBucket;
 
     @Autowired
     private RestTemplate restTemplate;
 
-    // Only these image formats are accepted
     private static final List<String> ALLOWED_TYPES = List.of(
             "image/jpeg", "image/jpg", "image/png", "image/webp", "application/octet-stream"
     );
@@ -36,24 +53,28 @@ public class ImageUploadService {
             ".jpg", ".jpeg", ".png", ".webp"
     );
 
-    // Maximum allowed file size: 5 MB
     private static final long MAX_SIZE_BYTES = 5 * 1024 * 1024L;
 
-    /**
-     * Accepts a MultipartFile, validates it, saves it, and returns the public URL.
-     *
-     * @param file the image file sent from the frontend (form-data key: "file")
-     * @return ImageUploadResponse containing imageUrl and fileName
-     */
-    // Old method — keeps working for teammates
+    // Old method — keeps working for agent image uploads
     public ImageUploadResponse uploadRoomImage(MultipartFile file) {
-        return uploadRoomImage(file, "general");
+        return uploadToBucket(file, roomBucket);
     }
 
-    public ImageUploadResponse uploadRoomImage(MultipartFile file, String folder) {
+    public ImageUploadResponse uploadHotelImage(MultipartFile file) {
+        return uploadToBucket(file, hotelBucket);
+    }
+
+    public ImageUploadResponse uploadProfileImage(MultipartFile file) {
+        return uploadToBucket(file, userBucket);
+    }
+
+    public ImageUploadResponse uploadReviewImage(MultipartFile file) {
+        return uploadToBucket(file, reviewBucket);
+    }
+
+    private ImageUploadResponse uploadToBucket(MultipartFile file, String bucketName) {
 
         // ── Step 1: Validate ──────────────────────────────────────────────────
-
         if (file == null || file.isEmpty()) {
             throw new RuntimeException("No file selected. Please choose an image.");
         }
@@ -70,7 +91,7 @@ public class ImageUploadService {
         if (!isValidType && !isValidExtension) {
             throw new RuntimeException(
                     "Invalid file type '" + file.getContentType() +
-                    "'. Only JPG, PNG, and WEBP images are allowed."
+                            "'. Only JPG, PNG, and WEBP images are allowed."
             );
         }
 
@@ -79,34 +100,48 @@ public class ImageUploadService {
         }
 
         // ── Step 2: Generate unique filename ─────────────────────────────────
-
-        // ── Step 2: Generate unique filename ─────────────────────────────────
         String uniqueFileName = UUID.randomUUID().toString() + extension;
 
-// ── Step 3 & 4: Upload to Supabase ──────────────────────────────────
+        // ── Step 3 & 4: Upload to Supabase ───────────────────────────────────
         try {
-            String uploadUrl = String.format("%s/storage/v1/object/%s/%s", supabaseUrl, supabaseBucket, uniqueFileName);
+            String uploadUrl = String.format("%s/storage/v1/object/%s/%s", supabaseUrl, bucketName, uniqueFileName);
+
+            log.info("[ImageUpload] Uploading to bucket '{}': {}", bucketName, uploadUrl);
 
             HttpHeaders headers = new HttpHeaders();
-            headers.set("Authorization", "Bearer " + supabaseKey);
             headers.set("apikey", supabaseKey);
-            headers.setContentType(MediaType.valueOf(file.getContentType()));
+            headers.set("Authorization", "Bearer " + supabaseKey);
+            headers.setContentType(MediaType.valueOf(
+                    file.getContentType() != null ? file.getContentType() : "application/octet-stream"
+            ));
 
             HttpEntity<byte[]> entity = new HttpEntity<>(file.getBytes(), headers);
 
             ResponseEntity<String> response = restTemplate.exchange(uploadUrl, HttpMethod.POST, entity, String.class);
 
             if (!response.getStatusCode().is2xxSuccessful()) {
+                log.error("[ImageUpload] Supabase returned non-2xx: {} - {}", response.getStatusCode(), response.getBody());
                 throw new RuntimeException("Failed to upload to Supabase: " + response.getBody());
             }
+
+            log.info("[ImageUpload] ✅ Upload successful for file: {}", uniqueFileName);
+
+        } catch (HttpClientErrorException ex) {
+            log.error("[ImageUpload] ❌ Supabase HTTP error: {} - {}", ex.getStatusCode(), ex.getResponseBodyAsString());
+            throw new RuntimeException("Supabase Upload Error: " + ex.getStatusCode() + " - " + ex.getResponseBodyAsString());
         } catch (IOException ex) {
+            log.error("[ImageUpload] ❌ Failed to read file: {}", ex.getMessage());
             throw new RuntimeException("Failed to read image file: " + ex.getMessage());
         } catch (Exception ex) {
+            log.error("[ImageUpload] ❌ Unexpected error: {}", ex.getMessage(), ex);
             throw new RuntimeException("Supabase Upload Error: " + ex.getMessage());
         }
 
-// ── Step 5: Build and return response ────────────────────────────────
-        String publicUrl = String.format("%s/storage/v1/object/public/%s/%s", supabaseUrl, supabaseBucket, uniqueFileName);
+        // ── Step 5: Build and return response ────────────────────────────────
+        String publicUrl = String.format("%s/storage/v1/object/public/%s/%s", supabaseUrl, bucketName, uniqueFileName);
+
+        log.info("[ImageUpload] Public URL: {}", publicUrl);
+
         return ImageUploadResponse.builder()
                 .imageUrl(publicUrl)
                 .fileName(uniqueFileName)

@@ -1,5 +1,7 @@
 package com.travelhub.backend.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.*;
 import java.util.List;
@@ -10,6 +12,7 @@ import java.util.List;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler", "amenityList", "rooms", "owner"})
 public class Hotel {
 
     @Id
@@ -30,19 +33,12 @@ public class Hotel {
 
     private Double priceFrom;
     private Double priceTo;
-    private Double rating;
-    private Integer reviewCount;
     private String imageUrl;
     private String district;
-
-    // ── Location Details ───────────────────────────────
-    @Column(name = "number_of_rooms")
-    private Integer numberOfRooms;
 
     // ── Owner Information ──────────────────────────────
     @Column(name = "owner_name")
     private String ownerName;
-
 
     @Column(name = "owner_email")
     private String ownerEmail;
@@ -50,15 +46,21 @@ public class Hotel {
     @Column(name = "owner_nic")
     private String ownerNic;
 
-
     @Column(name = "nic_image_url")
     private String nicImageUrl;
 
+    @Column(name = "owner_id", insertable = false, updatable = false)
+    private Long ownerId;
+
     // ── Contact Information ────────────────────────────
+    @Column(name = "hotel_email")
+    private String hotelEmail;
+
+    @Column(name = "hotel_contact_number")
+    private String hotelContactNumber;
 
     @Column(name = "phone_number")
     private String phoneNumber;
-
 
     @Column(name = "hotline_number")
     private String hotlineNumber;
@@ -69,7 +71,6 @@ public class Hotel {
     @Builder.Default
     private String applicationStatus = "Pending";
 
-    // ── Amenities (Amenity entity-உடன் relationship) ──
     @OneToMany(mappedBy = "hotel",
             cascade = CascadeType.ALL,
             fetch = FetchType.LAZY)
@@ -81,7 +82,9 @@ public class Hotel {
             fetch = FetchType.LAZY)
     private List<Room> rooms;
 
-    // ── Old amenities string field keep it ────────────
-    @Column(columnDefinition = "TEXT")
-    private String amenities;
+
+    // ── Link to Owner (User entity) ──
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "owner_id")
+    private User owner;
 }

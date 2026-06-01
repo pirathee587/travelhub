@@ -17,9 +17,13 @@ public class HotelController {
 
     @GetMapping
     public ResponseEntity<List<HotelResponse>> getAllHotels(
-            @RequestParam(required = false) String destination) {
+            @RequestParam(required = false) String destination,
+            @RequestParam(required = false) String district) {
         if (destination != null && !destination.equals("all")) {
             return ResponseEntity.ok(hotelService.getHotelsByDestination(destination));
+        }
+        if (district != null && !district.equals("all")) {
+            return ResponseEntity.ok(hotelService.getHotelsByDistrict(district));
         }
         return ResponseEntity.ok(hotelService.getAllHotels());
     }

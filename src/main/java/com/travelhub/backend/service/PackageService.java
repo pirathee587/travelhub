@@ -1,18 +1,21 @@
 package com.travelhub.backend.service;
 
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
 import com.travelhub.backend.dto.response.PackageDetailResponse;
 import com.travelhub.backend.dto.response.PackageResponse;
 import com.travelhub.backend.entity.Package;
 import com.travelhub.backend.entity.PackageItinerary;
 import com.travelhub.backend.repository.PackageRepository;
-import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Service;
-import java.util.Arrays;
-import java.util.List;
-import java.util.stream.Collectors;
 import com.travelhub.backend.repository.ReviewRepository;
 
-import org.springframework.transaction.annotation.Transactional;
+import lombok.RequiredArgsConstructor;
 
 @Service
 @RequiredArgsConstructor
@@ -23,24 +26,18 @@ public class PackageService {
     private final ReviewRepository reviewRepository;
 
     public List<PackageResponse> getAllPackages() {
-        return packageRepository.findByIsActiveTrue()
-                .stream()
-                .map(this::toPackageResponse)
-                .collect(Collectors.toList());
+        List<Package> packages = packageRepository.findByIsActiveTrue();
+        return toPackageResponses(packages);
     }
 
     public List<PackageResponse> getPackagesByCategory(String category) {
-        return packageRepository.findByCategory(category)
-                .stream()
-                .map(this::toPackageResponse)
-                .collect(Collectors.toList());
+        List<Package> packages = packageRepository.findByCategory(category);
+        return toPackageResponses(packages);
     }
 
     public List<PackageResponse> getTrendingPackages() {
-        return packageRepository.findByTrendingTrue()
-                .stream()
-                .map(this::toPackageResponse)
-                .collect(Collectors.toList());
+        List<Package> packages = packageRepository.findByTrendingTrue();
+        return toPackageResponses(packages);
     }
 
     public PackageDetailResponse getPackageById(Long id) {
@@ -49,7 +46,27 @@ public class PackageService {
         return toPackageDetailResponse(pkg);
     }
 
-    private PackageResponse toPackageResponse(Package pkg) {
+    /**
+     * ✅ OPTIMIZED: Batch rating lookup — 2 queries total instead of 2N.
+     * For a list of 10 packages, this saves 18 DB roundtrips.
+     */
+    private List<PackageResponse> toPackageResponses(List<Package> packages) {
+        if (packages.isEmpty()) return List.of();
+
+        List<Long> packageIds = packages.stream().map(Package::getId).collect(Collectors.toList());
+
+        // 2 bulk queries instead of 2 per package
+        Map<Long, Double> avgRatings = reviewRepository.getAverageRatingsByPackageIds(packageIds);
+        Map<Long, Long> reviewCounts = reviewRepository.getReviewCountsByPackageIds(packageIds);
+
+        return packages.stream()
+                .map(pkg -> toPackageResponse(pkg,
+                        avgRatings.getOrDefault(pkg.getId(), 0.0),
+                        reviewCounts.getOrDefault(pkg.getId(), 0L).intValue()))
+                .collect(Collectors.toList());
+    }
+
+    private PackageResponse toPackageResponse(Package pkg, double rating, int reviewCount) {
         return PackageResponse.builder()
                 .id(pkg.getId())
                 .packageName(pkg.getPackageName())
@@ -61,10 +78,8 @@ public class PackageService {
                 .duration(pkg.getDuration())
                 .category(pkg.getCategory())
                 .imageUrl(pkg.getImageUrl())
-                .rating(reviewRepository.getAverageRatingByPackageId(pkg.getId()) != null ?
-                        Math.round(reviewRepository.getAverageRatingByPackageId(pkg.getId()) * 10.0) / 10.0 : 0.0)
-                .reviewCount(reviewRepository.getReviewCountByPackageId(pkg.getId()) != null ?
-                        reviewRepository.getReviewCountByPackageId(pkg.getId()).intValue() : 0)
+                .rating(Math.round(rating * 10.0) / 10.0)
+                .reviewCount(reviewCount)
                 .festivalDetails(pkg.getFestivalDetails())
                 .trending(pkg.getTrending())
                 .agentName(pkg.getAgent() != null ? pkg.getAgent().getAgencyName() : null)
@@ -89,6 +104,10 @@ public class PackageService {
                     .collect(Collectors.toList());
         }
 
+        // Single detail page — 2 individual queries is fine here
+        Double avgRating = reviewRepository.getAverageRatingByPackageId(pkg.getId());
+        Long count = reviewRepository.getReviewCountByPackageId(pkg.getId());
+
         return PackageDetailResponse.builder()
                 .id(pkg.getId())
                 .packageName(pkg.getPackageName())
@@ -99,10 +118,9 @@ public class PackageService {
                 .priceTo(pkg.getPriceTo())
                 .duration(pkg.getDuration())
                 .category(pkg.getCategory())
-                .imageUrl(pkg.getImageUrl()).rating(reviewRepository.getAverageRatingByPackageId(pkg.getId()) != null ?
-                        Math.round(reviewRepository.getAverageRatingByPackageId(pkg.getId()) * 10.0) / 10.0 : 0.0)
-                .reviewCount(reviewRepository.getReviewCountByPackageId(pkg.getId()) != null ?
-                        reviewRepository.getReviewCountByPackageId(pkg.getId()).intValue() : 0)
+                .imageUrl(pkg.getImageUrl())
+                .rating(avgRating != null ? Math.round(avgRating * 10.0) / 10.0 : 0.0)
+                .reviewCount(count != null ? count.intValue() : 0)
                 .festivalDetails(pkg.getFestivalDetails())
                 .trending(pkg.getTrending())
                 .agentId(pkg.getAgent() != null ? pkg.getAgent().getId() : null)
@@ -118,7 +136,16 @@ public class PackageService {
     private PackageDetailResponse.ItineraryDayResponse toItineraryDayResponse(PackageItinerary day) {
         List<String> activities = null;
         if (day.getActivities() != null) {
-            activities = Arrays.asList(day.getActivities().split(","));
+            String raw = day.getActivities().trim();
+            // ✅ FIXED: DB stores JSON array ["activity1","activity2"]
+            // Remove [ ] brackets, split by comma, clean quotes and whitespace
+            if (raw.startsWith("[")) {
+                raw = raw.substring(1, raw.length() - 1);
+            }
+            activities = Arrays.stream(raw.split(",(?=(?:[^\"]*\"[^\"]*\")*[^\"]*$)"))
+                    .map(s -> s.trim().replaceAll("^\"|\"$", "").trim())
+                    .filter(s -> !s.isEmpty())
+                    .collect(Collectors.toList());
         }
         return PackageDetailResponse.ItineraryDayResponse.builder()
                 .dayNumber(day.getDayNumber())

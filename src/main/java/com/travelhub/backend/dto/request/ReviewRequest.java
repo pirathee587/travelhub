@@ -1,6 +1,7 @@
 package com.travelhub.backend.dto.request;
 
 import lombok.Data;
+import java.util.List;
 
 @Data
 public class ReviewRequest {
@@ -9,4 +10,5 @@ public class ReviewRequest {
     private String title;      // frontend sends this field
     private String comment;
     private Integer rating;
+    private List<String> imageUrls;  // ✅ Frontend sends Supabase public URLs
 }

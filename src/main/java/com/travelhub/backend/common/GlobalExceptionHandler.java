@@ -1,13 +1,13 @@
 package com.travelhub.backend.common;
 
 
-import com.travelhub.backend.common.ApiResponse;
+import java.util.List;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
-import java.util.List;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
@@ -59,9 +59,10 @@ public class GlobalExceptionHandler {
     // ── General Exception ─────────────────────────────────────
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiResponse> handleGeneral(Exception ex) {
+        ex.printStackTrace();
         return ResponseEntity
                 .status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(new ApiResponse(false, ex.getMessage()));
+                .body(new ApiResponse(false, "An unexpected error occurred: " + ex.getMessage()));
     }
 
     // ══════════════════════════════════════════════════════════

@@ -29,7 +29,7 @@ public class Package {
     @JoinColumn(name = "agent_id", nullable = false)
     private Agent agent;
 
-    // ── Core fields (kept from existing) ─────────────────────────────────────
+    // ── Core fields ───────────────────────────────────────────
     @Column(nullable = false)
     private String packageName;
 
@@ -42,14 +42,14 @@ public class Package {
     private String category;
     private String district;
 
-    // ── Price ─────────────────────────────────────────────────────────────────
+    // ── Price ─────────────────────────────────────────────────
     @Column(name = "price_from")
     private Double priceFrom;
 
     @Column(name = "price_to")
     private Double priceTo;
 
-    // ── Content fields ────────────────────────────────────────────────────────
+    // ── Content fields ─────────────────────────────────────────
     @Column(length = 2000)
     private String description;
 
@@ -59,7 +59,7 @@ public class Package {
     @Column(columnDefinition = "TEXT")
     private String inclusions;
 
-    // ── Status fields ─────────────────────────────────────────────────────────
+    // ── Status fields ──────────────────────────────────────────
     @Builder.Default
     private Boolean isActive = true;
 
@@ -70,18 +70,18 @@ public class Package {
     @Builder.Default
     private String applicationStatus = "Pending";
 
-    // ── Stats (set by review system, not form) ────────────────────────────────
+    // ── Stats (set by review system) ───────────────────────────
     private Double rating;
     private Integer reviewCount;
 
-    // ── Legacy single image URL (kept for backward compat) ───────────────────
+    // ── Legacy single image URL ────────────────────────────────
     private String imageUrl;
 
-    // ── Soft delete ───────────────────────────────────────────────────────────
+    // ── Soft delete ────────────────────────────────────────────
     @Column(name = "deleted_at")
     private LocalDateTime deletedAt;
 
-    // ── Timestamps ────────────────────────────────────────────────────────────
+    // ── Timestamps ─────────────────────────────────────────────
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
@@ -90,18 +90,16 @@ public class Package {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
-    // ── Relationships ─────────────────────────────────────────────────────────
-
-    // Existing itinerary (kept as-is)
+    // ── Relationships ──────────────────────────────────────────
     @OneToMany(mappedBy = "pkg", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OrderBy("dayNumber ASC")
     private List<PackageItinerary> itinerary = new ArrayList<>();
 
-    // Existing images (kept as-is)
     @OneToMany(mappedBy = "pkg", cascade = CascadeType.ALL, orphanRemoval = true)
     @OrderBy("displayOrder ASC")
     private List<PackageImage> images = new ArrayList<>();
 
-    // ── Category Enum ─────────────────────────────────────────────────────────
+    // ── Category Enum ──────────────────────────────────────────
     public enum PackageCategory {
         CULTURE, BEACH, MOUNTAIN, CITY, WILDLIFE
     }
