@@ -17,6 +17,9 @@ public class AgentNotificationService {
 
     private final NotificationRepository notificationRepository;
 
+    /**
+     * Returns notifications for the agent in newest-first order.
+     */
     public List<NotificationResponse> getNotifications(Long agentId) {
         return notificationRepository
                 .findByAgentIdOrderByCreatedAtDesc(agentId)
@@ -25,32 +28,51 @@ public class AgentNotificationService {
                 .collect(Collectors.toList());
     }
 
+    /**
+     * Marks a single notification as read after ownership validation.
+     */
     public NotificationResponse markAsRead(Long agentId, Long notificationId) {
+        // Find notification by id.
         Notification notification = notificationRepository.findById(notificationId)
                 .orElseThrow(() -> new ResourceNotFoundException("Notification", "id", notificationId));
+        // Ownership check: agent can only update their own notifications.
         if (!notification.getAgent().getId().equals(agentId)) {
             throw new ResourceNotFoundException("Notification", "agentId", agentId);
         }
+        // Mark read and persist.
         notification.setRead(true);
         return toResponse(notificationRepository.save(notification));
     }
 
+    /**
+     * Marks all unread notifications as read for the given agent.
+     */
     public void markAllAsRead(Long agentId) {
+        // Load unread records only, then bulk-update read state.
         List<Notification> unread = notificationRepository
                 .findByAgentIdAndRead(agentId, false);
         unread.forEach(n -> n.setRead(true));
         notificationRepository.saveAll(unread);
     }
 
+    /**
+     * Deletes one notification after ownership validation.
+     */
     public void deleteNotification(Long agentId, Long notificationId) {
+        // Find notification by id.
         Notification notification = notificationRepository.findById(notificationId)
                 .orElseThrow(() -> new ResourceNotFoundException("Notification", "id", notificationId));
+        // Ownership check: agent can only delete their own notifications.
         if (!notification.getAgent().getId().equals(agentId)) {
             throw new ResourceNotFoundException("Notification", "agentId", agentId);
         }
+        // Delete record.
         notificationRepository.delete(notification);
     }
 
+    /**
+     * Maps Notification entity -> response DTO.
+     */
     private NotificationResponse toResponse(Notification n) {
         return NotificationResponse.builder()
                 .id(n.getId())
@@ -62,6 +84,9 @@ public class AgentNotificationService {
                 .build();
     }
 
+    /**
+     * Formats createdAt into a short human-readable relative time string.
+     */
     private String getRelativeTime(LocalDateTime createdAt) {
         if (createdAt == null) return "";
         Duration duration = Duration.between(createdAt, LocalDateTime.now());

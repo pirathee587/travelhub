@@ -20,6 +20,7 @@ public interface PackageRepository extends JpaRepository<Package, Long> {
     List<Package> findByApplicationStatus(String applicationStatus);
 
     // ── New methods (added for agent package management) ──────────────────
+    Long countByAgentId(Long agentId);
 
     // Find agent's packages excluding soft-deleted
     List<Package> findByAgentIdAndDeletedAtIsNullOrderByCreatedAtDesc(Long agentId);

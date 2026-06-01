@@ -40,18 +40,23 @@ public class AgentPackageService {
             "Polonnaruwa", "Puttalam", "Ratnapura", "Trincomalee", "Vavuniya"
     );
 
-    // ── LIST ─────────────────────────────────────────────────────────────────
+    /**
+     * Lists packages for an agent with optional search and active-state filters.
+     */
     public List<PackageSummaryResponse> listPackages(Long agentId,
                                                      String search,
                                                      Boolean isActive) {
         List<Package> packages;
 
         if (search != null && !search.isBlank()) {
+            // Prioritize text search when provided.
             packages = packageRepository.searchByAgentId(agentId, search);
         } else if (isActive != null) {
+            // Filter by active state when explicitly requested.
             packages = packageRepository
                     .findByAgentIdAndIsActiveAndDeletedAtIsNullOrderByCreatedAtDesc(agentId, isActive);
         } else {
+            // Default: all non-deleted packages for the agent.
             packages = packageRepository
                     .findByAgentIdAndDeletedAtIsNullOrderByCreatedAtDesc(agentId);
         }
@@ -59,13 +64,17 @@ public class AgentPackageService {
         return packages.stream().map(this::toSummary).collect(Collectors.toList());
     }
 
-    // ── GET ONE ──────────────────────────────────────────────────────────────
+    /**
+     * Returns one package detail after ownership validation.
+     */
     public AgentPackageDetailResponse getPackage(Long agentId, String packageId) {
         Package pkg = findAndValidateOwnership(agentId, packageId);
         return toDetail(pkg);
     }
 
-    // ── CREATE ───────────────────────────────────────────────────────────────
+    /**
+     * Creates a new package, uploads images, and builds itinerary rows.
+     */
     @Transactional
     public AgentPackageDetailResponse createPackage(Long agentId,
                                                     String dataJson,
@@ -94,7 +103,7 @@ public class AgentPackageService {
                 .images(new ArrayList<>())
                 .build();
 
-        // Upload images to Supabase
+        // Upload and attach images; first image becomes cover.
         if (imageFiles != null && !imageFiles.isEmpty()) {
             int order = 0;
             for (MultipartFile file : imageFiles) {
@@ -106,11 +115,11 @@ public class AgentPackageService {
                         .originalFileName(file.getOriginalFilename())
                         .build();
                 pkg.getImages().add(image);
-                if (order == 1) pkg.setImageUrl(url); // set cover
+                if (order == 1) pkg.setImageUrl(url);
             }
         }
 
-        // Build itinerary
+        // Build itinerary day entities from request payload.
         if (req.getDays() != null) {
             buildItinerary(pkg, req.getDays());
         }
@@ -118,7 +127,9 @@ public class AgentPackageService {
         return toDetail(packageRepository.save(pkg));
     }
 
-    // ── UPDATE ───────────────────────────────────────────────────────────────
+    /**
+     * Updates package metadata, images, and itinerary for an owned package.
+     */
     @Transactional
     public AgentPackageDetailResponse updatePackage(Long agentId,
                                                     String packageId,
@@ -128,6 +139,7 @@ public class AgentPackageService {
         CreatePackageRequest req = parseRequest(dataJson);
         validateRequest(req);
 
+        // Update top-level package fields.
         pkg.setPackageName(req.getName());
         pkg.setCategory(req.getCategory().toUpperCase());
         pkg.setDestination(req.getDestination());
@@ -142,7 +154,7 @@ public class AgentPackageService {
         if (req.getIsActive() != null) pkg.setIsActive(req.getIsActive());
         if (req.getTrending() != null) pkg.setTrending(req.getTrending());
 
-        // Handle images
+        // Keep only images explicitly retained by client.
         List<String> keepUrls = req.getExistingImageUrls() != null
                 ? req.getExistingImageUrls() : List.of();
         pkg.getImages().removeIf(img -> !keepUrls.contains(img.getImageUrl()));
@@ -151,6 +163,7 @@ public class AgentPackageService {
                 .mapToInt(PackageImage::getDisplayOrder)
                 .max().orElse(-1) + 1;
 
+        // Append newly uploaded images after current max display order.
         if (imageFiles != null && !imageFiles.isEmpty()) {
             for (MultipartFile file : imageFiles) {
                 String url = imageUploadService.uploadRoomImage(file, "packages").getImageUrl();
@@ -163,20 +176,22 @@ public class AgentPackageService {
             }
         }
 
-        // Update cover
+        // Update cover image from displayOrder 0 image if present.
         pkg.getImages().stream()
                 .filter(img -> img.getDisplayOrder() == 0)
                 .findFirst()
                 .ifPresent(img -> pkg.setImageUrl(img.getImageUrl()));
 
-        // Replace itinerary
+        // Replace itinerary with incoming day list.
         pkg.getItinerary().clear();
         if (req.getDays() != null) buildItinerary(pkg, req.getDays());
 
         return toDetail(packageRepository.save(pkg));
     }
 
-    // ── TOGGLE STATUS ─────────────────────────────────────────────────────────
+    /**
+     * Toggles active status for an owned package.
+     */
     @Transactional
     public PackageSummaryResponse updateStatus(Long agentId,
                                                String packageId,
@@ -190,7 +205,9 @@ public class AgentPackageService {
                 .build();
     }
 
-    // ── SOFT DELETE ───────────────────────────────────────────────────────────
+    /**
+     * Soft-deletes an owned package by setting deletedAt and deactivating it.
+     */
     @Transactional
     public void deletePackage(Long agentId, String packageId) {
         Package pkg = findAndValidateOwnership(agentId, packageId);
@@ -199,8 +216,9 @@ public class AgentPackageService {
         packageRepository.save(pkg);
     }
 
-    // ── HELPERS ───────────────────────────────────────────────────────────────
-
+    /**
+     * Creates itinerary row entities from day requests.
+     */
     private void buildItinerary(Package pkg, List<PackageDayRequest> days) {
         for (PackageDayRequest dayReq : days) {
             String activitiesText = "";
@@ -218,6 +236,9 @@ public class AgentPackageService {
         }
     }
 
+    /**
+     * Resolves package by public id and enforces agent ownership.
+     */
     private Package findAndValidateOwnership(Long agentId, String packageId) {
         Package pkg = packageRepository.findByPackageIdAndDeletedAtIsNull(packageId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
@@ -229,6 +250,9 @@ public class AgentPackageService {
         return pkg;
     }
 
+    /**
+     * Validates request domain rules: district, category, pricing, and day ordering.
+     */
     private void validateRequest(CreatePackageRequest req) {
         if (!VALID_DISTRICTS.contains(req.getDistrict())) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
@@ -254,17 +278,26 @@ public class AgentPackageService {
         }
     }
 
+    /**
+     * Generates the next public package id.
+     */
     private String generatePackageId() {
         long count = packageRepository.countAll() + 1;
         return String.format("PKG%03d", count);
     }
 
+    /**
+     * Creates a lightweight agent reference for package assignment.
+     */
     private Agent agentRef(Long agentId) {
         Agent agent = new Agent();
         agent.setId(agentId);
         return agent;
     }
 
+    /**
+     * Parses JSON payload into CreatePackageRequest.
+     */
     private CreatePackageRequest parseRequest(String dataJson) {
         try {
             return objectMapper.readValue(dataJson, CreatePackageRequest.class);
@@ -274,8 +307,9 @@ public class AgentPackageService {
         }
     }
 
-    // ── MAPPERS ───────────────────────────────────────────────────────────────
-
+    /**
+     * Maps Package entity -> list summary response DTO.
+     */
     private PackageSummaryResponse toSummary(Package pkg) {
         String coverUrl = pkg.getImages() != null && !pkg.getImages().isEmpty()
                 ? pkg.getImages().get(0).getImageUrl()
@@ -297,6 +331,9 @@ public class AgentPackageService {
                 .build();
     }
 
+    /**
+     * Maps Package entity -> detailed response DTO including images and day plans.
+     */
     private AgentPackageDetailResponse toDetail(Package pkg) {
         List<AgentPackageDetailResponse.AgentPackageImageResponse> images = new ArrayList<>();
         if (pkg.getImages() != null) {
