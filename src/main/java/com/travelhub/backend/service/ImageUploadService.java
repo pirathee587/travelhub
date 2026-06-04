@@ -60,6 +60,11 @@ public class ImageUploadService {
         return uploadToBucket(file, roomBucket);
     }
 
+    // Keep compatibility with package uploads that passed a folder argument
+    public ImageUploadResponse uploadRoomImage(MultipartFile file, String folder) {
+        return uploadRoomImage(file);
+    }
+
     public ImageUploadResponse uploadHotelImage(MultipartFile file) {
         return uploadToBucket(file, hotelBucket);
     }
