@@ -13,7 +13,6 @@ import org.springframework.web.multipart.MultipartFile;
 @RestController
 @RequestMapping("/api/v1/owner/profile")
 @RequiredArgsConstructor
-@CrossOrigin(origins = "*")
 public class OwnerProfileController {
 
     private final OwnerProfileService ownerProfileService;
