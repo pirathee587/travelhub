@@ -19,8 +19,10 @@ public class OwnerHotelController {
 
     @GetMapping
     public ResponseEntity<List<HotelResponse>> getOwnerHotels(
-            @RequestParam(defaultValue = "Approved") String status) {
-        return ResponseEntity.ok(ownerHotelService.getOwnerHotels(status));
+            @RequestParam(defaultValue = "Approved") String status,
+            java.security.Principal principal) {
+        String ownerEmail = principal != null ? principal.getName() : null;
+        return ResponseEntity.ok(ownerHotelService.getOwnerHotels(status, ownerEmail));
     }
 
     @PostMapping
