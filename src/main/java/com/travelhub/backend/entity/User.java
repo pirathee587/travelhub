@@ -76,11 +76,19 @@ public class User {
     @Column(updatable = false)
     private LocalDateTime createdAt;
 
+    @Column(name = "updated_at")
+    private LocalDateTime updatedAt;
+
     @PrePersist
     protected void onCreate() {
         this.createdAt = LocalDateTime.now();
-        // Fallback checks for non-builder instantiation
+        this.updatedAt = LocalDateTime.now();
         if (this.isActive == null) this.isActive = true;
         if (this.agentApproved == null) this.agentApproved = false;
+    }
+
+    @PreUpdate
+    protected void onUpdate() {
+        this.updatedAt = LocalDateTime.now();
     }
 }

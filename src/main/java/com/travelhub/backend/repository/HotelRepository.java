@@ -29,4 +29,6 @@ public interface HotelRepository
     // Find pending hotels by ownerEmail stored in hotel row (works even when owner_id is NULL)
     List<Hotel> findByOwnerEmailIgnoreCaseAndApplicationStatus(
             String ownerEmail, String status);
+
+    long countByOwnerIdAndApplicationStatus(Long ownerId, String applicationStatus);
 }
