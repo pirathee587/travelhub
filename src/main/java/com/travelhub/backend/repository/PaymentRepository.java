@@ -1,59 +1,69 @@
 package com.travelhub.backend.repository;
 
-
-
 import com.travelhub.backend.entity.Booking;
 import com.travelhub.backend.entity.Payment;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import java.util.List;
 import java.util.Optional;
 
+/**
+ * PaymentRepository provides data access methods for the Payment entity.
+ * It includes queries for tracking transactions, calculating revenue, and monitoring refund status.
+ */
 @Repository
-public interface PaymentRepository
-        extends JpaRepository<Payment, Long> {
+public interface PaymentRepository extends JpaRepository<Payment, Long> {
 
-    // Transaction ID-ஆல் தேடு
+    // Finds a specific payment record using its unique external transaction ID
     Optional<Payment> findByTransactionId(String transactionId);
 
-    // Type-ஆல் filter (Payment / Refund)
+    // Retrieves payments filtered by their nature (e.g., "Payment", "Refund")
     List<Payment> findByType(String type);
 
-    // Status-ஆல் filter (Completed / Pending)
+    // Retrieves payments based on their current processing status (e.g., "Completed", "Pending")
     List<Payment> findByStatus(String status);
 
-    // Type + Status filter
-    List<Payment> findByTypeAndStatus(
-            String type, String status);
+    // Retrieves payments filtered by both their type and processing status
+    List<Payment> findByTypeAndStatus(String type, String status);
 
-    // Total Revenue — Completed Payments மட்டும்
+    // Calculates the total revenue generated from all completed "Payment" transactions
     @Query("SELECT COALESCE(SUM(p.amount), 0) " +
             "FROM Payment p " +
             "WHERE p.type = 'Payment' " +
             "AND p.status = 'Completed'")
     Double getTotalRevenue();
 
-    // Pending amount
+    // Calculates the total sum of payments that are currently in "Pending" status
     @Query("SELECT COALESCE(SUM(p.amount), 0) " +
             "FROM Payment p " +
             "WHERE p.status = 'Pending'")
     Double getPendingAmount();
 
-    // Total Refunds
+    // Calculates the total amount that has been successfully refunded to users
     @Query("SELECT COALESCE(SUM(p.amount), 0) " +
             "FROM Payment p " +
             "WHERE p.type = 'Refund' " +
             "AND p.status = 'Completed'")
     Double getTotalRefunds();
 
-    // Pending count
+    // Counts the number of payment records with a specific status (e.g., counting pending actions)
     Long countByStatus(String status);
 
-    // Booking-ஆல் தேடு
+    // Retrieves all payment attempts or records associated with a specific booking ID
     List<Payment> findByBookingId(Long bookingId);
 
-    // User-ஆல் தேடு
+    // Retrieves all payments made by a specific user
     List<Payment> findByUserId(Long userId);
+
+    @Query("SELECT p FROM Payment p " +
+            "JOIN FETCH p.booking b " +
+            "JOIN FETCH b.pkg " +
+            "WHERE p.user.id = :userId " +
+            "ORDER BY p.createdAt DESC")
+    List<Payment> findByUserIdWithDetails(@Param("userId") Long userId);
+    
+    // Finds the most recent payment record for a given booking, ordered by creation date
     Optional<Payment> findFirstByBookingOrderByCreatedAtDesc(Booking booking);
 }

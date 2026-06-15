@@ -9,11 +9,16 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
+/**
+ * GlobalExceptionHandler provides centralized error handling across all REST controllers.
+ * It intercepts specific exceptions and ensures that the client receives a standardized JSON error response.
+ */
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
-    // ── ResourceNotFoundException ─────────────────────────────
-    // எல்லோரும் பயன்படுத்தலாம்
+    /**
+     * Handles 404 Not Found errors when a requested resource (User, Booking, etc.) does not exist.
+     */
     @ExceptionHandler(ResourceNotFoundException.class)
     public ResponseEntity<ApiResponse> handleNotFound(
             ResourceNotFoundException ex) {
@@ -22,8 +27,9 @@ public class GlobalExceptionHandler {
                 .body(new ApiResponse(false, ex.getMessage()));
     }
 
-    // ── BadRequestException ───────────────────────────────────
-    // எல்லோரும் பயன்படுத்தலாம்
+    /**
+     * Handles 400 Bad Request errors for invalid business logic or data states.
+     */
     @ExceptionHandler(BadRequestException.class)
     public ResponseEntity<ApiResponse> handleBadRequest(
             BadRequestException ex) {
@@ -32,8 +38,9 @@ public class GlobalExceptionHandler {
                 .body(new ApiResponse(false, ex.getMessage()));
     }
 
-    // ── UnauthorizedException ─────────────────────────────────
-    // எல்லோரும் பயன்படுத்தலாம்
+    /**
+     * Handles 401 Unauthorized errors when security or permission checks fail.
+     */
     @ExceptionHandler(UnauthorizedException.class)
     public ResponseEntity<ApiResponse> handleUnauthorized(
             UnauthorizedException ex) {
@@ -42,7 +49,10 @@ public class GlobalExceptionHandler {
                 .body(new ApiResponse(false, ex.getMessage()));
     }
 
-    // ── Validation Exception ──────────────────────────────────
+    /**
+     * Handles 400 Bad Request errors specifically for @Valid constraint violations.
+     * Aggregates all field-specific validation messages into a single response.
+     */
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ApiResponse> handleValidation(
             MethodArgumentNotValidException ex) {
@@ -57,25 +67,16 @@ public class GlobalExceptionHandler {
                 .body(new ApiResponse(false, "Validation failed: " + errors));
     }
 
-    // ── General Exception ─────────────────────────────────────
+    /**
+     * Catch-all handler for any unexpected system-wide exceptions.
+     * Modified temporarily to expose the raw exception class and message for deep debugging.
+     */
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiResponse> handleGeneral(Exception ex) {
-        ex.printStackTrace();
+        ex.printStackTrace(); // Logs the full stack trace for internal debugging
+        String rawError = ex.getClass().getName() + ": " + ex.getMessage();
         return ResponseEntity
                 .status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(new ApiResponse(false, "An unexpected error occurred: " + ex.getMessage()));
+                .body(new ApiResponse(false, rawError));
     }
-
-    // ══════════════════════════════════════════════════════════
-    // TODO — மற்றவர்கள் Exception வேண்டும் என்றால்
-    // Piratheepan-க்கு சொல்லி இங்கே சேர்க்கவும்
-    //
-    // உதாரணம்:
-    // @ExceptionHandler(HotelNotFoundException.class)
-    // public ResponseEntity<ApiResponse> handleHotelNotFound(
-    //                      HotelNotFoundException ex) {
-    //     return ResponseEntity.status(404)
-    //         .body(new ApiResponse(false, ex.getMessage()));
-    // }
-    // ══════════════════════════════════════════════════════════
 }

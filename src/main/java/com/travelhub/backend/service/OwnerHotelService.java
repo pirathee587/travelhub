@@ -16,6 +16,10 @@ import org.springframework.web.multipart.MultipartFile;
 import java.util.List;
 import java.util.stream.Collectors;
 
+/**
+ * OwnerHotelService manages the hotel properties from the owner's perspective.
+ * It handles property registration, status tracking, and profile updates with integrated image handling.
+ */
 @Service
 @Transactional(readOnly = true)
 public class OwnerHotelService {
@@ -26,6 +30,9 @@ public class OwnerHotelService {
     private final ImageUploadService imageUploadService;
     private final ApplicationEventPublisher eventPublisher;
 
+    /**
+     * Constructor injection for repositories, multimedia, and event publishing services.
+     */
     public OwnerHotelService(
             HotelRepository hotelRepository,
             UserRepository userRepository,
@@ -39,8 +46,12 @@ public class OwnerHotelService {
         this.eventPublisher = eventPublisher;
     }
 
+    /**
+     * Retrieves hotels managed by the owner, filtered by their application status.
+     * Maps the internal status strings to consistent values (Pending, Rejected, Approved).
+     */
     public List<HotelResponse> getOwnerHotels(String status) {
-        String targetStatus = "Approved";
+        String targetStatus = "Approved"; // Default fallback
         
         if ("Pending".equalsIgnoreCase(status)) {
             targetStatus = "Pending";
@@ -55,8 +66,13 @@ public class OwnerHotelService {
                 .collect(Collectors.toList());
     }
 
+    /**
+     * Registers a new hotel property.
+     * Handles image upload and publishes a system event for administrative notification.
+     */
     @Transactional
     public HotelResponse createHotel(OwnerHotelRequest request, MultipartFile hotelImage, String email) {
+        // Resolve the persistent User entity for the owner
         User owner = (email != null && !email.isBlank())
                 ? userRepository.findByEmail(email).orElse(null)
                 : null;
@@ -66,6 +82,7 @@ public class OwnerHotelService {
             try {
                 imageUrl = imageUploadService.uploadHotelImage(hotelImage).getImageUrl();
             } catch (Exception e) {
+                // Log and fallback to a default placeholder if upload fails
                 System.err.println("Warning: Hotel image upload failed: " + e.getMessage());
                 if (imageUrl == null || imageUrl.isBlank()) {
                     imageUrl = "https://images.unsplash.com/photo-1566073771259-6a8506099945?q=80&w=2070&auto=format&fit=crop";
@@ -73,6 +90,7 @@ public class OwnerHotelService {
             }
         }
 
+        // Initialize and populate the persistent Hotel entity
         Hotel hotel = new Hotel();
         hotel.setHotelName(request.getHotelName());
         hotel.setDestination(request.getDestination());
@@ -89,29 +107,37 @@ public class OwnerHotelService {
         hotel.setOwnerName(request.getOwnerName());
         hotel.setOwnerEmail(email);
         hotel.setOwnerNic(request.getOwnerNic());
-        hotel.setApplicationStatus("Pending");
+        hotel.setApplicationStatus("Pending"); // New hotels start in Pending state
         hotel.setOwner(owner);
 
         hotel = hotelRepository.save(hotel);
+        
+        // Notify stakeholders via system events (e.g., for Admin review)
         eventPublisher.publishEvent(new HotelEvent(this, hotel, "CREATED"));
+        
         return toHotelResponse(hotel);
     }
 
+    /**
+     * Updates an existing hotel's details.
+     * Only updates imagery if a new file is explicitly provided.
+     */
     @Transactional
     public HotelResponse updateHotel(Long id, OwnerHotelRequest request, MultipartFile hotelImage) {
         Hotel hotel = hotelRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Hotel not found with id: " + id));
 
-        String imageUrl = request.getImageUrl();
+        // Multimedia update logic
         if (hotelImage != null && !hotelImage.isEmpty()) {
             try {
-                imageUrl = imageUploadService.uploadHotelImage(hotelImage).getImageUrl();
+                String imageUrl = imageUploadService.uploadHotelImage(hotelImage).getImageUrl();
                 hotel.setImageUrl(imageUrl);
             } catch (Exception e) {
                 System.err.println("Warning: Hotel image update failed: " + e.getMessage());
             }
         }
 
+        // Synchronize entity state with request data
         hotel.setHotelName(request.getHotelName());
         hotel.setDestination(request.getDestination());
         hotel.setLocation(request.getLocation());
@@ -129,6 +155,9 @@ public class OwnerHotelService {
         return toHotelResponse(hotel);
     }
 
+    /**
+     * Deletes a hotel property from the platform.
+     */
     @Transactional
     public void deleteHotel(Long id) {
         Hotel hotel = hotelRepository.findById(id)
@@ -136,6 +165,10 @@ public class OwnerHotelService {
         hotelRepository.delete(hotel);
     }
 
+    /**
+     * Maps a Hotel entity to a response DTO.
+     * Consolidates complex relationships like amenities into a flat list for the UI.
+     */
     private HotelResponse toHotelResponse(Hotel hotel) {
         List<String> amenityList = (hotel.getAmenityList() != null)
                 ? hotel.getAmenityList().stream()

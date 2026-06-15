@@ -7,16 +7,27 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
+/**
+ * AgentBookingController manages the operational workflow for travel agents overseeing their reservations.
+ * It provides endpoints for viewing booking queues and updating reservation states (Accept, Decline, Complete).
+ */
 @RestController
 @RequestMapping("/api/v1/agent")
 public class AgentBookingController {
 
     private final AgentBookingService agentBookingService;
+
+    /**
+     * Constructor injection for agent-specific booking business logic.
+     */
     public AgentBookingController(AgentBookingService agentBookingService) {
         this.agentBookingService = agentBookingService;
     }
 
-
+    /**
+     * Retrieves all bookings assigned to a specific agent.
+     * Supports optional filtering by reservation status (e.g., 'PENDING', 'ACCEPTED').
+     */
     @GetMapping("/{agentId}/bookings")
     public ResponseEntity<List<BookingResponse>> getAllBookings(
             @PathVariable Long agentId,
@@ -24,6 +35,9 @@ public class AgentBookingController {
         return ResponseEntity.ok(agentBookingService.getAllBookings(agentId, status));
     }
 
+    /**
+     * Retrieves the comprehensive details for a specific booking assigned to an agent.
+     */
     @GetMapping("/{agentId}/bookings/{bookingId}")
     public ResponseEntity<BookingResponse> getBookingById(
             @PathVariable Long agentId,
@@ -31,6 +45,9 @@ public class AgentBookingController {
         return ResponseEntity.ok(agentBookingService.getBookingById(agentId, bookingId));
     }
 
+    /**
+     * Endpoint for agents to approve a pending booking request.
+     */
     @PatchMapping("/{agentId}/bookings/{bookingId}/accept")
     public ResponseEntity<BookingResponse> acceptBooking(
             @PathVariable Long agentId,
@@ -38,6 +55,9 @@ public class AgentBookingController {
         return ResponseEntity.ok(agentBookingService.acceptBooking(agentId, bookingId));
     }
 
+    /**
+     * Endpoint for agents to reject a booking request, typically including a reason for the customer.
+     */
     @PatchMapping("/{agentId}/bookings/{bookingId}/decline")
     public ResponseEntity<BookingResponse> declineBooking(
             @PathVariable Long agentId,
@@ -46,6 +66,9 @@ public class AgentBookingController {
         return ResponseEntity.ok(agentBookingService.declineBooking(agentId, bookingId, request));
     }
 
+    /**
+     * Finalizes a booking after the trip or service has been successfully delivered.
+     */
     @PatchMapping("/{agentId}/bookings/{bookingId}/complete")
     public ResponseEntity<BookingResponse> completeBooking(
             @PathVariable Long agentId,

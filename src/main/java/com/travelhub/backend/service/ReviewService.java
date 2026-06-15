@@ -22,6 +22,10 @@ import com.travelhub.backend.repository.ReviewImageRepository;
 import com.travelhub.backend.repository.ReviewRepository;
 import com.travelhub.backend.repository.UserRepository;
 
+/**
+ * ReviewService manages the submission and retrieval of customer feedback.
+ * It supports reviews for both travel packages and hotels, including star ratings and image galleries.
+ */
 @Service
 public class ReviewService {
 
@@ -34,6 +38,9 @@ public class ReviewService {
     private final ReviewImageRepository reviewImageRepository;
     private final ImageUploadService imageUploadService;
 
+    /**
+     * Constructor injection for all required data and multimedia services.
+     */
     public ReviewService(
             ReviewRepository reviewRepository,
             UserRepository userRepository,
@@ -49,6 +56,9 @@ public class ReviewService {
         this.imageUploadService = imageUploadService;
     }
 
+    /**
+     * Retrieves all reviews associated with a specific travel package.
+     */
     @Transactional(readOnly = true)
     public List<ReviewResponse> getPackageReviews(Long packageId) {
         return reviewRepository.findByPkg_Id(packageId)
@@ -57,6 +67,9 @@ public class ReviewService {
                 .collect(Collectors.toList());
     }
 
+    /**
+     * Retrieves all reviews associated with a specific hotel.
+     */
     @Transactional(readOnly = true)
     public List<ReviewResponse> getHotelReviews(Long hotelId) {
         return reviewRepository.findByHotel_Id(hotelId)
@@ -65,6 +78,10 @@ public class ReviewService {
                 .collect(Collectors.toList());
     }
 
+    /**
+     * Submits a new review for a travel package.
+     * Handles file uploads for review images and links them to the review entity.
+     */
     @Transactional
     public ReviewResponse addPackageReview(Long packageId, ReviewRequest request, List<org.springframework.web.multipart.MultipartFile> images) {
         Package pkg = packageRepository.findById(packageId)
@@ -75,6 +92,7 @@ public class ReviewService {
             user = userRepository.findById(request.getUserId()).orElse(null);
         }
 
+        // Initialize the review entity
         Review review = new Review();
         review.setUser(user);
         review.setPkg(pkg);
@@ -85,6 +103,7 @@ public class ReviewService {
 
         Review saved = reviewRepository.save(review);
 
+        // Process and upload attached images
         if (images != null && !images.isEmpty()) {
             for (org.springframework.web.multipart.MultipartFile file : images) {
                 if (file != null && !file.isEmpty()) {
@@ -94,6 +113,8 @@ public class ReviewService {
                         img.setReview(saved);
                         img.setImageUrl(imageUrl);
                         reviewImageRepository.save(img);
+                        
+                        // Maintain the bidirectional relationship in-memory
                         if (saved.getImages() == null) {
                             saved.setImages(new ArrayList<>());
                         }
@@ -109,6 +130,10 @@ public class ReviewService {
         return toReviewResponse(saved);
     }
 
+    /**
+     * Submits a new review for a hotel property.
+     * Similar logic to package reviews, but linked to a Hotel entity.
+     */
     @Transactional
     public ReviewResponse addHotelReview(Long hotelId, ReviewRequest request, List<org.springframework.web.multipart.MultipartFile> images) {
         Hotel hotel = hotelRepository.findById(hotelId)
@@ -153,26 +178,42 @@ public class ReviewService {
         return toReviewResponse(saved);
     }
 
+    /**
+     * Calculates the average star rating for a package, rounded to 1 decimal.
+     */
     public double getAveragePackageRating(Long packageId) {
         Double avg = reviewRepository.getAverageRatingByPackageId(packageId);
         return avg != null ? Math.round(avg * 10.0) / 10.0 : 0.0;
     }
 
+    /**
+     * Returns the total count of reviews left for a specific package.
+     */
     public long getPackageReviewCount(Long packageId) {
         Long count = reviewRepository.getReviewCountByPackageId(packageId);
         return count != null ? count : 0L;
     }
 
+    /**
+     * Calculates the average star rating for a hotel, rounded to 1 decimal.
+     */
     public double getAverageHotelRating(Long hotelId) {
         Double avg = reviewRepository.getAverageRatingByHotelId(hotelId);
         return avg != null ? Math.round(avg * 10.0) / 10.0 : 0.0;
     }
 
+    /**
+     * Returns the total count of reviews left for a specific hotel.
+     */
     public long getHotelReviewCount(Long hotelId) {
         Long count = reviewRepository.getReviewCountByHotelId(hotelId);
         return count != null ? count : 0L;
     }
 
+    /**
+     * Maps a Review entity to a comprehensive response DTO.
+     * Resolves display names (real name vs custom string) and compiles the gallery image URLs.
+     */
     private ReviewResponse toReviewResponse(Review review) {
         String displayName = "Anonymous";
         if (review.getUser() != null && review.getUser().getName() != null) {
@@ -202,6 +243,7 @@ public class ReviewService {
         response.setImageUrls(imageUrls);
         response.setCustomerName(displayName);
         response.setDate(dateStr);
+        // Link to destination if it was a package review
         response.setTrip(review.getPkg() != null ? review.getPkg().getDestination() : null);
         response.setPackageName(review.getPkg() != null ? review.getPkg().getPackageName() : null);
         response.setReply(review.getReply());

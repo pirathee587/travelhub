@@ -9,6 +9,11 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+/**
+ * AdminDashboardController serves the primary analytical overview for platform administrators.
+ * It provides aggregated metrics across all system entities (users, bookings, revenue).
+ * Access is strictly restricted to users with the 'ADMIN' role.
+ */
 @RestController
 @RequestMapping("/api/admin/dashboard")
 @CrossOrigin(origins = "*")
@@ -16,12 +21,18 @@ import org.springframework.web.bind.annotation.RestController;
 public class AdminDashboardController {
 
     private final AdminDashboardService adminDashboardService;
+
+    /**
+     * Constructor injection for platform-wide dashboard aggregation logic.
+     */
     public AdminDashboardController(AdminDashboardService adminDashboardService) {
         this.adminDashboardService = adminDashboardService;
     }
 
-
-    // GET /api/admin/dashboard
+    /**
+     * Retrieves the high-level system health and performance statistics.
+     * Maps to the administrative dashboard cards and summary charts.
+     */
     @GetMapping
     public ResponseEntity<?> getDashboard() {
         return ResponseEntity.ok(

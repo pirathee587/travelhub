@@ -9,15 +9,23 @@ import com.travelhub.backend.repository.ReviewRepository;
 import com.travelhub.backend.repository.UserRepository;
 import org.springframework.stereotype.Service;
 
+/**
+ * AdminDashboardService provides a global overview of the TravelHub platform for administrators.
+ * It aggregates statistics across all major entities, including users, hotels, packages, and bookings.
+ */
 @Service
 public class AdminDashboardService {
 
-    private final UserRepository    userRepository;
-    private final HotelRepository   hotelRepository;
+    private final UserRepository userRepository;
+    private final HotelRepository hotelRepository;
     private final PackageRepository packageRepository;
     private final BookingRepository bookingRepository;
-    private final ReviewRepository  reviewRepository;
-    public AdminDashboardService(UserRepository    userRepository, HotelRepository   hotelRepository, PackageRepository packageRepository, BookingRepository bookingRepository, ReviewRepository  reviewRepository) {
+    private final ReviewRepository reviewRepository;
+
+    /**
+     * Constructor injection for all core repositories required for global statistics.
+     */
+    public AdminDashboardService(UserRepository userRepository, HotelRepository hotelRepository, PackageRepository packageRepository, BookingRepository bookingRepository, ReviewRepository reviewRepository) {
         this.userRepository = userRepository;
         this.hotelRepository = hotelRepository;
         this.packageRepository = packageRepository;
@@ -25,38 +33,49 @@ public class AdminDashboardService {
         this.reviewRepository = reviewRepository;
     }
 
-
+    /**
+     * Aggregates and returns a comprehensive snapshot of system-wide statistics.
+     * This includes role-based user counts, inventory totals, and the current volume of pending actions.
+     */
     public AdminDashboardResponse getDashboardStats() {
 
-        // ── Users ───────────────────────────────────────
-        Long totalTourists =
-                userRepository.countByRole(Role.TOURIST);
-        Long totalAgents =
-                userRepository.countByRole(Role.AGENT);
-        Long totalHotelManagers =
-                userRepository.countByRole(Role.HOTEL_OWNER);
-        Long totalUsers =
-                totalTourists + totalAgents + totalHotelManagers;
+        // ── User Demographics ───────────────────────────────
+        // Count tourists who are the primary consumers
+        Long totalTourists = userRepository.countByRole(Role.TOURIST);
+        // Count travel agents who manage packages and vehicles
+        Long totalAgents = userRepository.countByRole(Role.AGENT);
+        // Count hotel owners who list properties
+        Long totalHotelManagers = userRepository.countByRole(Role.HOTEL_OWNER);
+        // Total active system users across all roles
+        Long totalUsers = totalTourists + totalAgents + totalHotelManagers;
 
-        // ── Pending Agents ──────────────────────────────
+        // specifically counts agents who have registered but not yet been approved by admin
         Long pendingAgents = (long) userRepository
                 .findByRoleAndAgentApprovedFalse(Role.AGENT)
                 .size();
 
-        // ── Hotels ──────────────────────────────────────
-        Long totalHotels = hotelRepository.count();
+        // specifically counts hotel owners who have registered but not yet been approved by admin
+        Long pendingHotels = (long) userRepository
+                .findByRoleAndAgentApprovedFalse(Role.HOTEL_OWNER)
+                .size();
 
-        // ── Packages ────────────────────────────────────
+        // ── Global Inventory ───────────────────────────────
+        // Total number of hotels registered on the platform
+        Long totalHotels = hotelRepository.count();
+        // Total number of travel packages offered
         Long totalPackages = packageRepository.count();
 
-        // ── Bookings ────────────────────────────────────
-        Long totalBookings  = bookingRepository.count();
-        Long pendingBookings =
-                bookingRepository.countByStatus("pending");
+        // ── Operational Statistics ─────────────────────────
+        // Total volume of bookings ever created
+        Long totalBookings = bookingRepository.count();
+        // Count of bookings currently awaiting agent action
+        Long pendingBookings = bookingRepository.countByStatus("pending");
 
-        // ── Reviews ─────────────────────────────────────
+        // ── Engagement Metrics ─────────────────────────────
+        // Total number of reviews left by users across the platform
         Long totalReviews = reviewRepository.count();
 
+        // Map aggregated metrics to the global dashboard response DTO
         return new AdminDashboardResponse(
                 totalUsers,
                 totalTourists,
@@ -67,6 +86,7 @@ public class AdminDashboardService {
                 totalBookings,
                 totalReviews,
                 pendingAgents,
+                pendingHotels,
                 pendingBookings
         );
     }

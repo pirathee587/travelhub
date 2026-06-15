@@ -11,6 +11,10 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
+/**
+ * AmenityController manages the feature inventory endpoints for hotel properties.
+ * It provides tools for property managers to define and maintain the services provided at their locations.
+ */
 @RestController
 @RequestMapping("/api/v1/amenities")
 public class AmenityController {
@@ -18,7 +22,9 @@ public class AmenityController {
     @Autowired
     private AmenityService amenityService;
 
-    // POST /api/amenities
+    /**
+     * Endpoint to register a new amenity for a specific hotel.
+     */
     @PostMapping
     public ResponseEntity<ApiResponse> addAmenity(@RequestBody AmenityRequest request) {
         Amenity amenity = amenityService.addAmenity(request);
@@ -27,35 +33,45 @@ public class AmenityController {
                 .body(new ApiResponse(true, "Amenity added successfully", amenity));
     }
 
-    // GET /api/amenities
+    /**
+     * Retrieves all amenities registered across the entire platform.
+     */
     @GetMapping
     public ResponseEntity<ApiResponse> getAllAmenities() {
         List<Amenity> amenities = amenityService.getAllAmenities();
         return ResponseEntity.ok(new ApiResponse(true, "Amenities fetched successfully", amenities));
     }
 
-    // GET /api/v1/amenities/hotel/{hotelId}
+    /**
+     * Retrieves all amenities belonging to a specific hotel property.
+     */
     @GetMapping("/hotel/{hotelId}")
     public ResponseEntity<ApiResponse> getAmenitiesByHotelId(@PathVariable Long hotelId) {
         List<Amenity> amenities = amenityService.getAmenitiesByHotelId(hotelId);
         return ResponseEntity.ok(new ApiResponse(true, "Amenities fetched successfully", amenities));
     }
 
-    // GET /api/amenities/{id}
+    /**
+     * Retrieves the metadata for a single specific amenity by its ID.
+     */
     @GetMapping("/{id}")
     public ResponseEntity<ApiResponse> getAmenityById(@PathVariable Long id) {
         Amenity amenity = amenityService.getAmenityById(id);
         return ResponseEntity.ok(new ApiResponse(true, "Amenity fetched successfully", amenity));
     }
 
-    // PUT /api/amenities/{id}
+    /**
+     * Endpoint to update the details of an existing hotel amenity.
+     */
     @PutMapping("/{id}")
     public ResponseEntity<ApiResponse> updateAmenity(@PathVariable Long id, @RequestBody AmenityRequest request) {
         Amenity amenity = amenityService.updateAmenity(id, request);
         return ResponseEntity.ok(new ApiResponse(true, "Amenity updated successfully", amenity));
     }
 
-    // DELETE /api/amenities/{id}
+    /**
+     * Endpoint to permanently remove an amenity from a hotel's feature list.
+     */
     @DeleteMapping("/{id}")
     public ResponseEntity<ApiResponse> deleteAmenity(@PathVariable Long id) {
         amenityService.deleteAmenity(id);

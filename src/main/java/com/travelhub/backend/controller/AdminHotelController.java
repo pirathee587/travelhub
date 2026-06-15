@@ -9,6 +9,11 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 import java.util.Map;
 
+/**
+ * AdminHotelController manages the administrative lifecycle and quality control of hotel properties on the platform.
+ * It provides tools for auditing new hotel submissions, managing property status, and platform-wide inventory cleanup.
+ * Access is strictly restricted to users with the 'ADMIN' role.
+ */
 @RestController
 @RequestMapping("/api/admin/hotels")
 @CrossOrigin(origins = "*")
@@ -16,11 +21,17 @@ import java.util.Map;
 public class AdminHotelController {
 
     private final AdminHotelService adminHotelService;
+
+    /**
+     * Constructor injection for administrative hospitality business logic.
+     */
     public AdminHotelController(AdminHotelService adminHotelService) {
         this.adminHotelService = adminHotelService;
     }
 
-
+    /**
+     * Retrieves the complete list of all hotels registered across the platform.
+     */
     @GetMapping
     public ResponseEntity<?> getAllHotels(
             @AuthenticationPrincipal UserDetails userDetails) {
@@ -29,6 +40,9 @@ public class AdminHotelController {
                         adminHotelService.getAllHotels()));
     }
 
+    /**
+     * Retrieves hotels filtered by their platform listing status (e.g., 'Pending', 'Approved').
+     */
     @GetMapping("/status")
     public ResponseEntity<?> getHotelsByStatus(
             @RequestParam String status) {
@@ -37,6 +51,9 @@ public class AdminHotelController {
                         adminHotelService.getHotelsByStatus(status)));
     }
 
+    /**
+     * Retrieves comprehensive information and property metadata for a specific hotel.
+     */
     @GetMapping("/{id}")
     public ResponseEntity<?> getHotelDetail(
             @PathVariable Long id) {
@@ -45,6 +62,9 @@ public class AdminHotelController {
                         adminHotelService.getHotelDetail(id)));
     }
 
+    /**
+     * Endpoint to approve a pending hotel listing, making it visible to tourists.
+     */
     @PatchMapping("/{id}/approve")
     public ResponseEntity<?> approveHotel(
             @PathVariable Long id) {
@@ -53,7 +73,10 @@ public class AdminHotelController {
                         adminHotelService.approveHotel(id)));
     }
 
-    // ── PATCH /api/admin/hotels/{id}/reject ───────────
+    /**
+     * Endpoint to reject a hotel listing application.
+     * Optionally accepts a reason for rejection to be communicated to the hotel owner.
+     */
     @PatchMapping("/{id}/reject")
     public ResponseEntity<?> rejectHotel(
             @PathVariable Long id,
@@ -64,6 +87,9 @@ public class AdminHotelController {
                         adminHotelService.rejectHotel(id, reason)));
     }
 
+    /**
+     * Endpoint to permanently remove a hotel property from the platform.
+     */
     @DeleteMapping("/{id}")
     public ResponseEntity<?> deleteHotel(
             @PathVariable Long id) {

@@ -2,17 +2,25 @@ package com.travelhub.backend.entity;
 
 import jakarta.persistence.*;
 
+/**
+ * Vehicle entity represents a transport vehicle managed by an agent.
+ * it stores registration data, owner details, images, and current availability status.
+ */
 @Entity
 @Table(name = "vehicles")
 public class Vehicle {
+    
+    // Unique identifier for the vehicle
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    // The agent who owns or manages this vehicle
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "agent_id", nullable = true)
     private Agent agent;
 
+    // --- Owner Details ---
     private String ownerFirstName;
     private String ownerLastName;
     private String nicNumber;
@@ -23,13 +31,17 @@ public class Vehicle {
     private String mobileNumber;
     private String secondaryMobileNumber;
     private String ownerEmail;
-    private String vehicleType;
-    private String brand;
-    private String model;
+
+    // --- Vehicle Specifications ---
+    private String vehicleType;     // e.g., Car, Van, Bus
+    private String brand;           // e.g., Toyota, Honda
+    private String model;           // e.g., KDH, Prius
     private String color;
-    private String capacity;
+    private String capacity;        // Number of seats
     private String yearOfManufacture;
-    private String registration;
+    private String registration;    // License plate number
+
+    // --- Documents and Images ---
     private String insuranceCardFront;
     private String insuranceExpiryDate;
     private String revenueLicenseImage;
@@ -37,17 +49,28 @@ public class Vehicle {
     private String vehicleImageBack;
     private String vehicleImageSide;
     private String vehicleImageInside;
-    private String status = "available";
-    private String lifecycleStatus = "active";
+
+    // --- Status and Lifecycle ---
+    private String status = "available";        // Current operational status
+    private String lifecycleStatus = "active";  // System status (active/inactive)
+    
+    // Cached/Simplified driver information for quick access
     private String assignedDriverName;
     private String driverName;
     private String driverPhone;
     private Double driverRating;
     private Integer driverTrips;
+    
+    // Flag for immediate availability for bookings
     private Boolean isAvailable = true;
 
+    /**
+     * Default constructor for JPA.
+     */
     public Vehicle() {}
 
+    // --- Getters and Setters ---
+    
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
     public Agent getAgent() { return agent; }
@@ -117,6 +140,9 @@ public class Vehicle {
     public Boolean getIsAvailable() { return isAvailable; }
     public void setIsAvailable(Boolean isAvailable) { this.isAvailable = isAvailable; }
 
+    /**
+     * Inner Builder class for the fluent creation of Vehicle objects.
+     */
     public static class Builder {
         private Long id;
         private Agent agent;
@@ -188,6 +214,9 @@ public class Vehicle {
         public Builder driverTrips(Integer driverTrips) { this.driverTrips = driverTrips; return this; }
         public Builder isAvailable(Boolean isAvailable) { this.isAvailable = isAvailable; return this; }
 
+        /**
+         * Builds and returns a Vehicle object based on the builder's configuration.
+         */
         public Vehicle build() {
             Vehicle v = new Vehicle();
             v.setId(id);
@@ -227,5 +256,9 @@ public class Vehicle {
             return v;
         }
     }
+
+    /**
+     * Returns a new Builder instance for Vehicle.
+     */
     public static Builder builder() { return new Builder(); }
 }

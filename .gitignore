@@ -39,3 +39,4 @@ node_modules/
 target/
 *.log
 .DS_Store
+.env

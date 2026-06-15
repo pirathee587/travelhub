@@ -7,6 +7,11 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import java.util.Map;
 
+/**
+ * AdminPackageController manages the administrative lifecycle and quality control of travel packages.
+ * It provides tools for auditing agent submissions, managing product availability, and platform-wide inventory cleanup.
+ * Access is strictly restricted to users with the 'ADMIN' role.
+ */
 @RestController
 @RequestMapping("/api/admin/packages")
 @CrossOrigin(origins = "*")
@@ -14,11 +19,17 @@ import java.util.Map;
 public class AdminPackageController {
 
     private final AdminPackageService adminPackageService;
+
+    /**
+     * Constructor injection for administrative package business logic.
+     */
     public AdminPackageController(AdminPackageService adminPackageService) {
         this.adminPackageService = adminPackageService;
     }
 
-
+    /**
+     * Retrieves the complete list of all travel packages registered across the platform.
+     */
     @GetMapping
     public ResponseEntity<?> getAllPackages() {
         return ResponseEntity.ok(
@@ -26,6 +37,9 @@ public class AdminPackageController {
                         adminPackageService.getAllPackages()));
     }
 
+    /**
+     * Retrieves travel packages filtered by their platform listing status (e.g., 'Pending', 'Approved').
+     */
     @GetMapping("/status")
     public ResponseEntity<?> getByStatus(
             @RequestParam String status) {
@@ -34,6 +48,9 @@ public class AdminPackageController {
                         adminPackageService.getByStatus(status)));
     }
 
+    /**
+     * Retrieves comprehensive information and itinerary metadata for a specific travel package.
+     */
     @GetMapping("/{id}")
     public ResponseEntity<?> getPackageDetail(
             @PathVariable Long id) {
@@ -42,6 +59,9 @@ public class AdminPackageController {
                         adminPackageService.getPackageDetail(id)));
     }
 
+    /**
+     * Endpoint to approve a pending travel package listing, making it visible for booking.
+     */
     @PatchMapping("/{id}/approve")
     public ResponseEntity<?> approvePackage(
             @PathVariable Long id) {
@@ -50,6 +70,10 @@ public class AdminPackageController {
                         adminPackageService.approvePackage(id)));
     }
 
+    /**
+     * Endpoint to reject a travel package listing application.
+     * Optionally accepts a reason for rejection to be communicated to the agent.
+     */
     @PatchMapping("/{id}/reject")
     public ResponseEntity<?> rejectPackage(
             @PathVariable Long id,
@@ -60,6 +84,9 @@ public class AdminPackageController {
                         adminPackageService.rejectPackage(id, reason)));
     }
 
+    /**
+     * Toggles the visibility/active status of a package without deleting it.
+     */
     @PatchMapping("/{id}/toggle-active")
     public ResponseEntity<?> toggleActive(
             @PathVariable Long id) {
@@ -68,6 +95,9 @@ public class AdminPackageController {
                         adminPackageService.toggleActive(id)));
     }
 
+    /**
+     * Endpoint to permanently remove a travel package from the platform.
+     */
     @DeleteMapping("/{id}")
     public ResponseEntity<?> deletePackage(
             @PathVariable Long id) {

@@ -7,6 +7,11 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import java.util.Map;
 
+/**
+ * AdminPaymentController manages the administrative financial oversight of the platform.
+ * It provides tools for auditing transaction history, tracking revenue, and managing payment lifecycle states.
+ * Access is strictly restricted to users with the 'ADMIN' role.
+ */
 @RestController
 @RequestMapping("/api/admin/payments")
 @CrossOrigin(origins = "*")
@@ -15,11 +20,16 @@ public class AdminPaymentController {
 
     private final AdminPaymentService adminPaymentService;
 
+    /**
+     * Constructor injection for administrative financial business logic.
+     */
     public AdminPaymentController(AdminPaymentService adminPaymentService) {
         this.adminPaymentService = adminPaymentService;
     }
 
-    // GET /api/admin/payments/stats
+    /**
+     * Retrieves high-level financial statistics, including total transaction volume and success rates.
+     */
     @GetMapping("/stats")
     public ResponseEntity<?> getStats() {
         return ResponseEntity.ok(
@@ -27,12 +37,16 @@ public class AdminPaymentController {
                         adminPaymentService.getStats()));
     }
 
-    // GET /api/admin/payments
+    /**
+     * Retrieves the complete transaction history across the platform.
+     * Supports multi-parameter filtering by payment 'type' (e.g., Booking, Cancellation) and 'status'.
+     */
     @GetMapping
     public ResponseEntity<?> getAllPayments(
             @RequestParam(required = false) String type,
             @RequestParam(required = false) String status) {
 
+        // Handle complex filtering logic
         if (type != null && status != null
                 && !type.equals("All Types")
                 && !status.equals("All Status")) {
@@ -59,7 +73,9 @@ public class AdminPaymentController {
                 adminPaymentService.getAllPayments()));
     }
 
-    // GET /api/admin/payments/{id}
+    /**
+     * Retrieves the metadata for a single specific payment transaction.
+     */
     @GetMapping("/{id}")
     public ResponseEntity<?> getPaymentById(
             @PathVariable Long id) {
@@ -68,7 +84,9 @@ public class AdminPaymentController {
                 adminPaymentService.getPaymentById(id)));
     }
 
-    // GET /api/admin/payments/booking/{bookingId}
+    /**
+     * Retrieves all payment attempts and records linked to a specific booking.
+     */
     @GetMapping("/booking/{bookingId}")
     public ResponseEntity<?> getByBookingId(
             @PathVariable Long bookingId) {
@@ -77,7 +95,9 @@ public class AdminPaymentController {
                 adminPaymentService.getByBookingId(bookingId)));
     }
 
-    // GET /api/admin/payments/revenue
+    /**
+     * Retrieves the calculated total platform revenue.
+     */
     @GetMapping("/revenue")
     public ResponseEntity<?> getTotalRevenue() {
         return ResponseEntity.ok(new ApiResponse(
@@ -85,7 +105,9 @@ public class AdminPaymentController {
                 Map.of("totalRevenue", adminPaymentService.getStats().totalRevenue())));
     }
 
-    // GET /api/admin/payments/status?status=Completed
+    /**
+     * Retrieves payments filtered specifically by their current state (e.g., 'COMPLETED', 'FAILED').
+     */
     @GetMapping("/status")
     public ResponseEntity<?> getPaymentsByStatus(
             @RequestParam String status) {
@@ -94,7 +116,9 @@ public class AdminPaymentController {
                 adminPaymentService.filterByStatus(status)));
     }
 
-    // PATCH /api/admin/payments/{id}/status
+    /**
+     * Endpoint to manually update or override the status of a payment record.
+     */
     @PatchMapping("/{id}/status")
     public ResponseEntity<?> updateStatus(
             @PathVariable Long id,

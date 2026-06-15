@@ -3,14 +3,20 @@ package com.travelhub.backend.entity;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
 
+/**
+ * Payment entity represents a financial transaction in the system.
+ * It tracks payments made by tourists, linked to bookings and processed via PayHere.
+ */
 @Entity
 @Table(name = "payments")
-
-
-
-
 public class Payment {
+
+    /**
+     * Default constructor for JPA.
+     */
     public Payment() {}
+    
+    // --- Getters and Setters ---
     
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
@@ -41,61 +47,72 @@ public class Payment {
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
 
+    // Unique internal identifier for the payment record
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    // TXN-001, TXN-002 format
+    // External transaction ID (e.g., TXN-001) used for tracking and auditing
     @Column(name = "transaction_id",
             unique = true, nullable = false)
     private String transactionId;
 
-    // Booking-உடன் link
+    // Relationship: The specific booking associated with this payment
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "booking_id", nullable = false)
     private Booking booking;
 
-    // Tourist அல்லது Agent
+    // Relationship: The User (usually a tourist) who initiated the payment
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
-    // Agent/Company name
-    // உதாரணம்: Pinnacle Tours, Island Hopper
+    // Relationship: The Agent who will receive the payment for their service
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "agent_id")
     private Agent agent;
 
-    // Payment அல்லது Refund
+    // Nature of the transaction (e.g., Payment, Refund)
     @Column(nullable = false)
     private String type;
 
+    // The transaction amount in the system's base currency
     @Column(nullable = false)
     private Double amount;
 
-    // Completed, Pending, Canceled, Failed
+    // Current state of the transaction (e.g., Completed, Pending, Canceled, Failed)
     @Column(nullable = false)
     private String status;
 
-    // PayHere Specific Fields
+    // --- PayHere Specific Integration Fields ---
+    
+    // Amount processed specifically through the PayHere gateway
     @Column(name = "payhere_amount")
     private Double payhereAmount;
 
+    // Currency code returned by PayHere (e.g., LKR, USD)
     @Column(name = "payhere_currency")
     private String payhereCurrency;
 
+    // Payment method used (e.g., VISA, MASTER, AMEX)
     @Column(name = "method")
     private String method;
 
+    // Numeric status code returned by the PayHere API
     @Column(name = "status_code")
     private Integer statusCode;
 
+    // MD5 signature used for verifying the authenticity of PayHere callbacks
     @Column(name = "md5sig")
     private String md5sig;
 
+    // Timestamp of when the payment record was first created
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
 
+    /**
+     * Life-cycle hook to set the creation timestamp before persisting.
+     */
     @PrePersist
     protected void onCreate() {
         createdAt = LocalDateTime.now();

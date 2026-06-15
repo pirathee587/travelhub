@@ -10,9 +10,19 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.jdbc.core.JdbcTemplate;
 
+/**
+ * ConnectionCheckConfig is a diagnostic utility that executes immediately after the Spring application starts.
+ * It performs a real-time health check on the database connection and audits data integrity for critical entities.
+ */
 @Configuration
 public class ConnectionCheckConfig {
 
+    /**
+     * Executes a series of database diagnostics.
+     * 1. Verifies physical connectivity to the data store (PostgreSQL/Supabase).
+     * 2. Performs counts and relationship audits for 'hotels' and 'rooms'.
+     * 3. Logs schema metadata and sample data to the console for infrastructure verification.
+     */
     @Bean
     public CommandLineRunner checkConnection(JdbcTemplate jdbcTemplate) {
         return args -> {
@@ -30,11 +40,13 @@ public class ConnectionCheckConfig {
                     }
                 }
             } catch (SQLException e) {
+                // Provides actionable advice for common connection failures
                 System.err.println("[FAILED]  PostgreSQL: " + e.getMessage());
                 System.err.println("          Tip: Check if your IP is allowed in Supabase or if the DB is paused.");
             }
 
             try {
+                // Statistical audit of core domain entities
                 Integer totalHotels = jdbcTemplate.queryForObject("SELECT COUNT(*) FROM hotels", Integer.class);
                 Integer totalRooms = jdbcTemplate.queryForObject("SELECT COUNT(*) FROM rooms", Integer.class);
                 Integer nullHotelIds = jdbcTemplate.queryForObject(
@@ -43,6 +55,7 @@ public class ConnectionCheckConfig {
                         "SELECT COUNT(*) FROM rooms r LEFT JOIN hotels h ON h.id = r.hotel_id WHERE r.hotel_id IS NOT NULL AND h.id IS NULL",
                         Integer.class);
 
+                // Metadata audit for schema synchronization
                 String roomHotelIdType = jdbcTemplate.queryForObject(
                         "SELECT data_type FROM information_schema.columns WHERE table_name = 'rooms' AND column_name = 'hotel_id'",
                         String.class);
@@ -57,6 +70,7 @@ public class ConnectionCheckConfig {
                 System.out.println("[DB] rooms.hotel_id type: " + roomHotelIdType);
                 System.out.println("[DB] hotels.id type: " + hotelIdType);
 
+                // Sample data verification
                 System.out.println("[DB] sample room-to-hotel rows:");
                 jdbcTemplate.query(
                         "SELECT r.id, r.name, r.hotel_id, h.hotel_name FROM rooms r LEFT JOIN hotels h ON h.id = r.hotel_id ORDER BY r.id LIMIT 5",
@@ -72,6 +86,7 @@ public class ConnectionCheckConfig {
                             }
                         });
             } catch (RuntimeException e) {
+                // Catches table-not-found or other SQL errors during diagnostics
                 System.err.println("[FAILED]  Room/hotel integrity check: " + e.getMessage());
             }
 

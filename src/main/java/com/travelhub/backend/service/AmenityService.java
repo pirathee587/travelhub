@@ -11,6 +11,10 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
+/**
+ * AmenityService manages the features and services provided by hotels (e.g., WiFi, Pool).
+ * It handles the categorization of amenities and their visual representations (icons) for property listings.
+ */
 @Service
 @Transactional
 public class AmenityService {
@@ -18,15 +22,23 @@ public class AmenityService {
     private final AmenityRepository amenityRepository;
     private final HotelRepository hotelRepository;
 
+    /**
+     * Constructor injection for amenity and hotel repositories.
+     */
     public AmenityService(AmenityRepository amenityRepository, HotelRepository hotelRepository) {
         this.amenityRepository = amenityRepository;
         this.hotelRepository = hotelRepository;
     }
 
+    /**
+     * Registers a new amenity for a specific hotel.
+     * Includes a critical validation check: only hotels with 'Approved' status can manage amenities.
+     */
     public Amenity addAmenity(AmenityRequest request) {
         Hotel hotel = hotelRepository.findById(request.getHotelId())
                 .orElseThrow(() -> new ResourceNotFoundException("Hotel", "id", request.getHotelId()));
 
+        // Business Rule: Hotels must be approved before features can be modified
         if (!"Approved".equalsIgnoreCase(hotel.getApplicationStatus())) {
             throw new RuntimeException("Action disabled. Hotel status is: " + hotel.getApplicationStatus());
         }
@@ -40,19 +52,32 @@ public class AmenityService {
         return amenityRepository.save(amenity);
     }
 
+    /**
+     * Retrieves all amenities registered across the platform.
+     */
     public List<Amenity> getAllAmenities() {
         return amenityRepository.findAll();
     }
 
+    /**
+     * Retrieves all amenities associated with a specific hotel.
+     */
     public List<Amenity> getAmenitiesByHotelId(Long hotelId) {
         return amenityRepository.findByHotelId(hotelId);
     }
 
+    /**
+     * Retrieves metadata for a single specific amenity by its unique ID.
+     */
     public Amenity getAmenityById(Long id) {
         return amenityRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Amenity", "id", id));
     }
 
+    /**
+     * Updates an existing amenity's details.
+     * Continues to enforce the 'Approved' hotel status requirement.
+     */
     public Amenity updateAmenity(Long id, AmenityRequest request) {
         Amenity amenity = getAmenityById(id);
 
@@ -66,6 +91,9 @@ public class AmenityService {
         return amenityRepository.save(amenity);
     }
 
+    /**
+     * Permanently removes an amenity from a hotel's feature list.
+     */
     public void deleteAmenity(Long id) {
         Amenity amenity = getAmenityById(id);
 

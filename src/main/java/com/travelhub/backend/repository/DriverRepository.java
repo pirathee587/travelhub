@@ -5,21 +5,25 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 import java.util.List;
 
+/**
+ * DriverRepository provides data access methods for the Driver entity.
+ * It includes methods for agent-specific driver management and validation of unique identifiers.
+ */
 @Repository
 public interface DriverRepository extends JpaRepository<Driver, Long> {
 
-    // Get all drivers belonging to a specific agent
+    // Retrieves all drivers employed or managed by a specific agent
     List<Driver> findByAgentId(Long agentId);
 
-    // Get drivers by agent and lifecycle status (active/suspended)
+    // Retrieves drivers for an agent filtered by their system lifecycle status (e.g., "active", "suspended")
     List<Driver> findByAgentIdAndLifecycleStatus(Long agentId, String lifecycleStatus);
 
-    // Get drivers by agent and status (available/on-trip/off-duty)
+    // Retrieves drivers for an agent filtered by their current operational status (e.g., "available", "on-trip")
     List<Driver> findByAgentIdAndStatus(Long agentId, String status);
 
-    // Check if NIC already exists
+    // Checks if a driver with the given NIC (National Identity Card) already exists in the system
     boolean existsByNic(String nic);
 
-    // Check if license already exists
+    // Checks if a driver with the given license number already exists in the system
     boolean existsByLicenseNumber(String licenseNumber);
 }

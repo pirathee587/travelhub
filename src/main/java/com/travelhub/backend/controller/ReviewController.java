@@ -9,6 +9,10 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
+/**
+ * ReviewController manages the public-facing feedback and reputation endpoints.
+ * It provides tools for tourists to share their experiences and for all users to view aggregated quality metrics for hotels and packages.
+ */
 @RestController
 @RequestMapping("/api")
 @CrossOrigin(origins = "*")
@@ -17,26 +21,35 @@ public class ReviewController {
     private final ReviewService reviewService;
     private final ImageUploadService imageUploadService;
 
+    /**
+     * Constructor injection for review management and image handling.
+     */
     public ReviewController(ReviewService reviewService, ImageUploadService imageUploadService) {
         this.reviewService = reviewService;
         this.imageUploadService = imageUploadService;
     }
 
-    // GET /api/reviews/package/1
+    /**
+     * Retrieves all customer reviews for a specific travel package.
+     */
     @GetMapping("/reviews/package/{packageId}")
     public ResponseEntity<List<ReviewResponse>> getPackageReviews(
             @PathVariable Long packageId) {
         return ResponseEntity.ok(reviewService.getPackageReviews(packageId));
     }
 
-    // GET /api/reviews/hotel/1
+    /**
+     * Retrieves all customer reviews for a specific hotel property.
+     */
     @GetMapping("/reviews/hotel/{hotelId}")
     public ResponseEntity<List<ReviewResponse>> getHotelReviews(
             @PathVariable Long hotelId) {
         return ResponseEntity.ok(reviewService.getHotelReviews(hotelId));
     }
 
-    // GET /api/reviews/package/1/rating
+    /**
+     * Retrieves the aggregated rating summary (average score and total count) for a travel package.
+     */
     @GetMapping("/reviews/package/{packageId}/rating")
     public ResponseEntity<ReviewSummaryResponse> getPackageRatingSummary(
             @PathVariable Long packageId) {
@@ -46,7 +59,9 @@ public class ReviewController {
         return ResponseEntity.ok(summary);
     }
 
-    // GET /api/reviews/hotel/1/rating
+    /**
+     * Retrieves the aggregated rating summary (average score and total count) for a hotel property.
+     */
     @GetMapping("/reviews/hotel/{hotelId}/rating")
     public ResponseEntity<ReviewSummaryResponse> getHotelRatingSummary(
             @PathVariable Long hotelId) {
@@ -56,13 +71,17 @@ public class ReviewController {
         return ResponseEntity.ok(summary);
     }
 
-    // POST /api/tourist/reviews/package/1
+    /**
+     * Endpoint for tourists to submit a review for a travel package.
+     * Handles complex multipart/form-data containing both JSON review metadata and optional image uploads.
+     */
     @PostMapping(value = "/tourist/reviews/package/{packageId}", consumes = {"multipart/form-data"})
     public ResponseEntity<ReviewResponse> addPackageReview(
             @PathVariable Long packageId,
             @RequestPart("review") String reviewJson,
             @RequestPart(value = "images", required = false) List<org.springframework.web.multipart.MultipartFile> images) {
         try {
+            // Manual parsing required for combined multipart/string data
             com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
             ReviewRequest request = mapper.readValue(reviewJson, ReviewRequest.class);
             return ResponseEntity.ok(reviewService.addPackageReview(packageId, request, images));
@@ -71,13 +90,17 @@ public class ReviewController {
         }
     }
 
-    // POST /api/tourist/reviews/hotel/1
+    /**
+     * Endpoint for tourists to submit a review for a hotel property.
+     * Handles complex multipart/form-data containing both JSON review metadata and optional image uploads.
+     */
     @PostMapping(value = "/tourist/reviews/hotel/{hotelId}", consumes = {"multipart/form-data"})
     public ResponseEntity<ReviewResponse> addHotelReview(
             @PathVariable Long hotelId,
             @RequestPart("review") String reviewJson,
             @RequestPart(value = "images", required = false) List<org.springframework.web.multipart.MultipartFile> images) {
         try {
+            // Manual parsing required for combined multipart/string data
             com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
             ReviewRequest request = mapper.readValue(reviewJson, ReviewRequest.class);
             return ResponseEntity.ok(reviewService.addHotelReview(hotelId, request, images));

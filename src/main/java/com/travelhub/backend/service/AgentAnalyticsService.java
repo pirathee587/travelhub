@@ -12,6 +12,10 @@ import java.time.LocalDate;
 import java.util.*;
 import java.util.stream.Collectors;
 
+/**
+ * AgentAnalyticsService provides detailed performance data for agents.
+ * It calculates revenue trends, trip statistics, resource utilization, and feedback metrics over various time periods.
+ */
 @Service
 public class AgentAnalyticsService {
 
@@ -19,6 +23,10 @@ public class AgentAnalyticsService {
     private final DriverRepository driverRepository;
     private final VehicleRepository vehicleRepository;
     private final AgentRepository agentRepository;
+
+    /**
+     * Constructor injection for all required repositories.
+     */
     public AgentAnalyticsService(BookingRepository bookingRepository, DriverRepository driverRepository, VehicleRepository vehicleRepository, AgentRepository agentRepository) {
         this.bookingRepository = bookingRepository;
         this.driverRepository = driverRepository;
@@ -26,43 +34,56 @@ public class AgentAnalyticsService {
         this.agentRepository = agentRepository;
     }
 
-
+    /**
+     * Generates a comprehensive analytics report for a specific agent and time period.
+     * Includes financial summaries, chart data, and resource performance rankings.
+     */
     public AnalyticsResponse getAnalytics(Long agentId, String period) {
+        // Fetch all bookings where the assigned vehicle belongs to the agent
         List<Booking> allBookings = bookingRepository.findByVehicleAgentId(agentId);
+        // Apply time-based filter (Yearly, Quarterly, Monthly)
         List<Booking> filtered = filterByPeriod(allBookings, period);
 
-        // Stat cards
+        // --- Stat Cards Calculations ---
+        
+        // Sum of all prices for completed bookings
         double totalRevenue = filtered.stream()
                 .filter(b -> b.getStatus().equals("completed"))
                 .mapToDouble(b -> b.getTotalPrice() != null ? b.getTotalPrice() : 0)
                 .sum();
 
+        // Total count of successful trips
         long totalTrips = filtered.stream()
                 .filter(b -> b.getStatus().equals("completed"))
                 .count();
 
+        // Total count of cancelled reservations
         long cancelled = filtered.stream()
                 .filter(b -> b.getStatus().equals("cancelled"))
                 .count();
 
+        // Percentage of bookings that were cancelled
         double cancellationRate = filtered.isEmpty() ? 0 :
                 Math.round(((double) cancelled / filtered.size()) * 100.0) / 1.0;
 
+        // Current average rating for the agent
         Double averageRating = agentRepository.findById(agentId)
                 .map(a -> a.getRating() != null ? a.getRating() : 0.0)
                 .orElse(0.0);
 
-        // Revenue chart data
+        // --- Complex Data Visualizations ---
+
+        // Prepare time-series data for the revenue chart
         List<Map<String, Object>> revenueData = buildRevenueData(filtered, period);
 
-        // Trip status pie chart
+        // Breakdown of trip statuses for the pie chart
         Map<String, Long> tripStatusData = new LinkedHashMap<>();
         tripStatusData.put("completed", filtered.stream().filter(b -> b.getStatus().equals("completed")).count());
         tripStatusData.put("active", filtered.stream().filter(b -> b.getStatus().equals("active")).count());
         tripStatusData.put("pending", filtered.stream().filter(b -> b.getStatus().equals("pending")).count());
         tripStatusData.put("cancelled", cancelled);
 
-        // Top destinations
+        // Top 5 most booked destinations for this agent
         List<Map<String, Object>> topDestinations = filtered.stream()
                 .filter(b -> b.getPkg() != null && b.getPkg().getDestination() != null)
                 .collect(Collectors.groupingBy(b -> b.getPkg().getDestination(), Collectors.counting()))
@@ -77,7 +98,7 @@ public class AgentAnalyticsService {
                 })
                 .collect(Collectors.toList());
 
-        // Driver performance
+        // Top 5 drivers based on their current rating and status
         List<Map<String, Object>> driverPerformance = driverRepository
                 .findByAgentId(agentId).stream()
                 .limit(5)
@@ -90,7 +111,7 @@ public class AgentAnalyticsService {
                 })
                 .collect(Collectors.toList());
 
-        // Vehicle utilization
+        // Top 5 vehicles based on total trip count in the filtered period
         List<Map<String, Object>> vehicleUtilization = vehicleRepository
                 .findByAgentId(agentId).stream()
                 .limit(5)
@@ -107,6 +128,7 @@ public class AgentAnalyticsService {
                 })
                 .collect(Collectors.toList());
 
+        // Construct final response DTO
         return AnalyticsResponse.builder()
                 .totalRevenue(totalRevenue)
                 .totalTrips(totalTrips)
@@ -120,6 +142,9 @@ public class AgentAnalyticsService {
                 .build();
     }
 
+    /**
+     * Filters a list of bookings based on the specified time period relative to today.
+     */
     private List<Booking> filterByPeriod(List<Booking> bookings, String period) {
         LocalDate now = LocalDate.now();
         LocalDate from;
@@ -137,6 +162,10 @@ public class AgentAnalyticsService {
                 .collect(Collectors.toList());
     }
 
+    /**
+     * Aggregates revenue data into time-based labels for frontend charting.
+     * Supports Yearly (Months), Quarterly (Weeks), and Monthly (Days) granularities.
+     */
     private List<Map<String, Object>> buildRevenueData(List<Booking> bookings, String period) {
         List<Map<String, Object>> result = new ArrayList<>();
         boolean isYearly = "yearly".equals(period);
@@ -159,6 +188,7 @@ public class AgentAnalyticsService {
                 result.add(m);
             }
         } else if (isQuarterly) {
+            // Placeholder logic for weekly breakdown
             String[] weeks = {"Week 1","Week 2","Week 3","Week 4",
                     "Week 5","Week 6","Week 7","Week 8",
                     "Week 9","Week 10","Week 11","Week 12"};
@@ -169,6 +199,7 @@ public class AgentAnalyticsService {
                 result.add(m);
             }
         } else {
+            // Placeholder logic for daily breakdown
             String[] days = {"Mon","Tue","Wed","Thu","Fri","Sat","Sun"};
             for (String day : days) {
                 Map<String, Object> m = new LinkedHashMap<>();

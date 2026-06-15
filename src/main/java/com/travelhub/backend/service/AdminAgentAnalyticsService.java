@@ -10,19 +10,27 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * AdminAgentAnalyticsService provides high-level performance monitoring for all agents.
+ * It allows administrators to drill down into specific agent metrics, financial trends, and operational efficiency.
+ */
 @Service
 public class AdminAgentAnalyticsService {
 
-    private final AgentRepository   agentRepository;
+    private final AgentRepository agentRepository;
     private final BookingRepository bookingRepository;
-    public AdminAgentAnalyticsService(AgentRepository   agentRepository, BookingRepository bookingRepository) {
+
+    /**
+     * Constructor injection for agent and booking data access.
+     */
+    public AdminAgentAnalyticsService(AgentRepository agentRepository, BookingRepository bookingRepository) {
         this.agentRepository = agentRepository;
         this.bookingRepository = bookingRepository;
     }
 
-
-    // ── Get All Agents List ───────────────────────────
-    // Admin portal-ல் எல்லா agents பட்டியல்
+    /**
+     * Retrieves a summary list of all agents for administrative monitoring.
+     */
     public List<AdminAgentListResponse> getAllAgents() {
         return agentRepository.findAll()
                 .stream()
@@ -30,42 +38,30 @@ public class AdminAgentAnalyticsService {
                 .toList();
     }
 
-    // ── Get Agent Stats ───────────────────────────────
-    // ஒரு agent-இன் 4 cards data
-    // Total Revenue, Total Trips,
-    // Average Rating, Cancellation Rate
-    public AdminAgentStatsResponse getAgentStats(
-            Long agentId) {
-
+    /**
+     * Aggregates core performance metrics for a specific agent.
+     * Calculates total revenue, trip volume, average rating, and real-time cancellation rates.
+     */
+    public AdminAgentStatsResponse getAgentStats(Long agentId) {
         Agent agent = agentRepository.findById(agentId)
-                .orElseThrow(() ->
-                        new ResourceNotFoundException(
-                                "Agent", "id", agentId));
+                .orElseThrow(() -> new ResourceNotFoundException("Agent", "id", agentId));
 
-        // Total Revenue
-        Double totalRevenue = agentRepository
-                .getTotalRevenueByAgentId(agentId);
+        // Aggregate financial performance
+        Double totalRevenue = agentRepository.getTotalRevenueByAgentId(agentId);
 
-        // Total Trips
-        Long totalTrips = agentRepository
-                .getTotalTripsByAgentId(agentId);
+        // Aggregate operational volume
+        Long totalTrips = agentRepository.getTotalTripsByAgentId(agentId);
 
-        // Average Rating
-        Double avgRating = agentRepository
-                .getAvgRatingByAgentId(agentId);
+        // Aggregate quality metrics
+        Double avgRating = agentRepository.getAvgRatingByAgentId(agentId);
 
-        // Cancellation Rate calculation
-        // cancelled / total * 100
-        Long cancelledTrips = agentRepository
-                .getCancelledTripsByAgentId(agentId);
+        // Calculate specialized metrics: Cancellation Rate
+        Long cancelledTrips = agentRepository.getCancelledTripsByAgentId(agentId);
 
         Double cancellationRate = 0.0;
-        if (totalTrips != null && totalTrips > 0
-                && cancelledTrips != null) {
-            cancellationRate = Math.round(
-                    (cancelledTrips.doubleValue()
-                            / totalTrips.doubleValue() * 100)
-                            * 10.0) / 10.0;
+        if (totalTrips != null && totalTrips > 0 && cancelledTrips != null) {
+            // Formula: (Cancelled / Total) * 100, rounded to 1 decimal place
+            cancellationRate = Math.round((cancelledTrips.doubleValue() / totalTrips.doubleValue() * 100) * 10.0) / 10.0;
         }
 
         return new AdminAgentStatsResponse(
@@ -75,35 +71,26 @@ public class AdminAgentAnalyticsService {
                 agent.getRating(),
                 totalRevenue  != null ? totalRevenue  : 0.0,
                 totalTrips    != null ? totalTrips    : 0L,
-                avgRating     != null
-                        ? Math.round(avgRating * 10.0)
-                        / 10.0
-                        : 0.0,
+                avgRating     != null ? Math.round(avgRating * 10.0) / 10.0 : 0.0,
                 cancellationRate
         );
     }
 
-    // ── Get Monthly Revenue ───────────────────────────
-    // Chart data — J,F,M,A,M,J,J,A,S,O,N,D
-    public AdminAgentMonthlyRevenueResponse
-    getMonthlyRevenue(Long agentId, int year) {
-
+    /**
+     * Generates a monthly revenue breakdown for a specific agent and year.
+     * This data is used to populate administrative performance charts.
+     */
+    public AdminAgentMonthlyRevenueResponse getMonthlyRevenue(Long agentId, int year) {
         agentRepository.findById(agentId)
-                .orElseThrow(() ->
-                        new ResourceNotFoundException(
-                                "Agent", "id", agentId));
+                .orElseThrow(() -> new ResourceNotFoundException("Agent", "id", agentId));
 
-        List<String> labels = List.of(
-                "J","F","M","A","M","J",
-                "J","A","S","O","N","D");
-
+        // Standard labels for monthly time-series charts
+        List<String> labels = List.of("J","F","M","A","M","J","J","A","S","O","N","D");
         List<Double> data = new ArrayList<>();
 
-        // ஒவ்வொரு month-க்கும் revenue எடுக்கிறோம்
+        // Iteratively fetch revenue per month from the repository
         for (int month = 1; month <= 12; month++) {
-            Double revenue = agentRepository
-                    .getMonthlyRevenueByAgentId(
-                            agentId, month, year);
+            Double revenue = agentRepository.getMonthlyRevenueByAgentId(agentId, month, year);
             data.add(revenue != null ? revenue : 0.0);
         }
 
@@ -114,25 +101,17 @@ public class AdminAgentAnalyticsService {
         );
     }
 
-    // ── Get Trip Status ───────────────────────────────
-    // Pie chart — Completed, Pending, Cancelled
-    public AdminAgentTripStatusResponse
-    getTripStatus(Long agentId) {
-
+    /**
+     * Aggregates the volume of trips categorized by their current status for a specific agent.
+     * Suitable for populating operational distribution charts (e.g., Pie charts).
+     */
+    public AdminAgentTripStatusResponse getTripStatus(Long agentId) {
         agentRepository.findById(agentId)
-                .orElseThrow(() ->
-                        new ResourceNotFoundException(
-                                "Agent", "id", agentId));
+                .orElseThrow(() -> new ResourceNotFoundException("Agent", "id", agentId));
 
-        Long completed = bookingRepository
-                .countByAgentIdAndStatus(
-                        agentId, "completed");
-        Long pending = bookingRepository
-                .countByAgentIdAndStatus(
-                        agentId, "pending");
-        Long cancelled = bookingRepository
-                .countByAgentIdAndStatus(
-                        agentId, "cancelled");
+        Long completed = bookingRepository.countByAgentIdAndStatus(agentId, "completed");
+        Long pending = bookingRepository.countByAgentIdAndStatus(agentId, "pending");
+        Long cancelled = bookingRepository.countByAgentIdAndStatus(agentId, "cancelled");
 
         return new AdminAgentTripStatusResponse(
                 completed != null ? completed : 0L,
@@ -141,9 +120,10 @@ public class AdminAgentAnalyticsService {
         );
     }
 
-    // ── Map Agent → List Response ─────────────────────
-    private AdminAgentListResponse mapToListResponse(
-            Agent a) {
+    /**
+     * Maps an Agent entity to a summary response DTO for administrative lists.
+     */
+    private AdminAgentListResponse mapToListResponse(Agent a) {
         return new AdminAgentListResponse(
                 a.getId(),
                 a.getUser().getName(),

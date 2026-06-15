@@ -4,14 +4,67 @@ import jakarta.persistence.*;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
+/**
+ * Booking entity represents a reservation made by a tourist.
+ * It links users to packages, hotels, and vehicles for a specific travel period.
+ */
 @Entity
 @Table(name = "bookings")
-
-
-
-
 public class Booking {
+    
+    // Unique identifier for the booking
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    // The user (tourist) who made the booking
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id", nullable = false)
+    private User user;
+
+    // The travel package being booked
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "package_id", nullable = false)
+    private Package pkg;
+
+    // Optional hotel reservation associated with this booking
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "hotel_id")
+    private Hotel hotel;
+
+    // The vehicle assigned/selected for this trip
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "vehicle_id", nullable = false)
+    private Vehicle vehicle;
+
+    // Current status of the booking (e.g., confirmed, pending, cancelled)
+    @Column(nullable = false)
+    private String status;
+
+    // Scheduled start date of the trip
+    @Column(nullable = false)
+    private LocalDate startDate;
+
+    // Scheduled end date of the trip
+    @Column(nullable = false)
+    private LocalDate endDate;
+
+    // Calculated total price for the booking
+    private Double totalPrice;
+    
+    // Progress percentage of the trip (e.g., 0 for upcoming, 100 for completed)
+    private Integer progress = 0;
+
+    // Timestamp of when the booking was created in the system
+    @Column(updatable = false)
+    private LocalDateTime createdAt;
+
+    /**
+     * Default constructor for JPA.
+     */
     public Booking() {}
+    
+    // --- Getters and Setters ---
     
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
@@ -36,41 +89,9 @@ public class Booking {
     public Integer getProgress() { return progress; }
     public void setProgress(Integer progress) { this.progress = progress; }
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id", nullable = false)
-    private User user;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "package_id", nullable = false)
-    private Package pkg;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "hotel_id")
-    private Hotel hotel;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "vehicle_id", nullable = false)
-    private Vehicle vehicle;
-
-    @Column(nullable = false)
-    private String status;
-
-    @Column(nullable = false)
-    private LocalDate startDate;
-
-    @Column(nullable = false)
-    private LocalDate endDate;
-
-    private Double totalPrice;
-    private Integer progress = 0;
-
-    @Column(updatable = false)
-    private LocalDateTime createdAt;
-
+    /**
+     * Life-cycle hook to set the creation timestamp before the record is persisted.
+     */
     @PrePersist
     protected void onCreate() {
         createdAt = LocalDateTime.now();

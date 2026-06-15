@@ -5,12 +5,13 @@ import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 
-
-
-
-
+/**
+ * RegisterRequest is a Data Transfer Object (DTO) used for user account creation.
+ * It contains all necessary fields for both general tourists and business partners (Agents/Hotel Owners).
+ */
 public class RegisterRequest {
 
+    // Primary identity and authentication fields
     @NotBlank(message = "Name is required")
     private String name;
 
@@ -31,14 +32,23 @@ public class RegisterRequest {
     @NotBlank(message = "Preferred language is required")
     private String preferredLanguage;
 
-    // Role-specific optional fields
+    // Optional fields scoped by User Role
+    
+    // For Tourists
     private String nationality;
+
+    // For Travel Agents
     private String agencyName;
     private String licenseNumber;
+
+    // For Hotel Owners
     private String hotelName;
     private String businessRegistrationId;
     private String businessAddress;
     private String district;
+    private String nic;
+
+    // --- Standard Getters and Setters ---
 
     public String getName() { return name; }
     public void setName(String name) { this.name = name; }
@@ -66,4 +76,6 @@ public class RegisterRequest {
     public void setBusinessAddress(String businessAddress) { this.businessAddress = businessAddress; }
     public String getDistrict() { return district; }
     public void setDistrict(String district) { this.district = district; }
+    public String getNic() { return nic; }
+    public void setNic(String nic) { this.nic = nic; }
 }

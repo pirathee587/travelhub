@@ -13,6 +13,10 @@ import com.travelhub.backend.repository.HotelRepository;
 import com.travelhub.backend.repository.ReviewRepository;
 import com.travelhub.backend.service.HotelPricingService.PriceRange;
 
+/**
+ * HotelService manages the business logic for property discovery and details.
+ * It provides methods for listing approved hotels, searching by location, and retrieving detailed property profiles.
+ */
 @Service
 @Transactional(readOnly = true)
 public class HotelService {
@@ -21,27 +25,42 @@ public class HotelService {
     private final ReviewRepository reviewRepository;
     private final HotelPricingService hotelPricingService;
 
+    /**
+     * Constructor injection for required repositories and pricing utility service.
+     */
     public HotelService(HotelRepository hotelRepository, ReviewRepository reviewRepository, HotelPricingService hotelPricingService) {
         this.hotelRepository = hotelRepository;
         this.reviewRepository = reviewRepository;
         this.hotelPricingService = hotelPricingService;
     }
 
+    /**
+     * Retrieves all hotels that have been approved by administrators.
+     */
     public List<HotelResponse> getAllHotels() {
         List<Hotel> hotels = hotelRepository.findByApplicationStatus("Approved");
         return toHotelResponses(hotels);
     }
 
+    /**
+     * Retrieves hotels filtered by destination name (case-insensitive).
+     */
     public List<HotelResponse> getHotelsByDestination(String destination) {
         List<Hotel> hotels = hotelRepository.findByDestinationIgnoreCase(destination);
         return toHotelResponses(hotels);
     }
 
+    /**
+     * Retrieves approved hotels within a specific administrative district.
+     */
     public List<HotelResponse> getHotelsByDistrict(String district) {
         List<Hotel> hotels = hotelRepository.findByApplicationStatusAndDistrictIgnoreCase("Approved", district);
         return toHotelResponses(hotels);
     }
 
+    /**
+     * Retrieves the comprehensive profile for a single specific hotel.
+     */
     public HotelResponse getHotelById(Long id) {
         Hotel hotel = hotelRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Hotel not found with id: " + id));
@@ -49,15 +68,15 @@ public class HotelService {
     }
 
     /**
-     * ✅ OPTIMIZED: Batch rating lookup — 2 queries total instead of 2N.
-     * Fetches all ratings and counts in bulk, then maps them to responses.
+     * Optimized method to convert a list of Hotel entities into HotelResponse DTOs.
+     * Uses batch lookups for ratings, review counts, and price ranges to eliminate the N+1 performance issue.
      */
     private List<HotelResponse> toHotelResponses(List<Hotel> hotels) {
         if (hotels.isEmpty()) return List.of();
 
         List<Long> hotelIds = hotels.stream().map(Hotel::getId).collect(Collectors.toList());
 
-        // bulk queries
+        // Perform bulk queries for supporting statistics
         Map<Long, Double> avgRatings = reviewRepository.getAverageRatingsByHotelIds(hotelIds);
         Map<Long, Long> reviewCounts = reviewRepository.getReviewCountsByHotelIds(hotelIds);
         Map<Long, PriceRange> priceRanges = hotelPricingService.getPriceRangesByHotelIds(hotelIds);
@@ -70,7 +89,9 @@ public class HotelService {
                 .collect(Collectors.toList());
     }
 
-    /** Single hotel fetch — individual queries for detail pages */
+    /**
+     * Maps a single hotel to its response DTO using individual queries (suitable for detail pages).
+     */
     private HotelResponse toSingleHotelResponse(Hotel hotel) {
         Double avgRating = reviewRepository.getAverageRatingByHotelId(hotel.getId());
         Long count = reviewRepository.getReviewCountByHotelId(hotel.getId());
@@ -81,7 +102,11 @@ public class HotelService {
                 priceRange);
     }
 
+    /**
+     * Internal helper to populate a HotelResponse DTO from entity and calculated statistics.
+     */
     private HotelResponse toHotelResponse(Hotel hotel, double rating, int reviewCount, PriceRange priceRange) {
+        // Map persistent amenities to a clean list of names
         List<String> amenityList = null;
         if (hotel.getAmenityList() != null && !hotel.getAmenityList().isEmpty()) {
             amenityList = hotel.getAmenityList().stream()
@@ -95,6 +120,7 @@ public class HotelService {
         response.setDestination(hotel.getDestination());
         response.setLocation(hotel.getLocation());
         response.setDescription(hotel.getDescription());
+        // Map price ranges calculated from individual room data
         response.setPriceFrom(priceRange != null ? priceRange.priceFrom() : null);
         response.setPriceTo(priceRange != null ? priceRange.priceTo() : null);
         response.setRating(Math.round(rating * 10.0) / 10.0);

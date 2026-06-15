@@ -5,13 +5,22 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import java.util.List;
 
+/**
+ * Hotel entity represents a lodging establishment in the system.
+ * It stores property details, owner information, and links to rooms and amenities.
+ */
 @Entity
 @Table(name = "hotels", schema = "public")
 @JsonIgnoreProperties({"hibernateLazyInitializer", "handler", "amenityList", "rooms", "owner"})
 public class Hotel {
+
+    /**
+     * Default constructor for JPA.
+     */
     public Hotel() {}
     
-    // Explicit Getters/Setters for Demo stability
+    // --- Getters and Setters ---
+
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
     public String getHotelName() { return hotelName; }
@@ -65,79 +74,111 @@ public class Hotel {
     public User getOwner() { return owner; }
     public void setOwner(User owner) { this.owner = owner; }
 
+    // Unique identifier for the hotel
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     // ── Basic Info ─────────────────────────────────────
+    
+    // Official name of the hotel
     @Column(nullable = false)
     private String hotelName;
 
+    // Primary city or area destination
     @Column(nullable = false)
     private String destination;
 
+    // Detailed physical location or address
     private String location;
 
+    // Textual description of the hotel's features and services
     @Column(columnDefinition = "TEXT")
     private String description;
 
+    // Minimum room price per night
     private Double priceFrom;
+    
+    // Maximum room price per night
     private Double priceTo;
+    
+    // URL or path to the hotel's primary image
     private String imageUrl;
+    
+    // The administrative district where the hotel is located
     private String district;
+    
+    // Average user rating based on reviews
     private Double rating;
+    
+    // Total number of reviews received
     private Integer reviewCount;
+    
+    // Total capacity or number of rooms in the hotel
     private Integer numberOfRooms;
+    
+    // Comma-separated or serialized list of available amenities (simplified)
     private String amenities;
 
     // ── Owner Information ──────────────────────────────
+    
+    // Full name of the hotel owner
     @Column(name = "owner_name")
     private String ownerName;
 
+    // Contact email of the hotel owner
     @Column(name = "owner_email")
     private String ownerEmail;
 
+    // NIC (National Identity Card) number of the owner
     @Column(name = "owner_nic")
     private String ownerNic;
 
+    // URL or path to the owner's NIC image for verification
     @Column(name = "nic_image_url")
     private String nicImageUrl;
 
+    // Reference to the owner's user ID (mapped through the 'owner' relationship)
     @Column(name = "owner_id", insertable = false, updatable = false)
     private Long ownerId;
 
     // ── Contact Information ────────────────────────────
+    
+    // Official email address of the hotel
     @Column(name = "hotel_email")
     private String hotelEmail;
 
+    // Primary contact number for hotel inquiries
     @Column(name = "hotel_contact_number")
     private String hotelContactNumber;
 
+    // Secondary phone number
     @Column(name = "phone_number")
     private String phoneNumber;
 
+    // Dedicated hotline number for customer support
     @Column(name = "hotline_number")
     private String hotlineNumber;
 
     // ── Application Status ─────────────────────────────
-    // Pending, Approved, Rejected
-    @Column(name = "application_status")
     
+    // Current status of the hotel registration (e.g., Pending, Approved, Rejected)
+    @Column(name = "application_status")
     private String applicationStatus = "Pending";
 
+    // Relationship: List of specific amenities linked to this hotel
     @OneToMany(mappedBy = "hotel",
             cascade = CascadeType.ALL,
             fetch = FetchType.LAZY)
     private List<Amenity> amenityList;
 
-    // ── Rooms (Room entity-உடன் relationship) ─────────
+    // Relationship: List of rooms available in this hotel
     @OneToMany(mappedBy = "hotel",
             cascade = CascadeType.ALL,
             fetch = FetchType.LAZY)
     private List<Room> rooms;
 
-
-    // ── Link to Owner (User entity) ──
+    // Relationship: The User (Hotel Owner) who manages this property
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "owner_id")
     private User owner;

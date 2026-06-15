@@ -3,41 +3,60 @@ package com.travelhub.backend.entity;
 import jakarta.persistence.*;
 import java.time.LocalDate;
 
+/**
+ * Driver entity represents a vehicle driver managed by an agent.
+ * It stores personal information, licensing data, and performance metrics.
+ */
 @Entity
 @Table(name = "drivers")
 public class Driver {
+    
+    // Unique identifier for the driver
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    // The agent who employs or manages this driver
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "agent_id", nullable = false)
     private Agent agent;
 
+    // --- Personal Information ---
     private String firstName;
     private String lastName;
-    private String nic;
+    private String nic;             // National Identity Card number
     private String bloodGroup;
     private String nicFrontImage;
     private String nicRearImage;
+    private String profileImage;    // URL or path to the driver's profile picture
+
+    // --- Contact Details ---
     private String email;
     private String mobileNumber;
     private String secondaryMobileNumber;
     private String addressLine1;
     private String addressLine2;
+
+    // --- Licensing and Skills ---
     private String licenseNumber;
     private LocalDate licenseExpiryDate;
     private String licenseFrontImage;
     private String licenseRearImage;
-    private String vehicleTypes;
-    private String status = "available";
-    private String lifecycleStatus = "active";
-    private Double rating;
-    private String profileImage;
-    private String assignedVehicle;
+    private String vehicleTypes;    // Types of vehicles the driver is licensed for (e.g., Car, Van)
 
+    // --- Status and Performance ---
+    private String status = "available";        // Current work status (e.g., available, on-trip)
+    private String lifecycleStatus = "active";  // System status (active/inactive)
+    private Double rating;                      // Overall performance rating from tourists/agents
+    private String assignedVehicle;             // Simplified reference to the currently assigned vehicle
+
+    /**
+     * Default constructor for JPA.
+     */
     public Driver() {}
 
+    // --- Getters and Setters ---
+    
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
     public Agent getAgent() { return agent; }
@@ -85,6 +104,9 @@ public class Driver {
     public String getAssignedVehicle() { return assignedVehicle; }
     public void setAssignedVehicle(String assignedVehicle) { this.assignedVehicle = assignedVehicle; }
 
+    /**
+     * Inner Builder class for the fluent creation of Driver objects.
+     */
     public static class Builder {
         private Long id;
         private Agent agent;
@@ -134,6 +156,9 @@ public class Driver {
         public Builder profileImage(String profileImage) { this.profileImage = profileImage; return this; }
         public Builder assignedVehicle(String assignedVehicle) { this.assignedVehicle = assignedVehicle; return this; }
 
+        /**
+         * Builds and returns a Driver object based on the builder's configuration.
+         */
         public Driver build() {
             Driver d = new Driver();
             d.setId(id);
@@ -162,5 +187,9 @@ public class Driver {
             return d;
         }
     }
+
+    /**
+     * Returns a new Builder instance for Driver.
+     */
     public static Builder builder() { return new Builder(); }
 }

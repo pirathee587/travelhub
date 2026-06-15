@@ -11,17 +11,28 @@ import org.springframework.stereotype.Service;
 import java.util.List;
 import java.util.stream.Collectors;
 
+/**
+ * AgentBookingService handles the lifecycle of bookings from an agent's perspective.
+ * It manages reservation approvals, tracking active trips, and final completion status.
+ */
 @Service
 public class AgentBookingService {
 
     private final BookingRepository bookingRepository;
     private final VehicleRepository vehicleRepository;
+
+    /**
+     * Constructor injection for booking and vehicle data access.
+     */
     public AgentBookingService(BookingRepository bookingRepository, VehicleRepository vehicleRepository) {
         this.bookingRepository = bookingRepository;
         this.vehicleRepository = vehicleRepository;
     }
 
-
+    /**
+     * Retrieves all bookings associated with an agent's fleet.
+     * Optionally filters by booking status (e.g., "pending", "active", "completed").
+     */
     public List<BookingResponse> getAllBookings(Long agentId, String status) {
         List<Booking> bookings;
         if (status != null && !status.equals("all")) {
@@ -32,58 +43,86 @@ public class AgentBookingService {
         return bookings.stream().map(this::toResponse).collect(Collectors.toList());
     }
 
+    /**
+     * Retrieves detailed information for a specific booking, ensuring it belongs to the requesting agent.
+     */
     public BookingResponse getBookingById(Long agentId, Long bookingId) {
         Booking booking = bookingRepository.findById(bookingId)
                 .orElseThrow(() -> new ResourceNotFoundException("Booking", "id", bookingId));
+        
+        // Security check: Ensure the booking is associated with a vehicle belonging to this agent
         if (!booking.getVehicle().getAgent().getId().equals(agentId)) {
             throw new ResourceNotFoundException("Booking", "agentId", agentId);
         }
         return toResponse(booking);
     }
 
+    /**
+     * Approves a pending booking request and sets it to 'active' status.
+     * Initializes initial travel progress.
+     */
     public BookingResponse acceptBooking(Long agentId, Long bookingId) {
         Booking booking = bookingRepository.findById(bookingId)
                 .orElseThrow(() -> new ResourceNotFoundException("Booking", "id", bookingId));
+        
         if (!booking.getVehicle().getAgent().getId().equals(agentId)) {
             throw new ResourceNotFoundException("Booking", "agentId", agentId);
         }
+        
         if (!booking.getStatus().equals("pending")) {
             throw new BadRequestException("Only pending bookings can be accepted");
         }
+        
         booking.setStatus("active");
-        booking.setProgress(25);
+        booking.setProgress(25); // Set initial active progress
         return toResponse(bookingRepository.save(booking));
     }
 
+    /**
+     * Rejects a pending booking request and sets it to 'cancelled'.
+     */
     public BookingResponse declineBooking(Long agentId, Long bookingId,
-                                          BookingActionRequest request) {
+                                           BookingActionRequest request) {
         Booking booking = bookingRepository.findById(bookingId)
                 .orElseThrow(() -> new ResourceNotFoundException("Booking", "id", bookingId));
+        
         if (!booking.getVehicle().getAgent().getId().equals(agentId)) {
             throw new ResourceNotFoundException("Booking", "agentId", agentId);
         }
+        
         if (!booking.getStatus().equals("pending")) {
             throw new BadRequestException("Only pending bookings can be declined");
         }
+        
         booking.setStatus("cancelled");
         booking.setProgress(0);
         return toResponse(bookingRepository.save(booking));
     }
 
+    /**
+     * Marks an active booking as completed.
+     * Sets travel progress to 100%.
+     */
     public BookingResponse completeBooking(Long agentId, Long bookingId) {
         Booking booking = bookingRepository.findById(bookingId)
                 .orElseThrow(() -> new ResourceNotFoundException("Booking", "id", bookingId));
+        
         if (!booking.getVehicle().getAgent().getId().equals(agentId)) {
             throw new ResourceNotFoundException("Booking", "agentId", agentId);
         }
+        
         if (!booking.getStatus().equals("active")) {
             throw new BadRequestException("Only active bookings can be completed");
         }
+        
         booking.setStatus("completed");
         booking.setProgress(100);
         return toResponse(bookingRepository.save(booking));
     }
 
+    /**
+     * Maps a Booking entity to a detailed BookingResponse DTO.
+     */
     private BookingResponse toResponse(Booking booking) {
         return BookingResponse.builder()
                 .id(booking.getId())

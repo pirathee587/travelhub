@@ -3,15 +3,21 @@ package com.travelhub.backend.entity;
 import jakarta.persistence.*;
 import java.util.List;
 
+/**
+ * Package entity represents a travel package offered by an agent.
+ * It contains details about the destination, pricing, itinerary, and images.
+ */
 @Entity
 @Table(name = "packages")
-
-
-
-
 public class Package {
+
+    /**
+     * Default constructor for JPA.
+     */
     public Package() {}
     
+    // --- Getters and Setters ---
+
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
     public String getPackageName() { return packageName; }
@@ -55,51 +61,78 @@ public class Package {
     public Boolean getIsActive() { return isActive; }
     public void setIsActive(Boolean isActive) { this.isActive = isActive; }
 
+    // Unique identifier for the travel package
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-
+    // The agent who created and manages this package
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "agent_id", nullable = false)
     private Agent agent;
 
+    // The display name of the travel package
     @Column(nullable = false)
     private String packageName;
 
+    // The primary destination of the package
     @Column(nullable = false)
     private String destination;
 
-
+    // Starting location of the trip
     private String startPlace;
+    
+    // Ending location of the trip
     private String endPlace;
+    
+    // Minimum price for the package
     private Double priceFrom;
+    
+    // Maximum price for the package
     private Double priceTo;
+    
+    // Total duration of the trip (e.g., "3 Days, 2 Nights")
     private String duration;
+    
+    // Category of the package (e.g., Adventure, Cultural, Beach)
     private String category;
+    
+    // URL or path to the main featured image for the package
     private String imageUrl;
+    
+    // Average user rating based on reviews
     private Double rating;
+    
+    // Total number of reviews received
     private Integer reviewCount;
 
-
+    // Extra details about festivals or special events included in the package
     @Column(columnDefinition = "TEXT")
     private String festivalDetails;
 
+    // Flag indicating if the package is currently trending/promoted
     private Boolean trending = false;
+    
+    // Flag to enable or disable the package for tourists
     private Boolean isActive = true;
+    
+    // The administrative district associated with the package
     private String district;
 
+    // List of what is included in the package (e.g., meals, entrance fees)
     @Column(columnDefinition = "TEXT")
     private String inclusions;
 
+    // Admin approval status for the package application (e.g., Pending, Approved)
     @Column(name = "application_status")
-    
     private String applicationStatus = "Pending";
 
+    // Detailed day-by-day itinerary for the trip
     @OneToMany(mappedBy = "pkg", cascade = CascadeType.ALL, orphanRemoval = true)
     @OrderBy("dayNumber ASC")
     private List<PackageItinerary> itinerary;
 
+    // Additional gallery images for the package
     @OneToMany(mappedBy = "pkg", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<PackageImage> images;
 }

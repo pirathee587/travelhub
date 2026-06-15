@@ -11,22 +11,34 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * JwtTokenProvider is responsible for the creation, parsing, and validation of JSON Web Tokens.
+ * It encapsulates the cryptographic logic required to maintain stateless user sessions.
+ */
 @Component
 public class JwtTokenProvider {
 
     @Value("${jwt.secret:travelhub_secret_key_minimum_32_chars_long}")
     private String jwtSecret;
 
-    @Value("${app.jwt.expiration:86400000}")
+    @Value("${jwt.expiration:86400000}")
     private long jwtExpiration;
 
+    /**
+     * Generates a cryptographic signing key from the configured JWT secret.
+     */
     private Key getSigningKey() {
         return Keys.hmacShaKeyFor(jwtSecret.getBytes());
     }
 
-    // Generate Token with Custom Claims
+    /**
+     * Generates a new JWT for an authenticated user.
+     * Injects custom domain claims (Role, IDs) into the payload to allow the frontend and backend 
+     * to perform scoped operations without redundant database lookups.
+     */
     public String generateToken(Authentication authentication, User user) {
         Map<String, Object> claims = new HashMap<>();
+        // Inject business-critical identity markers into the token payload
         claims.put("role", user.getRole().name());
         claims.put("userId", user.getId());
         claims.put("agentId", user.getAgentProfile() != null ? user.getAgentProfile().getId() : null);
@@ -41,7 +53,9 @@ public class JwtTokenProvider {
                 .compact();
     }
 
-    // Get Email from Token
+    /**
+     * Extracts the subject (User Email) from a signed JWT payload.
+     */
     public String getEmailFromToken(String token) {
         return Jwts.parser()
                 .verifyWith((javax.crypto.SecretKey) getSigningKey())
@@ -51,7 +65,10 @@ public class JwtTokenProvider {
                 .getSubject();
     }
 
-    // Validate Token
+    /**
+     * Verifies the cryptographic integrity and expiration status of a provided JWT.
+     * @return true if the token is valid and signed by this server, false otherwise.
+     */
     public boolean validateToken(String token) {
         try {
             Jwts.parser()
@@ -60,6 +77,7 @@ public class JwtTokenProvider {
                     .parseSignedClaims(token);
             return true;
         } catch (Exception e) {
+            // Catches ExpiredJwtException, SignatureException, MalformedJwtException, etc.
             return false;
         }
     }

@@ -13,7 +13,7 @@ class PaymentServiceTest {
 
     @Test
     void testHashGeneration() {
-        PaymentService paymentService = new PaymentService(null, null);
+        PaymentService paymentService = new PaymentService(null, null, null);
         ReflectionTestUtils.setField(paymentService, "merchantId", "1211149");
         ReflectionTestUtils.setField(paymentService, "merchantSecret", "TEST_SECRET");
         ReflectionTestUtils.setField(paymentService, "currency", "LKR");
@@ -39,7 +39,7 @@ class PaymentServiceTest {
 
     @Test
     void testNotificationVerification() {
-        PaymentService paymentService = new PaymentService(null, null);
+        PaymentService paymentService = new PaymentService(null, null, null);
         ReflectionTestUtils.setField(paymentService, "merchantId", "1211149");
         ReflectionTestUtils.setField(paymentService, "merchantSecret", "TEST_SECRET");
 
