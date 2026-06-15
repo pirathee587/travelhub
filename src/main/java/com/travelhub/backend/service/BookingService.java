@@ -4,16 +4,21 @@ import com.travelhub.backend.dto.response.BookingResponse;
 import com.travelhub.backend.dto.response.TripResponse;
 import com.travelhub.backend.entity.Booking;
 import com.travelhub.backend.repository.BookingRepository;
+import com.travelhub.backend.repository.ReviewRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import org.springframework.transaction.annotation.Transactional;
+
 @Service
 @RequiredArgsConstructor
+@Transactional(readOnly = true)
 public class BookingService {
 
     private final BookingRepository bookingRepository;
+    private final ReviewRepository reviewRepository;
 
     // Get all trips for a user
     public List<TripResponse> getTripsByUserId(Long userId) {
@@ -48,6 +53,20 @@ public class BookingService {
 
     // Map Booking → TripResponse
     private TripResponse toTripResponse(Booking booking) {
+        // Calculate average rating and review count for the package
+        Double averageRating = 0.0;
+        Long reviewCount = 0L;
+        
+        if (booking.getPkg() != null && booking.getPkg().getId() != null) {
+            averageRating = reviewRepository.getAverageRatingByPackageId(booking.getPkg().getId());
+            reviewCount = reviewRepository.getReviewCountByPackageId(booking.getPkg().getId());
+            
+            // Handle null average rating (when no reviews exist)
+            if (averageRating == null) {
+                averageRating = 0.0;
+            }
+        }
+        
         return TripResponse.builder()
                 .id(booking.getId())
                 .packageId(booking.getPkg() != null ? booking.getPkg().getId() : null)
@@ -62,6 +81,8 @@ public class BookingService {
                 .price(booking.getTotalPrice())
                 .category(booking.getPkg() != null ? booking.getPkg().getCategory() : null)
                 .hotelName(booking.getHotel() != null ? booking.getHotel().getHotelName() : null)
+                .rating(averageRating)
+                .reviewCount(reviewCount)
                 .build();
     }
 

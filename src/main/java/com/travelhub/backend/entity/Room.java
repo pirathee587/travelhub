@@ -1,11 +1,20 @@
 package com.travelhub.backend.entity;
 
-import jakarta.persistence.*;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.Table;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Positive;
 
 @Entity
 @Table(name = "rooms")
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler", "hotel"})
 public class Room {
 
     @Id
@@ -18,9 +27,11 @@ public class Room {
     private String type;
 
     @Positive(message = "Price must be greater than zero")
-    private double price;
+    private Double price;
 
     private String description;
+
+    @Column(name = "image_url")
     private String imageUrl;
     private Boolean availability;
 
@@ -53,11 +64,11 @@ public class Room {
         this.type = type;
     }
 
-    public double getPrice() {
+    public Double getPrice() {
         return price;
     }
 
-    public void setPrice(double price) {
+    public void setPrice(Double price) {
         this.price = price;
     }
 

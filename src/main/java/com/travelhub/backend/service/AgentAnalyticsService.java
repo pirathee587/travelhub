@@ -12,6 +12,7 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDate;
 import java.util.*;
 import java.util.stream.Collectors;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
@@ -22,20 +23,35 @@ public class AgentAnalyticsService {
     private final VehicleRepository vehicleRepository;
     private final AgentRepository agentRepository;
 
+    /**
+     * Builds the analytics payload for an agent for a given period.
+     * <p>
+     * Output includes:
+     * - Stat cards: revenue, trips, rating, cancellation rate
+     * - Revenue chart: label/value pairs depending on period (monthly/quarterly/yearly)
+     * - Trip status breakdown
+     * - Top destinations (by number of bookings)
+     * - Driver performance (basic profile slice)
+     * - Vehicle utilization (trip count per vehicle within the filtered set)
+     */
+    @Transactional
     public AnalyticsResponse getAnalytics(Long agentId, String period) {
-        List<Booking> allBookings = bookingRepository.findByVehicleAgentId(agentId);
+        // Load all bookings for the agent, then apply the time-window filter.
+        List<Booking> allBookings = bookingRepository.findByAgentId(agentId);
         List<Booking> filtered = filterByPeriod(allBookings, period);
 
-        // Stat cards
+        // Stat cards: total revenue from completed trips (null-safe totalPrice).
         double totalRevenue = filtered.stream()
                 .filter(b -> b.getStatus().equals("completed"))
                 .mapToDouble(b -> b.getTotalPrice() != null ? b.getTotalPrice() : 0)
                 .sum();
 
+        // Stat cards: total completed trips within the filtered period.
         long totalTrips = filtered.stream()
                 .filter(b -> b.getStatus().equals("completed"))
                 .count();
 
+        // Stat cards: cancellation count + cancellation rate (% of filtered bookings).
         long cancelled = filtered.stream()
                 .filter(b -> b.getStatus().equals("cancelled"))
                 .count();
@@ -43,23 +59,27 @@ public class AgentAnalyticsService {
         double cancellationRate = filtered.isEmpty() ? 0 :
                 Math.round(((double) cancelled / filtered.size()) * 100.0) / 1.0;
 
+        // Stat cards: agent rating (default 0.0 if missing/null).
         Double averageRating = agentRepository.findById(agentId)
                 .map(a -> a.getRating() != null ? a.getRating() : 0.0)
                 .orElse(0.0);
 
-        // Revenue chart data
+        // Revenue chart data (label/value pairs; labels depend on the selected period).
         List<Map<String, Object>> revenueData = buildRevenueData(filtered, period);
 
-        // Trip status pie chart
+        // Trip status breakdown (for pie/donut charts).
         Map<String, Long> tripStatusData = new LinkedHashMap<>();
         tripStatusData.put("completed", filtered.stream().filter(b -> b.getStatus().equals("completed")).count());
         tripStatusData.put("active", filtered.stream().filter(b -> b.getStatus().equals("active")).count());
         tripStatusData.put("pending", filtered.stream().filter(b -> b.getStatus().equals("pending")).count());
         tripStatusData.put("cancelled", cancelled);
 
-        // Top destinations
+        // Top destinations: group bookings by package destination and take the top 5 by count.
         List<Map<String, Object>> topDestinations = filtered.stream()
-                .filter(b -> b.getPkg() != null && b.getPkg().getDestination() != null)
+                .filter(b -> {
+                    try { return b.getPkg() != null && b.getPkg().getDestination() != null; }
+                    catch (Exception e) { return false; }
+                })
                 .collect(Collectors.groupingBy(b -> b.getPkg().getDestination(), Collectors.counting()))
                 .entrySet().stream()
                 .sorted(Map.Entry.<String, Long>comparingByValue().reversed())
@@ -72,7 +92,7 @@ public class AgentAnalyticsService {
                 })
                 .collect(Collectors.toList());
 
-        // Driver performance
+        // Driver performance: take up to 5 drivers for this agent (basic summary fields).
         List<Map<String, Object>> driverPerformance = driverRepository
                 .findByAgentId(agentId).stream()
                 .limit(5)
@@ -85,7 +105,7 @@ public class AgentAnalyticsService {
                 })
                 .collect(Collectors.toList());
 
-        // Vehicle utilization
+        // Vehicle utilization: for each of up to 5 vehicles, count how many filtered bookings used it.
         List<Map<String, Object>> vehicleUtilization = vehicleRepository
                 .findByAgentId(agentId).stream()
                 .limit(5)
@@ -102,6 +122,7 @@ public class AgentAnalyticsService {
                 })
                 .collect(Collectors.toList());
 
+        // Assemble the DTO returned to the controller/UI.
         return AnalyticsResponse.builder()
                 .totalRevenue(totalRevenue)
                 .totalTrips(totalTrips)
@@ -115,6 +136,15 @@ public class AgentAnalyticsService {
                 .build();
     }
 
+    /**
+     * Filters bookings based on the requested period.
+     * Period values:
+     * - "monthly" (default): last 1 month
+     * - "quarterly": last 3 months
+     * - "yearly": last 1 year
+     *
+     * Filtering is based on Booking.createdAt.
+     */
     private List<Booking> filterByPeriod(List<Booking> bookings, String period) {
         LocalDate now = LocalDate.now();
         LocalDate from;
@@ -132,6 +162,14 @@ public class AgentAnalyticsService {
                 .collect(Collectors.toList());
     }
 
+    /**
+     * Builds the revenue chart series (label/value entries) for the given period.
+     * <p>
+     * Current behavior:
+     * - yearly: 12 month buckets (Jan..Dec) with computed completed-trip revenue per month
+     * - quarterly: 12 week labels prefilled with zero
+     * - monthly/default: 7 day labels (Mon..Sun) prefilled with zero
+     */
     private List<Map<String, Object>> buildRevenueData(List<Booking> bookings, String period) {
         List<Map<String, Object>> result = new ArrayList<>();
         boolean isYearly = "yearly".equals(period);

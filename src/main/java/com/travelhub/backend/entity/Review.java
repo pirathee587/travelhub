@@ -1,11 +1,28 @@
 package com.travelhub.backend.entity;
 
-import jakarta.persistence.*;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
+
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
+import jakarta.persistence.CascadeType;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToMany;
+import jakarta.persistence.PrePersist;
+import jakarta.persistence.Table;
+
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "reviews")
@@ -19,9 +36,8 @@ public class Review {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    // Teammate's existing relationships — keep these!
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "pkg_id")
+    @JoinColumn(name = "package_id")   // ✅ FIXED: DB column is package_id, not pkg_id
     private Package pkg;
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -32,7 +48,6 @@ public class Review {
     @JoinColumn(name = "user_id")
     private User user;
 
-    // Your new relationships
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "agent_id")
     private Agent agent;
@@ -47,14 +62,26 @@ public class Review {
     @Column(columnDefinition = "TEXT")
     private String comment;
 
-    // Your new field
+    @Column(nullable = true, length = 255)
+    private String title;
+
+    // ✅ FIXED: was @Transient — userName must be persisted to DB so it survives round-trips
+    @Column(name = "user_name")
+    private String userName;
+
     private String reply;
 
-    @Column(updatable = false)
-    private LocalDateTime createdAt;
+    @Column(name = "created_at", updatable = false)
+    private LocalDateTime reviewDate;   // Supabase column is created_at
+
+    // ✅ NEW: One-to-many relationship with ReviewImage
+    @OneToMany(mappedBy = "review", cascade = CascadeType.ALL, fetch = FetchType.EAGER, orphanRemoval = true)
+    @JsonIgnore
+    @Builder.Default
+    private List<ReviewImage> images = new ArrayList<>();
 
     @PrePersist
     protected void onCreate() {
-        createdAt = LocalDateTime.now();
+        reviewDate = LocalDateTime.now();
     }
 }

@@ -34,3 +34,8 @@ build/
 
 ### Feature A: Image Upload — ignore uploaded files ───────────────────────
 uploads/
+Frontend/
+node_modules/
+target/
+*.log
+.DS_Store

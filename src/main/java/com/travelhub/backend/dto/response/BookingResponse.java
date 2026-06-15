@@ -1,11 +1,12 @@
 package com.travelhub.backend.dto.response;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
 
 @Data
 @Builder
@@ -24,6 +25,10 @@ public class BookingResponse {
     private String imageUrl;
     private String category;
     private LocalDateTime bookedOn;
+    private Integer adults;
+    private Integer children;
+    private String specialRequests;
+    private String duration;
 
     // Hotel info
     private String hotelName;
@@ -38,4 +43,7 @@ public class BookingResponse {
     private String vehicleModel;
     private String vehicleRegistration;
     private String vehicleCapacity;
+
+    // Booking details
+    private String hotelIdsWithPreference;
 }
