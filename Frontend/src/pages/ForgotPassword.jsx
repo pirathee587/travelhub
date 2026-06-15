@@ -46,7 +46,7 @@ const ForgotPassword = () => {
                 </div>
                 <div className="d-grid gap-2 mt-4">
                   <button type="submit" className="btn btn-primary btn-lg" disabled={loading}>
-                    {loading ? 'Sending...' : 'Send Reset Link'}
+                    {loading ? 'Sending...' : 'Reset password'}
                   </button>
                 </div>
               </form>

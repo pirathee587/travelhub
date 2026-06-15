@@ -10,6 +10,9 @@ import Payment from './pages/Payment';
 import AdminDashboard from './pages/AdminDashboard';
 import PaymentSuccess from './pages/PaymentSuccess';
 import PaymentCancel from './pages/PaymentCancel';
+import BillingHistory from './pages/BillingHistory';
+import UserNotifications from './pages/UserNotifications';
+import Home from './pages/Home';
 import Dashboard from './pages/Dashboard';
 import SearchPackages from './pages/tourist/SearchPackages';
 import PackageDetail from './pages/PackageDetail';
@@ -76,6 +79,12 @@ function App() {
             <div className="collapse navbar-collapse" id="navbarNav">
               <div className="navbar-nav me-auto mb-2 mb-lg-0 ms-lg-4">
                 <Link className="nav-link fw-medium" to="/packages">Explore Packages</Link>
+                {user && (
+                  <>
+                    <Link className="nav-link fw-medium" to="/billing">Billing</Link>
+                    <Link className="nav-link fw-medium" to="/notifications">Notifications</Link>
+                  </>
+                )}
               </div>
               <div className="navbar-nav ms-auto align-items-center gap-3">
                 {user ? (
@@ -113,7 +122,7 @@ function App() {
           <Route path="/packages/:id" element={<PackageDetail />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/reset-password" element={<ResetPassword />} />
-          <Route path="/" element={<div className="container mt-5 text-center"><h1>Welcome to TravelHub Sri Lanka</h1><p className="lead">Your all-in-one travel management platform.</p></div>} />
+          <Route path="/" element={<Home />} />
 
           {/* Common Dashboard (Redirects based on role) */}
           <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
@@ -137,7 +146,6 @@ function App() {
           <Route path="/tourist/dashboard" element={<ProtectedRoute role="TOURIST"><TouristDashboard /></ProtectedRoute>} />
           <Route path="/tourist/bookings" element={<ProtectedRoute role="TOURIST"><TouristBookings /></ProtectedRoute>} />
           <Route path="/tourist/documents" element={<ProtectedRoute role="TOURIST"><TouristDocuments /></ProtectedRoute>} />
-
           {/* Owner Routes */}
           <Route path="/owner/dashboard" element={<ProtectedRoute role="HOTEL_OWNER"><HotelOwnerDashboard /></ProtectedRoute>} />
           <Route path="/owner/hotels" element={<ProtectedRoute role="HOTEL_OWNER"><OwnerHotels /></ProtectedRoute>} />
@@ -147,6 +155,8 @@ function App() {
           <Route path="/payment/:id" element={<ProtectedRoute><Payment /></ProtectedRoute>} />
           <Route path="/payment-success" element={<ProtectedRoute><PaymentSuccess /></ProtectedRoute>} />
           <Route path="/payment-cancel" element={<ProtectedRoute><PaymentCancel /></ProtectedRoute>} />
+          <Route path="/billing" element={<ProtectedRoute><BillingHistory /></ProtectedRoute>} />
+          <Route path="/notifications" element={<ProtectedRoute><UserNotifications /></ProtectedRoute>} />
 
           {/* 404 Redirect */}
           <Route path="*" element={<Navigate to="/" />} />
