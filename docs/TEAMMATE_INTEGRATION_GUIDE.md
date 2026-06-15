@@ -24,6 +24,14 @@
 
 ### Backend (`travelhub_backend`)
 
+**Requires Java 21** (not Java 17 or 25). Check with `java -version`, then set `JAVA_HOME` if needed:
+
+```bash
+# Debian/Ubuntu example after: sudo apt install openjdk-21-jdk
+export JAVA_HOME=/usr/lib/jvm/java-21-openjdk-amd64
+export PATH="$JAVA_HOME/bin:$PATH"
+```
+
 ```bash
 cp .env.example .env
 # Edit .env with your own SMTP, PayHere sandbox, and shared Supabase DB credentials
