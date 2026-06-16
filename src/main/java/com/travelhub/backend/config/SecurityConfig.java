@@ -45,6 +45,8 @@ public class SecurityConfig {
 
                         // ── Public Access (No Login Required) ──
                         .requestMatchers("/api/auth/**").permitAll()
+                        // PayHere callbacks must be public
+                        .requestMatchers("/api/payments/notify", "/api/payments/return").permitAll()
                         .requestMatchers("/api/v1/agent/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/packages/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/hotels/**").permitAll()
