@@ -21,7 +21,8 @@ import com.travelhub.backend.entity.Room;
 import com.travelhub.backend.service.RoomService;
 
 @RestController
-@RequestMapping("/api/v1/rooms")
+@RequestMapping("/api/rooms")
+@CrossOrigin(origins = "*")
 public class RoomController {
 
     @Autowired

@@ -19,6 +19,7 @@ public class AgentDashboardService {
     private final DriverRepository driverRepository;
     private final PackageRepository packageRepository;
     private final AgentRepository agentRepository;
+    private final AgentRatingCalculator agentRatingCalculator;
 
     /**
      * Builds the Agent Dashboard "stats" snapshot for a single agent.
@@ -62,10 +63,7 @@ public class AgentDashboardService {
                 .mapToDouble(b -> b.getTotalPrice() != null ? b.getTotalPrice() : 0)
                 .sum();
 
-        // Agent's average rating (defaults to 0.0 if agent record doesn't exist).
-        Double averageRating = agentRepository.findById(agentId)
-                .map(a -> a.getRating())
-                .orElse(0.0);
+        Double averageRating = agentRatingCalculator.getAgentRating(agentId);
 
         // Assemble the DTO response for the dashboard.
         return AgentDashboardStatsResponse.builder()

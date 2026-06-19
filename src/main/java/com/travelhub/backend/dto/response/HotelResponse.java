@@ -26,4 +26,5 @@ public class HotelResponse {
     private String applicationStatus;
     private String hotelEmail;
     private String hotelContactNumber;
+    private List<RoomResponse> rooms;
 }

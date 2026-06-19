@@ -24,6 +24,8 @@ public class TripResponse {
     private Double price;
     private String category;
     private String hotelName;
+    private String startPlace;
+    private String endPlace;
     private Double rating;
     private Long reviewCount;
 }

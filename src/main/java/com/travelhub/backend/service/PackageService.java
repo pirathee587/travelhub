@@ -24,25 +24,47 @@ public class PackageService {
 
     private final PackageRepository packageRepository;
     private final ReviewRepository reviewRepository;
+    private final AgentRatingCalculator agentRatingCalculator;
 
     public List<PackageResponse> getAllPackages() {
-        List<Package> packages = packageRepository.findByIsActiveTrue();
+        List<Package> packages = packageRepository.findByIsActiveTrue()
+                .stream()
+                .filter(p -> "Approved".equalsIgnoreCase(p.getApplicationStatus())) //Approved package
+                .collect(Collectors.toList());
         return toPackageResponses(packages);
     }
 
     public List<PackageResponse> getPackagesByCategory(String category) {
-        List<Package> packages = packageRepository.findByCategory(category);
+        List<Package> packages = packageRepository.findByCategory(category)
+                .stream()
+                .filter(p -> "Approved".equalsIgnoreCase(p.getApplicationStatus()) && Boolean.TRUE.equals(p.getIsActive()))
+                .collect(Collectors.toList());
         return toPackageResponses(packages);
     }
 
     public List<PackageResponse> getTrendingPackages() {
-        List<Package> packages = packageRepository.findByTrendingTrue();
+        List<Package> packages = packageRepository.findByTrendingTrue()
+                .stream()
+                .filter(p -> "Approved".equalsIgnoreCase(p.getApplicationStatus()) && Boolean.TRUE.equals(p.getIsActive()))
+                .collect(Collectors.toList());
+        return toPackageResponses(packages);
+    }
+
+    /**
+     * Returns all active packages belonging to a given agent (by surrogate agent id).
+     * Now that Package.@JoinColumn is corrected (no referencedColumnName), this works correctly.
+     */
+    public List<PackageResponse> getPackagesByAgentId(Long agentId) {
+        List<Package> packages = packageRepository.findByAgentId(agentId)
+                .stream()
+                .filter(p -> Boolean.TRUE.equals(p.getIsActive()))
+                .collect(Collectors.toList());
         return toPackageResponses(packages);
     }
 
     public PackageDetailResponse getPackageById(Long id) {
         Package pkg = packageRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Package not found with id: " + id));
+                .orElseThrow(() -> new RuntimeException("Package not found with id: " + id));   //Error handling for package not found
         return toPackageDetailResponse(pkg);
     }
 
@@ -66,6 +88,15 @@ public class PackageService {
                 .collect(Collectors.toList());
     }
 
+    private String getSafeAgentName(com.travelhub.backend.entity.Agent agent) {
+        if (agent == null) return null;
+        try {
+            return agent.getAgencyName();
+        } catch (jakarta.persistence.EntityNotFoundException | org.hibernate.ObjectNotFoundException e) {
+            return "Unknown Agent";
+        }
+    }
+
     private PackageResponse toPackageResponse(Package pkg, double rating, int reviewCount) {
         return PackageResponse.builder()
                 .id(pkg.getId())
@@ -82,7 +113,7 @@ public class PackageService {
                 .reviewCount(reviewCount)
                 .festivalDetails(pkg.getFestivalDetails())
                 .trending(pkg.getTrending())
-                .agentName(pkg.getAgent() != null ? pkg.getAgent().getAgencyName() : null)
+                .agentName(getSafeAgentName(pkg.getAgent()))
                 .district(pkg.getDistrict())
                 .build();
     }
@@ -108,6 +139,21 @@ public class PackageService {
         Double avgRating = reviewRepository.getAverageRatingByPackageId(pkg.getId());
         Long count = reviewRepository.getReviewCountByPackageId(pkg.getId());
 
+        Long aId = null;
+        String aName = null;
+        String aPhone = null;
+        Double aRating = null;
+        try {
+            if (pkg.getAgent() != null) {
+                aId = pkg.getAgent().getId();
+                aName = pkg.getAgent().getAgencyName();
+                aPhone = pkg.getAgent().getPhone();
+                aRating = agentRatingCalculator.getAgentRating(aId);
+            }
+        } catch (jakarta.persistence.EntityNotFoundException | org.hibernate.ObjectNotFoundException e) {
+            aName = "Unknown Agent";
+        }
+
         return PackageDetailResponse.builder()
                 .id(pkg.getId())
                 .packageName(pkg.getPackageName())
@@ -123,10 +169,10 @@ public class PackageService {
                 .reviewCount(count != null ? count.intValue() : 0)
                 .festivalDetails(pkg.getFestivalDetails())
                 .trending(pkg.getTrending())
-                .agentId(pkg.getAgent() != null ? pkg.getAgent().getId() : null)
-                .agentName(pkg.getAgent() != null ? pkg.getAgent().getAgencyName() : null)
-                .agentPhone(pkg.getAgent() != null ? pkg.getAgent().getPhone() : null)
-                .agentRating(pkg.getAgent() != null ? pkg.getAgent().getRating() : null)
+                .agentId(aId)
+                .agentName(aName)
+                .agentPhone(aPhone)
+                .agentRating(aRating)
                 .itinerary(itineraryDays)
                 .images(imageUrls)
                 .district(pkg.getDistrict())

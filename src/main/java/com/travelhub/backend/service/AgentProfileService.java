@@ -15,7 +15,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class AgentProfileService {
 
     private final AgentRepository agentRepository;
-    private final BookingRepository bookingRepository;
+    private final AgentRatingCalculator agentRatingCalculator;
 
     /**
      * Returns the profile details for the given agent id.
@@ -80,12 +80,8 @@ public class AgentProfileService {
                 .websiteUrl(agent.getWebsiteUrl())
                 .profileImage(agent.getProfileImage())
                 .memberSince(agent.getMemberSince() != null ? agent.getMemberSince().toString() : null)
-                .rating(agent.getRating())
-                // Total trips = completed bookings linked to this agent.
-                .totalTrips((int) bookingRepository.findByAgentId(agent.getId())
-                        .stream()
-                        .filter(b -> b.getStatus().equals("completed"))
-                        .count())
+                .rating(agentRatingCalculator.getAgentRating(agent.getId()))
+                .totalTrips(agent.getTotalTrips())
                 .totalRevenue(agent.getTotalRevenue())
                 .completionRate(agent.getCompletionRate())
                 .build();
