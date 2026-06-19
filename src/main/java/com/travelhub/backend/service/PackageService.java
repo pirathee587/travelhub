@@ -72,7 +72,7 @@ public class PackageService {
      * ✅ OPTIMIZED: Batch rating lookup — 2 queries total instead of 2N.
      * For a list of 10 packages, this saves 18 DB roundtrips.
      */
-    private List<PackageResponse> toPackageResponses(List<Package> packages) {
+    public List<PackageResponse> toPackageResponses(List<Package> packages) {
         if (packages.isEmpty()) return List.of();
 
         List<Long> packageIds = packages.stream().map(Package::getId).collect(Collectors.toList());
