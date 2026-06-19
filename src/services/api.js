@@ -1,6 +1,6 @@
 import { supabase } from "@/lib/supabase";
 
-const BASE_URL = "http://localhost:8082/api";
+const BASE_URL = "http://localhost:8080/api";
 
 const handleResponse = async (res) => {
     const data = await res.json();
