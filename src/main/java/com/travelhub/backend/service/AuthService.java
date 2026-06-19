@@ -94,7 +94,10 @@ public class AuthService {
         boolean requiresApproval = request.getRole() == Role.AGENT || request.getRole() == Role.HOTEL_OWNER;
         user.setAgentApproved(!requiresApproval);
 
-        // Link Role-specific profile before saving
+        // Save User first to generate the ID (required for @MapsId child entities)
+        user = userRepository.save(user);
+
+        // Create and link Role-specific profile using the saved user
         if (user.getRole() == Role.AGENT) {
             Agent agent = new Agent();
             agent.setUser(user);
@@ -102,6 +105,8 @@ public class AuthService {
             agent.setLicenseNumber(request.getLicenseNumber());
             agent.setCompanyName(request.getAgencyName());
             agent.setIsActive(true);
+            
+            agent = agentRepository.save(agent);
             user.setAgentProfile(agent);
         } else if (user.getRole() == Role.HOTEL_OWNER) {
             Hotel hotel = new Hotel();
@@ -112,13 +117,14 @@ public class AuthService {
             hotel.setHotelContactNumber(user.getTelephone());
             hotel.setOwnerNic(request.getNic());
             
+            hotel = hotelRepository.save(hotel);
             if (user.getOwnedHotels() == null) {
                 user.setOwnedHotels(new java.util.ArrayList<>());
             }
             user.getOwnedHotels().add(hotel);
         }
 
-        // Save User (cascades will save linked Agent or Hotel entities)
+        // Save User again to update the references in the parent entity
         user = userRepository.save(user);
 
         // Attempt to send verification email
