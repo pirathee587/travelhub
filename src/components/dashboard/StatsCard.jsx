@@ -15,7 +15,7 @@ const iconVariantStyles = {
     default: "bg-primary/10 text-primary",
     primary: "bg-primary-foreground/20 text-primary-foreground",
     accent: "bg-accent-foreground/20 text-accent-foreground",
-    success: "bg-emerald-500/20 text-emerald-600",
+    success: "bg-emerald-500/50 text-emerald-600",
     blue: "bg-blue-500/20 text-blue-600",
     green: "bg-emerald-500/20 text-emerald-600",
     orange: "bg-orange-500/20 text-orange-600",
@@ -60,7 +60,7 @@ export function StatsCard({
                             {subtitle}
                         </p>
                     )}
-                    {trend && (
+                {trend && (
                         <p
                             className={cn(
                                 "text-sm font-medium",

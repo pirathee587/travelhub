@@ -25,6 +25,7 @@ import {
 import { cn } from "@/lib/utils";
 import { useAllPackages, useRecommendations } from "@/hooks/useApi";
 import { CardGridSkeleton, RecommendationSkeleton } from "@/components/ui/skeletons";
+import { defaultUserId } from "@/lib/userHelpers";
 
 const categories = [
     { id: "all", label: "All", icon: Compass },
@@ -49,40 +50,40 @@ const Explore = () => {
 
     // SWR hooks — cached, deduplicated, background revalidated
     const { data: allPackages = [], isLoading: packagesLoading } = useAllPackages();
-    const { data: trendingPackages = [], isLoading: trendingLoading } = useRecommendations(1);
+    const { data: trendingPackages = [], isLoading: trendingLoading } = useRecommendations(defaultUserId());
 
     // Search suggestions logic
     useEffect(() => {
         if (searchQuery.trim().length > 0) {
             const suggestions = allPackages
                 .filter((pkg) =>
-                    pkg.destination?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                    pkg.packageName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                    pkg.category?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                    pkg.district?.toLowerCase().includes(searchQuery.toLowerCase())
+                    pkg.destination?.toLowerCase().includes(searchQuery.toLowerCase()) ||   //Search by destination
+                    pkg.packageName?.toLowerCase().includes(searchQuery.toLowerCase()) ||   //Search by package name
+                    pkg.category?.toLowerCase().includes(searchQuery.toLowerCase()) ||   //Search by category
+                    pkg.district?.toLowerCase().includes(searchQuery.toLowerCase())   //Search by district
                 )
                 .map((pkg) => ({
                     id: pkg.id,
-                    destination: pkg.destination,
-                    packageName: pkg.packageName,
+                    destination: pkg.destination,       // filter important detail
+                    packageName: pkg.packageName,       // package name to display in search suggestions
                 }))
                 .filter(
                     (item, index, self) =>
-                        index === self.findIndex((t) => t.destination === item.destination)
+                        index === self.findIndex((t) => t.destination === item.destination) //removed duplicates ( "findIndex()" is used to remove duplicates)
                 );
             setSearchSuggestions(suggestions);
-            setShowSuggestions(true);
+            setShowSuggestions(true);   //Show Results
         } else {
             setSearchSuggestions([]);
-            setShowSuggestions(false);
+            setShowSuggestions(false);  //Hide Results
         }
     }, [searchQuery, allPackages]);
 
-    // Memoize districts list — only recalculates when allPackages changes
+    // Memoize districts list — only Unique Districts(Using Set)
     const districts = useMemo(() =>
-        Array.from(
-            new Set(allPackages.map((pkg) => pkg.district).filter(Boolean))
-        ).sort(),
+        Array.from(                                           // converts Set back to Array
+            new Set(allPackages.map((pkg) => pkg.district).filter(Boolean))   // removes duplicates (Using Set)
+        ).sort(),               //Alphabetical Order
         [allPackages]
     );
 
@@ -102,7 +103,7 @@ const Explore = () => {
                     selectedDistrict === "all" || pkg.district === selectedDistrict;
                 return matchesSearch && matchesCategory && matchesDistrict;
             })
-            .sort((a, b) => {
+            .sort((a, b) => {                                                    //Sorting
                 if (sortBy === "price-low") return a.priceFrom - b.priceFrom;
                 if (sortBy === "price-high") return b.priceFrom - a.priceFrom;
                 if (sortBy === "rating") return (b.rating || 0) - (a.rating || 0);
@@ -112,9 +113,9 @@ const Explore = () => {
     }, [allPackages, searchQuery, selectedCategory, selectedDistrict, sortBy]);
 
     // Stable callback refs for category/filter changes
-    const handleCategoryChange = useCallback((id) => setSelectedCategory(id), []);
-    const handleDistrictChange = useCallback((val) => setSelectedDistrict(val), []);
-    const handleSortChange = useCallback((val) => setSortBy(val), []);
+    const handleCategoryChange = useCallback((id) => setSelectedCategory(id), []);          //UseCallback effect
+    const handleDistrictChange = useCallback((val) => setSelectedDistrict(val), []);        //District Selection
+    const handleSortChange = useCallback((val) => setSortBy(val), []);                      //Sort Selection
 
     return (
         <DashboardLayout>
@@ -122,31 +123,32 @@ const Explore = () => {
             <section className="relative rounded-3xl mb-8 animate-slide-up z-40">
                 {/* Background beach image for exploring */}
                 <div className="absolute inset-0 rounded-3xl overflow-hidden">
-                    <img 
-                        src="/beach-resort.jpeg" 
-                        alt="Hero Background" 
+                    <img
+                        src="/beach-resort.jpeg"                                     //Img from Public Folder 
+                        alt="Hero Background"
                         className="h-full w-full object-cover"
                     />
                     {/* Subtle dark overlay to ensure white text is readable */}
                     <div className="absolute inset-0 bg-black/30" />
                 </div>
                 <div className="relative px-8 py-12 lg:py-20 flex flex-col items-center text-center text-white">
-                    <div className="mb-6 inline-flex items-center gap-2 px-5 py-2 rounded-full bg-white/10 backdrop-blur-md border border-white/40 shadow-[0_0_20px_rgba(255,255,255,0.15)] hover:bg-white/20 transition-all duration-300 cursor-default group">
+                    <div className="mb-6 inline-flex items-center gap-2 px-5 py-2 rounded-full bg-white/10 backdrop-blur-md border border-black/40 shadow-[0_0_20px_rgba(255,255,255,0.15)] hover:bg-white/20 transition-all duration-300 cursor-default group">
                         <span className="text-lg group-hover:scale-125 transition-transform duration-300">✨</span>
                         <span className="text-sm font-semibold tracking-widest uppercase text-white/95 drop-shadow-sm">
                             Start Your Adventure
                         </span>
                         <span className="h-1.5 w-1.5 rounded-full bg-accent animate-pulse" />
                     </div>
+
                     <h1 className="text-4xl lg:text-6xl font-extrabold tracking-tight mb-4 drop-shadow-sm">
                         Find Your Next <span className="text-accent italic">Dream</span> Destination
                     </h1>
-                    
+
                     {/* Search Bar */}
                     <div className="w-full max-w-3xl bg-white p-2 rounded-2xl shadow-elevated flex flex-col md:flex-row items-center gap-2 relative z-50">
                         <div className="flex-1 flex items-center gap-3 px-4 w-full relative">
                             <MapPin className="h-5 w-5 text-primary" />
-                            <input 
+                            <input
                                 type="text"
                                 placeholder="Where are you going?"
                                 className="bg-transparent border-none focus:ring-0 text-foreground placeholder:text-muted-foreground w-full py-3"
@@ -154,7 +156,7 @@ const Explore = () => {
                                 onChange={(e) => setSearchQuery(e.target.value)}
                                 onFocus={() => searchQuery.trim().length > 0 && setShowSuggestions(true)}
                             />
-                            {searchQuery && (
+                            {searchQuery && (                       //SearchQuery start search function above
                                 <button
                                     onClick={() => {
                                         setSearchQuery("");
@@ -167,7 +169,7 @@ const Explore = () => {
                             )}
                         </div>
                         <div className="hidden md:block w-px h-10 bg-border mx-2" />
-                        <Button className="w-full md:w-auto bg-primary hover:bg-primary/90 text-white rounded-xl px-8 h-12 text-lg shadow-glow">
+                        <Button className="w-full md:w-auto bg-primary hover:bg-primary/90 text-white rounded-xl px-8 h-12 text-lg shadow-glow">        {/*Search btn click to get data*/}
                             Search
                         </Button>
 
@@ -179,8 +181,8 @@ const Explore = () => {
                                         <button
                                             key={suggestion.id}
                                             onClick={() => {
-                                                setSearchQuery(suggestion.destination);
-                                                setShowSuggestions(false);
+                                                setSearchQuery(suggestion.destination); {/* Search will go to there */ }
+                                                setShowSuggestions(false); {/* Show Auto sugessstion */ }
                                             }}
                                             className="w-full px-4 py-4 text-left hover:bg-primary/5 flex items-center gap-4 transition-colors border-b border-border/30 last:border-b-0 group"
                                         >
@@ -188,8 +190,8 @@ const Explore = () => {
                                                 <Compass className="h-5 w-5 text-primary" />
                                             </div>
                                             <div className="flex-1 min-w-0">
-                                                <p className="font-bold text-foreground truncate text-base">{suggestion.destination}</p>
-                                                <p className="text-sm text-muted-foreground truncate">{suggestion.packageName}</p>
+                                                <p className="font-bold text-foreground truncate text-base">{suggestion.packageName}</p>            {/* Search result Package Name*/}
+                                                <p className="text-sm text-muted-foreground truncate">{suggestion.destination}</p>                  {/* Search Result Destination */}
                                             </div>
                                         </button>
                                     ))}
@@ -202,12 +204,13 @@ const Explore = () => {
                                 <div className="h-12 w-12 bg-muted/30 rounded-full flex items-center justify-center mx-auto mb-3">
                                     <MapPin className="h-6 w-6 opacity-40" />
                                 </div>
-                                <p className="font-medium">No destinations found for "{searchQuery}"</p>
+                                <p className="font-medium">No destinations found for "{searchQuery}"</p>                        {/* Serch not found */}
                                 <p className="text-sm opacity-70">Try searching for a city, district, or category</p>
                             </div>
                         )}
                     </div>
-                    
+                    {/* Search Bar Ends */}
+
                     <p className="text-lg lg:text-xl text-white/90 max-w-2xl mb-8 mt-6">
                         Explore hand-picked packages, luxury hotels, and hidden gems around the <span className="text-accent italic text-xl font-bold">Srilanka</span>
                     </p>
@@ -228,12 +231,12 @@ const Explore = () => {
                             </div>
                         </div>
                     </div>
-                    
+
                     <div className="flex overflow-x-auto pb-4 gap-6 scrollbar-hide">
                         {trendingLoading ? (
-                            Array.from({ length: 4 }).map((_, i) => <RecommendationSkeleton key={i} />)
+                            Array.from({ length: 5 }).map((_, i) => <RecommendationSkeleton key={i} />)
                         ) : (
-                            trendingPackages.map((pkg) => (
+                            trendingPackages.map((pkg) => (                       // Display Top Recommendations from RecommendationService.java
                                 <MemoizedTravelCard key={pkg.id} recommendation={pkg} className="w-72 flex-shrink-0" />
                             ))
                         )}
@@ -260,15 +263,15 @@ const Explore = () => {
                                 >
                                     <category.icon className={cn(
                                         "h-4 w-4 mr-2 transition-transform",
-                                        selectedCategory === category.id ? "scale-110" : ""
+                                        selectedCategory === category.id ? "scale-110" : ""         //Category Icons
                                     )} />
-                                    {category.label}
+                                    {category.label}                                                 {/*Category name */}
                                 </Button>
                             ))}
                         </div>
                     </div>
 
-                    <div className="flex flex-col sm:flex-row items-center gap-3">
+                    <div className="flex flex-col sm:flex-row items-center gap-3">                   {/* District Selection */}
                         <Select value={selectedDistrict} onValueChange={handleDistrictChange}>
                             <SelectTrigger className="w-full sm:w-[180px] bg-white border-border/50 rounded-xl h-11 shadow-soft hover:shadow-card transition-all">
                                 <MapPin className="mr-2 h-4 w-4 text-primary" />
@@ -290,9 +293,9 @@ const Explore = () => {
                                 <SelectValue placeholder="Sort by Rating" />
                             </SelectTrigger>
                             <SelectContent className="rounded-xl border-border/50 shadow-elevated">
-                                <SelectItem value="rating">Highest Rated</SelectItem>
+                                <SelectItem value="rating">Highest Rating</SelectItem>                   {/* Rating Sort */}
                                 <SelectItem value="rating-low">Lowest Rating</SelectItem>
-                                <SelectItem value="price-low">Price: Low to High</SelectItem>
+                                <SelectItem value="price-low">Price: Low to High</SelectItem>            {/* Price Sort */}
                                 <SelectItem value="price-high">Price: High to Low</SelectItem>
                             </SelectContent>
                         </Select>
@@ -305,19 +308,19 @@ const Explore = () => {
                 <div className="flex items-center gap-2 mb-4">
                     <Sparkles className="h-5 w-5 text-primary" />
                     <h2 className="text-lg font-semibold">All Packages</h2>
-                    <Badge variant="secondary">{filteredPackages.length} available</Badge>
+                    <Badge variant="secondary">{filteredPackages.length} available</Badge>                  {/* Package count */}
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
                     {packagesLoading ? (
                         <CardGridSkeleton count={10} />
                     ) : (
                         <>
-                            {filteredPackages.map((pkg) => (
+                            {filteredPackages.map((pkg) => (                                                //Travelcard mapping
                                 <MemoizedTravelCard key={pkg.id} recommendation={pkg} className="w-full" />
                             ))}
                             {filteredPackages.length === 0 && (
                                 <div className="col-span-full text-center py-12 text-muted-foreground">
-                                    <MapPin className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                                    <MapPin className="h-12 w-12 mx-auto mb-4 opacity-50" />                  {/* No packages found message */}
                                     <p>No packages found matching your criteria</p>
                                 </div>
                             )}

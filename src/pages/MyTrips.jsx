@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Map, Plane } from "lucide-react";
 import { MyTripsSkeleton, TripListSkeleton } from "@/components/ui/skeletons";
 import { api } from "@/services/api";
+import { defaultUserId } from "@/lib/userHelpers";
 
 const MyTrips = () => {
     const [trips, setTrips] = useState([]);
@@ -22,7 +23,7 @@ const MyTrips = () => {
     const [selectedHotelId, setSelectedHotelId] = useState(null);
 
     useEffect(() => {
-        api.getTrips(1)
+        api.getTrips(defaultUserId())
             .then(async (data) => {
                 const tripsData = Array.isArray(data) ? data : [];
                 const tripsWithHotelInfo = await Promise.all(
@@ -53,10 +54,11 @@ const MyTrips = () => {
             });
     }, []);
 
-    const ongoingTrips = trips.filter(
-        (t) => t.status === "in_progress" || t.status === "confirmed"
-    );
-    const completedTrips = trips.filter((t) => t.status === "completed");
+    const pendingTrips = trips.filter((t) => t.status === "pending");           //Pending
+    const confirmedTrips = trips.filter((t) => t.status === "confirmed");       //Confirmed
+    const inProgressTrips = trips.filter((t) => t.status === "in_progress");   //In Progress
+    const completedTrips = trips.filter((t) => t.status === "completed");      //Completed
+    const rejectedTrips = trips.filter((t) => t.status === "rejected");        //Rejected
 
     const handleTripClick = async (trip) => {
         const bookingDetail = await api.getBookingById(trip.id);
@@ -109,7 +111,7 @@ const MyTrips = () => {
                             <Map className="h-6 w-6 text-foreground"  />
                         </div>
                         <div>
-                            <h1 className="text-2xl lg:text-3xl font-bold">My Trips</h1>
+                            <h1 className="text-2xl lg:text-3xl font-bold">My Trips </h1>
                             <p className="text-muted-foreground">
                                 Manage and view all your travel adventures
                             </p>
@@ -118,7 +120,7 @@ const MyTrips = () => {
                     <Link to="/">
                         <Button className="gradient-sunset shadow-card text-accent-foreground">
                             <Plane className="h-4 w-4 mr-2" />
-                            Plan New Trip
+                            Plan New Trip                                   {/* Booking Button */}
                         </Button>
                     </Link>
                 </div>
@@ -126,42 +128,93 @@ const MyTrips = () => {
 
             {/* Trips Tabs */}
             <section className="animate-slide-up py-8" style={{ animationDelay: "0.2s" }}>
-                <Tabs defaultValue="ongoing" className="space-y-4">
-                    <TabsList className="bg-secondary">
-                        <TabsTrigger
-                            value="ongoing"
+                <Tabs defaultValue="pending" className="space-y-4">
+                    <TabsList className="bg-secondary grid grid-cols-5 gap-1 max-w-2xl">
+                        <TabsTrigger                    //Pending tab to show pending trips
+                            value="pending"
+                            className="data-[state=active]:bg-card data-[state=active]:shadow-soft" 
+                        >
+                            Pending ({pendingTrips.length})
+                        </TabsTrigger>
+                        <TabsTrigger                    //Confirmed tab to show confirmed trips
+                            value="confirmed"
                             className="data-[state=active]:bg-card data-[state=active]:shadow-soft"
                         >
-                            Ongoing & Upcoming ({ongoingTrips.length})
+                            Confirmed ({confirmedTrips.length})
                         </TabsTrigger>
-                        <TabsTrigger
+                        <TabsTrigger                    //In Progress tab to show in progress trips
+                            value="in_progress"
+                            className="data-[state=active]:bg-card data-[state=active]:shadow-soft"
+                        >
+                            In Progress ({inProgressTrips.length})
+                        </TabsTrigger>
+                        <TabsTrigger                    //Completed tab to show completed trips 
                             value="completed"
                             className="data-[state=active]:bg-card data-[state=active]:shadow-soft"
                         >
                             Completed ({completedTrips.length})
                         </TabsTrigger>
-                        <TabsTrigger
-                            value="all"
+                        <TabsTrigger                    //Rejected tab to show rejected trips 
+                            value="rejected"
                             className="data-[state=active]:bg-card data-[state=active]:shadow-soft"
                         >
-                            All Trips ({trips.length})
+                            Rejected ({rejectedTrips.length})
                         </TabsTrigger>
                     </TabsList>
 
-                    <TabsContent value="ongoing" className="mt-0">
+                    {/* Trip card mapping*/}
+                    <TabsContent value="pending" className="mt-0">
                         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-                            {ongoingTrips.map((trip) => (
+                            {pendingTrips.map((trip) => (
                                 <TripCard
                                     key={trip.id}
                                     trip={trip}
                                     onClick={() => handleTripClick(trip)}
-                                    onReview={() => handleReviewClick(trip)}
-                                    onHotelReview={() => handleHotelReviewClick(trip)}
+                                    onReview={() => handleReviewClick(trip)}  //Pending trips tab content
+                                    onHotelReview={() => handleHotelReviewClick(trip)}     
                                 />
                             ))}
-                            {ongoingTrips.length === 0 && (
+                            {pendingTrips.length === 0 && (
                                 <div className="col-span-full text-center py-12 text-muted-foreground">
-                                    No ongoing trips found
+                                    No pending trips
+                                </div>
+                            )}
+                        </div>
+                    </TabsContent>
+
+                    <TabsContent value="confirmed" className="mt-0">
+                        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                            {confirmedTrips.map((trip) => (
+                                <TripCard
+                                    key={trip.id}
+                                    trip={trip}
+                                    onClick={() => handleTripClick(trip)}
+                                    onReview={() => handleReviewClick(trip)}    //Confirmed trips tab content   
+                                    onHotelReview={() => handleHotelReviewClick(trip)}  
+                                />
+                            ))}
+                            {confirmedTrips.length === 0 && (
+                                <div className="col-span-full text-center py-12 text-muted-foreground">
+                                    No confirmed trips
+                                </div>
+                            )}
+                        </div>
+                    </TabsContent>
+
+                    <TabsContent value="in_progress" className="mt-0">
+                        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                            {inProgressTrips.map((trip) => (
+                                <TripCard
+                                    key={trip.id}
+                                    trip={trip}
+                                    onClick={() => handleTripClick(trip)}
+                                    onReview={() => handleReviewClick(trip)}    //In Progress trips tab content   
+                                    onHotelReview={() => handleHotelReviewClick(trip)}  
+                                />
+                            ))}
+                            {inProgressTrips.length === 0 && (
+                                <div className="col-span-full text-center py-12 text-muted-foreground">
+                                    No trips in progress
                                 </div>
                             )}
                         </div>
@@ -174,32 +227,32 @@ const MyTrips = () => {
                                     key={trip.id}
                                     trip={trip}
                                     onClick={() => handleTripClick(trip)}
-                                    onReview={() => handleReviewClick(trip)}
-                                    onHotelReview={() => handleHotelReviewClick(trip)}
+                                    onReview={() => handleReviewClick(trip)}    //Completed trips tab content   
+                                    onHotelReview={() => handleHotelReviewClick(trip)}  
                                 />
                             ))}
                             {completedTrips.length === 0 && (
                                 <div className="col-span-full text-center py-12 text-muted-foreground">
-                                    No completed trips found
+                                    No completed trips
                                 </div>
                             )}
                         </div>
                     </TabsContent>
 
-                    <TabsContent value="all" className="mt-0">
+                    <TabsContent value="rejected" className="mt-0">
                         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-                            {trips.map((trip) => (
+                            {rejectedTrips.map((trip) => (
                                 <TripCard
                                     key={trip.id}
                                     trip={trip}
                                     onClick={() => handleTripClick(trip)}
-                                    onReview={() => handleReviewClick(trip)}
-                                    onHotelReview={() => handleHotelReviewClick(trip)}
+                                    onReview={() => handleReviewClick(trip)}    //Rejected trips tab content
+                                    onHotelReview={() => handleHotelReviewClick(trip)} 
                                 />
                             ))}
-                            {trips.length === 0 && (
+                            {rejectedTrips.length === 0 && (
                                 <div className="col-span-full text-center py-12 text-muted-foreground">
-                                    No trips found
+                                    No rejected trips
                                 </div>
                             )}
                         </div>

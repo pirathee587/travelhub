@@ -19,6 +19,8 @@ const PackageDetails = lazy(() => import("./pages/PackageDetails"));
 const PackageReservation = lazy(() => import("./pages/PackageReservation"));
 const Hotel = lazy(() => import("./pages/Hotel"));
 const HotelDetails = lazy(() => import("./pages/HotelDetails"));
+const Agents = lazy(() => import("./pages/Agents"));
+const AgentDetails = lazy(() => import("./pages/AgentDetails"));
 const Settings = lazy(() => import("./pages/Settings"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
@@ -37,7 +39,7 @@ const App = () => (
             <Toaster />
             <Sonner />
             <BrowserRouter>
-                <Suspense fallback={<PageFallback />}>
+                <Suspense fallback={<PageFallback />}> 
                     <Routes>
                         <Route path="/" element={<Explore />} />
                         <Route path="/overview" element={<Overview />} />
@@ -48,6 +50,8 @@ const App = () => (
                         <Route path="/explore/package/:id/reserve" element={<PackageReservation />} />
                         <Route path="/hotels" element={<Hotel />} />
                         <Route path="/hotels/:id" element={<HotelDetails />} />
+                        <Route path="/agents" element={<Agents />} />
+                        <Route path="/agents/:id" element={<AgentDetails />} />
                         <Route path="/settings" element={<Settings />} />
                         {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                         <Route path="*" element={<NotFound />} />

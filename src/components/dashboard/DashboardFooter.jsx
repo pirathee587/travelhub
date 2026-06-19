@@ -1,4 +1,4 @@
-import { Mail, Phone, MapPin, Instagram, Facebook, Twitter, Github, Plane, GithubIcon } from "lucide-react";
+import { Mail, Phone, MapPin, Instagram, Facebook, Twitter, Github, Plane, GithubIcon, Youtube } from "lucide-react";
 import { Link } from "react-router-dom";
 
 export function DashboardFooter() {
@@ -12,7 +12,7 @@ export function DashboardFooter() {
                     <div className="space-y-4">
                         <div className="flex items-center gap-3">
                             <div className="h-10 w-10 rounded-xl bg-primary flex items-center justify-center shadow-glow">
-                                <Plane className="h-5 w-5 text-white" />
+                                <Plane className="h-5 w-5 text-white" />            {/*Plane Icon*/}
                             </div>
                             <span className="text-2xl font-bold tracking-tight">
                                 TRAVEL<span className="text-primary italic">HUB</span>
@@ -58,6 +58,12 @@ export function DashboardFooter() {
                                 </Link>
                             </li>
                             <li>
+                                <Link to="/documents" className="text-muted-foreground hover:text-primary transition-colors text-sm flex items-center gap-2">
+                                    <div className="h-1 w-1 rounded-full bg-primary" />
+                                    Documents
+                                </Link>
+                            </li>
+                            <li>
                                 <Link to="/hotels" className="text-muted-foreground hover:text-primary transition-colors text-sm flex items-center gap-2">
                                     <div className="h-1 w-1 rounded-full bg-primary" />
                                     Luxury Hotels
@@ -97,7 +103,7 @@ export function DashboardFooter() {
 
                 <div className="border-t border-border mt-12 pt-8 flex flex-col md:flex-row items-center justify-between gap-4">
                     <p className="text-sm text-muted-foreground">
-                        © {currentYear} TRAVELHUB Srilanka. All rights reserved.
+                        © {currentYear} TRAVEL<span className="italic font-bold">HUB</span> Srilanka. All rights reserved.
                     </p>
                     <div className="flex items-center gap-6 text-sm text-muted-foreground">
                         <a href="#" className="hover:text-primary transition-colors">English (US)</a>

@@ -144,3 +144,48 @@ export function useRecommendations(userId) {
         defaultOptions
     );
 }
+
+export function useTopicRecommendations(userId) {
+    return useSWR(
+        userId ? `recommendations-topics-${userId}` : null,
+        () => api.getTopicRecommendations(userId),
+        defaultOptions
+    );
+}
+
+// ── Agents ────────────────────────────────────────────
+
+export function useAllAgents() {
+    return useSWR("agents", () => api.getAllAgents(), {
+        ...defaultOptions,
+        revalidateIfStale: true,
+    });
+}
+
+export function useAgentById(id) {
+    return useSWR(id ? `agent-${id}` : null, () => api.getAgentById(id), defaultOptions);
+}
+
+// ── Current User Profile ──────────────────────────────────
+
+/**
+ * Fetch the profile of the currently active user.
+ * Uses the hardcoded userId (32) for now.
+ * TODO: When JWT is implemented, pass the userId from the auth token instead.
+ */
+export function useUserProfile(userId) {
+    return useSWR(
+        userId ? `user-profile-${userId}` : null,
+        () => api.getUserProfile(userId),
+        {
+            ...defaultOptions,
+            onSuccess: (data) => {
+                // Cache the user name in localStorage so the header always has it
+                // even before this hook's data loads on the next visit.
+                if (data?.name) {
+                    localStorage.setItem("userName", data.name);
+                }
+            },
+        }
+    );
+}

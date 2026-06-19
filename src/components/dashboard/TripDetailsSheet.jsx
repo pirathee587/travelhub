@@ -19,8 +19,13 @@ import {
     Phone,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useHotelById } from "@/hooks/useApi";
 
 const statusConfig = {
+    pending: {
+        label: "Pending",
+        className: "bg-warning/10 text-warning border-warning/20",
+    },
     confirmed: {
         label: "Confirmed",
         className: "bg-primary/10 text-primary border-primary/20",
@@ -33,6 +38,10 @@ const statusConfig = {
         label: "Completed",
         className: "bg-muted text-muted-foreground border-border",
     },
+    rejected: {
+        label: "Rejected",
+        className: "bg-destructive/10 text-destructive border-destructive/20",
+    },
     cancelled: {
         label: "Cancelled",
         className: "bg-destructive/10 text-destructive border-destructive/20",
@@ -42,25 +51,25 @@ const statusConfig = {
 export function TripDetailsSheet({ trip, open, onOpenChange }) {
     if (!trip) return null;
 
-    const status = statusConfig[trip.status];
+    const status = statusConfig[trip.status] || statusConfig.pending;
 
     return (
         <Sheet open={open} onOpenChange={onOpenChange}>
             <SheetContent className="w-full sm:max-w-xl overflow-y-auto">
                 <SheetHeader className="space-y-1">
                     <div className="flex items-center gap-2">
-                        <SheetTitle className="text-xl">{trip.destination}</SheetTitle>
+                        <SheetTitle className="text-xl">{trip.destination}</SheetTitle>         {/*Destination*/}
                         <Badge variant="outline" className={cn("border", status.className)}>
-                            {status.label}
+                            {status.label}                                                      {/*Booking Status*/}
                         </Badge>
                     </div>
-                    <p className="text-muted-foreground">{trip.packageName}</p>
+                    <p className="text-muted-foreground">{trip.packageName}</p>                 {/*Package Name*/}
                 </SheetHeader>
 
                 <div className="mt-6 space-y-6">
                     {/* Trip Image */}
-                    <div className="relative h-48 rounded-xl overflow-hidden">
-                        <img
+                    <div className="relative h-48 rounded-xl overflow-hidden">                  {/*Package Image*/}
+                        <img                                                                    
                             src={trip.imageUrl}
                             alt={trip.destination}
                             className="w-full h-full object-cover"
@@ -69,7 +78,7 @@ export function TripDetailsSheet({ trip, open, onOpenChange }) {
                         <div className="absolute bottom-4 left-4 text-primary-foreground">
                             <div className="flex items-center gap-2">
                                 <Calendar className="h-4 w-4" />
-                                <span className="text-sm">{trip.startDate} - {trip.endDate}</span>
+                                <span className="text-sm">{trip.startDate} - {trip.endDate}</span>          {/*Start Date and End Date*/}
                             </div>
                         </div>
                     </div>
@@ -77,11 +86,63 @@ export function TripDetailsSheet({ trip, open, onOpenChange }) {
                     {/* Booking ID */}
                     <div className="p-3 rounded-lg bg-secondary/50 flex items-center justify-between">
                         <span className="text-sm text-muted-foreground">Booking ID</span>
-                        <span className="font-mono font-medium">#{trip.bookingId}</span>
+                        <span className="font-mono font-medium">#{trip.bookingId}</span>                       {/*Booking Id*/}
                     </div>
 
-                    {/* Live Status */}
-                    {trip.status === "in_progress" && (
+                    {/* Booking Requirements */}
+                    <>
+                        <div className="space-y-3">
+                            <h3 className="font-semibold flex items-center gap-2">
+                                <FileText className="h-5 w-5 text-primary" />
+                                Booking Requirements
+                            </h3>
+                            <div className="grid grid-cols-2 gap-3">
+                                <InfoItem label="Start Date" value={trip.startDate} />
+                                <InfoItem label="Duration" value={trip.duration || "-"} />
+                                <InfoItem label="Adults" value={trip.adults || 0} />
+                                <InfoItem label="Children" value={trip.children || 0} />
+                            </div>
+                            {(() => {
+                                let prefs = [];
+                                try {
+                                    if (trip.hotelIdsWithPreference) {
+                                        const parsed = JSON.parse(trip.hotelIdsWithPreference);
+                                        prefs = parsed.hotelIds || [];
+                                    }
+                                } catch (e) {
+                                    // Ignore parse error
+                                }
+                                if (prefs.length === 0 && !trip.specialRequests) return null;
+                                return (
+                                    <div className="space-y-3">
+                                        {prefs.length > 0 && (
+                                            <div className="p-3 rounded-lg bg-secondary/50">
+                                                <p className="text-xs text-muted-foreground mb-1">Hotel Preferences</p>
+                                                <div className="flex flex-col gap-1 mt-1">
+                                                    {prefs.map((id, index) => (
+                                                        <div key={id} className="text-sm font-medium flex items-center gap-2">
+                                                            <span className="text-muted-foreground text-xs">{index + 1}.</span>
+                                                            <HotelNameById id={id} />
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        )}
+                                        {trip.specialRequests && (
+                                            <div className="p-3 rounded-lg bg-secondary/50">
+                                                <p className="text-xs text-muted-foreground mb-1">Special Requests</p>
+                                                <p className="text-sm font-medium">{trip.specialRequests}</p>
+                                            </div>
+                                        )}
+                                    </div>
+                                );
+                            })()}
+                        </div>
+                        <Separator />
+                    </>
+
+                    {/* Live Status */}                                                                         {/*For In Progress Only*/}
+                    {trip.status === "in_progress" && (                                                            
                         <div className="p-4 rounded-xl bg-success/5 border border-success/20">
                             <h3 className="font-semibold flex items-center gap-2 text-success">
                                 <Navigation className="h-5 w-5" />
@@ -183,8 +244,8 @@ export function TripDetailsSheet({ trip, open, onOpenChange }) {
                             <div className="flex items-start gap-3">
                                 <div className="h-3 w-3 rounded-full bg-success mt-1.5" />
                                 <div>
-                                    <p className="text-sm text-muted-foreground">Pickup</p>
-                                    <p className="font-medium">Colombo Airport</p>
+                                    <p className="text-sm text-muted-foreground">Starting</p>
+                                    <p className="font-medium">{trip.startPlace}</p>
                                 </div>
                             </div>
                             <div className="ml-1.5 border-l-2 border-dashed border-border h-6" />
@@ -192,7 +253,7 @@ export function TripDetailsSheet({ trip, open, onOpenChange }) {
                                 <div className="h-3 w-3 rounded-full bg-accent mt-1.5" />
                                 <div>
                                     <p className="text-sm text-muted-foreground">Destination</p>
-                                    <p className="font-medium">{trip.destination}</p>
+                                    <p className="font-medium">{trip.endPlace}</p>
                                 </div>
                             </div>
                         </div>
@@ -253,4 +314,11 @@ function PriceRow({ label, value }) {
             <span>${value}</span>
         </div>
     );
+}
+
+function HotelNameById({ id }) {
+    const { data: hotel, isLoading } = useHotelById(id);
+    if (isLoading) return <span className="text-muted-foreground">Loading...</span>;
+    if (!hotel) return <span className="text-muted-foreground">Unknown Hotel</span>;
+    return <span>{hotel.hotelName}</span>;
 }

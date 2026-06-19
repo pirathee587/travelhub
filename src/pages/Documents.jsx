@@ -11,22 +11,23 @@ import {
 } from "lucide-react";
 import { api } from "@/services/api";
 import { DocumentsPageSkeleton } from "@/components/ui/skeletons";
+import { defaultUserId } from "@/lib/userHelpers";
 
 const Documents = () => {
     const [allDocuments, setAllDocuments] = useState([]);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        api.getDocuments(1).then(data => {
+        api.getDocuments(defaultUserId()).then(data => {
             setAllDocuments(data);
             setLoading(false);
         });
     }, []);
 
-    const invoices = allDocuments.filter((d) => d.docType === "invoice");
-    const receipts = allDocuments.filter((d) => d.docType === "receipt");
-    const itineraries = allDocuments.filter((d) => d.docType === "itinerary");
-    const confirmations = allDocuments.filter((d) => d.docType === "confirmation");
+    const invoices = allDocuments.filter((d) => d.docType?.toLowerCase() === "invoice");
+    const receipts = allDocuments.filter((d) => d.docType?.toLowerCase() === "receipt");
+    const itineraries = allDocuments.filter((d) => d.docType?.toLowerCase() === "itinerary");
+    const confirmations = allDocuments.filter((d) => d.docType?.toLowerCase() === "confirmation");
 
     if (loading) {
         return (
@@ -43,7 +44,7 @@ const Documents = () => {
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                     <div className="flex items-center gap-3">
                         <div className="h-12 w-12 rounded-xl bg-secondary flex items-center justify-center">
-                            <FileText className="h-6 w-6 text-foreground" />
+                            <FileText className="h-6 w-6 text-foreground" />.                                {/* Document Icon */}
                         </div>
                         <div>
                             <h1 className="text-2xl lg:text-3xl font-bold">Documents</h1>
@@ -69,6 +70,7 @@ const Documents = () => {
                         <p className="text-sm font-medium text-muted-foreground">Invoices</p>
                     </div>
                 </div>
+
                 <div className="bg-card rounded-2xl p-5 border border-border/50 flex items-center gap-4 shadow-soft transition-all duration-300 hover:shadow-card hover:-translate-y-1">
                     <div className="h-12 w-12 rounded-xl bg-accent/10 flex items-center justify-center">
                         <FileCheck className="h-6 w-6 text-accent" />
@@ -78,6 +80,7 @@ const Documents = () => {
                         <p className="text-sm font-medium text-muted-foreground">Receipts</p>
                     </div>
                 </div>
+
                 <div className="bg-card rounded-2xl p-5 border border-border/50 flex items-center gap-4 shadow-soft transition-all duration-300 hover:shadow-card hover:-translate-y-1">
                     <div className="h-12 w-12 rounded-xl bg-emerald-500/10 flex items-center justify-center">
                         <MapPinned className="h-6 w-6 text-emerald-500" />
@@ -87,6 +90,7 @@ const Documents = () => {
                         <p className="text-sm font-medium text-muted-foreground">Itineraries</p>
                     </div>
                 </div>
+
                 <div className="bg-card rounded-2xl p-5 border border-border/50 flex items-center gap-4 shadow-soft transition-all duration-300 hover:shadow-card hover:-translate-y-1">
                     <div className="h-12 w-12 rounded-xl bg-amber-500/10 flex items-center justify-center">
                         <FolderOpen className="h-6 w-6 text-amber-500" />
@@ -103,23 +107,23 @@ const Documents = () => {
                 <Tabs defaultValue="all" className="space-y-4">
                     <TabsList className="bg-secondary p-1.5 rounded-xl h-auto">
                         <TabsTrigger value="all" className="rounded-lg py-2 px-4 data-[state=active]:bg-white data-[state=active]:shadow-soft font-medium">
-                            All ({allDocuments.length})
+                            All ({allDocuments.length})                                 {/* All Tab */}
                         </TabsTrigger>
                         <TabsTrigger value="invoices" className="rounded-lg py-2 px-4 data-[state=active]:bg-white data-[state=active]:shadow-soft font-medium">
-                            Invoices ({invoices.length})
+                            Invoices ({invoices.length})                                {/* Invoice Tab */}
                         </TabsTrigger>
                         <TabsTrigger value="receipts" className="rounded-lg py-2 px-4 data-[state=active]:bg-white data-[state=active]:shadow-soft font-medium">
-                            Receipts ({receipts.length})
+                            Receipts ({receipts.length})                                {/* Recipts Tab */}
                         </TabsTrigger>
                         <TabsTrigger value="itineraries" className="rounded-lg py-2 px-4 data-[state=active]:bg-white data-[state=active]:shadow-soft font-medium">
-                            Itineraries ({itineraries.length})
+                            Itineraries ({itineraries.length})                          {/* Itineraries Tab */}
                         </TabsTrigger>
                     </TabsList>
 
-                    <TabsContent value="all" className="mt-0">
+                    <TabsContent value="all" className="mt-0">                          {/* All Tab */}
                         <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
                             {allDocuments.map((doc, index) => (
-                                <DocumentCard
+                                <DocumentCard                                             
                                     key={index}
                                     title={doc.title}
                                     type={doc.docType}
@@ -135,7 +139,7 @@ const Documents = () => {
                         </div>
                     </TabsContent>
 
-                    <TabsContent value="invoices" className="mt-0">
+                    <TabsContent value="invoices" className="mt-0">                     {/* Invoice Tab */}
                         <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
                             {invoices.map((doc, index) => (
                                 <DocumentCard
@@ -149,7 +153,7 @@ const Documents = () => {
                         </div>
                     </TabsContent>
 
-                    <TabsContent value="receipts" className="mt-0">
+                    <TabsContent value="receipts" className="mt-0">                     {/* Receipt Tab */}
                         <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
                             {receipts.map((doc, index) => (
                                 <DocumentCard
@@ -163,7 +167,7 @@ const Documents = () => {
                         </div>
                     </TabsContent>
 
-                    <TabsContent value="itineraries" className="mt-0">
+                    <TabsContent value="itineraries" className="mt-0">                  {/* Itineraries Tab */}
                         <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
                             {itineraries.map((doc, index) => (
                                 <DocumentCard

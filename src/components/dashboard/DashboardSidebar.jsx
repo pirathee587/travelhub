@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { NavLink, useLocation } from "react-router-dom";
+import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import {
     LayoutDashboard,
     Map,
@@ -12,16 +12,18 @@ import {
     Menu,
     X,
     Building2,
+    Users,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 
-const navItems = [
+const navItems = [                                                              //Side Bar Content
     { icon: Compass, label: "Explore", path: "/" },
     { icon: LayoutDashboard, label: "Overview", path: "/overview" },
     { icon: Map, label: "My Trips", path: "/trips" },
     { icon: FileText, label: "Documents", path: "/documents" },
     { icon: Building2, label: "Hotels", path: "/hotels" },
+    { icon: Users, label: "Agents", path: "/agents" },
 ];
 
 const bottomNavItems = [
@@ -32,6 +34,7 @@ export function DashboardSidebar() {
     const [collapsed, setCollapsed] = useState(false);
     const [mobileOpen, setMobileOpen] = useState(false);
     const location = useLocation();
+    const navigate = useNavigate();
 
     const isActive = (path) => {
         if (path === "/") {
@@ -40,16 +43,32 @@ export function DashboardSidebar() {
         return location.pathname === path || location.pathname.startsWith(`${path}/`);
     };
 
+    /**
+     * Logout handler.
+     * Clears the cached user name and redirects to the Explore page.
+     *
+     * TODO: When JWT auth is implemented, also clear the token here:
+     *   localStorage.removeItem("authToken");
+     *   // or call an /api/auth/logout endpoint if using server-side sessions.
+     */
+    const handleLogout = () => {
+        // Clear cached user name so it doesn't linger after logout
+        localStorage.removeItem("userName");
+        // Navigate to the root / explore page (acts as the "logged out" landing page)
+        navigate("/");
+        setMobileOpen(false);
+    };
+
     const SidebarContent = () => (
         <>
-            {/* Logo */}
+            {/* Logo */} 
             <div className="p-4 flex items-center gap-3">
                 <div className="h-12 w-12 rounded-xl bg-primary flex items-center justify-center shadow-glow">
-                    <Plane className="h-7 w-7 text-white" />
+                    <Plane className="h-7 w-7 text-white" />                                                     {/* Airplane Icon */}
                 </div>
                 {!collapsed && (
                     <div className="animate-fade-in">
-                        <h1 className="font-bold text-lg text-sidebar-foreground">TravelHub</h1>
+                        <h1 className="font-bold text-lg text-sidebar-foreground">TravelHub</h1> 
                         <p className="text-xs text-sidebar-foreground/60">Dashboard</p>
                     </div>
                 )}
@@ -100,17 +119,18 @@ export function DashboardSidebar() {
                         )}
                     >
                         <item.icon className="h-5 w-5 flex-shrink-0" />
-                        {!collapsed && <span className="font-medium">{item.label}</span>}
+                        {!collapsed && <span className="font-medium">{item.label}</span>}                   {/*Settings Button*/}
                     </NavLink>
                 ))}
                 <button
+                    onClick={handleLogout}
                     className={cn(
                         "w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300",
                         "text-sidebar-foreground/70 hover:text-destructive hover:bg-destructive/10 hover:translate-x-1"
                     )}
                 >
                     <LogOut className="h-5 w-5 flex-shrink-0" />
-                    {!collapsed && <span className="font-semibold">Log Out</span>}
+                    {!collapsed && <span className="font-semibold">Log Out</span>}                                       {/* Logout Button */}
                 </button>
             </nav>
 

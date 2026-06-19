@@ -1,12 +1,14 @@
 import { supabase } from "@/lib/supabase";
 
-const BASE_URL = "http://localhost:8080/api";
+const BASE_URL = "http://localhost:8082/api";
 
 const handleResponse = async (res) => {
+    const data = await res.json();
     if (!res.ok) {
-        throw new Error(`API error: ${res.status}`);
+        const errorMsg = data?.message || `API error: ${res.status}`;
+        throw new Error(errorMsg);
     }
-    return res.json();
+    return data;
 };
 
 export const api = {
@@ -55,7 +57,9 @@ export const api = {
                 console.error(`[API] Error fetching rooms for hotel ${hotelId}:`, err);
                 return [];
             }),
+    
 
+    //Calculate Hotel Min, Max price from room's prices
     getHotelPriceRanges: async (hotelIds = []) => {
         if (!Array.isArray(hotelIds) || hotelIds.length === 0) {
             return {};
@@ -119,15 +123,23 @@ export const api = {
 
     createBooking: (data) =>
         fetch(`${BASE_URL}/tourist/bookings`, {
-            method: "POST",
+            method: "POST",                                          //Post method to create booking
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(data)
-        }).then(handleResponse).catch(() => ({})),
+        }).then(handleResponse)
+        .catch((err) => {
+            console.error("[API] Booking request failed:", err);
+            throw err;  // ← Re-throw to ensure frontend catches it
+        }),
 
     cancelBooking: (id) =>
         fetch(`${BASE_URL}/tourist/bookings/${id}/cancel`, {
             method: "PUT"
-        }).then(handleResponse).catch(() => ({})),
+        }).then(handleResponse)
+        .catch((err) => {
+            console.error("[API] Cancel booking failed:", err);
+            throw err;
+        }),
 
     // Tourist — Documents
     getDocuments: (userId) =>
@@ -136,14 +148,7 @@ export const api = {
     getDocumentsByType: (userId, type) =>
         fetch(`${BASE_URL}/tourist/documents?userId=${userId}&type=${type}`).then(handleResponse).catch(() => []),
 
-    //reviews
-
-    /**
-     * ✅ FIXED: was querying Supabase directly with wrong column names
-     *    (packageId, userName, reviewDate don't exist as-is in Supabase schema).
-     *    Now calls the Spring Boot backend which handles DB correctly.
-     *    Backend returns: { id, userName, reviewDate, rating, title, comment }
-     */
+    //package reviews
     getPackageReviews: (packageId) =>
         fetch(`${BASE_URL}/reviews/package/${packageId}`)
             .then(handleResponse)
@@ -152,6 +157,12 @@ export const api = {
     //hotel review
     getHotelReviews: (hotelId) =>
         fetch(`${BASE_URL}/reviews/hotel/${hotelId}`)
+            .then(handleResponse)
+            .catch(() => []),
+
+    // Get all reviews created by a specific user
+    getUserReviews: (userId) =>
+        fetch(`${BASE_URL}/reviews/user/${userId}`)
             .then(handleResponse)
             .catch(() => []),
 
@@ -171,26 +182,103 @@ export const api = {
     getRecommendations: (userId) =>
         fetch(`${BASE_URL}/tourist/recommendations?userId=${userId}`).then(handleResponse).catch(() => []),
 
-    // Add Reviews
+    getTopicRecommendations: (userId) =>
+        fetch(`${BASE_URL}/tourist/recommendations/topics?userId=${userId}`).then(handleResponse).catch(() => []),
+
+                                                                // Add Package Reviews
     addPackageReview: (packageId, data, images = []) => {
         const formData = new FormData();
         formData.append("review", JSON.stringify(data));
         images.forEach((img) => formData.append("images", img));
 
-        return fetch(`${BASE_URL}/tourist/reviews/package/${packageId}`, {
-            method: "POST",
+        return fetch(`${BASE_URL}/tourist/reviews/package/${packageId}`, {              //API Call
+            method: "POST",                                                             //Post Method
             body: formData
-        }).then(handleResponse);
+        }).then(handleResponse).catch((err) => {
+            console.error("[API] Package review submission failed:", err);              //Error Handle
+            throw err;
+        });
     },
-        
+                                                                //Add Hotel Reviews
     addHotelReview: (hotelId, data, images = []) => {
         const formData = new FormData();
         formData.append("review", JSON.stringify(data));
         images.forEach((img) => formData.append("images", img));
 
-        return fetch(`${BASE_URL}/tourist/reviews/hotel/${hotelId}`, {
-            method: "POST",
+        return fetch(`${BASE_URL}/tourist/reviews/hotel/${hotelId}`, {          //API Call
+            method: "POST",                                                     //Post Method
             body: formData
-        }).then(handleResponse);
+        }).then(handleResponse).catch((err) => {
+            console.error("[API] Hotel review submission failed:", err);        //Error Handliing
+            throw err;
+        });
     },
+
+    // Update Package Review
+    updatePackageReview: (reviewId, userId, data, images = []) => {
+        const formData = new FormData();
+        formData.append("review", JSON.stringify(data));
+        formData.append("userId", userId.toString());
+        images.forEach((img) => formData.append("images", img));
+
+        return fetch(`${BASE_URL}/reviews/${reviewId}`, {
+            method: "PUT",
+            body: formData
+        }).then(handleResponse).catch((err) => {
+            console.error("[API] Package review update failed:", err);
+            throw err;
+        });
+    },
+
+    // Update Hotel Review
+    updateHotelReview: (reviewId, userId, data, images = []) => {
+        const formData = new FormData();
+        formData.append("review", JSON.stringify(data));
+        formData.append("userId", userId.toString());
+        images.forEach((img) => formData.append("images", img));
+
+        return fetch(`${BASE_URL}/reviews/${reviewId}`, {
+            method: "PUT",
+            body: formData
+        }).then(handleResponse).catch((err) => {
+            console.error("[API] Hotel review update failed:", err);
+            throw err;
+        });
+    },
+
+    // Delete Review (works for both package and hotel)
+    deleteReview: (reviewId, userId) => {
+        return fetch(`${BASE_URL}/reviews/${reviewId}?userId=${userId}`, {
+            method: "DELETE"
+        }).then((response) => {
+            if (!response.ok) {
+                return response.json().catch(() => ({ message: "Delete failed" }))
+                    .then(err => { throw new Error(err.message || "Delete failed"); });
+            }
+            return { success: true };
+        }).catch((err) => {
+            console.error("[API] Review deletion failed:", err);
+            throw err;
+        });
+    },
+    // Agents — Public listing
+    getAllAgents: () =>
+        fetch(`${BASE_URL}/agents`).then(handleResponse).catch(() => []),
+
+    getAgentById: (id) =>
+        fetch(`${BASE_URL}/agents/${id}`).then(handleResponse).catch(() => null),
+
+    // ── Current User Profile (dev mode: no JWT, userId passed explicitly) ──
+    // TODO: When JWT is implemented, remove userId param and use the token instead.
+    getUserProfile: (userId) =>
+        fetch(`${BASE_URL}/tourist/profile?userId=${userId}`)
+            .then(handleResponse)
+            .catch(() => null),
+
+    updateUserProfile: (userId, data) =>
+        fetch(`${BASE_URL}/tourist/profile?userId=${userId}`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(data),
+        }).then(handleResponse),
 };
