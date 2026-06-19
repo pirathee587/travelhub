@@ -30,24 +30,38 @@ import {
     Clock,
     Calendar,
     User,
+    Pencil,
+    Trash2,
 } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useCallback } from "react";
 import { cn } from "@/lib/utils";
 import { useHotelById, useHotelReviews, useHotelRating, useHotelRooms } from "@/hooks/useApi";
 import { HotelDetailSkeleton } from "@/components/ui/skeletons";
+import { EditReviewDialog } from "@/components/dashboard/EditReviewDialog";
+import { DeleteConfirmDialog } from "@/components/dashboard/DeleteConfirmDialog";
+import { useToast } from "@/hooks/use-toast";
+import { api } from "@/services/api";
+import { defaultUserId } from "@/lib/userHelpers";
 
 const HotelDetails = () => {
     const { id } = useParams();
     const navigate = useNavigate();
+    const { toast } = useToast();
     const [searchParams] = useSearchParams();
     const [reviewFilter, setReviewFilter] = useState("all");
     const [selectedImage, setSelectedImage] = useState(null);
     const [activeImage, setActiveImage] = useState(0);
+    const [editingReview, setEditingReview] = useState(null);
+    const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+    const [isDeletingReview, setIsDeletingReview] = useState(null);
+    const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+    const [isDeleting, setIsDeleting] = useState(false);
+    const [showAllReviews, setShowAllReviews] = useState(false);
 
     // SWR hooks — parallel cached fetching
     const { data: hotel, isLoading: hotelLoading } = useHotelById(id);
-    const { data: reviews = [] } = useHotelReviews(id);
+    const { data: reviews = [], mutate: mutateReviews } = useHotelReviews(id);
     const { data: ratingInfo = { averageRating: 0, reviewCount: 0 } } = useHotelRating(id);
     const { data: rooms = [], isLoading: roomsLoading } = useHotelRooms(id);
 
@@ -61,7 +75,11 @@ const HotelDetails = () => {
         [reviews, reviewFilter]
     );
 
-    // Memoize price range calculation for rooms
+    const visibleReviews = useMemo(() => {
+        return showAllReviews ? filteredReviews : filteredReviews.slice(0, 6);
+    }, [filteredReviews, showAllReviews]);
+
+    // Price range calculation for rooms
     const roomPriceRange = useMemo(() => {
         const validPrices = rooms
             .map((room) => Number(room?.price))
@@ -83,13 +101,62 @@ const HotelDetails = () => {
     const startingPriceText = Number.isFinite(priceFrom) ? `$${priceFrom}` : "Not Available";
     const priceRangeText = hasPriceRange ? `$${priceFrom} - $${priceTo}` : "Not Available";
 
+    // ✅ Edit review handler
+    const handleEditReview = useCallback((review) => {
+        setEditingReview(review);
+        setIsEditDialogOpen(true);
+    }, []);
+
+    // ✅ Delete review handler - shows confirmation
+    const handleDeleteReview = useCallback((review) => {
+        setIsDeletingReview(review);
+        setIsDeleteDialogOpen(true);
+    }, []);
+
+    // ✅ Confirm delete handler
+    const handleConfirmDelete = useCallback(async () => {
+        if (!isDeletingReview?.id) return;
+
+        setIsDeleting(true);
+        try {
+            console.log("[DEBUG] Deleting review:", isDeletingReview.id);
+            await api.deleteReview(isDeletingReview.id, defaultUserId());
+            
+            toast({
+                title: "Review Deleted",
+                description: "Your review has been deleted successfully.",
+                variant: "default",
+            });
+
+            // Refresh reviews list
+            await mutateReviews();
+            setIsDeleteDialogOpen(false);
+            setIsDeletingReview(null);
+        } catch (error) {
+            console.error("[DEBUG] Delete failed:", error);
+            toast({
+                title: "Error",
+                description: error.message || "Failed to delete review",
+                variant: "destructive",
+            });
+        } finally {
+            setIsDeleting(false);
+        }
+    }, [isDeletingReview, mutateReviews, toast]);
+
+    // ✅ Edit success handler
+    const handleEditSuccess = useCallback(() => {
+        console.log("[DEBUG] Review edited, refreshing reviews list");
+        mutateReviews();
+    }, [mutateReviews]);
+
     const handleSelectHotel = () => {
         if (isSelectionMode && returnTo && preferenceNumber && id) {
             navigate(`${decodeURIComponent(returnTo)}?selectedHotel=${id}&preference=${preferenceNumber}`);
         }
     };
 
-    //Amenties icon
+    //Amenties icon selection
     const getAmenityIcon = (amenity) => {
         const lower = amenity.toLowerCase();
         if (lower.includes("wifi") || lower.includes("internet")) return <Wifi className="h-4 w-4" />;
@@ -143,7 +210,7 @@ const HotelDetails = () => {
 
     return (
         <DashboardLayout>
-            <div className="animate-slide-up space-y-6 max-w-5xl mx-auto pb-10">
+            <div className="animate-slide-up space-y-6 max-w-[1440px] mx-auto pb-10">
                 {/* Navigation */}
                 <div className="flex items-center justify-between mb-2">
                     <Button
@@ -165,20 +232,20 @@ const HotelDetails = () => {
                     <div>
                         <div className="flex items-center gap-2 mb-2">
                             <Badge variant="outline" className="border-primary/20 text-primary bg-primary/5">
-                                {hotel.destination}
+                                {hotel.destination}                                         {/* Hotel Destination */}
                             </Badge>
                             <div className="flex items-center text-sm text-yellow-500">
-                                <Star className="h-4 w-4 fill-current mr-1" />
-                                <span className="font-bold mr-1">{ratingInfo.averageRating || 0}</span>
-                                <span className="text-muted-foreground">({ratingInfo.reviewCount || 0} reviews)</span>
+                                <Star className="h-4 w-4 fill-current mr-1" />                       {/* Hotel Rating */}
+                                <span className="font-bold mr-1">{ratingInfo.averageRating || 0}</span>    {/* Average Rating */}
+                                <span className="text-muted-foreground">({ratingInfo.reviewCount || 0} reviews)</span> {/* Review Count */}
                             </div>
                         </div>
-                        <h1 className="text-3xl lg:text-4xl font-bold text-foreground mb-2">
-                            {hotel.hotelName}
+                        <h1 className="text-3xl lg:text-4xl font-bold text-foreground mb-2">    
+                            {hotel.hotelName}                                                {/* Hotel Name */}
                         </h1>
                         <div className="flex items-center text-muted-foreground">
                             <MapPin className="h-4 w-4 mr-1 text-primary" />
-                            <span>{hotel.location}</span>
+                            <span>{hotel.location}</span>                                    {/* Hotel Location */}
                         </div>
                     </div>
                     <div className="text-right w-full md:w-auto">
@@ -199,7 +266,7 @@ const HotelDetails = () => {
                                 className="w-full gradient-ocean text-white shadow-lg hover:shadow-xl transition-all"
                                 onClick={() => document.getElementById('rooms')?.scrollIntoView({ behavior: 'smooth' })}
                             >
-                                View Rooms
+                                View Rooms                              {/* "View Rooms" Button */}
                             </Button>
                         )}
                     </div>
@@ -253,9 +320,10 @@ const HotelDetails = () => {
                         })}
                     </div>
                 </div>
+                {/* IMAGE END */}
 
                 {/* Content Section */}
-                <div className="relative z-10 max-w-4xl mx-auto space-y-12 mt-10 lg:mt-14">
+                <div className="relative z-10 w-full space-y-12 mt-10 lg:mt-14">
                     {/* Hotel Overview */}
                     <section className="bg-card rounded-xl p-6 border shadow-sm">
                         <h3 className="text-xl font-semibold mb-4 flex items-center gap-2">
@@ -263,9 +331,14 @@ const HotelDetails = () => {
                         </h3>
                         <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
                             <div>
-                                <label className="text-sm text-muted-foreground block mb-1">Destination</label>
-                                <p className="font-medium">{hotel.destination}</p>
+                                <label className="text-sm text-muted-foreground block mb-1">Rating</label>
+                                <p className="font-medium flex items-center gap-1">
+                                    <Star className="h-3 w-3 text-yellow-500 fill-current" /> {ratingInfo.averageRating || 0} ({ratingInfo.reviewCount || 0} reviews)
+                                </p>                                                             {/*  AverageRating */}         {/* Rating Count */}  
                             </div>
+                            
+                            {/* Price Calculation above */}
+
                             <div>
                                 { /* Display Maximum price fo hotel from rooms */ }
                                 <label className="text-sm text-muted-foreground block mb-1">Price From</label>
@@ -277,16 +350,18 @@ const HotelDetails = () => {
                                 <p className="font-medium">{Number.isFinite(priceTo) ? `$${priceTo}` : "Not Available"}</p>
                             </div>
                             <div>
-                                <label className="text-sm text-muted-foreground block mb-1">Rating</label>
-                                <p className="font-medium flex items-center gap-1">
-                                    <Star className="h-3 w-3 text-yellow-500 fill-current" /> {ratingInfo.averageRating || 0} ({ratingInfo.reviewCount || 0} reviews)
-                                </p>
-                            </div>
-                            <div>
-                                <label className="text-sm text-muted-foreground block mb-1">Location</label>
+                                <label className="text-sm text-muted-foreground block mb-1">Address</label>
                                 <p className="font-medium text-xm truncate" title={hotel.location}>
                                     {hotel.location}
-                                </p>
+                                </p>                                             {/* Address */}
+                            </div>
+                            <div>
+                                <label className="text-sm text-muted-foreground block mb-1">Destination</label>
+                                <p className="font-medium">{hotel.destination}</p>                 {/*Destination*/}
+                            </div>
+                            <div>
+                                <label className="text-sm text-muted-foreground block mb-1">District</label>
+                                <p className="font-medium">{hotel.district}</p>                 {/*District*/}  
                             </div>
                         </div>
                     </section>
@@ -297,7 +372,7 @@ const HotelDetails = () => {
                             <Sparkles className="h-6 w-6 text-primary" /> About this Hotel
                         </h3>
                         <div className="bg-card rounded-2xl p-6 border shadow-sm">
-                            <p className="text-muted-foreground leading-relaxed">
+                            <p className="text-muted-foreground leading-relaxed capitalize">
                                 {hotel.description}
                             </p>
                         </div>
@@ -312,9 +387,9 @@ const HotelDetails = () => {
                             {hotel.amenities?.map((amenity, idx) => (
                                 <div key={idx} className="flex items-center gap-3 bg-secondary/30 p-4 rounded-xl border border-border/50 hover:shadow-sm transition-all">
                                     <div className="h-8 w-8 rounded-lg bg-background flex items-center justify-center text-primary shadow-sm">
-                                        {getAmenityIcon(amenity)}
+                                        {getAmenityIcon(amenity)}   {/* Icon from above function */}
                                     </div>
-                                    <span className="text-sm font-medium capitalize">{amenity}</span>
+                                    <span className="text-sm font-medium capitalize">{amenity}</span> {/*Amenities name*/}
                                 </div>
                             ))}
                         </div>
@@ -348,24 +423,24 @@ const HotelDetails = () => {
                                                 />
                                             ) : (
                                                 <div className="w-full h-full flex items-center justify-center text-muted-foreground/30">
-                                                    <ImageOff className="h-10 w-10" />
-                                                </div>
+                                                    <ImageOff className="h-10 w-10" />          {/*Room Image*/}
+                                                </div>  
                                             )}
                                             <div className="absolute top-3 left-3">
                                                 <Badge className="bg-primary/90 text-white border-none shadow">
-                                                    {room.type || "Standard"}
+                                                    {room.type || "Standard"}                       {/* Room Type */}
                                                 </Badge>
                                             </div>
                                             <div className="absolute bottom-3 right-3 bg-white/90 backdrop-blur-sm px-3 py-1 rounded-lg font-bold text-primary shadow-sm border border-white/50">
-                                                ${room?.price || 0} <span className="text-[10px] font-normal text-muted-foreground uppercase">/ night</span>
+                                                ${room?.price || 0} <span className="text-[10px] font-normal text-muted-foreground uppercase">/ night</span>            {/* Room Price */}
                                             </div>
                                         </div>
                                         <div className="p-5 flex-1 flex flex-col">
-                                            <h4 className="font-bold text-lg mb-2 group-hover:text-primary transition-colors tracking-tight">
-                                                {room?.name}
+                                            <h4 className="font-bold text-lg mb-2 group-hover:text-primary transition-colors tracking-tight capitalize">
+                                                {room?.name} {/*Room Name*/}
                                             </h4>
-                                            <p className="text-sm text-muted-foreground line-clamp-2 mb-4 flex-1">
-                                                {room.description}
+                                            <p className="text-sm text-muted-foreground line-clamp-2 mb-4 flex-1 capitalize">
+                                                {room.description}              {/* Room Description */}
                                             </p>
                                         </div>
                                     </div>
@@ -379,16 +454,16 @@ const HotelDetails = () => {
                     </section>
 
                     {/* Reviews section */}
-                    <section className="space-y-6">
+                    <section className="bg-card rounded-2xl border shadow-sm p-6 lg:p-8 space-y-6">
                         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                             <h3 className="text-2xl font-bold flex items-center gap-3">
                                 <User className="h-6 w-6 text-primary" /> Guest Reviews
                             </h3>
                             <div className="flex items-center gap-1 text-yellow-500 font-bold">
                                 <Star className="h-5 w-5 fill-yellow-500" />
-                                <span>{ratingInfo.averageRating || 0}</span>
+                                <span>{ratingInfo.averageRating || 0}</span>           {/* Average Rating */}
                                 <span className="text-muted-foreground font-normal text-sm ml-1">
-                                    ({ratingInfo.reviewCount || 0} total)
+                                    ({ratingInfo.reviewCount || 0} total)              {/* Total Reviews */}
                                 </span>
                             </div>
                         </div>
@@ -410,10 +485,16 @@ const HotelDetails = () => {
                             ))}
                         </div>
 
-                        <div className="space-y-4">
-                            {filteredReviews.length > 0 ? (
-                                filteredReviews.map((review) => (
-                                    <div key={review.id} className="bg-card rounded-xl p-6 border shadow-sm space-y-4">
+                        <div className="relative">
+                            <div className={cn(
+                                "grid grid-cols-1 md:grid-cols-2 gap-4 transition-all duration-500 ease-in-out",
+                                !showAllReviews && filteredReviews.length > 6 ? "max-h-[520px] overflow-hidden" : ""
+                            )}>
+                                {filteredReviews.length > 0 ? (
+                                    filteredReviews.map((review) => {
+                                        const isReviewOwner = review.userId === defaultUserId();
+                                        return (
+                                        <div key={review.id} className="bg-background rounded-xl p-6 border shadow-sm space-y-4">
                                         <div className="flex justify-between items-start">
                                             <div className="flex items-center gap-3">
                                                 <Avatar className="h-10 w-10 border border-primary/10">
@@ -422,36 +503,61 @@ const HotelDetails = () => {
                                                     </AvatarFallback>
                                                 </Avatar>
                                                 <div>
-                                                    <p className="font-semibold text-sm">{review.userName}</p>
-                                                    <p className="text-xs text-muted-foreground">{review.reviewDate}</p>
+                                                    <p className="font-semibold text-sm">{review.userName}</p>                  {/* User Name */}
+                                                    <p className="text-xs text-muted-foreground">{review.reviewDate}</p>       {/* Review Date */}
                                                 </div>
                                             </div>
-                                            <div className="flex gap-0.5">
-                                                {[...Array(5)].map((_, i) => (
-                                                    <Star
-                                                        key={i}
-                                                        className={cn(
-                                                            "h-3.5 w-3.5",
-                                                            i < review.rating ? "fill-yellow-400 text-yellow-400" : "text-muted-foreground/30"
-                                                        )}
-                                                    />
-                                                ))}
+                                            <div className="flex items-center gap-2">
+                                                <div className="flex gap-0.5">
+                                                    {[...Array(5)].map((_, i) => (
+                                                        <Star
+                                                            key={i}
+                                                            className={cn(
+                                                                "h-3.5 w-3.5",
+                                                                i < review.rating ? "fill-yellow-400 text-yellow-400" : "text-muted-foreground/30"
+                                                            )}
+                                                        />
+                                                    ))}
+                                                </div>
+                                                {/* ✅ Edit and Delete buttons - only for review owner */}
+                                                {isReviewOwner && (
+                                                    <div className="flex gap-1 ml-2 pl-2 border-l border-border">
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="sm"
+                                                            onClick={() => handleEditReview(review)}
+                                                            className="h-7 w-7 p-0 hover:bg-primary/10 hover:text-primary"
+                                                            title="Edit review"
+                                                        >
+                                                            <Pencil className="h-4 w-4" />
+                                                        </Button>
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="sm"
+                                                            onClick={() => handleDeleteReview(review)}
+                                                            className="h-7 w-7 p-0 hover:bg-destructive/10 hover:text-destructive"
+                                                            title="Delete review"
+                                                        >
+                                                            <Trash2 className="h-4 w-4" />
+                                                        </Button>
+                                                    </div>
+                                                )}
                                             </div>
                                         </div>
                                         <div className="space-y-2">
-                                            {review.title && <h4 className="font-bold text-base">{review.title}</h4>}
+                                            {review.title && <h4 className="font-bold text-base">{review.title}</h4>}       {/* Review Title */}
                                             <p className="text-sm leading-relaxed text-muted-foreground italic">
                                                 "{review.comment}"
-                                            </p>
-                                            {review.imageUrls && review.imageUrls.length > 0 && (
+                                            </p>                                                                           {/* Review Comment */}
+                                            {review.imageUrls && review.imageUrls.length > 0 && (                          
                                                 <div className="flex gap-2 pt-2 flex-wrap">
                                                     {review.imageUrls.map((url, idx) => (
                                                         <img
                                                             key={idx}
-                                                            src={url}
+                                                            src={url}                                                       //Review iamge
                                                             alt={`Review image ${idx + 1}`}
                                                             className="h-20 w-20 rounded-lg object-cover border border-border cursor-pointer hover:opacity-80 transition-opacity"
-                                                            onClick={() => setSelectedImage(url)}
+                                                            onClick={() => setSelectedImage(url)}                           //open image - Image LightBox
                                                             loading="lazy"
                                                         />
                                                     ))}
@@ -459,14 +565,39 @@ const HotelDetails = () => {
                                             )}
                                         </div>
                                     </div>
-                                ))
-                            ) : (
-                                <div className="bg-muted/30 rounded-xl p-10 border border-dashed text-center">
+                                    );
+                                })
+                             ) : (
+                                <div className="bg-muted/30 rounded-xl p-10 border border-dashed flex flex-col items-center justify-center text-center col-span-full">
                                     <Sparkles className="h-8 w-8 text-muted-foreground/30 mb-2" />
                                     <p className="text-muted-foreground">No guest reviews yet.</p>
                                 </div>
                             )}
+                            </div>
+
+                            {/* Gradient Overlay and Read More Button */}
+                            {!showAllReviews && filteredReviews.length > 6 && (
+                                <div className="absolute bottom-0 left-0 right-0 h-40 bg-gradient-to-t from-card via-card/90 to-transparent flex items-end justify-center pb-4 z-20">
+                                    <Button
+                                        onClick={() => setShowAllReviews(true)}
+                                        className="gradient-ocean text-white shadow-lg hover:shadow-xl transition-all font-semibold rounded-xl px-8 py-2.5"
+                                    >
+                                        Read More
+                                    </Button>
+                                </div>
+                            )}
                         </div>
+                        {showAllReviews && filteredReviews.length > 6 && (
+                            <div className="flex justify-center mt-6">
+                                <Button
+                                    variant="outline"
+                                    onClick={() => setShowAllReviews(false)}
+                                    className="hover:bg-primary hover:text-white transition-all font-semibold"
+                                >
+                                    Show Less
+                                </Button>
+                            </div>
+                        )}
                     </section>
                 </div>
             </div>
@@ -492,6 +623,25 @@ const HotelDetails = () => {
                     </div>
                 </div>
             )}
+
+            {/* ✅ Edit Review Dialog */}
+            <EditReviewDialog
+                open={isEditDialogOpen}
+                onOpenChange={setIsEditDialogOpen}
+                review={editingReview}
+                targetName={hotel?.hotelName || "Hotel"}
+                onSuccess={handleEditSuccess}
+                isPackageReview={false}
+            />
+
+            {/* ✅ Delete Confirm Dialog */}
+            <DeleteConfirmDialog
+                open={isDeleteDialogOpen}
+                onOpenChange={setIsDeleteDialogOpen}
+                onConfirm={handleConfirmDelete}
+                isDeleting={isDeleting}
+                reviewTitle={isDeletingReview?.title}
+            />
         </DashboardLayout>
     );
 };

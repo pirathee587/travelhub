@@ -24,7 +24,10 @@ const typeConfig = {
 
 export function DocumentCard({ title, type, date, size, onDownload }) {
     const [downloaded, setDownloaded] = useState(false);
-    const config = typeConfig[type];
+    const config = typeConfig[type?.toLowerCase()] || {
+        color: "text-muted-foreground bg-muted/10",
+        label: type || "Document",
+    };
 
     const handleDownload = () => {
         setDownloaded(true);

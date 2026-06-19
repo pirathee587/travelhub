@@ -227,7 +227,7 @@ export function FilterBarSkeleton() {
 
 export function DetailSkeleton() {
     return (
-        <div className="space-y-8 max-w-5xl mx-auto pb-10">
+        <div className="space-y-8 max-w-[1440px] mx-auto pb-10">
             {/* Back button */}
             <Shimmer className="h-9 w-32 rounded-xl" />
 
@@ -342,7 +342,7 @@ export function ReservationSkeleton() {
 
 export function HotelDetailSkeleton() {
     return (
-        <div className="max-w-5xl mx-auto space-y-8 pb-16">
+        <div className="max-w-[1440px] mx-auto space-y-8 pb-16">
             <Shimmer className="h-9 w-32 rounded-xl" />
 
             {/* Hero image */}

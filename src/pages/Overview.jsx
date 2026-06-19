@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback, memo } from "react";
-import { Plane, CheckCircle, Calendar, TrendingUp, ChevronRight, ChevronLeft, Sparkles,} from "lucide-react";
+import { Plane, CheckCircle, Calendar, TrendingUp, ChevronRight, ChevronLeft, Sparkles, } from "lucide-react";
 import { DashboardLayout } from "@/components/dashboard/DashboardLayout";
 import { StatsCard } from "@/components/dashboard/StatsCard";
 import { TripCard } from "@/components/dashboard/TripCard";
@@ -13,6 +13,7 @@ import { Link } from "react-router-dom";
 import { api } from "@/services/api";
 import { useStats, useTrips, useDocuments, useRecommendations } from "@/hooks/useApi";
 import { StatsSkeleton, RecommendationSkeleton } from "@/components/ui/skeletons";
+import { defaultUserId } from "@/lib/userHelpers";
 
 const MemoizedTravelCard = memo(TravelCard);
 
@@ -27,17 +28,20 @@ const Overview = () => {
     const [selectedHotelId, setSelectedHotelId] = useState(null);
 
     // SWR hooks — parallel fetching with caching
-    const { data: stats = { totalTrips: 0, ongoingTrips: 0, completedTrips: 0, upcomingTrips: 0 }, isLoading: statsLoading } = useStats(1);
-    const { data: trips = [], isLoading: tripsLoading } = useTrips(1);
-    const { data: allDocs = [] } = useDocuments(1);
-    const { data: recommendations = [], isLoading: recsLoading } = useRecommendations(1);
+    const userId = defaultUserId();
+    const { data: stats = { totalTrips: 0, ongoingTrips: 0, completedTrips: 0, upcomingTrips: 0 }, isLoading: statsLoading } = useStats(userId);
+    const { data: trips = [], isLoading: tripsLoading } = useTrips(userId);
+    const { data: allDocs = [] } = useDocuments(userId);
+    const { data: recommendations = [], isLoading: recsLoading } = useRecommendations(userId);
 
     const recentDocs = allDocs.slice(0, 4);
 
-    const ongoingTrips = trips.filter(
-        (t) => t.status === "in_progress" || t.status === "confirmed"
-    );
-    const completedTrips = trips.filter((t) => t.status === "completed");
+    // Trip -> Filter Trips by Status
+    const pendingTrips = trips.filter((t) => t.status === "pending"); {/* Pending Trips */ }
+    const confirmedTrips = trips.filter((t) => t.status === "confirmed"); {/* Confirmed Trips */ }
+    const inProgressTrips = trips.filter((t) => t.status === "in_progress"); {/* In Progress Trips */ }
+    const completedTrips = trips.filter((t) => t.status === "completed"); {/* Completed Trips */ }
+    const rejectedTrips = trips.filter((t) => t.status === "rejected"); {/* Rejected Trips */ }
 
     const handleTripClick = useCallback(async (trip) => {
         const bookingDetail = await api.getBookingById(trip.id);
@@ -88,7 +92,7 @@ const Overview = () => {
                     <Link to="/">
                         <Button className="gradient-sunset shadow-card text-accent-foreground">
                             <Plane className="h-4 w-4 mr-2" />
-                            Book New Trip
+                            Book New Trip                                                       {/* Booking Button */}
                         </Button>
                     </Link>
                 </div>
@@ -100,29 +104,29 @@ const Overview = () => {
             ) : (
                 <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 animate-slide-up py-4" style={{ animationDelay: "0.1s" }}>
                     <StatsCard
-                        title="Ongoing Trips"
+                        title="Ongoing Trips"                                   // ongoing Trips Card
                         value={stats.ongoingTrips}
                         subtitle="Currently traveling"
                         icon={Plane}
-                        variant="blue"
+                        variant="blue"                                          //Status Card Colour
                     />
                     <StatsCard
-                        title="Completed Trips"
+                        title="Completed Trips"                                 //Complete Trips Card
                         value={stats.completedTrips}
                         subtitle="Memories made"
                         icon={CheckCircle}
                         variant="green"
-                        trend={{ value: 25, isPositive: true }}
+
                     />
                     <StatsCard
-                        title="Upcoming Bookings"
+                        title="Upcoming Bookings"                               //Upcoming Trips Card
                         value={stats.upcomingTrips}
                         subtitle="Adventures await"
                         icon={Calendar}
                         variant="orange"
                     />
                     <StatsCard
-                        title="Total Trips"
+                        title="Total Trips"                                     //Total Trips Card
                         value={stats.totalTrips}
                         subtitle="All time"
                         icon={TrendingUp}
@@ -132,15 +136,25 @@ const Overview = () => {
             )}
 
             {/* Trips Management */}
+            {/* Filter */}
             <section className="animate-slide-up py-8" style={{ animationDelay: "0.2s" }}>
-                <Tabs defaultValue="ongoing" className="space-y-4">
-                    <div className="flex items-center justify-between">
-                        <TabsList className="bg-secondary">
-                            <TabsTrigger value="ongoing" className="data-[state=active]:bg-card data-[state=active]:shadow-soft">
-                                Ongoing & Upcoming
+                <Tabs defaultValue="pending" className="space-y-4">             {/*Pending is default*/}
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                        <TabsList className="bg-secondary grid grid-cols-5 gap-1 w-full max-w-2xl">
+                            <TabsTrigger value="pending" className="data-[state=active]:bg-card data-[state=active]:shadow-soft">
+                                Pending ({pendingTrips.length})
+                            </TabsTrigger>
+                            <TabsTrigger value="confirmed" className="data-[state=active]:bg-card data-[state=active]:shadow-soft">
+                                Confirm ({confirmedTrips.length})
+                            </TabsTrigger>
+                            <TabsTrigger value="in_progress" className="data-[state=active]:bg-card data-[state=active]:shadow-soft">
+                                In Progress ({inProgressTrips.length})
                             </TabsTrigger>
                             <TabsTrigger value="completed" className="data-[state=active]:bg-card data-[state=active]:shadow-soft">
-                                Completed
+                                Completed ({completedTrips.length})
+                            </TabsTrigger>
+                            <TabsTrigger value="rejected" className="data-[state=active]:bg-card data-[state=active]:shadow-soft">
+                                Rejected ({rejectedTrips.length})
                             </TabsTrigger>
                         </TabsList>
                         <Link to="/trips">
@@ -151,9 +165,12 @@ const Overview = () => {
                         </Link>
                     </div>
 
-                    <TabsContent value="ongoing" className="mt-0">
+                    {/* Display Trips based on Filter */}
+
+                    {/* Pending Trips */}
+                    <TabsContent value="pending" className="mt-0">
                         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-                            {ongoingTrips.map((trip) => (
+                            {pendingTrips.map((trip) => (
                                 <TripCard
                                     key={trip.id}
                                     trip={trip}
@@ -162,14 +179,55 @@ const Overview = () => {
                                     onHotelReview={() => handleHotelReviewClick(trip)}
                                 />
                             ))}
-                            {ongoingTrips.length === 0 && (
+                            {pendingTrips.length === 0 && (
                                 <div className="col-span-full text-center py-12 text-muted-foreground">
-                                    No ongoing trips
+                                    No pending trips
                                 </div>
                             )}
                         </div>
                     </TabsContent>
 
+                    {/* Confirmed Trips */}
+                    <TabsContent value="confirmed" className="mt-0">
+                        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                            {confirmedTrips.map((trip) => (
+                                <TripCard
+                                    key={trip.id}
+                                    trip={trip}
+                                    onClick={() => handleTripClick(trip)}
+                                    onReview={() => handleReviewClick(trip)}
+                                    onHotelReview={() => handleHotelReviewClick(trip)}
+                                />
+                            ))}
+                            {confirmedTrips.length === 0 && (
+                                <div className="col-span-full text-center py-12 text-muted-foreground">
+                                    No confirmed trips
+                                </div>
+                            )}
+                        </div>
+                    </TabsContent>
+
+                    {/* In Progress Trips */}
+                    <TabsContent value="in_progress" className="mt-0">
+                        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                            {inProgressTrips.map((trip) => (
+                                <TripCard
+                                    key={trip.id}
+                                    trip={trip}
+                                    onClick={() => handleTripClick(trip)}
+                                    onReview={() => handleReviewClick(trip)}
+                                    onHotelReview={() => handleHotelReviewClick(trip)}
+                                />
+                            ))}
+                            {inProgressTrips.length === 0 && (
+                                <div className="col-span-full text-center py-12 text-muted-foreground">
+                                    No trips in progress
+                                </div>
+                            )}
+                        </div>
+                    </TabsContent>
+
+                    {/* Completed Trips */}
                     <TabsContent value="completed" className="mt-0">
                         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
                             {completedTrips.map((trip) => (
@@ -188,6 +246,26 @@ const Overview = () => {
                             )}
                         </div>
                     </TabsContent>
+
+                    {/* Rejected Trips */}
+                    <TabsContent value="rejected" className="mt-0">
+                        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                            {rejectedTrips.map((trip) => (
+                                <TripCard
+                                    key={trip.id}
+                                    trip={trip}
+                                    onClick={() => handleTripClick(trip)}
+                                    onReview={() => handleReviewClick(trip)}
+                                    onHotelReview={() => handleHotelReviewClick(trip)}
+                                />
+                            ))}
+                            {rejectedTrips.length === 0 && (
+                                <div className="col-span-full text-center py-12 text-muted-foreground">
+                                    No rejected trips
+                                </div>
+                            )}
+                        </div>
+                    </TabsContent>
                 </Tabs>
             </section>
 
@@ -202,7 +280,7 @@ const Overview = () => {
                         </Button>
                     </Link>
                 </div>
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">         {/* Documents */}
                     {recentDocs.map((doc, index) => (
                         <DocumentCard
                             key={index}

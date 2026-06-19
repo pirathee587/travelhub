@@ -15,6 +15,7 @@ import { Star, Upload, X, AlertCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { api } from "@/services/api";
 import { useToast } from "@/hooks/use-toast";
+import { defaultUserId, defaultUserName } from "@/lib/userHelpers";
 
 export function ReviewDialog({ open, onOpenChange, targetName, showDriverRating, onSuccess, packageId, hotelId }) {
     const { toast } = useToast();
@@ -29,7 +30,7 @@ export function ReviewDialog({ open, onOpenChange, targetName, showDriverRating,
     const [errorMessage, setErrorMessage] = useState("");
     const fileInputRef = useRef(null);
 
-    const handleFileChange = (e) => {
+    const handleFileChange = (e) => {               //Image Handling
         if (e.target.files) {
             const newFiles = Array.from(e.target.files);
             setImages((prev) => [...prev, ...newFiles]);
@@ -54,10 +55,10 @@ export function ReviewDialog({ open, onOpenChange, targetName, showDriverRating,
 
         try {
             console.log("[DEBUG] Submitting review and images...");
-            
+                                                                    //Review Object creation
             const reviewData = {
-                userId: 1,
-                userName: "Harith Keshan",
+                userId: defaultUserId(),
+                userName: defaultUserName(),
                 title: title,
                 comment: description,
                 rating: rating,
@@ -66,11 +67,11 @@ export function ReviewDialog({ open, onOpenChange, targetName, showDriverRating,
 
             if (packageId) {
                 console.log("[DEBUG] Submitting package review to packageId:", packageId);
-                await api.addPackageReview(packageId, reviewData, images);
+                await api.addPackageReview(packageId, reviewData, images);                  {/*Package Review API Connection*/}
                 console.log("[DEBUG] ✅ Package review submitted successfully");
             } else if (hotelId) {
                 console.log("[DEBUG] Submitting hotel review to hotelId:", hotelId);
-                await api.addHotelReview(hotelId, reviewData, images);
+                await api.addHotelReview(hotelId, reviewData, images);                      {/*Hotel Review API Connection*/}
                 console.log("[DEBUG] ✅ Hotel review submitted successfully");
             }
 
@@ -124,7 +125,7 @@ export function ReviewDialog({ open, onOpenChange, targetName, showDriverRating,
                             <p className="text-sm text-destructive">{errorMessage}</p>
                         </div>
                     )}
-{/*Package Rating (Optional) */}
+{/*Package or hotel Rating */}
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div className="space-y-2 flex flex-col items-center py-2 bg-accent/5 rounded-xl border border-border/50">
                             <Label className="text-sm font-semibold">Overall Rating</Label>
@@ -182,7 +183,7 @@ export function ReviewDialog({ open, onOpenChange, targetName, showDriverRating,
                     </div>
 
                     <div className="space-y-2">
-                        <Label htmlFor="title">Review Title</Label>
+                        <Label htmlFor="title">Review Title</Label>             {/* Review Title Input */}
                         <Input
                             id="title"
                             placeholder="e.g. Amazing experience!"
@@ -193,7 +194,7 @@ export function ReviewDialog({ open, onOpenChange, targetName, showDriverRating,
                     </div>
 
                     <div className="space-y-2">
-                        <Label htmlFor="description">Description</Label>
+                        <Label htmlFor="description">Description</Label>        {/* Review Description Input */}
                         <Textarea
                             id="description"
                             placeholder="What made this trip special?"
@@ -239,8 +240,8 @@ export function ReviewDialog({ open, onOpenChange, targetName, showDriverRating,
                             accept="image/*"
                             className="hidden"
                             ref={fileInputRef}
-                            onChange={handleFileChange}
-                        />
+                            onChange={handleFileChange}             
+                        />                                  {/* image upload handle */}
                         {images.length > 0 && (
                             <p className="text-xs text-muted-foreground">
                                 {images.length} image(s) selected — will upload on submit
@@ -253,7 +254,7 @@ export function ReviewDialog({ open, onOpenChange, targetName, showDriverRating,
                             Cancel
                         </Button>
                         <Button type="submit" disabled={rating === 0 || submitting} className="gradient-ocean shadow-glow">
-                            {submitting ? "Uploading & Submitting..." : "Submit Review"}
+                            {submitting ? "Uploading & Submitting..." : "Submit Review"}                {/* Review Submit Button */}
                         </Button>
                     </DialogFooter>
                 </form>

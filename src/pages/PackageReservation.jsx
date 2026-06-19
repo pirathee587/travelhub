@@ -28,6 +28,8 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { api } from "@/services/api";
+import { useToast } from "@/hooks/use-toast";
+import { defaultUserId } from "@/lib/userHelpers";
 
 const PackageReservation = () => {
     const { id } = useParams();
@@ -42,9 +44,10 @@ const PackageReservation = () => {
     const [adults, setAdults] = useState(1);
     const [children, setChildren] = useState(0);
     const [specialRequests, setSpecialRequests] = useState("");
+    
 
     const [hotelPreferences, setHotelPreferences] = useState(() => {
-        const saved = sessionStorage.getItem(`hotelPrefs_${id}`);
+        const saved = sessionStorage.getItem(`hotelPrefs_${id}`);           {/* Hotel preferences */}
         if (saved) {
             try {
                 return JSON.parse(saved);
@@ -110,7 +113,7 @@ const PackageReservation = () => {
         setHotelPreferences((prev) => prev.filter((pref) => pref.id !== prefId));
     };
 
-    const calculateTotalPrice = () => {
+    const calculateTotalPrice = () => {                                     //Price Calculation
         const basePrice = pkg?.priceFrom || 0;
         const hotelTotal = hotelPreferences.reduce((sum, pref) => {
             if (pref.hotel) {
@@ -122,33 +125,49 @@ const PackageReservation = () => {
     };
 
     const handleConfirmReservation = async () => {
-        if (!startDate) return;
+        if (!startDate) {
+            alert("Please select a start date");
+            return;
+        }
 
         setSubmitting(true);
 
+        const userId = defaultUserId();
         const selectedHotels = hotelPreferences.filter(p => p.hotel).map(p => p.hotel.id);
-        const primaryHotelId = selectedHotels.length > 0 ? selectedHotels[0] : null;
 
         const bookingData = {
-            userId: 1,
+            userId: userId,
             packageId: parseInt(id),
-            hotelId: primaryHotelId,
             hotelIds: selectedHotels,
-            vehicleId: 1,
             startDate: startDate,
-            endDate: startDate,
             totalPrice: calculateTotalPrice(),
+            adults: adults || 1,
+            children: children || 0,
+            specialRequests: specialRequests,
+            duration: pkg?.duration || "",
         };
 
+        console.log("[Booking] Sending booking request:", {
+            userId: userId,
+            packageId: parseInt(id),
+            selectedHotels: selectedHotels.length,
+            startDate: startDate,
+            totalPrice: calculateTotalPrice(),
+            adults: adults || 1,
+            children: children || 0
+        });
+
         try {
-            const booking = await api.createBooking(bookingData);
+            const booking = await api.createBooking(bookingData);                               {/* Api call for booking creation */}
             if (booking && booking.id) {
-                sessionStorage.removeItem(`hotelPrefs_${id}`);
+                sessionStorage.removeItem(`hotelPrefs_${id}`);  
                 alert(`Booking confirmed! Booking ID: BK${String(booking.id).padStart(5, "0")}`);
                 navigate("/trips");
             }
         } catch (error) {
-            alert("Booking failed. Please try again.");
+            const errorMsg = error.message || "Booking failed. Please try again.";                      {/* Error handling */}
+            console.error("[Booking] Error:", errorMsg);
+            alert(errorMsg);
         } finally {
             setSubmitting(false);
         }
@@ -210,19 +229,19 @@ const PackageReservation = () => {
                             <CardHeader>
                                 <CardTitle className="flex items-center gap-2">
                                     <MapPin className="h-5 w-5 text-primary" />
-                                    {pkg.packageName}
+                                    {pkg.packageName}                   {/* Package Name */}
                                 </CardTitle>
                                 <CardDescription>
-                                    {pkg.destination} • {pkg.duration}
+                                    {pkg.destination} • {pkg.duration}  {/* Package Destination, Duration*/}
                                 </CardDescription>
                             </CardHeader>
                             <CardContent>
                                 <div className="flex items-center gap-2">
-                                    <Badge variant="outline" className="border-primary/20 text-primary">
-                                        {pkg.category?.charAt(0).toUpperCase() + pkg.category?.slice(1)}
+                                    <Badge variant="outline" className="border-primary/20 text-primary">                {/* Package Category */}
+                                        {pkg.category?.charAt(0).toUpperCase() + pkg.category?.slice(1)}        
                                     </Badge>
                                     <span className="text-sm text-muted-foreground">
-                                        ★ {pkg.rating} ({pkg.reviewCount} reviews)
+                                        ★ {pkg.rating} ({pkg.reviewCount} reviews)                                     {/* Package rating */}
                                     </span>
                                 </div>
                             </CardContent>
@@ -254,8 +273,8 @@ const PackageReservation = () => {
                                             id="adults"
                                             type="number"
                                             min="1"
-                                            value={adults}
-                                            onChange={(e) => setAdults(parseInt(e.target.value))}
+                                            value={adults || ""}
+                                            onChange={(e) => setAdults(e.target.value ? parseInt(e.target.value) : 1)}
                                             className="bg-background"
                                         />
                                     </div>
@@ -265,8 +284,8 @@ const PackageReservation = () => {
                                             id="children"
                                             type="number"
                                             min="0"
-                                            value={children}
-                                            onChange={(e) => setChildren(parseInt(e.target.value))}
+                                            value={children || ""}
+                                            onChange={(e) => setChildren(e.target.value ? parseInt(e.target.value) : 0)}
                                             className="bg-background"
                                         />
                                     </div>
@@ -389,7 +408,7 @@ const PackageReservation = () => {
                                 <div className="space-y-2">
                                     <div className="flex justify-between text-sm">
                                         <span className="text-muted-foreground">Package</span>
-                                        <span className="font-medium">${pkg.priceFrom}</span>
+                                        <span className="font-medium">${pkg.priceFrom}</span>           {/* Total price*/}
                                     </div>
                                     <div className="flex justify-between text-sm">
                                         <span className="text-muted-foreground flex items-center gap-1">
@@ -397,12 +416,12 @@ const PackageReservation = () => {
                                             Guests
                                         </span>
                                         <span className="font-medium">
-                                            {adults} Adults, {children} Children
+                                            {adults} Adults, {children} Children                    {/* Adult, children count */}
                                         </span>
                                     </div>
                                     {hotelPreferences.filter((p) => p.hotel).length > 0 && (
                                         <div className="pt-2 border-t">
-                                            <p className="text-sm font-medium mb-2">Selected Hotels</p>
+                                            <p className="text-sm font-medium mb-2">Selected Hotels</p>     {/* Hotel name and price */}
                                             {hotelPreferences
                                                 .filter((p) => p.hotel)
                                                 .map((pref) => (
@@ -430,21 +449,21 @@ const PackageReservation = () => {
                                     <Button
                                         className="w-full gradient-ocean text-white shadow-lg"
                                         size="lg"
-                                        disabled={!startDate || submitting}
+                                        disabled={!startDate || submitting}                 //without start date, button will be disabled
                                         onClick={handleConfirmReservation}
                                     >
                                         <DollarSign className="mr-2 h-4 w-4" />
                                         {submitting ? "Confirming..." : "Confirm Reservation"}
                                     </Button>
 
-                                    <Button
+                                    {/* <Button
                                         variant="outline"
                                         className="w-full mt-2"
                                         size="sm"
                                     >
                                         <MessageSquare className="mr-2 h-4 w-4" />
                                         Contact Agent
-                                    </Button>
+                                    </Button> */}
 
                                     <p className="text-xs text-muted-foreground text-center mt-3">
                                         You won't be charged yet
