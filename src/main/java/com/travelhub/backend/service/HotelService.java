@@ -139,8 +139,9 @@ public class HotelService {
                 map.put("description", hotel.getDescription());
                 map.put("priceFrom",   hotel.getPriceFrom());
                 map.put("priceTo",     hotel.getPriceTo());
-                map.put("rating",      hotel.getRating());
-                map.put("amenities",   hotel.getAmenities());
+                // Rating is dynamically calculated, default to 0.0 for chatbot if needed, or omit
+                map.put("rating",      0.0);
+                map.put("amenities",   hotel.getAmenityList() != null ? hotel.getAmenityList().stream().map(a -> a.getName()).collect(Collectors.toList()) : java.util.List.of());
                 return map;
             })
             .collect(Collectors.toList());

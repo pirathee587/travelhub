@@ -226,7 +226,7 @@ public class PackageService {
                 map.put("endPlace",        pkg.getEndPlace());
                 // Safely get agent name — avoid null pointer if agent is null
                 try {
-                    map.put("agentName", pkg.getAgent() != null ? pkg.getAgent().getAgentName() : "");
+                    map.put("agentName", pkg.getAgent() != null ? pkg.getAgent().getAgencyName() : "");
                 } catch (Exception e) {
                     map.put("agentName", "");
                 }
