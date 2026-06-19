@@ -13,6 +13,7 @@ import org.springframework.stereotype.Service;
 public class AgentProfileService {
 
     private final AgentRepository agentRepository;
+    private final AgentRatingCalculator agentRatingCalculator;
 
     public AgentProfileResponse getProfile(Long agentId) {
         Agent agent = agentRepository.findById(agentId)
@@ -61,7 +62,7 @@ public class AgentProfileService {
                 .websiteUrl(agent.getWebsiteUrl())
                 .profileImage(agent.getProfileImage())
                 .memberSince(agent.getMemberSince() != null ? agent.getMemberSince().toString() : null)
-                .rating(agent.getRating())
+                .rating(agentRatingCalculator.getAgentRating(agent.getId()))
                 .totalTrips(agent.getTotalTrips())
                 .totalRevenue(agent.getTotalRevenue())
                 .completionRate(agent.getCompletionRate())

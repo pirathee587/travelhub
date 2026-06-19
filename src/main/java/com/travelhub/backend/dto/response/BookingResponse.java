@@ -24,6 +24,8 @@ public class BookingResponse {
     private Integer progress;
     private String imageUrl;
     private String category;
+    private String startPlace;
+    private String endPlace;
     private LocalDateTime bookedOn;
 
     // Hotel info

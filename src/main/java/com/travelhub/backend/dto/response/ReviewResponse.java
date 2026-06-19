@@ -10,20 +10,20 @@ import lombok.Data;
 public class ReviewResponse {
     private Long id;
 
-    // ✅ Frontend PackageDetails & HotelDetails use `review.userName`
+    //  Frontend PackageDetails & HotelDetails use `review.userName`
     private String userName;
 
-    // ✅ Frontend uses `review.reviewDate`
+    //  Frontend uses `review.reviewDate`
     private String reviewDate;
 
     private Integer rating;
 
-    // ✅ Frontend uses `review.title`
+    //  Frontend uses `review.title`
     private String title;
 
     private String comment;
 
-    // ✅ Frontend renders `review.imageUrls` array
+    //  Frontend renders `review.imageUrls` array
     private List<String> imageUrls;
 
     // kept for agent dashboard / other consumers
@@ -31,6 +31,10 @@ public class ReviewResponse {
     private String date;
     private String trip;
     private String packageName;
+    private Long packageId;          // ✅ NEW: For navigation to package details
+    private String hotelName;        // ✅ NEW: For hotel reviews
+    private Long hotelId;            // ✅ NEW: For navigation to hotel details
+    private String district;         // ✅ NEW: For package/hotel district information
     private String reply;
     private Boolean hasReply;
 }

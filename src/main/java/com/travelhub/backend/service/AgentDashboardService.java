@@ -18,6 +18,7 @@ public class AgentDashboardService {
     private final DriverRepository driverRepository;
     private final PackageRepository packageRepository;
     private final AgentRepository agentRepository;
+    private final AgentRatingCalculator agentRatingCalculator;
 
     public AgentDashboardStatsResponse getStats(Long agentId) {
 
@@ -39,9 +40,7 @@ public class AgentDashboardService {
                 .mapToDouble(b -> b.getTotalPrice() != null ? b.getTotalPrice() : 0)
                 .sum();
 
-        Double averageRating = agentRepository.findById(agentId)
-                .map(a -> a.getRating())
-                .orElse(0.0);
+        Double averageRating = agentRatingCalculator.getAgentRating(agentId);
 
         return AgentDashboardStatsResponse.builder()
                 .totalPackages(totalPackages)

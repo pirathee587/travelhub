@@ -18,6 +18,9 @@ public class Agent {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(name = "user_id")
+    private Long userId;
+
     // ── Company / Agent Info ───────────────────────────
     @Column(nullable = false)
     private String agentName;

@@ -38,7 +38,7 @@ public class RecommendationService {
                 recommendations.addAll(packageService.getPackagesByCategory(category));
             }
 
-            // Step 4 — Sort by rating DESC (highest first)
+            // Step 4 — Sort by rating DESCENDING (Highest first)
             recommendations.sort((a, b) -> Double.compare(
                     b.getRating() != null ? b.getRating() : 0.0,
                     a.getRating() != null ? a.getRating() : 0.0
@@ -61,6 +61,23 @@ public class RecommendationService {
                     .collect(Collectors.toList());
 
             for (PackageResponse pkg : trending) {
+                if (recommendations.size() >= 5) break;
+                if (recommendations.stream().noneMatch(r -> r.getId().equals(pkg.getId()))) {
+                    recommendations.add(pkg);
+                }
+            }
+        }
+
+        // Final Fallback: Fill remaining slots from all packages if still less than 5
+        if (recommendations.size() < 5) {
+            List<PackageResponse> allPackages = packageService.getAllPackages()
+                    .stream()
+                    .sorted((a, b) -> Double.compare(
+                            b.getRating() != null ? b.getRating() : 0.0,
+                            a.getRating() != null ? a.getRating() : 0.0))
+                    .collect(Collectors.toList());
+
+            for (PackageResponse pkg : allPackages) {
                 if (recommendations.size() >= 5) break;
                 if (recommendations.stream().noneMatch(r -> r.getId().equals(pkg.getId()))) {
                     recommendations.add(pkg);

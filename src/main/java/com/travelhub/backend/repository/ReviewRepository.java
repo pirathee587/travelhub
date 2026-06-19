@@ -16,8 +16,7 @@ import com.travelhub.backend.entity.Review;
 @Repository
 public interface ReviewRepository extends JpaRepository<Review, Long> {
 
-    // ✅ FIXED: was findByPkgId — but the entity field is `pkg`, so it must be findByPkg_Id
-    @EntityGraph(attributePaths = {"pkg", "user"})
+    @EntityGraph(attributePaths = { "pkg", "user" })
     List<Review> findByPkg_Id(Long packageId);
 
     @EntityGraph(attributePaths = {"pkg", "user"})
@@ -29,16 +28,16 @@ public interface ReviewRepository extends JpaRepository<Review, Long> {
     // ── Single-entity queries (for detail pages) ─────
 
     @Query("SELECT AVG(r.rating) FROM Review r WHERE r.pkg.id = :packageId")
-    Double getAverageRatingByPackageId(@Param("packageId") Long packageId);
+    Double getAverageRatingByPackageId(@Param("packageId") Long packageId);     //Average rating for package
 
     @Query("SELECT COUNT(r) FROM Review r WHERE r.pkg.id = :packageId")
-    Long getReviewCountByPackageId(@Param("packageId") Long packageId);
+    Long getReviewCountByPackageId(@Param("packageId") Long packageId);          //Number of reviews for package
 
     @Query("SELECT AVG(r.rating) FROM Review r WHERE r.hotel.id = :hotelId")
-    Double getAverageRatingByHotelId(@Param("hotelId") Long hotelId);
+    Double getAverageRatingByHotelId(@Param("hotelId") Long hotelId);          //Average rating for hotel
 
     @Query("SELECT COUNT(r) FROM Review r WHERE r.hotel.id = :hotelId")
-    Long getReviewCountByHotelId(@Param("hotelId") Long hotelId);
+    Long getReviewCountByHotelId(@Param("hotelId") Long hotelId);               //Number of reviews for hotel
 
     // ── Bulk queries (for list pages — eliminates N+1) ─────
 
@@ -92,4 +91,41 @@ public interface ReviewRepository extends JpaRepository<Review, Long> {
 
     List<Review> findByAgent_Id(Long agentId);
     List<Review> findByAgent_IdAndRating(Long agentId, Integer rating);
+
+    // ── Agent rating aggregation (computed from package reviews) ──
+
+    /**
+     * Computes the agent's rating as AVG of all review ratings across all packages
+     * belonging to the agent. Single DB query — no N+1.
+     * Returns null if the agent has no reviewed packages.
+     */
+    @Query("""
+        SELECT AVG(r.rating)
+        FROM Review r
+        WHERE r.pkg.agent.id = :agentId
+          AND r.pkg IS NOT NULL
+    """)
+    Double getAverageRatingByAgentId(@Param("agentId") Long agentId);
+
+    /**
+     * Bulk variant: returns [agentId, avgRating] rows for all agents in the list.
+     * Used on the agents list page to avoid N+1 (one query total).
+     */
+    @Query("""
+        SELECT r.pkg.agent.id, AVG(r.rating)
+        FROM Review r
+        WHERE r.pkg.agent.id IN :agentIds
+          AND r.pkg IS NOT NULL
+        GROUP BY r.pkg.agent.id
+    """)
+    List<Object[]> getAverageRatingsByAgentIdsRaw(@Param("agentIds") List<Long> agentIds);
+
+    default Map<Long, Double> getAverageRatingsByAgentIds(List<Long> agentIds) {
+        if (agentIds == null || agentIds.isEmpty()) return new HashMap<>();
+        return getAverageRatingsByAgentIdsRaw(agentIds).stream()
+                .collect(Collectors.toMap(
+                        row -> (Long) row[0],
+                        row -> (Double) row[1]
+                ));
+    }
 }

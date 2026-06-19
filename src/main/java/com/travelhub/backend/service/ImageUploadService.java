@@ -31,13 +31,13 @@ public class ImageUploadService {
     private String supabaseKey;
 
     @Value("${supabase.bucket}")
-    private String roomBucket;         // ✅ FIXED: renamed for clarity — maps to "room-images"
+    private String roomBucket;         // maps to "room-images"
 
     @Value("${supabase.hotel-bucket}")
     private String hotelBucket;
 
     @Value("${supabase.review-bucket}")
-    private String reviewBucket;       // ✅ NEW: maps to "review-images"
+    private String reviewBucket;       //  maps to "review-images"
 
     @Value("${supabase.user-bucket}")
     private String userBucket;
@@ -61,7 +61,7 @@ public class ImageUploadService {
      * Accepts a MultipartFile, validates it, saves it to the specified bucket, and returns the public URL.
      */
     public ImageUploadResponse uploadRoomImage(MultipartFile file) {
-        return uploadToBucket(file, roomBucket);   // ✅ FIXED: was pointing to reviewBucket
+        return uploadToBucket(file, roomBucket);   //  pointing to reviewBucket
     }
 
     public ImageUploadResponse uploadHotelImage(MultipartFile file) {
@@ -72,7 +72,7 @@ public class ImageUploadService {
         return uploadToBucket(file, userBucket);
     }
 
-    // ✅ NEW: Dedicated method for review image uploads
+                                                            //Dedicated method for review image uploads
     public ImageUploadResponse uploadReviewImage(MultipartFile file) {
         return uploadToBucket(file, reviewBucket);
     }
@@ -117,10 +117,8 @@ public class ImageUploadService {
             log.info("[ImageUpload] Uploading to bucket '{}': {}", bucketName, uploadUrl);
 
             HttpHeaders headers = new HttpHeaders();
-            // ✅ FIXED: Use the key in both headers — Supabase validates the apikey header
-            // for authentication and the Authorization header for the JWT.
-            // The sb_secret_ key works as the apikey; for Bearer, we also pass it.
-            headers.set("apikey", supabaseKey);
+            
+            headers.set("apikey", supabaseKey);                     //Supabase Connection
             headers.set("Authorization", "Bearer " + supabaseKey);
             headers.setContentType(MediaType.valueOf(
                     file.getContentType() != null ? file.getContentType() : "application/octet-stream"
@@ -135,13 +133,13 @@ public class ImageUploadService {
                 throw new RuntimeException("Failed to upload to Supabase: " + response.getBody());
             }
 
-            log.info("[ImageUpload] ✅ Upload successful for file: {}", uniqueFileName);
+            log.info("[ImageUpload] Upload successful for file: {}", uniqueFileName);
 
-        } catch (HttpClientErrorException ex) {
-            log.error("[ImageUpload] ❌ Supabase HTTP error: {} - {}", ex.getStatusCode(), ex.getResponseBodyAsString());
+        } catch (HttpClientErrorException ex) {                                                     //Error Handling
+            log.error("[ImageUpload] Supabase HTTP error: {} - {}", ex.getStatusCode(), ex.getResponseBodyAsString());
             throw new RuntimeException("Supabase Upload Error: " + ex.getStatusCode() + " - " + ex.getResponseBodyAsString());
         } catch (IOException ex) {
-            log.error("[ImageUpload] ❌ Failed to read file: {}", ex.getMessage());
+            log.error("[ImageUpload] Failed to read file: {}", ex.getMessage());
             throw new RuntimeException("Failed to read image file: " + ex.getMessage());
         } catch (Exception ex) {
             log.error("[ImageUpload] ❌ Unexpected error: {}", ex.getMessage(), ex);

@@ -8,6 +8,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.travelhub.backend.dto.response.HotelResponse;
+import com.travelhub.backend.dto.response.RoomResponse;
 import com.travelhub.backend.entity.Hotel;
 import com.travelhub.backend.repository.HotelRepository;
 import com.travelhub.backend.repository.ReviewRepository;
@@ -41,7 +42,7 @@ public class HotelService {
 
     public HotelResponse getHotelById(Long id) {
         Hotel hotel = hotelRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Hotel not found with id: " + id));
+                .orElseThrow(() -> new RuntimeException("Hotel not found with id: " + id));                 //Error handle
         return toSingleHotelResponse(hotel);
     }
 
@@ -86,6 +87,22 @@ public class HotelService {
                     .collect(Collectors.toList());
         }
 
+        List<RoomResponse> roomResponses = null;
+        if (hotel.getRooms() != null && !hotel.getRooms().isEmpty()) {
+            roomResponses = hotel.getRooms().stream()
+                    .map(room -> new RoomResponse(
+                            room.getId(),
+                            room.getName(),
+                            room.getType(),
+                            room.getPrice(),
+                            room.getDescription(),
+                            room.getImageUrl(),
+                            room.getAvailability(),
+                            hotel.getId()
+                    ))
+                    .collect(Collectors.toList());
+        }
+
         return HotelResponse.builder()
                 .id(hotel.getId())
                 .hotelName(hotel.getHotelName())
@@ -98,6 +115,7 @@ public class HotelService {
                 .reviewCount(reviewCount)
                 .imageUrl(hotel.getImageUrl())
                 .amenities(amenityList)
+                .rooms(roomResponses)
                 .district(hotel.getDistrict())
                 .applicationStatus(hotel.getApplicationStatus())
                 .build();

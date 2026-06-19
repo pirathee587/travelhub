@@ -85,7 +85,7 @@ public class AdminPackageService {
             providerName =
                     pkg.getAgent().getCompanyName() != null
                             ? pkg.getAgent().getCompanyName()
-                            : pkg.getAgent().getAgentName();
+                            : pkg.getAgent().getAgencyName();
         }
 
         return new AdminPackageDetailResponse(
@@ -207,7 +207,7 @@ public class AdminPackageService {
                 p.getTrending(),
                 p.getIsActive(),
                 p.getAgent() != null
-                        ? p.getAgent().getAgentName()
+                        ? p.getAgent().getAgencyName()
                         : "",
                 p.getApplicationStatus() != null
                         ? p.getApplicationStatus()

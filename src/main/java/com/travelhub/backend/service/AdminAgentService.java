@@ -21,6 +21,7 @@ public class AdminAgentService {
 
     private final AgentRepository   agentRepository;
     private final PackageRepository packageRepository;
+    private final AgentRatingCalculator agentRatingCalculator;
 
     // ── Get All Agents ────────────────────────────────
     public List<AdminAgentListResponse> getAllAgents() {
@@ -99,7 +100,7 @@ public class AdminAgentService {
                         : "Pending",
                 submittedDate,
                 agent.getNicImageUrl(),
-                agent.getRating(),
+                agentRatingCalculator.getAgentRating(id),
                 agent.getTotalTrips(),
                 agent.getExperienceYears(),
                 agent.getIsActive()
