@@ -71,16 +71,11 @@ public class AuthService {
 
         // Handle Role-specific profile creation
         if (user.getRole() == Role.AGENT) {
-            // Note: The teammate MUST update Agent.java to include the 'user' field and remove 'email'/'phone'
-            // for this to compile successfully.
             Agent agent = Agent.builder()
-                    // .user(user) // UNCOMMENT THIS once teammate adds the 'user' field in Agent.java
+                    .userId(user.getId())      // link agent to user via userId
                     .agencyName(user.getAgencyName())
                     .isActive(true)
                     .build();
-            
-            // agent.setUser(user); // Alternative if using setters
-            user.setAgentProfile(agent);
             agentRepository.save(agent);
         } else if (user.getRole() == Role.HOTEL_OWNER) {
             Hotel hotel = Hotel.builder()
