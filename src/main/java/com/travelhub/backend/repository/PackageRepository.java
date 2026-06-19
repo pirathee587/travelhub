@@ -49,7 +49,4 @@ public interface PackageRepository extends JpaRepository<Package, Long> {
      */
     @Query(value = "SELECT * FROM packages WHERE agent_id = :agentUserId", nativeQuery = true)
     List<Package> findByAgentUserId(@Param("agentUserId") Long agentUserId);
-
-    List<Package> findByApplicationStatus(
-            String applicationStatus);
 }

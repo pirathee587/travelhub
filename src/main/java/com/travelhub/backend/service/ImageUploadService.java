@@ -73,6 +73,10 @@ public class ImageUploadService {
         return uploadToBucket(file, reviewBucket);
     }
 
+    public ImageUploadResponse uploadPackageImage(MultipartFile file) {
+        return uploadToBucket(file, "package-images");
+    }
+
     private ImageUploadResponse uploadToBucket(MultipartFile file, String bucketName) {
 
         // ── Step 1: Validate ──────────────────────────────────────────────────
