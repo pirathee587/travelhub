@@ -4,6 +4,7 @@ import HotelDetailsModal from './HotelDetailsModal'
 import PackageDetailsModal from './PackageDetailsModal'
 import AgentDetailsModal from './AgentDetailsModal'
 import ToastContainer from './ToastContainer'
+import AdminProfileModal from './AdminProfileModal'
 
 const ModalContext = createContext(null)
 
@@ -18,6 +19,7 @@ export default function ModalProvider({children}){
   const [hotelDetailsModal, setHotelDetailsModal] = useState({open:false,hotel:null})
   const [packageDetailsModal, setPackageDetailsModal] = useState({open:false,pkg:null})
   const [agentDetailsModal, setAgentDetailsModal] = useState({open:false,agent:null})
+  const [adminProfileOpen, setAdminProfileOpen] = useState(false)
 
   const showConfirm = useCallback((opts={})=>{
     return new Promise((resolve)=>{
@@ -71,13 +73,33 @@ export default function ModalProvider({children}){
     setAgentDetailsModal({open:false,agent:null})
   },[])
 
+  const showAdminProfile = useCallback(() => {
+    setAdminProfileOpen(true)
+  }, [])
+
+  const closeAdminProfile = useCallback(() => {
+    setAdminProfileOpen(false)
+  }, [])
+
   return (
-    <ModalContext.Provider value={{ showConfirm, addToast, showHotelDetails, closeHotelDetails, showPackageDetails, closePackageDetails, showAgentDetails, closeAgentDetails }}>
+    <ModalContext.Provider value={{ 
+      showConfirm, 
+      addToast, 
+      showHotelDetails, 
+      closeHotelDetails, 
+      showPackageDetails, 
+      closePackageDetails, 
+      showAgentDetails, 
+      closeAgentDetails,
+      showAdminProfile,
+      closeAdminProfile
+    }}>
       {children}
       <ConfirmModal open={modal.open} title={modal.title} message={modal.message} onConfirm={handleConfirm} onCancel={handleCancel} />
       <HotelDetailsModal open={hotelDetailsModal.open} hotel={hotelDetailsModal.hotel} onClose={closeHotelDetails} />
       <PackageDetailsModal open={packageDetailsModal.open} pkg={packageDetailsModal.pkg} onClose={closePackageDetails} />
       <AgentDetailsModal open={agentDetailsModal.open} agent={agentDetailsModal.agent} onClose={closeAgentDetails} />
+      {adminProfileOpen && <AdminProfileModal open={adminProfileOpen} onClose={closeAdminProfile} />}
       <ToastContainer toasts={toasts} />
     </ModalContext.Provider>
   )

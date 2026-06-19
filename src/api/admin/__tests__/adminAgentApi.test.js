@@ -168,7 +168,7 @@ describe('GET /admin/agents/{id}/stats — getAgentStats()', () => {
   it('fetches stats for agent', async () => {
     api.get.mockResolvedValueOnce(wrap(mockStats))
     const result = await adminAgentApi.getAgentStats(1)
-    expect(api.get).toHaveBeenCalledWith('/admin/agents/1/stats')
+    expect(api.get).toHaveBeenCalledWith('/admin/analytics/1/stats')
     expect(result.data.agentId).toBe(1)
   })
 
@@ -190,7 +190,7 @@ describe('GET /admin/agents/{id}/revenue — getAgentRevenue()', () => {
   it('fetches revenue with year param', async () => {
     api.get.mockResolvedValueOnce(wrap(mockRevenue))
     const result = await adminAgentApi.getAgentRevenue(1, 2024)
-    expect(api.get).toHaveBeenCalledWith('/admin/agents/1/revenue', {params:{year:2024}})
+    expect(api.get).toHaveBeenCalledWith('/admin/analytics/1/revenue', {params:{year:2024}})
     expect(result.data.period).toBe('Monthly')
     expect(result.data.labels).toHaveLength(12)
     expect(result.data.data).toHaveLength(12)

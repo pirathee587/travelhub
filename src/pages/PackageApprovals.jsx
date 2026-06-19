@@ -194,12 +194,13 @@ const PackageCard = ({ pkg, onView, onApprove, onReject, onToggle, onDelete, act
   return (
     <div className="bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-shadow border border-gray-100 flex flex-col">
       {/* Image */}
-      <div className="relative">
-        {imageUrl ? (
-          <img src={imageUrl} alt={packageName} className="w-full h-48 object-cover" />
-        ) : (
-          <div className="w-full h-48 bg-gray-100 flex items-center justify-center text-5xl">📦</div>
-        )}
+      <div className="relative h-48">
+        <img 
+          src={imageUrl || '/placeholder.png'} 
+          alt={packageName}
+          onError={(e) => { e.target.src = '/placeholder.png' }} 
+          className="w-full h-full object-cover"
+        />
       </div>
 
       {/* Info */}

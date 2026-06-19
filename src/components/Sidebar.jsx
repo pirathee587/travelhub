@@ -7,41 +7,75 @@ import {
   Hotel,
   Package,
   CreditCard,
-  BarChart3
+  BarChart3,
+  Settings,
+  LogOut
 } from 'lucide-react'
+import { useModal } from './ModalContext'
 
-const MenuItem = ({ icon, label, to }) => {
+const MenuItem = ({ icon, label, to, onClick }) => {
   const location = useLocation()
-  const isActive = location.pathname === to
-  return (
-    <Link
-      to={to}
-      className={`flex items-center justify-between menu-item px-4 py-0 rounded-xl cursor-pointer transition ${
-        isActive
-          ? 'bg-gradient-to-r from-blue-500 to-blue-600 bg-opacity-50'
-          : 'hover:bg-teal-800 hover:bg-opacity-30'
-      }`}
-    >
-      <div className="flex items-center gap-3">
-        <div className="text-2xl">{icon}</div>
-        <div className={`text-lg font-medium ${isActive ? 'text-amber-400' : 'text-teal-50'}`}>
-          {label}
-        </div>
+  const isActive = to ? location.pathname === to : false
+  
+  const content = (
+    <div className="flex items-center gap-3">
+      <div className="text-2xl">{icon}</div>
+      <div className={`text-lg font-medium ${isActive ? 'text-amber-400' : 'text-teal-50'}`}>
+        {label}
       </div>
-      {isActive && (
-        <svg width="20" height="8" viewBox="0 0 5 2" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" />
-      )}
-    </Link>
+    </div>
+  )
+
+  const activeClasses = "bg-gradient-to-r from-blue-500 to-blue-600 shadow-lg"
+  const hoverClasses = "hover:bg-gradient-to-r hover:from-blue-500 hover:to-blue-600 hover:shadow-md transition-all duration-300"
+
+  if (to) {
+    return (
+      <Link
+        to={to}
+        className={`flex items-center justify-between menu-item px-4 py-3 rounded-xl cursor-pointer ${
+          isActive ? activeClasses : hoverClasses
+        }`}
+      >
+        {content}
+        {isActive && (
+          <div className="w-2 h-2 rounded-full bg-amber-400 shadow-[0_0_8px_#fbbf24]" />
+        )}
+      </Link>
+    )
+  }
+
+  return (
+    <button
+      onClick={onClick}
+      className={`flex items-center gap-3 px-4 py-3 rounded-xl cursor-pointer w-full text-left ${hoverClasses}`}
+    >
+      {content}
+    </button>
   )
 }
 
 export default function Sidebar() {
-  return (
-    <aside className="sidebar w-72 bg-teal-950 from-teal-900 to-teal-950 text-teal-50 px-5 py-8 flex flex-col gap-8 min-h-screen">
+  const { showAdminProfile, showConfirm } = useModal()
 
+  const handleLogout = async () => {
+    const ok = await showConfirm({
+      title: 'Log Out',
+      message: 'Are you sure you want to log out of the admin portal?'
+    })
+    
+    if (ok) {
+      localStorage.removeItem('token')
+      localStorage.removeItem('user')
+      window.location.href = '/login'
+    }
+  }
+
+  return (
+    <aside className="sidebar w-72 bg-teal-950 text-teal-50 px-5 py-8 flex flex-col gap-8 h-screen sticky top-0 overflow-y-auto shadow-2xl">
       {/* Logo Section */}
       <div className="flex items-center gap-4">
-        <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl flex items-center justify-center">
+        <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl flex items-center justify-center shadow-lg shadow-blue-500/20">
           <Plane className="text-white w-10 h-10" strokeWidth={2.5} />
         </div>
         <div>
@@ -51,18 +85,31 @@ export default function Sidebar() {
       </div>
 
       {/* Navigation */}
-      <nav className="flex flex-col gap-8 flex-1">
-        <MenuItem icon={<LayoutDashboard size={26} />} label="Dashboard"  to="/"         />
-        <MenuItem icon={<Users size={26} />}           label="Agents"     to="/agents"   />
-        <MenuItem icon={<Hotel size={26} />}           label="Hotels"     to="/hotels"   />
-        <MenuItem icon={<Package size={26} />}         label="Packages"   to="/packages" />
-        <MenuItem icon={<CreditCard size={26} />}      label="Payments"   to="/payments" />
-        <MenuItem icon={<BarChart3 size={26} />}       label="Analytics"  to="/analytics"/>
+      <nav className="flex flex-col gap-3 flex-1">
+        <MenuItem icon={<LayoutDashboard size={24} />} label="Dashboard"  to="/"         />
+        <MenuItem icon={<Users size={24} />}           label="Agents"     to="/agents"   />
+        <MenuItem icon={<Hotel size={24} />}           label="Hotels"     to="/hotels"   />
+        <MenuItem icon={<Package size={24} />}         label="Packages"   to="/packages" />
+        <MenuItem icon={<CreditCard size={24} />}      label="Payments"   to="/payments" />
+        <MenuItem icon={<BarChart3 size={24} />}       label="Analytics"  to="/analytics"/>
       </nav>
 
-      {/* Footer */}
-      <div className="text-xs text-teal-300 text-center">
-        © {new Date().getFullYear()} Admin Portal
+      {/* Bottom Actions */}
+      <div className="flex flex-col gap-3 border-t border-teal-900/50 pt-6 mt-auto">
+        <MenuItem 
+          icon={<Settings size={24} />} 
+          label="Settings" 
+          onClick={showAdminProfile} 
+        />
+        <MenuItem 
+          icon={<LogOut size={24} />} 
+          label="Log Out" 
+          onClick={handleLogout}
+        />
+        
+        <div className="text-xs text-teal-400 text-center mt-4 opacity-50">
+          © {new Date().getFullYear()} Admin Portal
+        </div>
       </div>
     </aside>
   )

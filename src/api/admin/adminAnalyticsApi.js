@@ -2,26 +2,26 @@ import api from '../axios';
 
 const adminAnalyticsApi = {
 
-    // GET /api/admin/agents/{id}/stats
+    // GET /api/admin/analytics/{id}/stats
     getAgentStats: async (agentId) => {
         const res = await api.get(
-            `/admin/agents/${agentId}/stats`);
+            `/admin/analytics/${agentId}/stats`);
         return res.data;
     },
 
-    // GET /api/admin/agents/{id}/revenue?year=
+    // GET /api/admin/analytics/{id}/revenue?year=
     getAgentMonthlyRevenue: async (agentId, year) => {
         const res = await api.get(
-            `/admin/agents/${agentId}/revenue`, {
+            `/admin/analytics/${agentId}/revenue`, {
             params: { year },
         });
         return res.data;
     },
 
-    // GET /api/admin/agents/{id}/trip-status
+    // GET /api/admin/analytics/{id}/trip-status
     getAgentTripStatus: async (agentId) => {
         const res = await api.get(
-            `/admin/agents/${agentId}/trip-status`);
+            `/admin/analytics/${agentId}/trip-status`);
         return res.data;
     },
 };

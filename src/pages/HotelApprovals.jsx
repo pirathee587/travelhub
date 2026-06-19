@@ -103,23 +103,7 @@ const HotelDetailView = ({ hotel, onBack, onApprove, onReject, onDelete, loading
         </div>
 
         {/* Owner Information */}
-        <div className="bg-[#eff6ff] rounded-xl p-6 border border-blue-50">
-          <h3 className="text-lg font-bold text-gray-900 mb-6">Owner Information</h3>
-          <div className="space-y-5">
-            <div>
-              <div className="text-xs text-gray-500 font-medium mb-1">Owner Name</div>
-              <div className="font-semibold text-gray-900">{ownerName || '—'}</div>
-            </div>
-            <div>
-              <div className="text-xs text-gray-500 font-medium mb-1">Email</div>
-              <div className="font-semibold text-gray-900">{ownerEmail || '—'}</div>
-            </div>
-            <div>
-              <div className="text-xs text-gray-500 font-medium mb-1">NIC Number</div>
-              <div className="font-semibold text-gray-900">{ownerNic || '—'}</div>
-            </div>
-          </div>
-        </div>
+        
 
         {/* Contact Information */}
         <div className="bg-[#f0fdf4] rounded-xl p-6 border border-emerald-50">

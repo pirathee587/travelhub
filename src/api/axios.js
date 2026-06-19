@@ -2,7 +2,7 @@ import axios from 'axios';
 
 // ── Base URL ───────────────────────────────────────
 const BASE_URL = import.meta.env.VITE_API_URL
-    || 'http://localhost:8080';
+    || 'http://localhost:8082';
 
 // ── Axios Instance ─────────────────────────────────
 const api = axios.create({
@@ -10,17 +10,16 @@ const api = axios.create({
     headers: {
         'Content-Type': 'application/json',
     },
-    timeout: 10000,
+    timeout: 15000,
 });
 
 // ── Request Interceptor ────────────────────────────
-// Every request-ல் token automatically add (if available)
+// Attach JWT token automatically on every request
 api.interceptors.request.use(
     (config) => {
         const token = localStorage.getItem('token');
         if (token) {
-            config.headers.Authorization =
-                `Bearer ${token}`;
+            config.headers.Authorization = `Bearer ${token}`;
         }
         return config;
     },
@@ -28,9 +27,18 @@ api.interceptors.request.use(
 );
 
 // ── Response Interceptor ───────────────────────────
+// On 401 Unauthorized → clear session and redirect to /login
 api.interceptors.response.use(
     (response) => response,
     (error) => {
+        if (error.response?.status === 401) {
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            // Only redirect if not already on login page
+            if (!window.location.pathname.includes('/login')) {
+                window.location.href = '/login';
+            }
+        }
         return Promise.reject(error);
     }
 );

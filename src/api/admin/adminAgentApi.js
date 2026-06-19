@@ -41,26 +41,26 @@ const adminAgentApi = {
         return res.data;
     },
 
-    // GET /api/admin/agents/{id}/stats
+    // GET /api/admin/analytics/{id}/stats
     getAgentStats: async (id) => {
         const res = await api.get(
-            `/admin/agents/${id}/stats`);
+            `/admin/analytics/${id}/stats`);
         return res.data;
     },
 
-    // GET /api/admin/agents/{id}/revenue?year=
+    // GET /api/admin/analytics/{id}/revenue?year=
     getAgentRevenue: async (id, year) => {
         const res = await api.get(
-            `/admin/agents/${id}/revenue`, {
+            `/admin/analytics/${id}/revenue`, {
             params: { year },
         });
         return res.data;
     },
 
-    // GET /api/admin/agents/{id}/trip-status
+    // GET /api/admin/analytics/{id}/trip-status
     getAgentTripStatus: async (id) => {
         const res = await api.get(
-            `/admin/agents/${id}/trip-status`);
+            `/admin/analytics/${id}/trip-status`);
         return res.data;
     },
 
