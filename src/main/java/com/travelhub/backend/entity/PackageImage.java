@@ -26,4 +26,8 @@ public class PackageImage {
     private String imageUrl;
 
     private Integer displayOrder;
+
+    // NEW: store original filename for reference
+    @Column(name = "original_file_name")
+    private String originalFileName;
 }

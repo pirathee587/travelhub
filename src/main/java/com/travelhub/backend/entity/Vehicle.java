@@ -78,7 +78,7 @@ public class Vehicle {
     // Currently assigned driver name (for display)
     private String assignedDriverName;
 
-    // Keep these from original so nothing breaks for teammates
+    // Kept for teammate's BookingService compatibility
     private String driverName;
     private String driverPhone;
     private Double driverRating;

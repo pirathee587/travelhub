@@ -142,7 +142,7 @@ public class AdminPaymentService {
                 // Agent/Company name
                 // உதாரணம்: Pinnacle Tours
                 p.getAgent() != null
-                        ? p.getAgent().getAgentName()
+                        ? p.getAgent().getAgencyName()
                         : "",
 
                 // Payment or Refund

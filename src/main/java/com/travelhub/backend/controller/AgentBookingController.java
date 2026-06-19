@@ -32,8 +32,9 @@ public class AgentBookingController {
     @PatchMapping("/{agentId}/bookings/{bookingId}/accept")
     public ResponseEntity<BookingResponse> acceptBooking(
             @PathVariable Long agentId,
-            @PathVariable Long bookingId) {
-        return ResponseEntity.ok(agentBookingService.acceptBooking(agentId, bookingId));
+            @PathVariable Long bookingId,
+            @RequestBody(required = false) BookingActionRequest request) {
+        return ResponseEntity.ok(agentBookingService.acceptBooking(agentId, bookingId, request));
     }
 
     @PatchMapping("/{agentId}/bookings/{bookingId}/decline")

@@ -22,11 +22,10 @@ public class Agent {
     private Long userId;
 
     // ── Company / Agent Info ───────────────────────────
-    @Column(nullable = false)
-    private String agentName;
+    @Column(name = "agency_name", nullable = false)
+    private String agencyName;
 
     private String companyName;
-    private String agencyName;
 
     private String profileImage;
 
@@ -34,7 +33,7 @@ public class Agent {
     @Column(name = "owner_name")
     private String ownerName;
 
-    @Column(nullable = false, unique = true)
+    @Transient
     private String email;
 
     private String phone;
@@ -75,6 +74,7 @@ public class Agent {
     private Integer totalRevenue;
     private Integer experienceYears;
     private Double completionRate;
+
 
     // ── Status ─────────────────────────────────────────
     @Column(nullable = false)

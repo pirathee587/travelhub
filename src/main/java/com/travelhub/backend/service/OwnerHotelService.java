@@ -28,8 +28,7 @@ public class OwnerHotelService {
     private final ImageUploadService imageUploadService;
     private final ApplicationEventPublisher eventPublisher;
 
-    public List<HotelResponse> getOwnerHotels(String status) {
-        // Fetch all hotels matching the status (Global View)
+    public List<HotelResponse> getOwnerHotels(String status, String ownerEmail) {
         // Ensure the status matches the database values: "Approved", "Pending", "Rejected"
         String targetStatus = "Approved"; // Default to Approved
         
@@ -41,7 +40,16 @@ public class OwnerHotelService {
             targetStatus = "Approved";
         }
 
-        return hotelRepository.findByApplicationStatus(targetStatus).stream()
+        List<Hotel> hotels;
+        if (ownerEmail != null && !ownerEmail.isBlank()) {
+            // Filter by the logged-in owner's email
+            hotels = hotelRepository.findByOwnerEmailIgnoreCaseAndApplicationStatus(ownerEmail, targetStatus);
+        } else {
+            // Fallback: no authenticated user (shouldn't happen in production)
+            hotels = hotelRepository.findByApplicationStatus(targetStatus);
+        }
+
+        return hotels.stream()
                 .map(this::toHotelResponse)
                 .collect(Collectors.toList());
     }

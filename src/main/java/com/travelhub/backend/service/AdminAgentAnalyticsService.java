@@ -67,7 +67,7 @@ public class AdminAgentAnalyticsService {
 
         return new AdminAgentStatsResponse(
                 agent.getId(),
-                agent.getAgentName(),
+                agent.getAgencyName(),
                 agent.getCompanyName(),
                 agent.getRating(),
                 totalRevenue  != null ? totalRevenue  : 0.0,
@@ -143,7 +143,7 @@ public class AdminAgentAnalyticsService {
             Agent a) {
         return new AdminAgentListResponse(
                 a.getId(),
-                a.getAgentName(),
+                a.getAgencyName(),
                 a.getCompanyName(),
                 a.getOwnerName(),
                 a.getEmail(),

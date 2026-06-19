@@ -27,6 +27,10 @@ public class BookingResponse {
     private String startPlace;
     private String endPlace;
     private LocalDateTime bookedOn;
+    private Integer adults;
+    private Integer children;
+    private String specialRequests;
+    private String duration;
 
     // Hotel info
     private String hotelName;
@@ -43,9 +47,5 @@ public class BookingResponse {
     private String vehicleCapacity;
 
     // Booking details
-    private Integer adults;
-    private Integer children;
-    private String specialRequests;
-    private String duration;
     private String hotelIdsWithPreference;
 }

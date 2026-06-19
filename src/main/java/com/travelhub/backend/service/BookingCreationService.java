@@ -127,7 +127,7 @@ public class BookingCreationService {
             for (int i = 0; i < request.getHotelIds().size(); i++) {
                 Long hotelId = request.getHotelIds().get(i);
                 Hotel hotel = hotelRepository.findById(hotelId).get();
-                
+
                 BookingHotelPreference pref = BookingHotelPreference.builder()
                         .booking(saved)
                         .hotel(hotel)
@@ -154,12 +154,11 @@ public class BookingCreationService {
         if (duration == null || duration.isEmpty()) {
             return startDate;
         }
-        
+
         try {
-            // Parse duration string like "3 days", "1 week", etc.
             String[] parts = duration.toLowerCase().trim().split(" ");
             int value = Integer.parseInt(parts[0]);
-            
+
             if (duration.toLowerCase().contains("week")) {
                 return startDate.plusWeeks(value);
             } else if (duration.toLowerCase().contains("day")) {
@@ -167,11 +166,9 @@ public class BookingCreationService {
             } else if (duration.toLowerCase().contains("month")) {
                 return startDate.plusMonths(value);
             } else {
-                // Default to days
                 return startDate.plusDays(value);
             }
         } catch (Exception e) {
-            // If parsing fails, return start date
             return startDate;
         }
     }
@@ -180,7 +177,7 @@ public class BookingCreationService {
         if (hotelIds == null || hotelIds.isEmpty()) {
             return null;
         }
-        
+
         try {
             Map<String, Object> hotelData = new HashMap<>();
             hotelData.put("hotelIds", hotelIds);

@@ -48,18 +48,18 @@ public class Booking {
 
     private Double totalPrice;
     private Integer progress = 0;
-    
+
     private Integer adults;
     private Integer children;
-    
+
     @Column(columnDefinition = "TEXT")
     private String specialRequests;
-    
+
     private String duration;
-    
+
     @Column(columnDefinition = "TEXT")
     private String hotelIdsWithPreference;
-    
+
     @OneToMany(mappedBy = "booking", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private List<BookingHotelPreference> hotelPreferences;
 

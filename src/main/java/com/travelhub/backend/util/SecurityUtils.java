@@ -70,4 +70,15 @@ public class SecurityUtils {
         }
         return null;
     }
+
+    /**
+     * Helper to get the User ID of the logged-in user.
+     */
+    public static Long getCurrentUserId() {
+        Claims claims = getCurrentUserClaims();
+        if (claims != null && claims.get("userId") != null) {
+            return Long.valueOf(claims.get("userId").toString());
+        }
+        return null;
+    }
 }

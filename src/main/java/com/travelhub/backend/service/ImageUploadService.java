@@ -45,7 +45,6 @@ public class ImageUploadService {
     @Autowired
     private RestTemplate restTemplate;
 
-    // Only these image formats are accepted
     private static final List<String> ALLOWED_TYPES = List.of(
             "image/jpeg", "image/jpg", "image/png", "image/webp", "application/octet-stream"
     );
@@ -54,12 +53,9 @@ public class ImageUploadService {
             ".jpg", ".jpeg", ".png", ".webp"
     );
 
-    // Maximum allowed file size: 5 MB
     private static final long MAX_SIZE_BYTES = 5 * 1024 * 1024L;
 
-    /**
-     * Accepts a MultipartFile, validates it, saves it to the specified bucket, and returns the public URL.
-     */
+    // Old method — keeps working for agent image uploads
     public ImageUploadResponse uploadRoomImage(MultipartFile file) {
         return uploadToBucket(file, roomBucket);   //  pointing to reviewBucket
     }
@@ -80,7 +76,6 @@ public class ImageUploadService {
     private ImageUploadResponse uploadToBucket(MultipartFile file, String bucketName) {
 
         // ── Step 1: Validate ──────────────────────────────────────────────────
-
         if (file == null || file.isEmpty()) {
             throw new RuntimeException("No file selected. Please choose an image.");
         }
@@ -97,7 +92,7 @@ public class ImageUploadService {
         if (!isValidType && !isValidExtension) {
             throw new RuntimeException(
                     "Invalid file type '" + file.getContentType() +
-                    "'. Only JPG, PNG, and WEBP images are allowed."
+                            "'. Only JPG, PNG, and WEBP images are allowed."
             );
         }
 
@@ -106,11 +101,9 @@ public class ImageUploadService {
         }
 
         // ── Step 2: Generate unique filename ─────────────────────────────────
-
         String uniqueFileName = UUID.randomUUID().toString() + extension;
 
-        // ── Step 3 & 4: Upload to Supabase ──────────────────────────────────
-
+        // ── Step 3 & 4: Upload to Supabase ───────────────────────────────────
         try {
             String uploadUrl = String.format("%s/storage/v1/object/%s/%s", supabaseUrl, bucketName, uniqueFileName);
 
@@ -147,7 +140,6 @@ public class ImageUploadService {
         }
 
         // ── Step 5: Build and return response ────────────────────────────────
-
         String publicUrl = String.format("%s/storage/v1/object/public/%s/%s", supabaseUrl, bucketName, uniqueFileName);
 
         log.info("[ImageUpload] Public URL: {}", publicUrl);

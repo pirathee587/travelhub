@@ -8,6 +8,7 @@ import com.travelhub.backend.repository.VehicleRepository;
 import com.travelhub.backend.repository.PackageRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
@@ -20,28 +21,51 @@ public class AgentDashboardService {
     private final AgentRepository agentRepository;
     private final AgentRatingCalculator agentRatingCalculator;
 
+    /**
+     * Builds the Agent Dashboard "stats" snapshot for a single agent.
+     * <p>
+     * Notes:
+     * - Most metrics are simple counts from repositories.
+     * - Revenue is computed as the sum of totalPrice for completed bookings (null-safe).
+     * - Rating is read from the Agent entity (defaults to 0.0 if not present).
+     */
+    @Transactional
     public AgentDashboardStatsResponse getStats(Long agentId) {
 
-        long activeTrips = bookingRepository
-                .findByVehicleAgentIdAndStatus(agentId, "active").size();
+        // Count trips that are currently ongoing/active for this agent.
+        long activeTrips = bookingRepository.findByAgentId(agentId)
+                .stream()
+                .filter(b -> b.getStatus().equals("active") ||
+                        b.getStatus().equals("confirmed") ||
+                        b.getStatus().equals("in_progress") ||
+                        b.getStatus().equals("In_progress"))
+                .count();
+
+        // Completed/pending counts are pulled via status-specific repository methods.
         long completedTrips = bookingRepository
-                .findByVehicleAgentIdAndStatus(agentId, "completed").size();
+                .findByAgentIdAndStatus(agentId, "completed").size();
         long pendingRequests = bookingRepository
-                .findByVehicleAgentIdAndStatus(agentId, "pending").size();
+                .findByAgentIdAndStatus(agentId, "pending").size();
+
+        // Inventory counts for the agent.
         long totalVehicles = vehicleRepository
                 .findByAgentId(agentId).size();
         long totalDrivers = driverRepository
                 .findByAgentId(agentId).size();
-        long totalPackages = packageRepository.count();
 
+        // Total packages created/owned by this agent.
+        long totalPackages = packageRepository.countByAgentId(agentId);
+
+        // Revenue = sum of totalPrice across completed bookings (treat null as 0).
         Double totalRevenue = bookingRepository
-                .findByVehicleAgentIdAndStatus(agentId, "completed")
+                .findByAgentIdAndStatus(agentId, "completed")
                 .stream()
                 .mapToDouble(b -> b.getTotalPrice() != null ? b.getTotalPrice() : 0)
                 .sum();
 
         Double averageRating = agentRatingCalculator.getAgentRating(agentId);
 
+        // Assemble the DTO response for the dashboard.
         return AgentDashboardStatsResponse.builder()
                 .totalPackages(totalPackages)
                 .activeTrips(activeTrips)
