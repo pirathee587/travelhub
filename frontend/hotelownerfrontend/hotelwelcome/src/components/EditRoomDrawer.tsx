@@ -70,7 +70,7 @@ export function EditRoomDrawer({
         data.append("image", image);
       }
 
-      const res = await fetch(`http://localhost:8080/api/v1/rooms/${roomId}`, {
+      const res = await fetch(`http://localhost:8080/api/rooms/${roomId}`, {
         method: "PUT",
         headers: {
           Authorization: `Bearer ${localStorage.getItem("token")}`,

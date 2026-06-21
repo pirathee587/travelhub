@@ -32,7 +32,7 @@ const RoomManagement = ({ searchQuery, hotelId, isLocked = false }: RoomManageme
     try {
       setLoading(true);
       const res = await fetch(
-        `http://localhost:8080/api/v1/rooms/hotel/${hotelId}`
+        `http://localhost:8080/api/rooms/hotel/${hotelId}`
       );
       if (!res.ok) throw new Error("Failed to fetch rooms");
       const data = await res.json();
@@ -52,7 +52,7 @@ const RoomManagement = ({ searchQuery, hotelId, isLocked = false }: RoomManageme
   const handleDelete = async (roomId: string) => {
     if (!window.confirm("Are you sure you want to delete this room?")) return;
     try {
-      const res = await fetch(`http://localhost:8080/api/v1/rooms/${roomId}`, {
+      const res = await fetch(`http://localhost:8080/api/rooms/${roomId}`, {
         method: "DELETE",
       });
       if (res.ok) {

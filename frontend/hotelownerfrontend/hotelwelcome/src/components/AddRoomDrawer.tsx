@@ -59,7 +59,7 @@ export function AddRoomDrawer({ hotelId, onSuccess, children }: AddRoomDrawerPro
         data.append("image", image);
       }
 
-      const res = await fetch("http://localhost:8080/api/v1/rooms", {
+      const res = await fetch("http://localhost:8080/api/rooms", {
         method: "POST",
         body: data,
       });
