@@ -1,20 +1,17 @@
 package com.travelhub.backend.service;
 
-import org.springframework.transaction.annotation.Transactional;
 import com.travelhub.backend.common.BadRequestException;
 import com.travelhub.backend.common.ResourceNotFoundException;
 import com.travelhub.backend.dto.request.BookingActionRequest;
 import com.travelhub.backend.dto.response.BookingResponse;
 import com.travelhub.backend.entity.Booking;
+import com.travelhub.backend.entity.Vehicle;
 import com.travelhub.backend.repository.BookingRepository;
 import com.travelhub.backend.repository.VehicleRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-
 import java.util.List;
 import java.util.stream.Collectors;
-
-import com.travelhub.backend.entity.Vehicle;
 
 @Service
 @RequiredArgsConstructor
@@ -23,169 +20,140 @@ public class AgentBookingService {
     private final BookingRepository bookingRepository;
     private final VehicleRepository vehicleRepository;
 
-    /**
-     * Returns all bookings visible to the agent.
-     * If status is provided and not "all", results are filtered by status.
-     */
-    @Transactional
+    // ── GET ALL / GET BY ID ───────────────────────────────────────────────────
+
     public List<BookingResponse> getAllBookings(Long agentId, String status) {
         List<Booking> bookings;
         if (status != null && !status.equals("all")) {
-            // Filter by requested booking status.
-            bookings = bookingRepository.findByAgentIdAndStatus(agentId, status);
+            bookings = bookingRepository.findByVehicleAgentIdAndStatus(agentId, status);
         } else {
-            // Return all bookings for the agent.
-            bookings = bookingRepository.findByAgentId(agentId);
+            bookings = bookingRepository.findByVehicleAgentId(agentId);
         }
-        // Convert entities to response DTOs.
         return bookings.stream().map(this::toResponse).collect(Collectors.toList());
     }
 
-    /**
-     * Returns a single booking by id, enforcing ownership by the given agent.
-     */
-    @Transactional
     public BookingResponse getBookingById(Long agentId, Long bookingId) {
-        // Find booking by id.
-        Booking booking = bookingRepository.findById(bookingId)
-                .orElseThrow(() -> new ResourceNotFoundException("Booking", "id", bookingId));
-        // Ownership check via the booking's vehicle agent.
-        if (!booking.getVehicle().getAgent().getId().equals(agentId)) {
-            throw new ResourceNotFoundException("Booking", "agentId", agentId);
-        }
+        Booking booking = findAndValidate(agentId, bookingId);
         return toResponse(booking);
     }
 
-    /**
-     * Accepts a booking for the given agent.
-     * Optionally assigns a vehicle and marks that vehicle as booked.
-     */
-    @Transactional
-    public BookingResponse acceptBooking(Long agentId, Long bookingId, BookingActionRequest request) {
-        // Find booking and enforce ownership.
-        Booking booking = bookingRepository.findById(bookingId)
-                .orElseThrow(() -> new ResourceNotFoundException("Booking", "id", bookingId));
-        if (!booking.getVehicle().getAgent().getId().equals(agentId)) {
-            throw new ResourceNotFoundException("Booking", "id", bookingId);
-        }
-        // Allow accepting only pending/confirmed records.
-        if (!booking.getStatus().equals("pending") &&
-                !booking.getStatus().equals("confirmed")) {
+    // ── ACCEPT: pending → confirmed ───────────────────────────────────────────
+    // Agent manually accepts a pending booking request.
+    // Assigns a vehicle and moves status to "confirmed".
+    // The trip has NOT started yet — it is simply approved and waiting for startDate.
+
+    public BookingResponse acceptBooking(Long agentId, Long bookingId, Long vehicleId) {
+        Booking booking = findAndValidate(agentId, bookingId);
+
+        if (!booking.getStatus().equals("pending")) {
             throw new BadRequestException("Only pending bookings can be accepted");
         }
 
-        // Assign a specific vehicle if provided by the request.
-        if (request != null && request.getVehicleId() != null) {
-            Vehicle vehicle = vehicleRepository.findById(request.getVehicleId())
-                    .orElseThrow(() -> new ResourceNotFoundException("Vehicle", "id", request.getVehicleId()));
+        // Assign the selected vehicle
+        if (vehicleId != null) {
+            Vehicle vehicle = vehicleRepository.findById(vehicleId)
+                    .orElseThrow(() -> new ResourceNotFoundException("Vehicle", "id", vehicleId));
             booking.setVehicle(vehicle);
-            // Mark assigned vehicle as unavailable for new trips.
-            vehicle.setStatus("booked");
-            vehicleRepository.save(vehicle);
         }
 
-        // Move booking into active workflow.
-        booking.setStatus("active");
+        booking.setStatus("confirmed");   // waiting for trip to start
         booking.setProgress(25);
         return toResponse(bookingRepository.save(booking));
     }
 
-    /**
-     * Declines a booking for the given agent.
-     * Allowed only from pending/confirmed states.
-     */
-    @Transactional
+    // ── DECLINE: pending → cancelled ──────────────────────────────────────────
+    // Agent declines an incoming booking request.
+
     public BookingResponse declineBooking(Long agentId, Long bookingId,
                                           BookingActionRequest request) {
-        // Find booking and enforce ownership.
-        Booking booking = bookingRepository.findById(bookingId)
-                .orElseThrow(() -> new ResourceNotFoundException("Booking", "id", bookingId));
-        if (!booking.getVehicle().getAgent().getId().equals(agentId)) {
-            throw new ResourceNotFoundException("Booking", "agentId", agentId);
-        }
-        // Status transition guard.
-        if (!booking.getStatus().equals("pending") &&
-                !booking.getStatus().equals("confirmed")) {
+        Booking booking = findAndValidate(agentId, bookingId);
+
+        if (!booking.getStatus().equals("pending")) {
             throw new BadRequestException("Only pending bookings can be declined");
         }
-        // Mark booking as cancelled.
+
         booking.setStatus("cancelled");
         booking.setProgress(0);
         return toResponse(bookingRepository.save(booking));
     }
 
-    /**
-     * Completes a booking for the given agent.
-     * Allowed from active/in_progress/confirmed states.
-     */
-    @Transactional
+    // ── START TRIP: confirmed → in_progress ───────────────────────────────────
+    // Agent manually confirms the trip is starting today.
+    // System notified the agent earlier (via scheduler) — agent clicks "Start Trip".
+    // Only allowed on/after the booking's startDate.
+
+    public BookingResponse startTrip(Long agentId, Long bookingId) {
+        Booking booking = findAndValidate(agentId, bookingId);
+
+        if (!booking.getStatus().equals("confirmed")) {
+            throw new BadRequestException("Only confirmed bookings can be started");
+        }
+
+        booking.setStatus("in_progress");
+        booking.setProgress(60);
+        return toResponse(bookingRepository.save(booking));
+    }
+
+    // ── COMPLETE TRIP: in_progress → completed ────────────────────────────────
+    // Agent manually marks the trip as done.
+    // System notified the agent on/after endDate — agent clicks "Complete Trip".
+
     public BookingResponse completeBooking(Long agentId, Long bookingId) {
-        // Find booking and enforce ownership.
-        Booking booking = bookingRepository.findById(bookingId)
-                .orElseThrow(() -> new ResourceNotFoundException("Booking", "id", bookingId));
-        if (!booking.getVehicle().getAgent().getId().equals(agentId)) {
-            throw new ResourceNotFoundException("Booking", "agentId", agentId);
+        Booking booking = findAndValidate(agentId, bookingId);
+
+        if (!booking.getStatus().equals("in_progress")) {
+            throw new BadRequestException("Only in-progress trips can be marked as completed");
         }
-        // Status transition guard.
-        if (!booking.getStatus().equals("active") &&
-                !booking.getStatus().equals("in_progress") &&
-                !booking.getStatus().equals("confirmed")) {
-            throw new BadRequestException("Only active bookings can be completed");
-        }
-        // Mark booking as completed.
+
         booking.setStatus("completed");
         booking.setProgress(100);
         return toResponse(bookingRepository.save(booking));
     }
 
-    /**
-     * Maps Booking entity -> API response DTO.
-     * Uses null-safe fallback reads for optional package/vehicle relations.
-     */
+    // ── CANCEL: confirmed or in_progress → cancelled ──────────────────────────
+    // Emergency cancellation — agent can cancel an accepted or ongoing trip.
+    // Requires a reason (e.g. vehicle breakdown, natural disaster).
+
+    public BookingResponse cancelBooking(Long agentId, Long bookingId,
+                                         BookingActionRequest request) {
+        Booking booking = findAndValidate(agentId, bookingId);
+
+        String status = booking.getStatus();
+        if (!status.equals("confirmed") && !status.equals("in_progress")) {
+            throw new BadRequestException("Only confirmed or in-progress bookings can be cancelled");
+        }
+
+        booking.setStatus("cancelled");
+        booking.setProgress(0);
+        return toResponse(bookingRepository.save(booking));
+    }
+
+    // ── HELPERS ───────────────────────────────────────────────────────────────
+
+    private Booking findAndValidate(Long agentId, Long bookingId) {
+        Booking booking = bookingRepository.findById(bookingId)
+                .orElseThrow(() -> new ResourceNotFoundException("Booking", "id", bookingId));
+        if (!booking.getVehicle().getAgent().getId().equals(agentId)) {
+            throw new ResourceNotFoundException("Booking", "agentId", agentId);
+        }
+        return booking;
+    }
+
     private BookingResponse toResponse(Booking booking) {
-        String packageName = null;
-        String destination = null;
-        String vehicleType = null;
-        String vehicleModel = null;
-        String vehicleRegistration = null;
-
-        try {
-            if (booking.getPkg() != null) {
-                packageName = booking.getPkg().getPackageName();
-                destination = booking.getPkg().getDestination();
-            }
-        } catch (Exception e) {
-            // Relation access failed; keep package fields as null.
-        }
-
-        try {
-            if (booking.getVehicle() != null) {
-                vehicleType = booking.getVehicle().getVehicleType();
-                vehicleModel = booking.getVehicle().getModel();
-                vehicleRegistration = booking.getVehicle().getRegistration();
-            }
-        } catch (Exception e) {
-            // Relation access failed; keep vehicle fields as null.
-        }
-
         return BookingResponse.builder()
                 .id(booking.getId())
                 .bookingId(String.format("BK%05d", booking.getId()))
-                .packageName(packageName)
-                .destination(destination)
+                .packageName(booking.getPkg() != null ? booking.getPkg().getPackageName() : null)
+                .destination(booking.getPkg() != null ? booking.getPkg().getDestination() : null)
                 .startDate(booking.getStartDate())
                 .endDate(booking.getEndDate())
                 .status(booking.getStatus())
                 .totalPrice(booking.getTotalPrice())
                 .progress(booking.getProgress())
-                .vehicleType(vehicleType)
-                .vehicleModel(vehicleModel)
-                .vehicleRegistration(vehicleRegistration)
+                .vehicleType(booking.getVehicle() != null ? booking.getVehicle().getVehicleType() : null)
+                .vehicleModel(booking.getVehicle() != null ? booking.getVehicle().getModel() : null)
+                .vehicleRegistration(booking.getVehicle() != null ? booking.getVehicle().getRegistration() : null)
                 .bookedOn(booking.getCreatedAt())
-                .adults(booking.getAdults())
-                .children(booking.getChildren())
-                .specialRequests(booking.getSpecialRequests())
-                .duration(booking.getDuration())
                 .build();
     }
 }

@@ -107,7 +107,7 @@ public class AgentPackageService {
         if (imageFiles != null && !imageFiles.isEmpty()) {
             int order = 0;
             for (MultipartFile file : imageFiles) {
-                String url = imageUploadService.uploadRoomImage(file, "packages").getImageUrl();
+                String url = imageUploadService.uploadRoomImage(file).getImageUrl();
                 PackageImage image = PackageImage.builder()
                         .pkg(pkg)
                         .imageUrl(url)
@@ -166,7 +166,7 @@ public class AgentPackageService {
         // Append newly uploaded images after current max display order.
         if (imageFiles != null && !imageFiles.isEmpty()) {
             for (MultipartFile file : imageFiles) {
-                String url = imageUploadService.uploadRoomImage(file, "packages").getImageUrl();
+                String url = imageUploadService.uploadRoomImage(file).getImageUrl();
                 pkg.getImages().add(PackageImage.builder()
                         .pkg(pkg)
                         .imageUrl(url)

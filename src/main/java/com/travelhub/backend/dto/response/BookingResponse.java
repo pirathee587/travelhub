@@ -45,9 +45,5 @@ public class BookingResponse {
     private String vehicleCapacity;
 
     // Booking details
-    private Integer adults;
-    private Integer children;
-    private String specialRequests;
-    private String duration;
     private String hotelIdsWithPreference;
 }
