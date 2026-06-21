@@ -137,7 +137,7 @@ public class AuthService {
                 .email(user.getEmail())
                 .role(user.getRole())
                 .profileImage(user.getProfileImage())
-                .agentId(user.getAgentId())
+                .agentId(user.getAgentProfile() != null ? user.getAgentProfile().getId() : null)
                 .hotelId(user.getHotelId())
                 .id(user.getId())
                 .build();
