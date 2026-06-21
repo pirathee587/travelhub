@@ -16,6 +16,8 @@ public interface PackageRepository extends JpaRepository<Package, Long> {
     List<Package> findByIsActiveTrue();
     List<Package> findByCategory(String category);
     List<Package> findByTrendingTrue();
+
+    /** Finds packages by the agent's surrogate PK (agents.id). */
     List<Package> findByAgentId(Long agentId);
     List<Package> findByApplicationStatus(String applicationStatus);
 
@@ -40,7 +42,11 @@ public interface PackageRepository extends JpaRepository<Package, Long> {
     List<Package> searchByAgentId(@Param("agentId") Long agentId,
                                   @Param("search") String search);
 
-    // For generating PKG001, PKG002 etc.
-    @Query("SELECT COUNT(p) FROM Package p")
-    Long countAll();
+    /**
+     * Finds packages by the value stored in packages.agent_id column
+     * (which equals agents.user_id due to the @JoinColumn referencedColumnName).
+     * Use this when you have the agent's user_id, not the surrogate id.
+     */
+    @Query(value = "SELECT * FROM packages WHERE agent_id = :agentUserId", nativeQuery = true)
+    List<Package> findByAgentUserId(@Param("agentUserId") Long agentUserId);
 }

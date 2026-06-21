@@ -45,16 +45,27 @@ public class SecurityConfig {
 
                         // ── Public Access (No Login Required) ──
                         .requestMatchers("/api/auth/**").permitAll()
+                        // PayHere callbacks must be public
+                        .requestMatchers("/api/payments/notify", "/api/payments/return").permitAll()
                         .requestMatchers("/api/v1/agent/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/packages/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/hotels/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/agents/**").permitAll()
                         .requestMatchers("/api/v1/owner/hotels/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/rooms/**").permitAll()
+                        .requestMatchers("/api/v1/owner/session/**").permitAll()
+                        .requestMatchers("/api/v1/owner/profile/**").permitAll()
                         .requestMatchers("/api/v1/rooms/**").permitAll()
+                        .requestMatchers("/api/rooms/**").permitAll()
                         .requestMatchers("/api/v1/amenities/**").permitAll()
                         .requestMatchers("/api/reviews/**").permitAll()
                         .requestMatchers("/api/upload/**").permitAll()
                         .requestMatchers("/uploads/**").permitAll()
                         .requestMatchers("/api/tourist/**").permitAll()
+
+                        // ── Chatbot Routes ──
+                        .requestMatchers("/chat").permitAll() // Public access for tourists
+                        .requestMatchers("/sync").hasRole("ADMIN") // Only admins can trigger data sync
 
                         // ── Admin Protected Routes ──
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
@@ -73,11 +84,13 @@ public class SecurityConfig {
         CorsConfiguration configuration = new CorsConfiguration();
         configuration.setAllowedOrigins(List.of(
                 "http://localhost:5173",
+                "http://localhost:5174",
                 "http://localhost:8080",
+                "http://localhost:8082",
                 "http://localhost:3000"
         ));
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
-        configuration.setAllowedHeaders(List.of("Authorization", "Content-Type"));
+        configuration.setAllowedHeaders(List.of("Authorization", "Content-Type", "X-Owner-Id", "X-Owner-Email"));
         configuration.setAllowCredentials(true);
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);

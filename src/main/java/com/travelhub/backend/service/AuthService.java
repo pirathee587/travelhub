@@ -66,17 +66,22 @@ public class AuthService {
                 .agentApproved(request.getRole() != Role.AGENT)
                 .build();
 
+        // Save User first to generate the ID (required for @MapsId child entities)
+        user = userRepository.save(user);
+
         // Handle Role-specific profile creation
         if (user.getRole() == Role.AGENT) {
+            // Note: The teammate MUST update Agent.java to include the 'user' field and remove 'email'/'phone'
+            // for this to compile successfully.
             Agent agent = Agent.builder()
-                    .agencyName(user.getName())
-                    .email(user.getEmail())
-                    .phone(user.getTelephone())
+                    // .user(user) // UNCOMMENT THIS once teammate adds the 'user' field in Agent.java
                     .agencyName(user.getAgencyName())
                     .isActive(true)
                     .build();
-            agent = agentRepository.save(agent);
-            user.setAgentId(agent.getId());
+            
+            // agent.setUser(user); // Alternative if using setters
+            user.setAgentProfile(agent);
+            agentRepository.save(agent);
         } else if (user.getRole() == Role.HOTEL_OWNER) {
             Hotel hotel = Hotel.builder()
                     .hotelName(user.getHotelName() != null ? user.getHotelName() : user.getName() + "'s Hotel")
@@ -86,7 +91,8 @@ public class AuthService {
             user.setHotelId(hotel.getId());
         }
 
-        userRepository.save(user);
+        // Save User again to cascade the linked profile relationships
+        user = userRepository.save(user);
 
         // Send verification email
         try {
@@ -131,7 +137,7 @@ public class AuthService {
                 .email(user.getEmail())
                 .role(user.getRole())
                 .profileImage(user.getProfileImage())
-                .agentId(user.getAgentId())
+                .agentId(user.getAgentProfile() != null ? user.getAgentProfile().getId() : null)
                 .hotelId(user.getHotelId())
                 .id(user.getId())
                 .build();

@@ -8,12 +8,15 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.travelhub.backend.dto.response.HotelResponse;
+import com.travelhub.backend.dto.response.RoomResponse;
 import com.travelhub.backend.entity.Hotel;
 import com.travelhub.backend.repository.HotelRepository;
 import com.travelhub.backend.repository.ReviewRepository;
 import com.travelhub.backend.service.HotelPricingService.PriceRange;
 
 import lombok.RequiredArgsConstructor;
+import java.util.Map;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
@@ -41,7 +44,7 @@ public class HotelService {
 
     public HotelResponse getHotelById(Long id) {
         Hotel hotel = hotelRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Hotel not found with id: " + id));
+                .orElseThrow(() -> new RuntimeException("Hotel not found with id: " + id));                 //Error handle
         return toSingleHotelResponse(hotel);
     }
 
@@ -86,6 +89,22 @@ public class HotelService {
                     .collect(Collectors.toList());
         }
 
+        List<RoomResponse> roomResponses = null;
+        if (hotel.getRooms() != null && !hotel.getRooms().isEmpty()) {
+            roomResponses = hotel.getRooms().stream()
+                    .map(room -> new RoomResponse(
+                            room.getId(),
+                            room.getName(),
+                            room.getType(),
+                            room.getPrice(),
+                            room.getDescription(),
+                            room.getImageUrl(),
+                            room.getAvailability(),
+                            hotel.getId()
+                    ))
+                    .collect(Collectors.toList());
+        }
+
         return HotelResponse.builder()
                 .id(hotel.getId())
                 .hotelName(hotel.getHotelName())
@@ -98,8 +117,33 @@ public class HotelService {
                 .reviewCount(reviewCount)
                 .imageUrl(hotel.getImageUrl())
                 .amenities(amenityList)
+                .rooms(roomResponses)
                 .district(hotel.getDistrict())
                 .applicationStatus(hotel.getApplicationStatus())
                 .build();
+    }
+    // ── Chatbot data method ────────────────────────────────────────────────
+    // Added for AI chatbot feature — returns all hotels as simple maps
+    // so the Python RAG service can load them into ChromaDB
+    @Transactional(readOnly = true)
+    public List<Map<String, Object>> getAllHotelsForChatbot() {
+    return hotelRepository.findAll()
+            .stream()
+            .map(hotel -> {
+                Map<String, Object> map = new java.util.HashMap<>();
+                map.put("id",          hotel.getId());
+                map.put("hotelName",   hotel.getHotelName());
+                map.put("destination", hotel.getDestination());
+                map.put("location",    hotel.getLocation());
+                map.put("district",    hotel.getDistrict());
+                map.put("description", hotel.getDescription());
+                map.put("priceFrom",   hotel.getPriceFrom());
+                map.put("priceTo",     hotel.getPriceTo());
+                // Rating is dynamically calculated, default to 0.0 for chatbot if needed, or omit
+                map.put("rating",      0.0);
+                map.put("amenities",   hotel.getAmenityList() != null ? hotel.getAmenityList().stream().map(a -> a.getName()).collect(Collectors.toList()) : java.util.List.of());
+                return map;
+            })
+            .collect(Collectors.toList());
     }
 }

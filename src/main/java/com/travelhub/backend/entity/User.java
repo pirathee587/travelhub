@@ -69,18 +69,30 @@ public class User {
     @Builder.Default
     private Boolean agentApproved = false;
 
-    private Long agentId; // Link to the Agent table
+    private Long agentId; // Legacy Link to the Agent table (To be removed after Agent refactor)
+    
+    @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private Agent agentProfile;
+    
     private Long hotelId; // Link to the Hotel table
     
 
     @Column(updatable = false)
     private LocalDateTime createdAt;
 
+    @Column(name = "updated_at")
+    private LocalDateTime updatedAt;
+
     @PrePersist
     protected void onCreate() {
         this.createdAt = LocalDateTime.now();
-        // Fallback checks for non-builder instantiation
+        this.updatedAt = LocalDateTime.now();
         if (this.isActive == null) this.isActive = true;
         if (this.agentApproved == null) this.agentApproved = false;
+    }
+
+    @PreUpdate
+    protected void onUpdate() {
+        this.updatedAt = LocalDateTime.now();
     }
 }

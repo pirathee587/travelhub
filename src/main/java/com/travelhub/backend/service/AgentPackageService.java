@@ -103,10 +103,10 @@ public class AgentPackageService {
                 .images(new ArrayList<>())
                 .build();
 
-        // Upload and attach images; first image becomes cover.
         if (imageFiles != null && !imageFiles.isEmpty()) {
             int order = 0;
             for (MultipartFile file : imageFiles) {
+
                 String url = imageUploadService.uploadRoomImage(file).getImageUrl();
                 PackageImage image = PackageImage.builder()
                         .pkg(pkg)
@@ -166,7 +166,9 @@ public class AgentPackageService {
         // Append newly uploaded images after current max display order.
         if (imageFiles != null && !imageFiles.isEmpty()) {
             for (MultipartFile file : imageFiles) {
+
                 String url = imageUploadService.uploadRoomImage(file).getImageUrl();
+
                 pkg.getImages().add(PackageImage.builder()
                         .pkg(pkg)
                         .imageUrl(url)
@@ -282,7 +284,7 @@ public class AgentPackageService {
      * Generates the next public package id.
      */
     private String generatePackageId() {
-        long count = packageRepository.countAll() + 1;
+        long count = packageRepository.count() + 1;
         return String.format("PKG%03d", count);
     }
 

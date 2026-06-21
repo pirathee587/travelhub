@@ -8,6 +8,7 @@ import com.travelhub.backend.repository.VehicleRepository;
 import com.travelhub.backend.repository.PackageRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
@@ -18,33 +19,36 @@ public class AgentDashboardService {
     private final DriverRepository driverRepository;
     private final PackageRepository packageRepository;
     private final AgentRepository agentRepository;
+    private final AgentRatingCalculator agentRatingCalculator;
 
+    @Transactional
     public AgentDashboardStatsResponse getStats(Long agentId) {
 
-        // Active trips = confirmed (accepted, not yet started) + in_progress (currently running)
-        long activeTrips = bookingRepository
-                .findByVehicleAgentIdAndStatus(agentId, "confirmed").size()
-                + bookingRepository
-                .findByVehicleAgentIdAndStatus(agentId, "in_progress").size();
+        long activeTrips = bookingRepository.findByAgentId(agentId)
+                .stream()
+                .filter(b -> b.getStatus().equals("active") ||
+                        b.getStatus().equals("confirmed") ||
+                        b.getStatus().equals("in_progress") ||
+                        b.getStatus().equals("In_progress"))
+                .count();
+
         long completedTrips = bookingRepository
-                .findByVehicleAgentIdAndStatus(agentId, "completed").size();
+                .findByAgentIdAndStatus(agentId, "completed").size();
         long pendingRequests = bookingRepository
-                .findByVehicleAgentIdAndStatus(agentId, "pending").size();
+                .findByAgentIdAndStatus(agentId, "pending").size();
         long totalVehicles = vehicleRepository
                 .findByAgentId(agentId).size();
         long totalDrivers = driverRepository
                 .findByAgentId(agentId).size();
-        long totalPackages = packageRepository.count();
+        long totalPackages = packageRepository.countByAgentId(agentId);
 
         Double totalRevenue = bookingRepository
-                .findByVehicleAgentIdAndStatus(agentId, "completed")
+                .findByAgentIdAndStatus(agentId, "completed")
                 .stream()
                 .mapToDouble(b -> b.getTotalPrice() != null ? b.getTotalPrice() : 0)
                 .sum();
 
-        Double averageRating = agentRepository.findById(agentId)
-                .map(a -> a.getRating())
-                .orElse(0.0);
+        Double averageRating = agentRatingCalculator.getAgentRating(agentId);
 
         return AgentDashboardStatsResponse.builder()
                 .totalPackages(totalPackages)

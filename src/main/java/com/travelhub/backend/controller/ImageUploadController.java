@@ -35,7 +35,8 @@ public class ImageUploadController {
     @PostMapping("/image")
     public ResponseEntity<ApiResponse> uploadImage(
             @RequestParam("file") MultipartFile file) {
-        ImageUploadResponse uploadResponse = imageUploadService.uploadRoomImage(file);
+
+        ImageUploadResponse uploadResponse = imageUploadService.uploadRoomImage(file);          
 
         return ResponseEntity.ok(
                 new ApiResponse(true, "Image uploaded successfully", uploadResponse)

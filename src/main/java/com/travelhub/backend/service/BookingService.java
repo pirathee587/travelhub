@@ -81,6 +81,8 @@ public class BookingService {
                 .price(booking.getTotalPrice())
                 .category(booking.getPkg() != null ? booking.getPkg().getCategory() : null)
                 .hotelName(booking.getHotel() != null ? booking.getHotel().getHotelName() : null)
+                .startPlace(booking.getPkg() != null ? booking.getPkg().getStartPlace() : null)
+                .endPlace(booking.getPkg() != null ? booking.getPkg().getEndPlace() : null)
                 .rating(averageRating)
                 .reviewCount(reviewCount)
                 .build();
@@ -100,6 +102,8 @@ public class BookingService {
                 .progress(booking.getProgress())
                 .imageUrl(booking.getPkg() != null ? booking.getPkg().getImageUrl() : null)
                 .category(booking.getPkg() != null ? booking.getPkg().getCategory() : null)
+                .startPlace(booking.getPkg() != null ? booking.getPkg().getStartPlace() : null)
+                .endPlace(booking.getPkg() != null ? booking.getPkg().getEndPlace() : null)
                 .bookedOn(booking.getCreatedAt())
                 .hotelName(booking.getHotel() != null ? booking.getHotel().getHotelName() : null)
                 .hotelLocation(booking.getHotel() != null ? booking.getHotel().getLocation() : null)
@@ -113,6 +117,11 @@ public class BookingService {
                 .vehicleCapacity(booking.getVehicle() != null && booking.getVehicle().getCapacity() != null
                         ? booking.getVehicle().getCapacity().toString()
                         : null)
+                .adults(booking.getAdults())
+                .children(booking.getChildren())
+                .specialRequests(booking.getSpecialRequests())
+                .duration(booking.getDuration())
+                .hotelIdsWithPreference(booking.getHotelIdsWithPreference())
                 .build();
     }
 }

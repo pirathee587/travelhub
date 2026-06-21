@@ -14,6 +14,8 @@ import com.travelhub.backend.entity.Package;
 import com.travelhub.backend.entity.PackageItinerary;
 import com.travelhub.backend.repository.PackageRepository;
 import com.travelhub.backend.repository.ReviewRepository;
+import java.util.Map;
+import org.springframework.transaction.annotation.Transactional;
 
 import lombok.RequiredArgsConstructor;
 
@@ -24,25 +26,47 @@ public class PackageService {
 
     private final PackageRepository packageRepository;
     private final ReviewRepository reviewRepository;
+    private final AgentRatingCalculator agentRatingCalculator;
 
     public List<PackageResponse> getAllPackages() {
-        List<Package> packages = packageRepository.findByIsActiveTrue();
+        List<Package> packages = packageRepository.findByIsActiveTrue()
+                .stream()
+                .filter(p -> "Approved".equalsIgnoreCase(p.getApplicationStatus())) //Approved package
+                .collect(Collectors.toList());
         return toPackageResponses(packages);
     }
 
     public List<PackageResponse> getPackagesByCategory(String category) {
-        List<Package> packages = packageRepository.findByCategory(category);
+        List<Package> packages = packageRepository.findByCategory(category)
+                .stream()
+                .filter(p -> "Approved".equalsIgnoreCase(p.getApplicationStatus()) && Boolean.TRUE.equals(p.getIsActive()))
+                .collect(Collectors.toList());
         return toPackageResponses(packages);
     }
 
     public List<PackageResponse> getTrendingPackages() {
-        List<Package> packages = packageRepository.findByTrendingTrue();
+        List<Package> packages = packageRepository.findByTrendingTrue()
+                .stream()
+                .filter(p -> "Approved".equalsIgnoreCase(p.getApplicationStatus()) && Boolean.TRUE.equals(p.getIsActive()))
+                .collect(Collectors.toList());
+        return toPackageResponses(packages);
+    }
+
+    /**
+     * Returns all active packages belonging to a given agent (by surrogate agent id).
+     * Now that Package.@JoinColumn is corrected (no referencedColumnName), this works correctly.
+     */
+    public List<PackageResponse> getPackagesByAgentId(Long agentId) {
+        List<Package> packages = packageRepository.findByAgentId(agentId)
+                .stream()
+                .filter(p -> Boolean.TRUE.equals(p.getIsActive()))
+                .collect(Collectors.toList());
         return toPackageResponses(packages);
     }
 
     public PackageDetailResponse getPackageById(Long id) {
         Package pkg = packageRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Package not found with id: " + id));
+                .orElseThrow(() -> new RuntimeException("Package not found with id: " + id));   //Error handling for package not found
         return toPackageDetailResponse(pkg);
     }
 
@@ -50,7 +74,7 @@ public class PackageService {
      * ✅ OPTIMIZED: Batch rating lookup — 2 queries total instead of 2N.
      * For a list of 10 packages, this saves 18 DB roundtrips.
      */
-    private List<PackageResponse> toPackageResponses(List<Package> packages) {
+    public List<PackageResponse> toPackageResponses(List<Package> packages) {
         if (packages.isEmpty()) return List.of();
 
         List<Long> packageIds = packages.stream().map(Package::getId).collect(Collectors.toList());
@@ -64,6 +88,15 @@ public class PackageService {
                         avgRatings.getOrDefault(pkg.getId(), 0.0),
                         reviewCounts.getOrDefault(pkg.getId(), 0L).intValue()))
                 .collect(Collectors.toList());
+    }
+
+    private String getSafeAgentName(com.travelhub.backend.entity.Agent agent) {
+        if (agent == null) return null;
+        try {
+            return agent.getAgencyName();
+        } catch (jakarta.persistence.EntityNotFoundException | org.hibernate.ObjectNotFoundException e) {
+            return "Unknown Agent";
+        }
     }
 
     private PackageResponse toPackageResponse(Package pkg, double rating, int reviewCount) {
@@ -82,7 +115,7 @@ public class PackageService {
                 .reviewCount(reviewCount)
                 .festivalDetails(pkg.getFestivalDetails())
                 .trending(pkg.getTrending())
-                .agentName(pkg.getAgent() != null ? pkg.getAgent().getAgencyName() : null)
+                .agentName(getSafeAgentName(pkg.getAgent()))
                 .district(pkg.getDistrict())
                 .build();
     }
@@ -108,6 +141,21 @@ public class PackageService {
         Double avgRating = reviewRepository.getAverageRatingByPackageId(pkg.getId());
         Long count = reviewRepository.getReviewCountByPackageId(pkg.getId());
 
+        Long aId = null;
+        String aName = null;
+        String aPhone = null;
+        Double aRating = null;
+        try {
+            if (pkg.getAgent() != null) {
+                aId = pkg.getAgent().getId();
+                aName = pkg.getAgent().getAgencyName();
+                aPhone = pkg.getAgent().getPhone();
+                aRating = agentRatingCalculator.getAgentRating(aId);
+            }
+        } catch (jakarta.persistence.EntityNotFoundException | org.hibernate.ObjectNotFoundException e) {
+            aName = "Unknown Agent";
+        }
+
         return PackageDetailResponse.builder()
                 .id(pkg.getId())
                 .packageName(pkg.getPackageName())
@@ -123,10 +171,10 @@ public class PackageService {
                 .reviewCount(count != null ? count.intValue() : 0)
                 .festivalDetails(pkg.getFestivalDetails())
                 .trending(pkg.getTrending())
-                .agentId(pkg.getAgent() != null ? pkg.getAgent().getId() : null)
-                .agentName(pkg.getAgent() != null ? pkg.getAgent().getAgencyName() : null)
-                .agentPhone(pkg.getAgent() != null ? pkg.getAgent().getPhone() : null)
-                .agentRating(pkg.getAgent() != null ? pkg.getAgent().getRating() : null)
+                .agentId(aId)
+                .agentName(aName)
+                .agentPhone(aPhone)
+                .agentRating(aRating)
                 .itinerary(itineraryDays)
                 .images(imageUrls)
                 .district(pkg.getDistrict())
@@ -154,4 +202,36 @@ public class PackageService {
                 .activities(activities)
                 .build();
     }
+    // ── Chatbot data method ────────────────────────────────────────────────
+    // Added for AI chatbot feature — returns all active packages as simple maps
+    // so the Python RAG service can load them into ChromaDB
+    @Transactional(readOnly = true)
+    public List<Map<String, Object>> getAllPackagesForChatbot() {
+    // Use a fresh query to avoid lazy loading issues with Agent relationship
+    return packageRepository.findByIsActiveTrue()
+            .stream()
+            .map(pkg -> {
+                Map<String, Object> map = new java.util.HashMap<>();
+                map.put("id",              pkg.getId());
+                map.put("packageName",     pkg.getPackageName());
+                map.put("destination",     pkg.getDestination());
+                map.put("district",        pkg.getDistrict());
+                map.put("category",        pkg.getCategory());
+                map.put("priceFrom",       pkg.getPriceFrom());
+                map.put("priceTo",         pkg.getPriceTo());
+                map.put("duration",        pkg.getDuration());
+                map.put("rating",          pkg.getRating());
+                map.put("festivalDetails", pkg.getFestivalDetails());
+                map.put("startPlace",      pkg.getStartPlace());
+                map.put("endPlace",        pkg.getEndPlace());
+                // Safely get agent name — avoid null pointer if agent is null
+                try {
+                    map.put("agentName", pkg.getAgent() != null ? pkg.getAgent().getAgencyName() : "");
+                } catch (Exception e) {
+                    map.put("agentName", "");
+                }
+                return map;
+            })
+            .collect(Collectors.toList());
+}
 }

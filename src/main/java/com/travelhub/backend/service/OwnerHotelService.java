@@ -1,7 +1,9 @@
 package com.travelhub.backend.service;
 
+import com.travelhub.backend.common.ForbiddenException;
 import com.travelhub.backend.dto.request.OwnerHotelRequest;
 import com.travelhub.backend.dto.response.HotelResponse;
+import com.travelhub.backend.dto.response.OwnerHotelSummaryResponse;
 import com.travelhub.backend.entity.Hotel;
 import com.travelhub.backend.entity.User;
 import com.travelhub.backend.event.HotelEvent;
@@ -28,29 +30,32 @@ public class OwnerHotelService {
     private final ImageUploadService imageUploadService;
     private final ApplicationEventPublisher eventPublisher;
 
-    public List<HotelResponse> getOwnerHotels(String status) {
-        // Fetch all hotels matching the status (Global View)
-        // Ensure the status matches the database values: "Approved", "Pending", "Rejected"
-        String targetStatus = "Approved"; // Default to Approved
-        
-        if ("Pending".equalsIgnoreCase(status)) {
-            targetStatus = "Pending";
-        } else if ("Rejected".equalsIgnoreCase(status)) {
-            targetStatus = "Rejected";
-        } else if ("Approved".equalsIgnoreCase(status)) {
-            targetStatus = "Approved";
-        }
+    public List<HotelResponse> getOwnerHotels(String status, Long ownerId) {
+        String targetStatus = normalizeStatus(status);
+        List<Hotel> hotels = hotelRepository.findByOwnerIdAndApplicationStatus(ownerId, targetStatus);
 
-        return hotelRepository.findByApplicationStatus(targetStatus).stream()
+        return hotels.stream()
                 .map(this::toHotelResponse)
                 .collect(Collectors.toList());
     }
 
+    public OwnerHotelSummaryResponse getOwnerHotelSummary(Long ownerId) {
+        int approved = (int) hotelRepository.countByOwnerIdAndApplicationStatus(ownerId, "Approved");
+        int pending = (int) hotelRepository.countByOwnerIdAndApplicationStatus(ownerId, "Pending");
+        int rejected = (int) hotelRepository.countByOwnerIdAndApplicationStatus(ownerId, "Rejected");
+
+        return OwnerHotelSummaryResponse.builder()
+                .approved(approved)
+                .pending(pending)
+                .rejected(rejected)
+                .total(approved + pending + rejected)
+                .build();
+    }
+
     @Transactional
-    public HotelResponse createHotel(OwnerHotelRequest request, MultipartFile hotelImage, String email) {
-        User owner = (email != null && !email.isBlank())
-                ? userRepository.findByEmail(email).orElse(null)
-                : null;
+    public HotelResponse createHotel(OwnerHotelRequest request, MultipartFile hotelImage, Long ownerId) {
+        User owner = userRepository.findById(ownerId)
+                .orElseThrow(() -> new RuntimeException("Owner not found with id: " + ownerId));
 
         String imageUrl = request.getImageUrl();
         if (hotelImage != null && !hotelImage.isEmpty()) {
@@ -58,7 +63,6 @@ public class OwnerHotelService {
                 imageUrl = imageUploadService.uploadHotelImage(hotelImage).getImageUrl();
             } catch (Exception e) {
                 System.err.println("Warning: Hotel image upload failed: " + e.getMessage());
-                // Fallback to placeholder if upload fails
                 if (imageUrl == null || imageUrl.isBlank()) {
                     imageUrl = "https://images.unsplash.com/photo-1566073771259-6a8506099945?q=80&w=2070&auto=format&fit=crop";
                 }
@@ -79,7 +83,7 @@ public class OwnerHotelService {
                 .phoneNumber(request.getPhoneNumber())
                 .hotlineNumber(request.getHotlineNumber())
                 .ownerName(request.getOwnerName())
-                .ownerEmail(email)
+                .ownerEmail(owner.getEmail())
                 .ownerNic(request.getOwnerNic())
                 .applicationStatus("Pending")
                 .owner(owner)
@@ -91,9 +95,8 @@ public class OwnerHotelService {
     }
 
     @Transactional
-    public HotelResponse updateHotel(Long id, OwnerHotelRequest request, MultipartFile hotelImage) {
-        Hotel hotel = hotelRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Hotel not found with id: " + id));
+    public HotelResponse updateHotel(Long id, OwnerHotelRequest request, MultipartFile hotelImage, Long ownerId) {
+        Hotel hotel = getOwnedHotel(id, ownerId);
 
         String imageUrl = request.getImageUrl();
         if (hotelImage != null && !hotelImage.isEmpty()) {
@@ -123,10 +126,35 @@ public class OwnerHotelService {
     }
 
     @Transactional
-    public void deleteHotel(Long id) {
+    public void deleteHotel(Long id, Long ownerId) {
+        Hotel hotel = getOwnedHotel(id, ownerId);
+        hotelRepository.delete(hotel);
+    }
+
+    private Hotel getOwnedHotel(Long id, Long ownerId) {
         Hotel hotel = hotelRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Hotel not found with id: " + id));
-        hotelRepository.delete(hotel);
+
+        Long hotelOwnerId = hotel.getOwnerId();
+        if (hotelOwnerId == null && hotel.getOwner() != null) {
+            hotelOwnerId = hotel.getOwner().getId();
+        }
+
+        if (hotelOwnerId == null || !hotelOwnerId.equals(ownerId)) {
+            throw new ForbiddenException("You do not have permission to manage this hotel.");
+        }
+
+        return hotel;
+    }
+
+    private String normalizeStatus(String status) {
+        if ("Pending".equalsIgnoreCase(status)) {
+            return "Pending";
+        }
+        if ("Rejected".equalsIgnoreCase(status)) {
+            return "Rejected";
+        }
+        return "Approved";
     }
 
     private HotelResponse toHotelResponse(Hotel hotel) {

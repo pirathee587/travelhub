@@ -48,5 +48,8 @@ public interface BookingRepository
     // ── Admin/global queries ───────────────────────────
     Long countByStatus(String status);
     List<Booking> findByStatus(String status);
+
+    @Query("SELECT b FROM Booking b JOIN FETCH b.pkg WHERE LOWER(b.status) IN ('completed', 'finished', 'done')")
+    List<Booking> findCompletedBookingsWithPackages();
 }
 
