@@ -70,8 +70,7 @@ public class User {
     @Builder.Default
     private Boolean agentApproved = false;
 
-    @OneToMany(mappedBy = "owner", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    private List<Agent> agencies;
+    private Long agentId; // Legacy Link to the Agent table (To be removed after Agent refactor)
     
     private Long hotelId; // Link to the Hotel table
     

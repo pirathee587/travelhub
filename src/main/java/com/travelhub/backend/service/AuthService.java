@@ -71,12 +71,10 @@ public class AuthService {
         // Handle Role-specific profile creation
         if (user.getRole() == Role.AGENT) {
             Agent agent = Agent.builder()
-                    .owner(user)
-                    .agencyName(request.getAgencyName())
+                    .userId(user.getId())      // link agent to user via userId
+                    .agencyName(user.getAgencyName())
                     .isActive(true)
                     .build();
-            
-            user.setAgencies(java.util.List.of(agent));
             agentRepository.save(agent);
         } else if (user.getRole() == Role.HOTEL_OWNER) {
             Hotel hotel = Hotel.builder()
