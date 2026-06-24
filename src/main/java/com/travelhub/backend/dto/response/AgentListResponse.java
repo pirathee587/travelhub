@@ -18,5 +18,6 @@ public class AgentListResponse {
     private String location;
     private Double rating;
     private Integer totalTrips;
+    private Integer totalPackages;
     private String memberSince;
 }

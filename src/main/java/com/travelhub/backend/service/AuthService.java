@@ -53,8 +53,7 @@ public class AuthService {
                 .role(request.getRole())
                 .preferredLanguage(request.getPreferredLanguage())
                 .nationality(request.getNationality())
-                .agencyName(request.getAgencyName())
-                .licenseNumber(request.getLicenseNumber())
+                .nicNumber(request.getNicNumber())
                 .hotelName(request.getHotelName())
                 .businessRegistrationId(request.getBusinessRegistrationId())
                 .businessAddress(request.getBusinessAddress())
@@ -132,7 +131,7 @@ public class AuthService {
                 .email(user.getEmail())
                 .role(user.getRole())
                 .profileImage(user.getProfileImage())
-                .agentId(user.getAgentId())
+                .agentId(user.getAgencies() != null && !user.getAgencies().isEmpty() ? user.getAgencies().get(0).getId() : null)
                 .hotelId(user.getHotelId())
                 .id(user.getId())
                 .build();

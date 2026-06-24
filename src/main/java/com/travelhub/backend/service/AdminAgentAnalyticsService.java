@@ -68,7 +68,7 @@ public class AdminAgentAnalyticsService {
         return new AdminAgentStatsResponse(
                 agent.getId(),
                 agent.getAgencyName(),
-                agent.getCompanyName(),
+                agent.getAgencyName(),
                 agent.getRating(),
                 totalRevenue  != null ? totalRevenue  : 0.0,
                 totalTrips    != null ? totalTrips    : 0L,
@@ -144,12 +144,12 @@ public class AdminAgentAnalyticsService {
         return new AdminAgentListResponse(
                 a.getId(),
                 a.getAgencyName(),
-                a.getCompanyName(),
-                a.getOwnerName(),
-                a.getEmail(),
-                a.getPhone(),
+                a.getAgencyName(),
+                a.getOwner() != null ? a.getOwner().getName() : null,
+                a.getOwner() != null ? a.getOwner().getEmail() : null,
+                a.getOwner() != null ? a.getOwner().getTelephone() : null,
                 a.getLocation(),
-                a.getApplicationStatus(),
+                a.getOwner() != null && Boolean.TRUE.equals(a.getOwner().getAgentApproved()) ? "Approved" : "Pending",
                 a.getSubmittedDate() != null ? a.getSubmittedDate().toString() : null,
                 a.getIsActive()
         );

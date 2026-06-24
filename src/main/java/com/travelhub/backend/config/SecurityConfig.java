@@ -62,6 +62,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/upload/**").permitAll()
                         .requestMatchers("/uploads/**").permitAll()
                         .requestMatchers("/api/tourist/**").permitAll()
+                        .requestMatchers("/api/v1/test/**").permitAll() // DEV ONLY: test agent creation
 
                         // ── Chatbot Routes ──
                         .requestMatchers("/chat").permitAll() // Public access for tourists

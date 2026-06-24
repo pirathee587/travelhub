@@ -59,7 +59,7 @@ public class PackageService {
     public List<PackageResponse> getPackagesByAgentId(Long agentId) {
         List<Package> packages = packageRepository.findByAgentId(agentId)
                 .stream()
-                .filter(p -> Boolean.TRUE.equals(p.getIsActive()))
+                .filter(p -> "Approved".equalsIgnoreCase(p.getApplicationStatus()) && Boolean.TRUE.equals(p.getIsActive()))
                 .collect(Collectors.toList());
         return toPackageResponses(packages);
     }
@@ -149,7 +149,9 @@ public class PackageService {
             if (pkg.getAgent() != null) {
                 aId = pkg.getAgent().getId();
                 aName = pkg.getAgent().getAgencyName();
-                aPhone = pkg.getAgent().getPhone();
+                aPhone = pkg.getAgent().getOwner() != null
+                        ? pkg.getAgent().getOwner().getTelephone()
+                        : null;
                 aRating = agentRatingCalculator.getAgentRating(aId);
             }
         } catch (jakarta.persistence.EntityNotFoundException | org.hibernate.ObjectNotFoundException e) {

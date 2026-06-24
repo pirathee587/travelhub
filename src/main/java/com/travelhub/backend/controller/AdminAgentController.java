@@ -11,7 +11,7 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/api/admin/agents")
 @RequiredArgsConstructor
-@CrossOrigin(origins = "*")
+
 @PreAuthorize("hasRole('ADMIN')")
 public class AdminAgentController {
 
@@ -24,17 +24,6 @@ public class AdminAgentController {
         return ResponseEntity.ok(
                 new ApiResponse(true, "Agents found",
                         adminAgentService.getAllAgents()));
-    }
-
-    // ── GET /api/admin/agents/status?status=Pending ───
-    // Filter by status
-    @GetMapping("/status")
-    public ResponseEntity<?> getByStatus(
-            @RequestParam String status) {
-        return ResponseEntity.ok(
-                new ApiResponse(true, "Agents found",
-                        adminAgentService
-                                .getByStatus(status)));
     }
 
     // ── GET /api/admin/agents/search?keyword= ─────────
@@ -67,26 +56,6 @@ public class AdminAgentController {
                 new ApiResponse(true, "Agent packages",
                         adminAgentService
                                 .getAgentPackages(id)));
-    }
-
-    // ── PATCH /api/admin/agents/{id}/approve ──────────
-    @PatchMapping("/{id}/approve")
-    public ResponseEntity<?> approveAgent(
-            @PathVariable Long id) {
-        return ResponseEntity.ok(
-                new ApiResponse(true, "Agent approved",
-                        adminAgentService
-                                .approveAgent(id)));
-    }
-
-    // ── PATCH /api/admin/agents/{id}/reject ───────────
-    @PatchMapping("/{id}/reject")
-    public ResponseEntity<?> rejectAgent(
-            @PathVariable Long id) {
-        return ResponseEntity.ok(
-                new ApiResponse(true, "Agent rejected",
-                        adminAgentService
-                                .rejectAgent(id)));
     }
 
     // ── PATCH /api/admin/agents/{id}/toggle-active ────
