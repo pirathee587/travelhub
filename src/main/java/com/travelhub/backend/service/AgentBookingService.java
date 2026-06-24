@@ -49,8 +49,8 @@ public class AgentBookingService {
         // Find booking by id.
         Booking booking = bookingRepository.findById(bookingId)
                 .orElseThrow(() -> new ResourceNotFoundException("Booking", "id", bookingId));
-        // Ownership check via the booking's vehicle agent.
-        if (!booking.getVehicle().getAgent().getId().equals(agentId)) {
+        // Ownership check via the package's agent (vehicle may be null for new bookings).
+        if (!isOwnedByAgent(booking, agentId)) {
             throw new ResourceNotFoundException("Booking", "agentId", agentId);
         }
         return toResponse(booking);
@@ -65,7 +65,7 @@ public class AgentBookingService {
         // Find booking and enforce ownership.
         Booking booking = bookingRepository.findById(bookingId)
                 .orElseThrow(() -> new ResourceNotFoundException("Booking", "id", bookingId));
-        if (!booking.getVehicle().getAgent().getId().equals(agentId)) {
+        if (!isOwnedByAgent(booking, agentId)) {
             throw new ResourceNotFoundException("Booking", "id", bookingId);
         }
         // Allow accepting only pending/confirmed records.
@@ -84,8 +84,8 @@ public class AgentBookingService {
             vehicleRepository.save(vehicle);
         }
 
-        // Move booking into active workflow.
-        booking.setStatus("active");
+        // Move booking to confirmed state (pending → confirmed).
+        booking.setStatus("confirmed");
         booking.setProgress(25);
         return toResponse(bookingRepository.save(booking));
     }
@@ -100,7 +100,7 @@ public class AgentBookingService {
         // Find booking and enforce ownership.
         Booking booking = bookingRepository.findById(bookingId)
                 .orElseThrow(() -> new ResourceNotFoundException("Booking", "id", bookingId));
-        if (!booking.getVehicle().getAgent().getId().equals(agentId)) {
+        if (!isOwnedByAgent(booking, agentId)) {
             throw new ResourceNotFoundException("Booking", "agentId", agentId);
         }
         // Status transition guard.
@@ -111,6 +111,9 @@ public class AgentBookingService {
         // Mark booking as cancelled.
         booking.setStatus("cancelled");
         booking.setProgress(0);
+
+        // Publish decline event so tourist receives email notification.
+        String reason = (request != null) ? request.getReason() : null;
         return toResponse(bookingRepository.save(booking));
     }
 
@@ -123,7 +126,7 @@ public class AgentBookingService {
         // Find booking and enforce ownership.
         Booking booking = bookingRepository.findById(bookingId)
                 .orElseThrow(() -> new ResourceNotFoundException("Booking", "id", bookingId));
-        if (!booking.getVehicle().getAgent().getId().equals(agentId)) {
+        if (!isOwnedByAgent(booking, agentId)) {
             throw new ResourceNotFoundException("Booking", "agentId", agentId);
         }
         // Status transition guard.
@@ -136,6 +139,59 @@ public class AgentBookingService {
         booking.setStatus("completed");
         booking.setProgress(100);
         return toResponse(bookingRepository.save(booking));
+    }
+
+    /**
+     * Starts a trip for the given agent.
+     * Transitions booking from confirmed → in_progress.
+     */
+    @Transactional
+    public BookingResponse startTrip(Long agentId, Long bookingId) {
+        Booking booking = bookingRepository.findById(bookingId)
+                .orElseThrow(() -> new ResourceNotFoundException("Booking", "id", bookingId));
+        if (!isOwnedByAgent(booking, agentId)) {
+            throw new ResourceNotFoundException("Booking", "agentId", agentId);
+        }
+        if (!booking.getStatus().equals("confirmed")) {
+            throw new BadRequestException("Only confirmed bookings can be started");
+        }
+        booking.setStatus("in_progress");
+        booking.setProgress(50);
+        return toResponse(bookingRepository.save(booking));
+    }
+
+    /**
+     * Emergency cancellation by agent for confirmed or in_progress bookings.
+     */
+    @Transactional
+    public BookingResponse cancelBooking(Long agentId, Long bookingId, BookingActionRequest request) {
+        Booking booking = bookingRepository.findById(bookingId)
+                .orElseThrow(() -> new ResourceNotFoundException("Booking", "id", bookingId));
+        if (!isOwnedByAgent(booking, agentId)) {
+            throw new ResourceNotFoundException("Booking", "agentId", agentId);
+        }
+        if (!booking.getStatus().equals("confirmed") &&
+                !booking.getStatus().equals("in_progress") &&
+                !booking.getStatus().equals("active")) {
+            throw new BadRequestException("Only confirmed or in-progress bookings can be cancelled");
+        }
+        booking.setStatus("cancelled");
+        booking.setProgress(0);
+        return toResponse(bookingRepository.save(booking));
+    }
+
+    /**
+     * Null-safe ownership check: verifies that the booking's package belongs to the given agent.
+     * Uses pkg->agent chain (always present) instead of vehicle->agent (null for new bookings).
+     */
+    private boolean isOwnedByAgent(Booking booking, Long agentId) {
+        try {
+            return booking.getPkg() != null
+                    && booking.getPkg().getAgent() != null
+                    && booking.getPkg().getAgent().getId().equals(agentId);
+        } catch (Exception e) {
+            return false;
+        }
     }
 
     /**
