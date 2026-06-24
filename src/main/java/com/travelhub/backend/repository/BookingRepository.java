@@ -18,10 +18,10 @@ public interface BookingRepository
     Long countByUserIdAndStatus(Long userId, String status);
 
     // ── Agent (package) queries ────────────────────────
-    @Query("SELECT b FROM Booking b WHERE b.pkg.agent.id = :agentId")
+    @Query("SELECT b FROM Booking b LEFT JOIN FETCH b.pkg LEFT JOIN FETCH b.vehicle WHERE b.pkg.agent.id = :agentId")
     List<Booking> findByAgentId(@Param("agentId") Long agentId);
 
-    @Query("SELECT b FROM Booking b WHERE b.pkg.agent.id = :agentId AND b.status = :status")
+    @Query("SELECT b FROM Booking b LEFT JOIN FETCH b.pkg LEFT JOIN FETCH b.vehicle WHERE b.pkg.agent.id = :agentId AND b.status = :status")
     List<Booking> findByAgentIdAndStatus(@Param("agentId") Long agentId, @Param("status") String status);
 
     @Query("SELECT COUNT(b) FROM Booking b WHERE b.pkg.agent.id = :agentId AND b.status = :status")

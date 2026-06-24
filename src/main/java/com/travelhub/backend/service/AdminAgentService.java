@@ -31,15 +31,7 @@ public class AdminAgentService {
                 .toList();
     }
 
-    // ── Get Agents By Status ──────────────────────────
-    public List<AdminAgentListResponse> getByStatus(
-            String status) {
-        return agentRepository
-                .findByApplicationStatus(status)
-                .stream()
-                .map(this::mapToListResponse)
-                .toList();
-    }
+
 
     // ── Search Agents ─────────────────────────────────
     public List<AdminAgentListResponse> searchAgents(
@@ -87,18 +79,18 @@ public class AdminAgentService {
                 agent.getId(),
                 initials,
                 agent.getAgencyName(),
-                agent.getCompanyName(),
-                agent.getProfileImage(),
-                agent.getOwnerName(),
-                agent.getEmail(),
-                agent.getPhone(),
+                agent.getAgencyName(),
+                agent.getOwner() != null ? agent.getOwner().getProfileImage() : null,
+                agent.getOwner() != null ? agent.getOwner().getName() : null,
+                agent.getOwner() != null ? agent.getOwner().getEmail() : null,
+                agent.getOwner() != null ? agent.getOwner().getTelephone() : null,
                 agent.getLocation(),
                 memberSince,
-                agent.getApplicationStatus() != null
-                        ? agent.getApplicationStatus()
+                agent.getOwner() != null && Boolean.TRUE.equals(agent.getOwner().getAgentApproved())
+                        ? "Approved"
                         : "Pending",
                 submittedDate,
-                agent.getNicImageUrl(),
+                agent.getOwner() != null ? agent.getOwner().getNicImage() : null,
                 agentRatingCalculator.getAgentRating(id),
                 agent.getTotalTrips(),
                 agent.getExperienceYears(),
@@ -121,30 +113,6 @@ public class AdminAgentService {
                 .stream()
                 .map(this::mapToPackageResponse)
                 .toList();
-    }
-
-    // ── Approve Agent ─────────────────────────────────
-    public AdminAgentDetailResponse approveAgent(
-            Long id) {
-        Agent agent = agentRepository.findById(id)
-                .orElseThrow(() ->
-                        new ResourceNotFoundException(
-                                "Agent", "id", id));
-        agent.setApplicationStatus("Approved");
-        agentRepository.save(agent);
-        return getAgentDetail(id);
-    }
-
-    // ── Reject Agent ──────────────────────────────────
-    public AdminAgentDetailResponse rejectAgent(
-            Long id) {
-        Agent agent = agentRepository.findById(id)
-                .orElseThrow(() ->
-                        new ResourceNotFoundException(
-                                "Agent", "id", id));
-        agent.setApplicationStatus("Rejected");
-        agentRepository.save(agent);
-        return getAgentDetail(id);
     }
 
     // ── Toggle Active ─────────────────────────────────
@@ -202,13 +170,13 @@ public class AdminAgentService {
         return new AdminAgentListResponse(
                 a.getId(),
                 a.getAgencyName(),
-                a.getCompanyName(),
-                a.getOwnerName(),
-                a.getEmail(),
-                a.getPhone(),
+                a.getAgencyName(),
+                a.getOwner() != null ? a.getOwner().getName() : null,
+                a.getOwner() != null ? a.getOwner().getEmail() : null,
+                a.getOwner() != null ? a.getOwner().getTelephone() : null,
                 a.getLocation(),
-                a.getApplicationStatus() != null
-                        ? a.getApplicationStatus()
+                a.getOwner() != null && Boolean.TRUE.equals(a.getOwner().getAgentApproved())
+                        ? "Approved"
                         : "Pending",
                 submittedDate,
                 a.getIsActive()

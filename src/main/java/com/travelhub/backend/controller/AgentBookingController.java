@@ -31,7 +31,7 @@ public class AgentBookingController {
         return ResponseEntity.ok(agentBookingService.getBookingById(agentId, bookingId));
     }
 
-    // PATCH: pending → confirmed (agent accepts + assigns vehicle)
+    // PATCH: pending → confirmed (agent accepts + optionally assigns vehicle)
     @PatchMapping("/{agentId}/bookings/{bookingId}/accept")
     public ResponseEntity<BookingResponse> acceptBooking(
             @PathVariable Long agentId,
@@ -39,6 +39,24 @@ public class AgentBookingController {
             @RequestBody(required = false) BookingActionRequest request) {
         Long vehicleId = (request != null) ? request.getVehicleId() : null;
         return ResponseEntity.ok(agentBookingService.acceptBooking(agentId, bookingId, vehicleId));
+    }
+
+    // PATCH: assign vehicle to a booking
+    @PatchMapping("/{agentId}/bookings/{bookingId}/assign-vehicle")
+    public ResponseEntity<BookingResponse> assignVehicle(
+            @PathVariable Long agentId,
+            @PathVariable Long bookingId,
+            @RequestBody BookingActionRequest request) {
+        return ResponseEntity.ok(agentBookingService.assignVehicle(agentId, bookingId, request.getVehicleId()));
+    }
+
+    // PATCH: assign driver to a booking
+    @PatchMapping("/{agentId}/bookings/{bookingId}/assign-driver")
+    public ResponseEntity<BookingResponse> assignDriver(
+            @PathVariable Long agentId,
+            @PathVariable Long bookingId,
+            @RequestBody BookingActionRequest request) {
+        return ResponseEntity.ok(agentBookingService.assignDriver(agentId, bookingId, request.getDriverId()));
     }
 
     // PATCH: pending → cancelled (agent declines with a reason)

@@ -43,6 +43,7 @@ public class AgentPackageService {
     /**
      * Lists packages for an agent with optional search and active-state filters.
      */
+    @Transactional(readOnly = true)
     public List<PackageSummaryResponse> listPackages(Long agentId,
                                                      String search,
                                                      Boolean isActive) {
@@ -67,6 +68,7 @@ public class AgentPackageService {
     /**
      * Returns one package detail after ownership validation.
      */
+    @Transactional(readOnly = true)
     public AgentPackageDetailResponse getPackage(Long agentId, String packageId) {
         Package pkg = findAndValidateOwnership(agentId, packageId);
         return toDetail(pkg);

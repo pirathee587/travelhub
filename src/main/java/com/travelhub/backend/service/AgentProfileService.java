@@ -38,18 +38,17 @@ public class AgentProfileService {
         Agent agent = agentRepository.findById(agentId)
                 .orElseThrow(() -> new ResourceNotFoundException("Agent", "id", agentId));
 
-        User user = agent.getUser();
+        User user = agent.getOwner();
 
         // Agent-specific fields stay on Agent.
         agent.setAgencyName(request.getAgencyName() != null ? request.getAgencyName().trim() : null);
-        agent.setSecondaryPhone(request.getSecondaryPhone());
+        agent.setSecondaryNumber(request.getSecondaryPhone());
         agent.setWhatsappNumber(request.getWhatsappNumber());
         agent.setLocation(request.getLocation());
         agent.setBio(request.getBio());
         agent.setLanguages(request.getLanguages());
         agent.setOperatingDistricts(request.getOperatingDistricts());
         agent.setWebsiteUrl(request.getWebsiteUrl());
-        agent.setCompanyName(request.getCompanyName());
 
         // Name & phone now live on User.
         if (request.getAgentName() != null) {
@@ -63,6 +62,9 @@ public class AgentProfileService {
         if (request.getProfileImage() != null) {
             user.setProfileImage(request.getProfileImage());
         }
+        if (request.getNicImage() != null) {
+            user.setNicImage(request.getNicImage());
+        }
 
         Agent saved = agentRepository.save(agent);
         return toResponse(saved);
@@ -73,16 +75,15 @@ public class AgentProfileService {
      * Common fields (name, email, phone, profileImage) now read through agent.getUser().
      */
     private AgentProfileResponse toResponse(Agent agent) {
-        User user = agent.getUser();
+        User user = agent.getOwner();
 
         return AgentProfileResponse.builder()
                 .id(agent.getId())
                 .agentName(user != null ? user.getName() : null)
                 .email(user != null ? user.getEmail() : null)
                 .phone(user != null ? user.getTelephone() : null)
-                .secondaryPhone(agent.getSecondaryPhone())
+                .secondaryPhone(agent.getSecondaryNumber())
                 .whatsappNumber(agent.getWhatsappNumber())
-                .companyName(agent.getCompanyName())
                 .agencyName(agent.getAgencyName())
                 .location(agent.getLocation())
                 .bio(agent.getBio())
@@ -90,6 +91,7 @@ public class AgentProfileService {
                 .operatingDistricts(agent.getOperatingDistricts())
                 .websiteUrl(agent.getWebsiteUrl())
                 .profileImage(user != null ? user.getProfileImage() : null)
+                .nicImage(user != null ? user.getNicImage() : null)
                 .memberSince(agent.getMemberSince() != null ? agent.getMemberSince().toString() : null)
                 .rating(agentRatingCalculator.getAgentRating(agent.getId()))
                 .totalTrips(agent.getTotalTrips())

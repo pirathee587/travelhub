@@ -75,7 +75,15 @@ public class NotificationListener {
         log.info("Handling package event: {} for package: {}", event.getType(), event.getPkg().getPackageName());
 
         if (event.getPkg().getAgent() != null) {
-            emailService.sendPackageStatusNotification(event.getPkg().getAgent().getEmail(), event.getPkg().getPackageName(), event.getType(), event.getReason());
+            String agentEmail = event.getPkg().getAgent().getOwner() != null
+                    ? event.getPkg().getAgent().getOwner().getEmail()
+                    : null;
+            if (agentEmail != null) {
+                emailService.sendPackageStatusNotification(agentEmail, event.getPkg().getPackageName(), event.getType(), event.getReason());
+            } else {
+                // Log or skip — agent has no linked user account yet, can't send email
+                System.err.println("Skipping package status email — agent has no email (agentId: " + event.getPkg().getAgent().getId() + ")");
+            }
         }
     }
 }

@@ -15,7 +15,6 @@ public interface AgentRepository extends JpaRepository<Agent, Long> {
     // ── Agent Filters ─────────────────────────────────
     List<Agent> findByIsActiveTrue();
 
-    List<Agent> findByApplicationStatus(String applicationStatus);
 
     List<Agent> findByAgencyNameContainingIgnoreCase(
             String name);

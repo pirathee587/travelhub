@@ -88,6 +88,7 @@ public class ReviewService {
         Review review = Review.builder()
                 .user(user)
                 .pkg(pkg)
+                .agent(pkg.getAgent())
                 .comment(request.getComment())
                 .rating(request.getRating())
                 .title(request.getTitle())

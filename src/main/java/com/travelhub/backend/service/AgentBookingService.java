@@ -5,29 +5,34 @@ import com.travelhub.backend.common.ResourceNotFoundException;
 import com.travelhub.backend.dto.request.BookingActionRequest;
 import com.travelhub.backend.dto.response.BookingResponse;
 import com.travelhub.backend.entity.Booking;
+import com.travelhub.backend.entity.Driver;
 import com.travelhub.backend.entity.Vehicle;
 import com.travelhub.backend.repository.BookingRepository;
+import com.travelhub.backend.repository.DriverRepository;
 import com.travelhub.backend.repository.VehicleRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+@Transactional
 public class AgentBookingService {
 
     private final BookingRepository bookingRepository;
     private final VehicleRepository vehicleRepository;
+    private final DriverRepository driverRepository;
 
     // ── GET ALL / GET BY ID ───────────────────────────────────────────────────
 
     public List<BookingResponse> getAllBookings(Long agentId, String status) {
         List<Booking> bookings;
         if (status != null && !status.equals("all")) {
-            bookings = bookingRepository.findByVehicleAgentIdAndStatus(agentId, status);
+            bookings = bookingRepository.findByAgentIdAndStatus(agentId, status);
         } else {
-            bookings = bookingRepository.findByVehicleAgentId(agentId);
+            bookings = bookingRepository.findByAgentId(agentId);
         }
         return bookings.stream().map(this::toResponse).collect(Collectors.toList());
     }
@@ -38,9 +43,7 @@ public class AgentBookingService {
     }
 
     // ── ACCEPT: pending → confirmed ───────────────────────────────────────────
-    // Agent manually accepts a pending booking request.
-    // Assigns a vehicle and moves status to "confirmed".
-    // The trip has NOT started yet — it is simply approved and waiting for startDate.
+    // Agent accepts a booking. Vehicle/driver can be assigned before or after.
 
     public BookingResponse acceptBooking(Long agentId, Long bookingId, Long vehicleId) {
         Booking booking = findAndValidate(agentId, bookingId);
@@ -49,20 +52,48 @@ public class AgentBookingService {
             throw new BadRequestException("Only pending bookings can be accepted");
         }
 
-        // Assign the selected vehicle
         if (vehicleId != null) {
             Vehicle vehicle = vehicleRepository.findById(vehicleId)
                     .orElseThrow(() -> new ResourceNotFoundException("Vehicle", "id", vehicleId));
             booking.setVehicle(vehicle);
         }
 
-        booking.setStatus("confirmed");   // waiting for trip to start
+        booking.setStatus("confirmed");
         booking.setProgress(25);
         return toResponse(bookingRepository.save(booking));
     }
 
+    // ── ASSIGN VEHICLE ────────────────────────────────────────────────────────
+
+    public BookingResponse assignVehicle(Long agentId, Long bookingId, Long vehicleId) {
+        Booking booking = findAndValidate(agentId, bookingId);
+
+        if (booking.getStatus().equals("cancelled")) {
+            throw new BadRequestException("Cannot assign a vehicle to a cancelled booking");
+        }
+
+        Vehicle vehicle = vehicleRepository.findById(vehicleId)
+                .orElseThrow(() -> new ResourceNotFoundException("Vehicle", "id", vehicleId));
+        booking.setVehicle(vehicle);
+        return toResponse(bookingRepository.save(booking));
+    }
+
+    // ── ASSIGN DRIVER ─────────────────────────────────────────────────────────
+
+    public BookingResponse assignDriver(Long agentId, Long bookingId, Long driverId) {
+        Booking booking = findAndValidate(agentId, bookingId);
+
+        if (booking.getStatus().equals("cancelled")) {
+            throw new BadRequestException("Cannot assign a driver to a cancelled booking");
+        }
+
+        Driver driver = driverRepository.findById(driverId)
+                .orElseThrow(() -> new ResourceNotFoundException("Driver", "id", driverId));
+        booking.setDriver(driver);
+        return toResponse(bookingRepository.save(booking));
+    }
+
     // ── DECLINE: pending → cancelled ──────────────────────────────────────────
-    // Agent declines an incoming booking request.
 
     public BookingResponse declineBooking(Long agentId, Long bookingId,
                                           BookingActionRequest request) {
@@ -78,9 +109,6 @@ public class AgentBookingService {
     }
 
     // ── START TRIP: confirmed → in_progress ───────────────────────────────────
-    // Agent manually confirms the trip is starting today.
-    // System notified the agent earlier (via scheduler) — agent clicks "Start Trip".
-    // Only allowed on/after the booking's startDate.
 
     public BookingResponse startTrip(Long agentId, Long bookingId) {
         Booking booking = findAndValidate(agentId, bookingId);
@@ -95,8 +123,6 @@ public class AgentBookingService {
     }
 
     // ── COMPLETE TRIP: in_progress → completed ────────────────────────────────
-    // Agent manually marks the trip as done.
-    // System notified the agent on/after endDate — agent clicks "Complete Trip".
 
     public BookingResponse completeBooking(Long agentId, Long bookingId) {
         Booking booking = findAndValidate(agentId, bookingId);
@@ -111,8 +137,6 @@ public class AgentBookingService {
     }
 
     // ── CANCEL: confirmed or in_progress → cancelled ──────────────────────────
-    // Emergency cancellation — agent can cancel an accepted or ongoing trip.
-    // Requires a reason (e.g. vehicle breakdown, natural disaster).
 
     public BookingResponse cancelBooking(Long agentId, Long bookingId,
                                          BookingActionRequest request) {
@@ -133,13 +157,14 @@ public class AgentBookingService {
     private Booking findAndValidate(Long agentId, Long bookingId) {
         Booking booking = bookingRepository.findById(bookingId)
                 .orElseThrow(() -> new ResourceNotFoundException("Booking", "id", bookingId));
-        if (!booking.getVehicle().getAgent().getId().equals(agentId)) {
+        if (booking.getPkg() == null || !booking.getPkg().getAgent().getId().equals(agentId)) {
             throw new ResourceNotFoundException("Booking", "agentId", agentId);
         }
         return booking;
     }
 
     private BookingResponse toResponse(Booking booking) {
+        Driver d = booking.getDriver();
         return BookingResponse.builder()
                 .id(booking.getId())
                 .bookingId(String.format("BK%05d", booking.getId()))
@@ -153,6 +178,9 @@ public class AgentBookingService {
                 .vehicleType(booking.getVehicle() != null ? booking.getVehicle().getVehicleType() : null)
                 .vehicleModel(booking.getVehicle() != null ? booking.getVehicle().getModel() : null)
                 .vehicleRegistration(booking.getVehicle() != null ? booking.getVehicle().getRegistration() : null)
+                .driverName(d != null ? (d.getFirstName() + (d.getLastName() != null ? " " + d.getLastName() : "")) : null)
+                .driverPhone(d != null ? d.getMobileNumber() : null)
+                .driverRating(d != null ? d.getRating() : null)
                 .bookedOn(booking.getCreatedAt())
                 .build();
     }

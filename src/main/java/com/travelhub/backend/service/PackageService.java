@@ -16,7 +16,6 @@ import com.travelhub.backend.repository.PackageRepository;
 import com.travelhub.backend.repository.ReviewRepository;
 import java.util.Map;
 import org.springframework.transaction.annotation.Transactional;
-
 import lombok.RequiredArgsConstructor;
 
 @Service
@@ -149,7 +148,9 @@ public class PackageService {
             if (pkg.getAgent() != null) {
                 aId = pkg.getAgent().getId();
                 aName = pkg.getAgent().getAgencyName();
-                aPhone = pkg.getAgent().getPhone();
+                aPhone = pkg.getAgent().getOwner() != null
+                        ? pkg.getAgent().getOwner().getTelephone()
+                        : null;
                 aRating = agentRatingCalculator.getAgentRating(aId);
             }
         } catch (jakarta.persistence.EntityNotFoundException | org.hibernate.ObjectNotFoundException e) {

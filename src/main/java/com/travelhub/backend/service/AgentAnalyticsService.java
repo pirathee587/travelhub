@@ -22,6 +22,7 @@ public class AgentAnalyticsService {
     private final DriverRepository driverRepository;
     private final VehicleRepository vehicleRepository;
     private final AgentRepository agentRepository;
+    private final AgentRatingCalculator agentRatingCalculator;
 
     /**
      * Builds the analytics payload for an agent for a given period.
@@ -59,10 +60,8 @@ public class AgentAnalyticsService {
         double cancellationRate = filtered.isEmpty() ? 0 :
                 Math.round(((double) cancelled / filtered.size()) * 100.0) / 1.0;
 
-        // Stat cards: agent rating (default 0.0 if missing/null).
-        Double averageRating = agentRepository.findById(agentId)
-                .map(a -> a.getRating() != null ? a.getRating() : 0.0)
-                .orElse(0.0);
+        // Stat cards: agent rating
+        Double averageRating = agentRatingCalculator.getAgentRating(agentId);
 
         // Revenue chart data (label/value pairs; labels depend on the selected period).
         List<Map<String, Object>> revenueData = buildRevenueData(filtered, period);

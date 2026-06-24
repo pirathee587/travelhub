@@ -7,6 +7,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Entity
 @Table(name = "users")
@@ -39,8 +40,8 @@ public class User {
 
     // Role-specific fields (Nullable based on role)
     private String nationality;           // Tourist
-    private String agencyName;            // Agent
-    private String licenseNumber;         // Agent (For Admin Verification)
+    private String nicNumber;             // Agent (Captured at Signup)
+    private String nicImage;              // Agent (Captured in Profile)
     private String hotelName;             // Hotel Owner
     private String businessRegistrationId; // Hotel Owner (For Admin Verification)
     private String businessAddress;        // Hotel Owner
@@ -69,10 +70,8 @@ public class User {
     @Builder.Default
     private Boolean agentApproved = false;
 
-    private Long agentId; // Legacy Link to the Agent table (To be removed after Agent refactor)
-    
-    @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    private Agent agentProfile;
+    @OneToMany(mappedBy = "owner", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private List<Agent> agencies;
     
     private Long hotelId; // Link to the Hotel table
     

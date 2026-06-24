@@ -33,7 +33,7 @@ public class AgentService {
     public List<AgentListResponse> getApprovedAgents() {
         List<Agent> agents = agentRepository.findAll()
                 .stream()
-                .filter(a -> "Approved".equalsIgnoreCase(a.getApplicationStatus())
+                .filter(a -> a.getOwner() != null && Boolean.TRUE.equals(a.getOwner().getAgentApproved())
                         && Boolean.TRUE.equals(a.getIsActive()))
                 .sorted(Comparator.comparing(
                         a -> a.getAgencyName() != null ? a.getAgencyName() : "",
@@ -62,7 +62,7 @@ public class AgentService {
                 .orElseThrow(() -> new ResponseStatusException(
                         HttpStatus.NOT_FOUND, "Agent not found with id: " + id));
 
-        if (!"Approved".equalsIgnoreCase(agent.getApplicationStatus())) {
+        if (agent.getOwner() == null || !Boolean.TRUE.equals(agent.getOwner().getAgentApproved())) {
             throw new ResponseStatusException(
                     HttpStatus.NOT_FOUND, "Agent not found with id: " + id);
         }
@@ -80,14 +80,14 @@ public class AgentService {
         return AgentDetailResponse.builder()
                 .id(agent.getId())
                 .agencyName(agent.getAgencyName())
-                .agentName(agent.getOwnerName())
-                .profileImage(agent.getProfileImage())
+                .agentName(agent.getOwner() != null ? agent.getOwner().getName() : null)
+                .profileImage(agent.getOwner() != null ? agent.getOwner().getProfileImage() : null)
                 .bio(agent.getBio())
                 .location(agent.getLocation())
-                .email(agent.getEmail())
-                .phone(agent.getPhone())
+                .email(agent.getOwner() != null ? agent.getOwner().getEmail() : null)
+                .phone(agent.getOwner() != null ? agent.getOwner().getTelephone() : null)
                 .whatsappNumber(agent.getWhatsappNumber())
-                .companyName(agent.getCompanyName())
+                .companyName(agent.getAgencyName())
                 .languages(agent.getLanguages())
                 .operatingDistricts(agent.getOperatingDistricts())
                 .websiteUrl(agent.getWebsiteUrl())
@@ -102,8 +102,8 @@ public class AgentService {
         return AgentListResponse.builder()
                 .id(agent.getId())
                 .agencyName(agent.getAgencyName())
-                .agentName(agent.getOwnerName())
-                .profileImage(agent.getProfileImage())
+                .agentName(agent.getOwner() != null ? agent.getOwner().getName() : null)
+                .profileImage(agent.getOwner() != null ? agent.getOwner().getProfileImage() : null)
                 .bio(agent.getBio())
                 .location(agent.getLocation())
                 .rating(computedRating)

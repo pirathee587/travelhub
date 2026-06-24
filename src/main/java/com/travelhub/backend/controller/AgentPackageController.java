@@ -17,7 +17,6 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/v1/agent/{agentId}/packages")
 @RequiredArgsConstructor
-@CrossOrigin(origins = "*")
 public class AgentPackageController {
 
     private final AgentPackageService packageService;

@@ -10,7 +10,6 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/tourist")
 @RequiredArgsConstructor
-@CrossOrigin(origins = "*")
 public class DocumentController {
 
     private final DocumentService documentService;
