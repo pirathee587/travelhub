@@ -25,11 +25,76 @@ import {
     CheckCircle2,
     AlertCircle,
     MessageSquare,
+    PartyPopper,
 } from "lucide-react";
 import { cn } from "@tourist/lib/utils";
 import { api } from "@tourist/services/api";
-import { useToast } from "@tourist/hooks/use-toast";
+import { toast } from "sonner";
 import { defaultUserId } from "@tourist/lib/userHelpers";
+
+// ─── Booking Success Screen ───────────────────────────────────────────────────
+const BookingSuccessScreen = ({ booking, pkg, onViewTrips, onGoHome }) => (
+    <DashboardLayout>
+        <div className="flex flex-col items-center justify-center min-h-[70vh] text-center px-4">
+            <div className="relative mb-6">
+                <div className="w-24 h-24 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center animate-bounce-slow">
+                    <CheckCircle2 className="w-14 h-14 text-green-500" />
+                </div>
+            </div>
+
+            <h1 className="text-3xl font-bold mb-2">Booking Confirmed! 🎉</h1>
+            <p className="text-muted-foreground mb-6 max-w-md">
+                Your reservation has been submitted. The agent will review and approve it shortly. You'll receive a confirmation email.
+            </p>
+
+            <Card className="w-full max-w-md text-left mb-6 border-green-200 dark:border-green-800 bg-green-50 dark:bg-green-900/20">
+                <CardHeader className="pb-2">
+                    <CardTitle className="text-base flex items-center gap-2">
+                        <MapPin className="h-4 w-4 text-green-600" />
+                        Booking Details
+                    </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-2 text-sm">
+                    <div className="flex justify-between">
+                        <span className="text-muted-foreground">Booking ID</span>
+                        <span className="font-bold text-green-700 dark:text-green-400">{booking.bookingId}</span>
+                    </div>
+                    <div className="flex justify-between">
+                        <span className="text-muted-foreground">Package</span>
+                        <span className="font-medium">{booking.packageName}</span>
+                    </div>
+                    <div className="flex justify-between">
+                        <span className="text-muted-foreground">Start Date</span>
+                        <span className="font-medium">{booking.startDate}</span>
+                    </div>
+                    <div className="flex justify-between">
+                        <span className="text-muted-foreground">Duration</span>
+                        <span className="font-medium">{booking.duration}</span>
+                    </div>
+                    <div className="flex justify-between">
+                        <span className="text-muted-foreground">Guests</span>
+                        <span className="font-medium">{booking.adults} Adults{booking.children > 0 ? `, ${booking.children} Children` : ""}</span>
+                    </div>
+                    <div className="flex justify-between items-center pt-2 border-t border-green-200 dark:border-green-800">
+                        <span className="font-semibold">Status</span>
+                        <Badge className="bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400 border-amber-200">
+                            Pending Approval
+                        </Badge>
+                    </div>
+                </CardContent>
+            </Card>
+
+            <div className="flex gap-3">
+                <Button variant="outline" onClick={onGoHome}>
+                    Back to Explore
+                </Button>
+                <Button className="gradient-ocean text-white" onClick={onViewTrips}>
+                    View My Trips
+                </Button>
+            </div>
+        </div>
+    </DashboardLayout>
+);
 
 const PackageReservation = () => {
     const { id } = useParams();
@@ -39,7 +104,7 @@ const PackageReservation = () => {
     const [pkg, setPkg] = useState(null);
     const [loading, setLoading] = useState(true);
     const [submitting, setSubmitting] = useState(false);
-
+    const [confirmedBooking, setConfirmedBooking] = useState(null); // holds booking after success
     const [startDate, setStartDate] = useState("");
     const [adults, setAdults] = useState(1);
     const [children, setChildren] = useState(0);
@@ -126,7 +191,7 @@ const PackageReservation = () => {
 
     const handleConfirmReservation = async () => {
         if (!startDate) {
-            alert("Please select a start date");
+            toast.error("Please select a start date");
             return;
         }
 
@@ -158,16 +223,15 @@ const PackageReservation = () => {
         });
 
         try {
-            const booking = await api.createBooking(bookingData);                               {/* Api call for booking creation */}
+            const booking = await api.createBooking(bookingData);                               // Api call for booking creation
             if (booking && booking.id) {
                 sessionStorage.removeItem(`hotelPrefs_${id}`);  
-                alert(`Booking confirmed! Booking ID: BK${String(booking.id).padStart(5, "0")}`);
-                navigate("/tourist/trips");
+                setConfirmedBooking(booking);
             }
         } catch (error) {
             const errorMsg = error.message || "Booking failed. Please try again.";                      {/* Error handling */}
             console.error("[Booking] Error:", errorMsg);
-            alert(errorMsg);
+            toast.error(errorMsg);
         } finally {
             setSubmitting(false);
         }
@@ -180,6 +244,18 @@ const PackageReservation = () => {
                     <p className="text-muted-foreground">Loading package...</p>
                 </div>
             </DashboardLayout>
+        );
+    }
+
+    // ─── Show success screen after booking confirmed ───────────────────────────
+    if (confirmedBooking) {
+        return (
+            <BookingSuccessScreen
+                booking={confirmedBooking}
+                pkg={pkg}
+                onViewTrips={() => navigate("/tourist/trips")}
+                onGoHome={() => navigate("/tourist/explore")}
+            />
         );
     }
 
