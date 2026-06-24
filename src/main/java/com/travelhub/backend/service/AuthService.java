@@ -53,8 +53,7 @@ public class AuthService {
                 .role(request.getRole())
                 .preferredLanguage(request.getPreferredLanguage())
                 .nationality(request.getNationality())
-                .agencyName(request.getAgencyName())
-                .licenseNumber(request.getLicenseNumber())
+                .nicNumber(request.getNicNumber())
                 .hotelName(request.getHotelName())
                 .businessRegistrationId(request.getBusinessRegistrationId())
                 .businessAddress(request.getBusinessAddress())
@@ -71,16 +70,13 @@ public class AuthService {
 
         // Handle Role-specific profile creation
         if (user.getRole() == Role.AGENT) {
-            // Note: The teammate MUST update Agent.java to include the 'user' field and remove 'email'/'phone'
-            // for this to compile successfully.
             Agent agent = Agent.builder()
-                    // .user(user) // UNCOMMENT THIS once teammate adds the 'user' field in Agent.java
-                    .agencyName(user.getAgencyName())
+                    .owner(user)
+                    .agencyName(request.getAgencyName())
                     .isActive(true)
                     .build();
             
-            // agent.setUser(user); // Alternative if using setters
-            user.setAgentProfile(agent);
+            user.setAgencies(java.util.List.of(agent));
             agentRepository.save(agent);
         } else if (user.getRole() == Role.HOTEL_OWNER) {
             Hotel hotel = Hotel.builder()
@@ -137,7 +133,7 @@ public class AuthService {
                 .email(user.getEmail())
                 .role(user.getRole())
                 .profileImage(user.getProfileImage())
-                .agentId(user.getAgentId())
+                .agentId(user.getAgencies() != null && !user.getAgencies().isEmpty() ? user.getAgencies().get(0).getId() : null)
                 .hotelId(user.getHotelId())
                 .id(user.getId())
                 .build();

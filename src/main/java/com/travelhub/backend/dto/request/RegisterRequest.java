@@ -37,7 +37,7 @@ public class RegisterRequest {
     // Role-specific optional fields
     private String nationality;
     private String agencyName;
-    private String licenseNumber;
+    private String nicNumber;
     private String hotelName;
     private String businessRegistrationId;
     private String businessAddress;

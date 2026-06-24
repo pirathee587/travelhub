@@ -18,26 +18,17 @@ public class Agent {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "user_id")
-    private Long userId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id", nullable = false)
+    private User owner;
 
     // ── Company / Agent Info ───────────────────────────
     @Column(name = "agency_name", nullable = false)
     private String agencyName;
 
-    private String companyName;
-
-    private String profileImage;
-
-    // ── Owner Information ──────────────────────────────
-    @Column(name = "owner_name")
-    private String ownerName;
-
-    @Transient
-    private String email;
-
-    private String phone;
-    private String secondaryPhone;
+    // ── Contact Information ──────────────────────────────
+    private String agencyNumber;
+    private String secondaryNumber;
     private String whatsappNumber;
 
     private String location;
@@ -55,15 +46,6 @@ public class Agent {
 
     private LocalDate memberSince;
 
-    // ── NIC ────────────────────────────────────────────
-    @Column(name = "nic_image_url")
-    private String nicImageUrl;
-
-    // ── Application Status ─────────────────────────────
-    @Column(name = "application_status")
-    @Builder.Default
-    private String applicationStatus = "Pending";
-
     // ── Submitted Date ─────────────────────────────────
     @Column(name = "submitted_date", updatable = false)
     private LocalDateTime submittedDate;
@@ -74,7 +56,6 @@ public class Agent {
     private Integer totalRevenue;
     private Integer experienceYears;
     private Double completionRate;
-
 
     // ── Status ─────────────────────────────────────────
     @Column(nullable = false)

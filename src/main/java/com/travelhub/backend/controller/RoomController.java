@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
+import lombok.RequiredArgsConstructor;
 
 import com.travelhub.backend.dto.response.RoomResponse;
 import com.travelhub.backend.entity.Room;
@@ -22,7 +23,7 @@ import com.travelhub.backend.service.RoomService;
 
 @RestController
 @RequestMapping("/api/rooms")
-@CrossOrigin(origins = "*")
+@RequiredArgsConstructor
 public class RoomController {
 
     @Autowired

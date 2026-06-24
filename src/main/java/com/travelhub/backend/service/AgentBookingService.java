@@ -14,6 +14,8 @@ import org.springframework.stereotype.Service;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import org.springframework.context.ApplicationEventPublisher;
+import com.travelhub.backend.event.BookingEvent;
 import com.travelhub.backend.entity.Vehicle;
 
 @Service
@@ -22,6 +24,7 @@ public class AgentBookingService {
 
     private final BookingRepository bookingRepository;
     private final VehicleRepository vehicleRepository;
+    private final ApplicationEventPublisher eventPublisher;
 
     /**
      * Returns all bookings visible to the agent.
@@ -87,7 +90,9 @@ public class AgentBookingService {
         // Move booking to confirmed state (pending → confirmed).
         booking.setStatus("confirmed");
         booking.setProgress(25);
-        return toResponse(bookingRepository.save(booking));
+        Booking saved = bookingRepository.save(booking);
+        eventPublisher.publishEvent(new BookingEvent(this, saved, "APPROVED"));
+        return toResponse(saved);
     }
 
     /**
@@ -113,8 +118,10 @@ public class AgentBookingService {
         booking.setProgress(0);
 
         // Publish decline event so tourist receives email notification.
-        String reason = (request != null) ? request.getReason() : null;
-        return toResponse(bookingRepository.save(booking));
+        String reason = (request != null) ? request.getDeclineReason() : null;
+        Booking saved = bookingRepository.save(booking);
+        eventPublisher.publishEvent(new BookingEvent(this, saved, "DECLINED", reason));
+        return toResponse(saved);
     }
 
     /**

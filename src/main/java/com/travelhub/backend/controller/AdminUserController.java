@@ -11,7 +11,6 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/admin/users")
 @RequiredArgsConstructor
-// Note: Replace "*" with your Vercel URL in production
 @PreAuthorize("hasRole('ADMIN')")
 public class AdminUserController {
 

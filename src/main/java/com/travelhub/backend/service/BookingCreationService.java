@@ -86,11 +86,13 @@ public class BookingCreationService {
                         });
 
                 // District Matching Validation
-                if (h.getDistrict() != null && pkg.getDistrict() != null // package and hotel both have district info,
-                                                                         // validate they match
-                        && !h.getDistrict().equalsIgnoreCase(pkg.getDistrict())) {
-                    logger.error("District mismatch: hotel={}, package={}", h.getDistrict(), pkg.getDistrict());
-                    throw new RuntimeException("Selected hotel's district does not match package's district");
+                if (h.getDistrict() != null && pkg.getDistrict() != null) {
+                    String hDist = h.getDistrict().replaceAll("(?i)\\s*district$", "").trim();
+                    String pDist = pkg.getDistrict().replaceAll("(?i)\\s*district$", "").trim();
+                    if (!hDist.equalsIgnoreCase(pDist)) {
+                        logger.error("District mismatch: hotel={}, package={}", h.getDistrict(), pkg.getDistrict());
+                        throw new RuntimeException("Selected hotel's district does not match package's district");
+                    }
                 }
                 logger.debug("  ✓ Hotel validated: {} ({})", h.getHotelName(), h.getDistrict());
             }
