@@ -235,40 +235,40 @@ const PackageDetails = () => {
                         </h3>
                         <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
                             <div>
-                                <label className="text-sm text-muted-foreground block mb-1">Duration</label>
-                                <p className="font-medium">{pkg.duration}</p>                               {/* Duration */}
+                                <label className="text-sm font-bold text-muted-foreground block mb-1">Duration</label>
+                                <p className="font-extrabold">{pkg.duration}</p>                               {/* Duration */}
                             </div>
                             <div>
-                                <label className="text-sm text-muted-foreground block mb-1">Start Place</label>
-                                <p className="font-medium">{pkg.startPlace || "Not specified"}</p>             {/* Start Place*/}
+                                <label className="text-sm font-bold text-muted-foreground block mb-1">Start Place</label>
+                                <p className="font-extrabold">{pkg.startPlace || "Not specified"}</p>             {/* Start Place*/}
                             </div>
                             <div>
-                                <label className="text-sm text-muted-foreground block mb-1">End Place</label>
-                                <p className="font-medium">{pkg.endPlace || "Not specified"}</p>                 {/* End Place*/}
+                                <label className="text-sm font-bold text-muted-foreground block mb-1">End Place</label>
+                                <p className="font-extrabold">{pkg.endPlace || "Not specified"}</p>                 {/* End Place*/}
                             </div>
                             <div>
-                                <label className="text-sm text-muted-foreground block mb-1">Agent</label>
+                                <label className="text-sm font-bold text-muted-foreground block mb-1">Agency</label>
                                 {pkg.agentId ? (
                                     <button
                                         id="pkg-agent-link"
                                         onClick={() => navigate(`/agents/${pkg.agentId}`)}
-                                        className="font-medium flex items-center gap-1 text-primary hover:underline hover:text-primary/80 transition-colors"
+                                        className="font-extrabold flex items-center gap-1 text-primary hover:underline hover:text-primary/80 transition-colors"
                                     >
                                         <User className="h-3 w-3" /> {pkg.agentName || "View Agent"}  {/* Clickable Agent Name*/}
                                     </button>
                                 ) : (
-                                    <p className="font-medium flex items-center gap-1">
+                                    <p className="font-extrabold flex items-center gap-1">
                                         <User className="h-3 w-3" /> {pkg.agentName || "Premium Travel"}
                                     </p>
                                 )}
                             </div>
                             <div>
-                                <label className="text-sm text-muted-foreground block mb-1">Price Range</label>
-                                <p className="font-medium">${pkg.priceFrom} - ${pkg.priceTo}</p>               {/* Price Range*/}
+                                <label className="text-sm font-bold text-muted-foreground block mb-1">Price Range</label>
+                                <p className="font-extrabold">${pkg.priceFrom} - ${pkg.priceTo}</p>               {/* Price Range*/}
                             </div>
                             <div>
-                                <label className="text-sm text-muted-foreground block mb-1">District</label>
-                                <p className="font-medium">{pkg.district || "Not specified"}</p>               {/* District*/}
+                                <label className="text-sm font-bold text-muted-foreground block mb-1">District</label>
+                                <p className="font-extrabold">{pkg.district || "Not specified"}</p>               {/* District*/}
                             </div>
                         </div>
                     </section>

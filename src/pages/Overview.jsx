@@ -41,7 +41,7 @@ const Overview = () => {
     const confirmedTrips = trips.filter((t) => t.status === "confirmed"); {/* Confirmed Trips */ }
     const inProgressTrips = trips.filter((t) => t.status === "in_progress"); {/* In Progress Trips */ }
     const completedTrips = trips.filter((t) => t.status === "completed"); {/* Completed Trips */ }
-    const rejectedTrips = trips.filter((t) => t.status === "rejected"); {/* Rejected Trips */ }
+    const cancelledTrips = trips.filter((t) => t.status === "cancelled"); {/* Cancelled Trips */ }
 
     const handleTripClick = useCallback(async (trip) => {
         const bookingDetail = await api.getBookingById(trip.id);
@@ -153,8 +153,8 @@ const Overview = () => {
                             <TabsTrigger value="completed" className="data-[state=active]:bg-card data-[state=active]:shadow-soft">
                                 Completed ({completedTrips.length})
                             </TabsTrigger>
-                            <TabsTrigger value="rejected" className="data-[state=active]:bg-card data-[state=active]:shadow-soft">
-                                Rejected ({rejectedTrips.length})
+                            <TabsTrigger value="cancelled" className="data-[state=active]:bg-card data-[state=active]:shadow-soft">
+                                Cancelled ({cancelledTrips.length})
                             </TabsTrigger>
                         </TabsList>
                         <Link to="/trips">
@@ -247,10 +247,10 @@ const Overview = () => {
                         </div>
                     </TabsContent>
 
-                    {/* Rejected Trips */}
-                    <TabsContent value="rejected" className="mt-0">
+                    {/* Cancelled Trips */}
+                    <TabsContent value="cancelled" className="mt-0">
                         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-                            {rejectedTrips.map((trip) => (
+                            {cancelledTrips.map((trip) => (
                                 <TripCard
                                     key={trip.id}
                                     trip={trip}
@@ -259,9 +259,9 @@ const Overview = () => {
                                     onHotelReview={() => handleHotelReviewClick(trip)}
                                 />
                             ))}
-                            {rejectedTrips.length === 0 && (
+                            {cancelledTrips.length === 0 && (
                                 <div className="col-span-full text-center py-12 text-muted-foreground">
-                                    No rejected trips
+                                    No cancelled trips
                                 </div>
                             )}
                         </div>

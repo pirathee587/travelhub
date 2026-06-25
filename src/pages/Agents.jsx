@@ -12,6 +12,7 @@ import {
     Briefcase,
     ChevronRight,
     Calendar,
+    Package,
 } from "lucide-react";
 import { useAllAgents } from "@/hooks/useApi";
 import { cn } from "@/lib/utils";
@@ -130,6 +131,12 @@ const AgentCard = memo(({ agent, index }) => {
                     <div className="flex items-center gap-1 text-muted-foreground">
                         <Briefcase className="h-3.5 w-3.5" />
                         <span className="text-sm">{agent.totalTrips} trips</span>
+                    </div>
+                )}
+                {agent.totalPackages != null && (
+                    <div className="flex items-center gap-1.5 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 px-2.5 py-0.5 rounded-md ml-1 border border-emerald-500/20">
+                        <Package className="h-3.5 w-3.5" />
+                        <span className="text-xs font-semibold">{agent.totalPackages} packages</span>
                     </div>
                 )}
                 {agent.memberSince && (

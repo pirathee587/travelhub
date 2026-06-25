@@ -24,8 +24,8 @@ const statusConfig = {                                    // Status Badge Color 
         label: "Completed",
         className: "bg-muted text-muted-foreground font-bold border-border",
     },
-    rejected: {
-        label: "Rejected",
+    cancelled: {
+        label: "Cancelled",
         className: "bg-muted text-destructive font-bold border-destructive",
     },
 

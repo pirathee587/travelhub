@@ -58,7 +58,7 @@ const MyTrips = () => {
     const confirmedTrips = trips.filter((t) => t.status === "confirmed");       //Confirmed
     const inProgressTrips = trips.filter((t) => t.status === "in_progress");   //In Progress
     const completedTrips = trips.filter((t) => t.status === "completed");      //Completed
-    const rejectedTrips = trips.filter((t) => t.status === "rejected");        //Rejected
+    const cancelledTrips = trips.filter((t) => t.status === "cancelled");        //Cancelled
 
     const handleTripClick = async (trip) => {
         const bookingDetail = await api.getBookingById(trip.id);
@@ -154,11 +154,11 @@ const MyTrips = () => {
                         >
                             Completed ({completedTrips.length})
                         </TabsTrigger>
-                        <TabsTrigger                    //Rejected tab to show rejected trips 
-                            value="rejected"
+                        <TabsTrigger                    //Cancelled tab to show cancelled trips 
+                            value="cancelled"
                             className="data-[state=active]:bg-card data-[state=active]:shadow-soft"
                         >
-                            Rejected ({rejectedTrips.length})
+                            Cancelled ({cancelledTrips.length})
                         </TabsTrigger>
                     </TabsList>
 
@@ -239,20 +239,20 @@ const MyTrips = () => {
                         </div>
                     </TabsContent>
 
-                    <TabsContent value="rejected" className="mt-0">
+                    <TabsContent value="cancelled" className="mt-0">
                         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-                            {rejectedTrips.map((trip) => (
+                            {cancelledTrips.map((trip) => (
                                 <TripCard
                                     key={trip.id}
                                     trip={trip}
                                     onClick={() => handleTripClick(trip)}
-                                    onReview={() => handleReviewClick(trip)}    //Rejected trips tab content
+                                    onReview={() => handleReviewClick(trip)}    //Cancelled trips tab content
                                     onHotelReview={() => handleHotelReviewClick(trip)} 
                                 />
                             ))}
-                            {rejectedTrips.length === 0 && (
+                            {cancelledTrips.length === 0 && (
                                 <div className="col-span-full text-center py-12 text-muted-foreground">
-                                    No rejected trips
+                                    No cancelled trips
                                 </div>
                             )}
                         </div>

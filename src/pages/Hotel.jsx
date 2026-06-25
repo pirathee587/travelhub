@@ -34,23 +34,27 @@ const Hotel = () => {
     const preferenceNumber = searchParams.get("preference");
     const returnTo = searchParams.get("returnTo");
 
-    // SWR hook — cached, deduplicated
-    const fetchDistrict = isSelectionMode && districtParam ? districtParam : null;
-    const { data: hotels = [], isLoading } = useAllHotels(fetchDistrict);
+    // Always fetch all hotels to allow flexible local filtering of district
+    const { data: hotels = [], isLoading } = useAllHotels(null);
     const hotelIds = useMemo(() => hotels.map((hotel) => hotel.id).filter(Boolean), [hotels]);
     const { data: roomPriceRanges = {} } = useHotelPriceRanges(hotelIds);
 
-    // Sync district param to local state
+    // Sync district param to local state, normalizing it to remove " District"
     useState(() => {
-        if (districtParam) setSelectedDistrict(districtParam);
+        if (districtParam) {
+            setSelectedDistrict(districtParam.replace(/ district$/i, "").trim());
+        }
     });
 
-    const dynamicDistricts = useMemo(() =>
-        Array.from(
-            new Set(hotels.map((hotel) => hotel.district).filter(Boolean))
-        ).sort(),
-        [hotels]
-    );
+    const dynamicDistricts = useMemo(() => {
+        const uniqueDists = new Set(
+            hotels
+                .map((hotel) => hotel.district)
+                .filter(Boolean)
+                .map((d) => d.replace(/ district$/i, "").trim())
+        );
+        return Array.from(uniqueDists).sort();
+    }, [hotels]);
   
     // Combine hotel data with price ranges from rooms
     const hotelsWithRoomPrice = useMemo(() =>
@@ -77,7 +81,11 @@ const Hotel = () => {
         hotelsWithRoomPrice
             .filter((hotel) => {
                 const matchesApproved = hotel.applicationStatus === "Approved";  //show hotels if only "Approved" from Hotel Table 
-                const matchesDistrict = selectedDistrict === "all" || hotel.district === selectedDistrict; //All District filter
+                
+                const nHotelDist = hotel.district?.replace(/ district$/i, "").trim() || "";
+                const nSelectedDist = selectedDistrict === "all" ? "all" : selectedDistrict?.replace(/ district$/i, "").trim() || "";
+                const matchesDistrict = nSelectedDist === "all" || nHotelDist.toLowerCase() === nSelectedDist.toLowerCase(); //Flexible District filter
+                
                 const matchesSearch = hotel.hotelName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
                     hotel.destination?.toLowerCase().includes(searchQuery.toLowerCase());
                 return matchesApproved && matchesDistrict && matchesSearch;

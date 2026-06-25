@@ -30,8 +30,7 @@ const bottomNavItems = [
     { icon: Settings, label: "Settings", path: "/settings" },
 ];
 
-export function DashboardSidebar() {
-    const [collapsed, setCollapsed] = useState(false);
+export function DashboardSidebar({ collapsed, setCollapsed }) {
     const [mobileOpen, setMobileOpen] = useState(false);
     const location = useLocation();
     const navigate = useNavigate();
@@ -62,9 +61,9 @@ export function DashboardSidebar() {
     const SidebarContent = () => (
         <>
             {/* Logo */} 
-            <div className="p-4 flex items-center gap-3">
-                <div className="h-12 w-12 rounded-xl bg-primary flex items-center justify-center shadow-glow">
-                    <Plane className="h-7 w-7 text-white" />                                                     {/* Airplane Icon */}
+            <div className={cn("p-4 flex items-center gap-3 transition-all duration-300", collapsed && "justify-center px-2 py-4")}>
+                <div className={cn("rounded-xl bg-primary flex items-center justify-center shadow-glow transition-all duration-300", collapsed ? "h-10 w-10" : "h-12 w-12")}>
+                    <Plane className={cn("text-white transition-all duration-300", collapsed ? "h-5 w-5" : "h-7 w-7")} />                                                     {/* Airplane Icon */}
                 </div>
                 {!collapsed && (
                     <div className="animate-fade-in">
@@ -75,16 +74,18 @@ export function DashboardSidebar() {
             </div>
 
             {/* Main Navigation */}
-            <nav className="flex-1 px-3 py-4 space-y-1">
+            <nav className={cn("flex-1 px-3 py-4 space-y-1 transition-all duration-300", collapsed && "px-1")}>
                 {navItems.map((item) => (
                     <NavLink
                         key={item.path}
                         to={item.path}
                         onClick={() => setMobileOpen(false)}
                         className={cn(
-                            "flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300",
-                            "text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-sidebar-accent hover:translate-x-1",
-                            isActive(item.path) && "bg-sidebar-primary text-sidebar-primary-foreground shadow-glow translate-x-1"
+                            "flex items-center rounded-xl transition-all duration-300",
+                            collapsed ? "justify-center px-0 py-3" : "px-4 py-3 gap-3",
+                            "text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-sidebar-accent",
+                            !collapsed && "hover:translate-x-1",
+                            isActive(item.path) && (collapsed ? "bg-sidebar-primary text-sidebar-primary-foreground shadow-glow" : "bg-sidebar-primary text-sidebar-primary-foreground shadow-glow translate-x-1")
                         )}
                     >
                         <item.icon className="h-5 w-5 flex-shrink-0" />
@@ -93,27 +94,16 @@ export function DashboardSidebar() {
                 ))}
             </nav>
 
-            {/* Notifications */}
-            {/* {!collapsed && (
-                <div className="mx-3 p-4 rounded-xl bg-sidebar-accent/50 border border-sidebar-border animate-fade-in">
-                    <div className="flex items-center gap-2 mb-2">
-                        <Bell className="h-4 w-4 text-sidebar-primary" />
-                        <span className="text-sm font-medium text-sidebar-foreground">Notifications</span>
-                        <Badge className="ml-auto bg-accent text-accent-foreground text-xs px-1.5 py-0.5">3</Badge>
-                    </div>
-                    <p className="text-xs text-sidebar-foreground/60">You have 3 new updates</p>
-                </div>
-            )} */}
-
             {/* Bottom Navigation */}
-            <nav className="px-3 py-4 border-t border-sidebar-border space-y-1">
+            <nav className={cn("px-3 py-4 border-t border-sidebar-border space-y-1 transition-all duration-300", collapsed && "px-1")}>
                 {bottomNavItems.map((item) => (
                     <NavLink
                         key={item.path}
                         to={item.path}
                         onClick={() => setMobileOpen(false)}
                         className={cn(
-                            "flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all",
+                            "flex items-center rounded-lg transition-all",
+                            collapsed ? "justify-center px-0 py-2.5" : "px-3 py-2.5 gap-3",
                             "text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-sidebar-accent",
                             isActive(item.path) && "bg-sidebar-accent text-sidebar-foreground"
                         )}
@@ -125,8 +115,10 @@ export function DashboardSidebar() {
                 <button
                     onClick={handleLogout}
                     className={cn(
-                        "w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300",
-                        "text-sidebar-foreground/70 hover:text-destructive hover:bg-destructive/10 hover:translate-x-1"
+                        "w-full flex items-center rounded-xl transition-all duration-300",
+                        collapsed ? "justify-center px-0 py-3" : "px-4 py-3 gap-3",
+                        "text-sidebar-foreground/70 hover:text-destructive hover:bg-destructive/10",
+                        !collapsed && "hover:translate-x-1"
                     )}
                 >
                     <LogOut className="h-5 w-5 flex-shrink-0" />
@@ -183,7 +175,7 @@ export function DashboardSidebar() {
             {/* Desktop Sidebar */}
             <aside
                 className={cn(
-                    "hidden lg:flex flex-col fixed left-0 top-0 h-screen bg-sidebar border-r border-sidebar-border transition-all duration-300 z-30",
+                    "hidden lg:flex flex-col relative h-screen bg-sidebar border-r border-sidebar-border transition-all duration-300 ease-in-out z-30 flex-shrink-0",
                     collapsed ? "w-16" : "w-64"
                 )}
             >

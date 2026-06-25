@@ -98,7 +98,7 @@ const Explore = () => {
                     pkg.category?.toLowerCase().includes(query) ||
                     pkg.district?.toLowerCase().includes(query);
                 const matchesCategory =
-                    selectedCategory === "all" || pkg.category === selectedCategory;
+                    selectedCategory === "all" || (pkg.category && pkg.category.toLowerCase() === selectedCategory.toLowerCase());
                 const matchesDistrict =
                     selectedDistrict === "all" || pkg.district === selectedDistrict;
                 return matchesSearch && matchesCategory && matchesDistrict;
