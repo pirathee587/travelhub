@@ -32,9 +32,11 @@ import {
     User,
     Pencil,
     Trash2,
+    ChevronLeft,
+    ChevronRight,
 } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { useEffect, useState, useMemo, useCallback } from "react";
+import { useEffect, useState, useMemo, useCallback, useRef } from "react";
 import { cn } from "@/lib/utils";
 import { useHotelById, useHotelReviews, useHotelRating, useHotelRooms, useHotelImages } from "@/hooks/useApi";
 import { HotelDetailSkeleton } from "@/components/ui/skeletons";
@@ -51,7 +53,9 @@ const HotelDetails = () => {
     const [searchParams] = useSearchParams();
     const [reviewFilter, setReviewFilter] = useState("all");
     const [selectedImage, setSelectedImage] = useState(null);
-    const [activeImage, setActiveImage] = useState(0);
+    const [carouselIndex, setCarouselIndex] = useState(0);
+    const touchStartX = useRef(null);
+    const touchEndX = useRef(null);
     const [editingReview, setEditingReview] = useState(null);
     const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
     const [isDeletingReview, setIsDeletingReview] = useState(null);
@@ -213,9 +217,16 @@ const HotelDetails = () => {
         ? hotelImages
         : (hotel.imageUrl ? [hotel.imageUrl] : []);
 
-    // The gallery shows 3 slots (1 large + 2 small). Extra images appear in a thumbnail strip below.
-    const galleryImages = [0, 1, 2].map((index) => allImages[index] || null);
-    const remainingCount = allImages.length - 3;
+    // Carousel helpers
+    const totalImages = allImages.length;
+    const goPrev = () => setCarouselIndex(i => (i - 1 + totalImages) % totalImages);
+    const goNext = () => setCarouselIndex(i => (i + 1) % totalImages);
+    const onTouchStart = (e) => { touchStartX.current = e.touches[0].clientX; };
+    const onTouchEnd = (e) => {
+        touchEndX.current = e.changedTouches[0].clientX;
+        const diff = touchStartX.current - touchEndX.current;
+        if (Math.abs(diff) > 40) diff > 0 ? goNext() : goPrev();
+    };
 
     return (
         <DashboardLayout>
@@ -281,95 +292,82 @@ const HotelDetails = () => {
                     </div>
                 </div>
 
-                {/* Image Gallery */}
-                <div className="grid grid-cols-1 lg:grid-cols-[2fr_1fr] gap-4 lg:h-[440px] mb-8 lg:mb-10 items-stretch">
-                    <div
-                        className={cn(
-                            "relative group rounded-2xl overflow-hidden shadow-lg h-[340px] lg:h-full cursor-pointer",
-                            activeImage === 0 && "ring-2 ring-primary ring-offset-2 ring-offset-background"
-                        )}
-                        onClick={() => {
-                            setActiveImage(0);
-                            setSelectedImage(galleryImages[0]);
-                        }}
+                {/* ── Image Carousel ───────────────────────────────────────────── */}
+                {allImages.length === 0 ? (
+                    <div className="w-full h-[380px] lg:h-[460px] rounded-2xl bg-muted/20 border border-dashed flex flex-col items-center justify-center text-muted-foreground/40 gap-3 mb-8">
+                        <ImageOff className="h-14 w-14" />
+                        <span className="text-sm font-medium">No Images Available</span>
+                    </div>
+                ) : (
+                    <div className="relative w-full h-[380px] lg:h-[460px] rounded-2xl overflow-hidden shadow-xl mb-8 select-none group"
+                        onTouchStart={onTouchStart}
+                        onTouchEnd={onTouchEnd}
                     >
-                        {galleryImages[0] ? (
-                            <img
-                                src={galleryImages[0]}
-                                alt={`${hotel.hotelName} main view`}
-                                className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-                                loading="eager"
-                            />
-                        ) : (
-                            <div className="w-full h-full flex flex-col items-center justify-center text-muted-foreground/40 bg-muted/20 gap-2">
-                                <ImageOff className="h-12 w-12" />
-                                <span className="text-sm">No Images Available</span>
-                            </div>
-                        )}
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent" />
-                    </div>
-
-                    <div className="grid grid-cols-2 lg:grid-cols-1 lg:grid-rows-2 gap-4 lg:h-full min-h-0">
-                        {galleryImages.slice(1, 3).map((img, idx) => {
-                            const imageIndex = idx + 1;
-                            return (
-                                <div
-                                    key={imageIndex}
-                                    className={cn(
-                                        "relative group rounded-2xl overflow-hidden shadow-md cursor-pointer h-[160px] lg:h-full min-h-0",
-                                        activeImage === imageIndex && "ring-2 ring-primary ring-offset-2 ring-offset-background"
-                                    )}
-                                    onClick={() => {
-                                        if (img) {
-                                            setActiveImage(imageIndex);
-                                            setSelectedImage(img);
-                                        }
-                                    }}
+                        {/* Slides */}
+                        <div
+                            className="flex h-full transition-transform duration-500 ease-in-out"
+                            style={{ transform: `translateX(-${carouselIndex * 100}%)` }}
+                        >
+                            {allImages.map((img, idx) => (
+                                <div key={idx} className="relative flex-shrink-0 w-full h-full cursor-pointer"
+                                    onClick={() => setSelectedImage(img)}
                                 >
-                                    {img ? (
-                                        <>
-                                            <img
-                                                src={img}
-                                                alt={`${hotel.hotelName} ${imageIndex + 1}`}
-                                                className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-                                                loading="lazy"
-                                            />
-                                            <div className="absolute inset-0 bg-gradient-to-t from-black/25 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                                        </>
-                                    ) : (
-                                        <div className="w-full h-full flex items-center justify-center text-muted-foreground/20 bg-muted/10">
-                                            <ImageOff className="h-8 w-8" />
-                                        </div>
-                                    )}
+                                    <img
+                                        src={img}
+                                        alt={`${hotel.hotelName} image ${idx + 1}`}
+                                        className="w-full h-full object-cover"
+                                        loading={idx === 0 ? "eager" : "lazy"}
+                                    />
+                                    <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent" />
                                 </div>
-                            );
-                        })}
-                    </div>
-                </div>
-                        {/* Extra images strip — shown only when there are more than 3 images */}
-                        {allImages.length > 3 && (
-                            <div className="flex gap-2 overflow-x-auto pb-1">
-                                {allImages.slice(3).map((img, idx) => (
-                                    <div
-                                        key={idx + 3}
-                                        className="relative flex-shrink-0 h-16 w-24 rounded-lg overflow-hidden cursor-pointer group"
-                                        onClick={() => setSelectedImage(img)}
-                                    >
-                                        <img
-                                            src={img}
-                                            alt={`${hotel.hotelName} photo ${idx + 4}`}
-                                            className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
-                                            loading="lazy"
-                                        />
-                                        {idx === allImages.slice(3).length - 1 && remainingCount > 1 && (
-                                            <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
-                                                <span className="text-white text-xs font-bold">+{remainingCount - 1} more</span>
-                                            </div>
+                            ))}
+                        </div>
+
+                        {/* Prev / Next arrows — only show when >1 image */}
+                        {totalImages > 1 && (
+                            <>
+                                <button
+                                    onClick={(e) => { e.stopPropagation(); goPrev(); }}
+                                    className="absolute left-3 top-1/2 -translate-y-1/2 z-10 bg-black/40 hover:bg-black/70 text-white rounded-full p-2 transition-all opacity-0 group-hover:opacity-100 backdrop-blur-sm"
+                                    aria-label="Previous image"
+                                >
+                                    <ChevronLeft className="h-6 w-6" />
+                                </button>
+                                <button
+                                    onClick={(e) => { e.stopPropagation(); goNext(); }}
+                                    className="absolute right-3 top-1/2 -translate-y-1/2 z-10 bg-black/40 hover:bg-black/70 text-white rounded-full p-2 transition-all opacity-0 group-hover:opacity-100 backdrop-blur-sm"
+                                    aria-label="Next image"
+                                >
+                                    <ChevronRight className="h-6 w-6" />
+                                </button>
+                            </>
+                        )}
+
+                        {/* Image counter badge */}
+                        <div className="absolute top-3 right-3 z-10 bg-black/50 backdrop-blur-sm text-white text-xs font-semibold px-3 py-1 rounded-full">
+                            {carouselIndex + 1} / {totalImages}
+                        </div>
+
+                        {/* Dot indicators */}
+                        {totalImages > 1 && (
+                            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-10 flex gap-2">
+                                {allImages.map((_, idx) => (
+                                    <button
+                                        key={idx}
+                                        onClick={(e) => { e.stopPropagation(); setCarouselIndex(idx); }}
+                                        className={cn(
+                                            "rounded-full transition-all duration-300",
+                                            idx === carouselIndex
+                                                ? "w-6 h-2 bg-white"
+                                                : "w-2 h-2 bg-white/50 hover:bg-white/80"
                                         )}
-                                    </div>
+                                        aria-label={`Go to image ${idx + 1}`}
+                                    />
                                 ))}
                             </div>
                         )}
+                    </div>
+                )}
                 {/* IMAGE END */}
 
 
