@@ -205,8 +205,15 @@ const HotelDetails = () => {
         );
     }
 
-    const images = hotel.images && hotel.images.length > 0 ? hotel.images : [hotel.imageUrl];
-    const galleryImages = [0, 1, 2].map((index) => images[index] || images[0]);
+    // Build the full image list from the imageUrls array the backend now provides.
+    // Fallback order: imageUrls list → legacy imageUrl string → empty array.
+    const allImages = (hotel.imageUrls && hotel.imageUrls.length > 0)
+        ? hotel.imageUrls
+        : (hotel.imageUrl ? [hotel.imageUrl] : []);
+
+    // The gallery shows 3 slots (1 large + 2 small). Any extra images are accessible via the lightbox strip.
+    const galleryImages = [0, 1, 2].map((index) => allImages[index] || allImages[0] || null);
+    const remainingCount = allImages.length - 3; // how many images are not visible in the 3-slot grid
 
     return (
         <DashboardLayout>
@@ -284,12 +291,19 @@ const HotelDetails = () => {
                             setSelectedImage(galleryImages[0]);
                         }}
                     >
-                        <img
-                            src={galleryImages[0]}
-                            alt={`${hotel.hotelName} main view`}
-                            className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-                            loading="eager"
-                        />
+                        {galleryImages[0] ? (
+                            <img
+                                src={galleryImages[0]}
+                                alt={`${hotel.hotelName} main view`}
+                                className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                                loading="eager"
+                            />
+                        ) : (
+                            <div className="w-full h-full flex flex-col items-center justify-center text-muted-foreground/40 bg-muted/20 gap-2">
+                                <ImageOff className="h-12 w-12" />
+                                <span className="text-sm">No Images Available</span>
+                            </div>
+                        )}
                         <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent" />
                     </div>
 
@@ -304,23 +318,58 @@ const HotelDetails = () => {
                                         activeImage === imageIndex && "ring-2 ring-primary ring-offset-2 ring-offset-background"
                                     )}
                                     onClick={() => {
-                                        setActiveImage(imageIndex);
-                                        setSelectedImage(img);
+                                        if (img) {
+                                            setActiveImage(imageIndex);
+                                            setSelectedImage(img);
+                                        }
                                     }}
                                 >
-                                    <img
-                                        src={img}
-                                        alt={`${hotel.hotelName} ${imageIndex + 1}`}
-                                        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-                                        loading="lazy"
-                                    />
-                                    <div className="absolute inset-0 bg-gradient-to-t from-black/25 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                                    {img ? (
+                                        <>
+                                            <img
+                                                src={img}
+                                                alt={`${hotel.hotelName} ${imageIndex + 1}`}
+                                                className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                                                loading="lazy"
+                                            />
+                                            <div className="absolute inset-0 bg-gradient-to-t from-black/25 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                                        </>
+                                    ) : (
+                                        <div className="w-full h-full flex items-center justify-center text-muted-foreground/20 bg-muted/10">
+                                            <ImageOff className="h-8 w-8" />
+                                        </div>
+                                    )}
                                 </div>
                             );
                         })}
                     </div>
                 </div>
+                        {/* Extra images strip — shown only when there are more than 3 images */}
+                        {allImages.length > 3 && (
+                            <div className="flex gap-2 overflow-x-auto pb-1">
+                                {allImages.slice(3).map((img, idx) => (
+                                    <div
+                                        key={idx + 3}
+                                        className="relative flex-shrink-0 h-16 w-24 rounded-lg overflow-hidden cursor-pointer group"
+                                        onClick={() => setSelectedImage(img)}
+                                    >
+                                        <img
+                                            src={img}
+                                            alt={`${hotel.hotelName} photo ${idx + 4}`}
+                                            className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
+                                            loading="lazy"
+                                        />
+                                        {idx === allImages.slice(3).length - 1 && remainingCount > 1 && (
+                                            <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
+                                                <span className="text-white text-xs font-bold">+{remainingCount - 1} more</span>
+                                            </div>
+                                        )}
+                                    </div>
+                                ))}
+                            </div>
+                        )}
                 {/* IMAGE END */}
+
 
                 {/* Content Section */}
                 <div className="relative z-10 w-full space-y-12 mt-10 lg:mt-14">
