@@ -5,6 +5,7 @@ import java.util.Map;
 
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.travelhub.backend.common.ResourceNotFoundException;
 import com.travelhub.backend.dto.response.AdminHotelDetailResponse;
@@ -12,11 +13,13 @@ import com.travelhub.backend.dto.response.AdminHotelResponse;
 import com.travelhub.backend.entity.Amenity;
 import com.travelhub.backend.entity.Hotel;
 import com.travelhub.backend.entity.Room;
+import com.travelhub.backend.entity.User;
 import com.travelhub.backend.event.HotelEvent;
 import com.travelhub.backend.repository.AmenityRepository;
 import com.travelhub.backend.repository.HotelRepository;
 import com.travelhub.backend.repository.ReviewRepository;
 import com.travelhub.backend.repository.RoomRepository;
+import com.travelhub.backend.repository.UserRepository;
 import com.travelhub.backend.service.HotelPricingService.PriceRange;
 
 import lombok.RequiredArgsConstructor;
@@ -29,7 +32,8 @@ public class AdminHotelService {
     private final RoomRepository             roomRepository;
     private final AmenityRepository          amenityRepository;
     private final ReviewRepository           reviewRepository;
-        private final HotelPricingService        hotelPricingService;
+    private final HotelPricingService        hotelPricingService;
+    private final UserRepository             userRepository;
     private final ApplicationEventPublisher  eventPublisher; // ← சேர்க்கணும்
 
     // ── Get All Hotels ────────────────────────────────
@@ -124,6 +128,7 @@ public class AdminHotelService {
     }
 
     // ── Approve Hotel ─────────────────────────────────
+    @Transactional
     public AdminHotelDetailResponse approveHotel(Long id) {
         Hotel hotel = hotelRepository.findById(id)
                 .orElseThrow(() ->
@@ -132,6 +137,12 @@ public class AdminHotelService {
         hotel.setApplicationStatus("Approved");
         hotelRepository.save(hotel);
 
+        User owner = hotel.getOwner();
+        if (owner != null) {
+            owner.setStatus("ACTIVE");
+            owner.setIsActive(true);
+            userRepository.save(owner);
+        }
 
         eventPublisher.publishEvent(
                 new HotelEvent(this, hotel, "APPROVED"));

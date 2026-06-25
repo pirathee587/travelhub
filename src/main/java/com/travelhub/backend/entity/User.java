@@ -72,6 +72,9 @@ public class User {
 
     private Long agentId; // Legacy Link to the Agent table (To be removed after Agent refactor)
     
+    @OneToMany(mappedBy = "owner", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private List<Agent> agencies;
+    
     private Long hotelId; // Link to the Hotel table
     
 
