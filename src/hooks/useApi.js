@@ -65,6 +65,13 @@ export function useHotelById(id) {
     return useSWR(id ? `hotel-${id}` : null, () => api.getHotelById(id), defaultOptions);
 }
 
+export function useHotelImages(id) {
+    return useSWR(id ? `hotel-images-${id}` : null, () => api.getHotelImages(id), {
+        ...defaultOptions,
+        fallbackData: [],
+    });
+}
+
 export function useAllRooms() {
     return useSWR("rooms", () => api.getAllRooms(), {
         ...defaultOptions,

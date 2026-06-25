@@ -39,6 +39,10 @@ export const api = {
     getHotelById: (id) =>
         fetch(`${BASE_URL}/hotels/${id}`).then(handleResponse).catch(() => null),
 
+    // Fetch all images for a hotel from hotel_images table (ordered by display_order)
+    getHotelImages: (id) =>
+        fetch(`${BASE_URL}/hotels/${id}/images`).then(handleResponse).catch(() => []),
+
     getAllRooms: () =>
         fetch(`${BASE_URL}/rooms`).then(handleResponse).catch(() => []),
 

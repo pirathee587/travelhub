@@ -36,7 +36,7 @@ import {
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { useEffect, useState, useMemo, useCallback } from "react";
 import { cn } from "@/lib/utils";
-import { useHotelById, useHotelReviews, useHotelRating, useHotelRooms } from "@/hooks/useApi";
+import { useHotelById, useHotelReviews, useHotelRating, useHotelRooms, useHotelImages } from "@/hooks/useApi";
 import { HotelDetailSkeleton } from "@/components/ui/skeletons";
 import { EditReviewDialog } from "@/components/dashboard/EditReviewDialog";
 import { DeleteConfirmDialog } from "@/components/dashboard/DeleteConfirmDialog";
@@ -64,6 +64,7 @@ const HotelDetails = () => {
     const { data: reviews = [], mutate: mutateReviews } = useHotelReviews(id);
     const { data: ratingInfo = { averageRating: 0, reviewCount: 0 } } = useHotelRating(id);
     const { data: rooms = [], isLoading: roomsLoading } = useHotelRooms(id);
+    const { data: hotelImages = [] } = useHotelImages(id); // all images from hotel_images table
 
     const isSelectionMode = searchParams.get("mode") === "select";
     const preferenceNumber = searchParams.get("preference");
@@ -205,15 +206,16 @@ const HotelDetails = () => {
         );
     }
 
-    // Build the full image list from the imageUrls array the backend now provides.
-    // Fallback order: imageUrls list → legacy imageUrl string → empty array.
-    const allImages = (hotel.imageUrls && hotel.imageUrls.length > 0)
-        ? hotel.imageUrls
+    // Build the full image list from the dedicated /api/hotels/{id}/images endpoint
+    // which queries the hotel_images table directly using hotel_id.
+    // Fallback: legacy hotel.imageUrl field for older records that haven't been migrated.
+    const allImages = hotelImages.length > 0
+        ? hotelImages
         : (hotel.imageUrl ? [hotel.imageUrl] : []);
 
-    // The gallery shows 3 slots (1 large + 2 small). Any extra images are accessible via the lightbox strip.
-    const galleryImages = [0, 1, 2].map((index) => allImages[index] || allImages[0] || null);
-    const remainingCount = allImages.length - 3; // how many images are not visible in the 3-slot grid
+    // The gallery shows 3 slots (1 large + 2 small). Extra images appear in a thumbnail strip below.
+    const galleryImages = [0, 1, 2].map((index) => allImages[index] || null);
+    const remainingCount = allImages.length - 3;
 
     return (
         <DashboardLayout>
