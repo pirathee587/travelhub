@@ -15,6 +15,8 @@ import org.springframework.stereotype.Service;
 public class UserService {
 
     private final UserRepository userRepository;
+    private final PasswordEncoder passwordEncoder;
+
 
     public User updateProfile(Long userId, UpdateProfileRequest request) {
         User user = userRepository.findById(userId)
@@ -40,12 +42,16 @@ public class UserService {
         return userRepository.save(user);
     }
 
-    public void changePassword(Long userId, UpdatePasswordRequest request, PasswordEncoder passwordEncoder) {
+    public void changePassword(Long userId, UpdatePasswordRequest request) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User", "id", userId));
 
         if (!passwordEncoder.matches(request.getCurrentPassword(), user.getPassword())) {
             throw new BadRequestException("Current password is incorrect");
+        }
+
+        if (passwordEncoder.matches(request.getNewPassword(), user.getPassword())) {
+            throw new BadRequestException("New password cannot be the same as the current password");
         }
 
         user.setPassword(passwordEncoder.encode(request.getNewPassword()));

@@ -79,4 +79,7 @@ public interface BookingRepository
             "WHERE b.status = :status " +
             "ORDER BY b.createdAt DESC")
     List<Booking> findByStatusWithDetails(@Param("status") String status);
+
+    List<Booking> findByCreatedAtAfter(java.time.LocalDateTime startDate);
+    List<Booking> findTop5ByOrderByCreatedAtDesc();
 }

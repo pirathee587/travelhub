@@ -160,6 +160,11 @@ public class AdminPackageService {
                         new ResourceNotFoundException(
                                 "Package", "id", id));
         pkg.setIsActive(!pkg.getIsActive());
+        if (Boolean.TRUE.equals(pkg.getIsActive())) {
+            pkg.setApplicationStatus("Approved");
+        } else {
+            pkg.setApplicationStatus("Suspended");
+        }
         packageRepository.save(pkg);
         return getPackageDetail(id);
     }

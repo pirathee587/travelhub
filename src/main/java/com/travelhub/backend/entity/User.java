@@ -81,6 +81,7 @@ public class User {
     private String nicNumber;             // Captured at Signup
     private String nicImage;              // Captured in Profile
 
+    @JsonIgnore
     @OneToMany(mappedBy = "owner", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<Agent> agencies;          // Owned agencies list
     

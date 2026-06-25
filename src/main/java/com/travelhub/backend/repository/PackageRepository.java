@@ -55,4 +55,9 @@ public interface PackageRepository extends JpaRepository<Package, Long> {
     // For generating PKG001, PKG002 etc.
     @Query("SELECT COUNT(p) FROM Package p")
     Long countAll();
+
+    List<Package> findTop5ByOrderByCreatedAtDesc();
+
+    @Query("SELECT p.category, COUNT(p) FROM Package p WHERE p.deletedAt IS NULL GROUP BY p.category")
+    List<Object[]> countPackagesByCategory();
 }

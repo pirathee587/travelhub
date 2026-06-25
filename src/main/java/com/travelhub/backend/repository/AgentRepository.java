@@ -65,4 +65,6 @@ public interface AgentRepository extends JpaRepository<Agent, Long> {
             @Param("month") int month,
             @Param("year") int year
     );
+
+    List<Agent> findTop5ByOrderBySubmittedDateDesc();
 }
