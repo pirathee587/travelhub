@@ -105,7 +105,7 @@ public class AdminHotelService {
                 hotel.getId(),
                 hotel.getHotelName(),
                 avgRating != null ? Math.round(avgRating * 10.0) / 10.0 : 0.0,
-                hotel.getImageUrl(),
+                hotel.getHotelImages() != null ? hotel.getHotelImages().stream().map(hi -> hi.getImageUrl()).toList() : List.of(),
                 hotel.getDistrict(),
                 hotel.getLocation(),
                 roomTypes,
@@ -185,7 +185,7 @@ public class AdminHotelService {
                                 priceRange != null ? priceRange.priceTo() : null,
                 Math.round(rating * 10.0) / 10.0,
                 reviewCount,
-                h.getImageUrl(),
+                h.getHotelImages() != null ? h.getHotelImages().stream().map(hi -> hi.getImageUrl()).toList() : List.of(),
                 h.getDistrict(),
                 h.getApplicationStatus()
         );

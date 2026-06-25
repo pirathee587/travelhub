@@ -1,6 +1,7 @@
 package com.travelhub.backend.entity;
 
 import com.travelhub.backend.enums.Role;
+import com.travelhub.backend.enums.District;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -44,7 +45,7 @@ public class User {
     private String hotelName;             // Hotel Owner
     private String businessRegistrationId; // Hotel Owner (For Admin Verification)
     private String businessAddress;        // Hotel Owner
-    private String district;               // Hotel Owner
+    private District district;               // Hotel Owner
 
     // Preferred Language (EN, SI, TA)
     private String preferredLanguage;

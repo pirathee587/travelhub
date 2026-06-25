@@ -1,5 +1,7 @@
 package com.travelhub.backend.dto.response;
 
+import com.travelhub.backend.enums.District;
+
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -20,9 +22,9 @@ public class HotelResponse {
     private Double priceTo;
     private Double rating;
     private Integer reviewCount;
-    private String imageUrl;
+    private List<String> images;
     private List<String> amenities;
-    private String district;
+    private District district;
     private String applicationStatus;
     private String hotelEmail;
     private String hotelContactNumber;

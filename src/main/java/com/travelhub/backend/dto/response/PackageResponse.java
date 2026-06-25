@@ -1,5 +1,7 @@
 package com.travelhub.backend.dto.response;
 
+import com.travelhub.backend.enums.District;
+
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -18,6 +20,7 @@ public class PackageResponse {
     private Double priceFrom;
     private Double priceTo;
     private String duration;
+    private District district;
     private String category;
     private String imageUrl;
     private Double rating;
@@ -25,5 +28,4 @@ public class PackageResponse {
     private String festivalDetails;
     private Boolean trending;
     private String agentName;
-    private String district;
 }

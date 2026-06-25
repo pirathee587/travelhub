@@ -3,6 +3,7 @@ package com.travelhub.backend.service;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import com.travelhub.backend.enums.District;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -10,6 +11,7 @@ import org.springframework.transaction.annotation.Transactional;
 import com.travelhub.backend.dto.response.HotelResponse;
 import com.travelhub.backend.dto.response.RoomResponse;
 import com.travelhub.backend.entity.Hotel;
+import com.travelhub.backend.entity.HotelImage;
 import com.travelhub.backend.repository.HotelRepository;
 import com.travelhub.backend.repository.ReviewRepository;
 import com.travelhub.backend.service.HotelPricingService.PriceRange;
@@ -38,7 +40,8 @@ public class HotelService {
     }
 
     public List<HotelResponse> getHotelsByDistrict(String district) {
-        List<Hotel> hotels = hotelRepository.findByApplicationStatusAndDistrictIgnoreCase("Approved", district);
+        District districtEnum = District.fromString(district);
+        List<Hotel> hotels = hotelRepository.findByApplicationStatusAndDistrict("Approved", districtEnum);
         return toHotelResponses(hotels);
     }
 
@@ -89,6 +92,13 @@ public class HotelService {
                     .collect(Collectors.toList());
         }
 
+        List<String> images = null;
+        if (hotel.getHotelImages() != null && !hotel.getHotelImages().isEmpty()) {
+            images = hotel.getHotelImages().stream()
+                    .map(HotelImage::getImageUrl)
+                    .collect(Collectors.toList());
+        }
+
         List<RoomResponse> roomResponses = null;
         if (hotel.getRooms() != null && !hotel.getRooms().isEmpty()) {
             roomResponses = hotel.getRooms().stream()
@@ -115,7 +125,7 @@ public class HotelService {
                 .priceTo(priceRange != null ? priceRange.priceTo() : null)
                 .rating(Math.round(rating * 10.0) / 10.0)
                 .reviewCount(reviewCount)
-                .imageUrl(hotel.getImageUrl())
+                .images(images)
                 .amenities(amenityList)
                 .rooms(roomResponses)
                 .district(hotel.getDistrict())

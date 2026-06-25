@@ -1,5 +1,6 @@
 package com.travelhub.backend.entity;
 
+import com.travelhub.backend.enums.District;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
@@ -40,7 +41,7 @@ public class Package {
     private String endPlace;
     private String duration;
     private String category;
-    private String district;
+    private District district;
 
     // ── Price ─────────────────────────────────────────────────
     @Column(name = "price_from")

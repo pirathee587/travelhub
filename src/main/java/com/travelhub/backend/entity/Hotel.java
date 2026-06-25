@@ -2,6 +2,7 @@ package com.travelhub.backend.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.travelhub.backend.enums.District;
 import jakarta.persistence.*;
 import lombok.*;
 import java.util.List;
@@ -33,8 +34,7 @@ public class Hotel {
 
     private Double priceFrom;
     private Double priceTo;
-    private String imageUrl;
-    private String district;
+    private District district;
 
     // ── Owner Information ──────────────────────────────
     @Column(name = "owner_name")
@@ -82,6 +82,12 @@ public class Hotel {
             fetch = FetchType.LAZY)
     private List<Room> rooms;
 
+    // ── Images ─────────────────────────────────────────
+    @OneToMany(mappedBy = "hotel",
+            cascade = CascadeType.ALL,
+            orphanRemoval = true,
+            fetch = FetchType.LAZY)
+    private List<HotelImage> hotelImages;
 
     // ── Link to Owner (User entity) ──
     @ManyToOne(fetch = FetchType.LAZY)

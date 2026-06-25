@@ -4,10 +4,12 @@ import com.travelhub.backend.enums.Role;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import com.travelhub.backend.enums.District;
 
 @Data
 @Builder
@@ -40,6 +42,8 @@ public class RegisterRequest {
     private String licenseNumber;
     private String hotelName;
     private String businessRegistrationId;
-    private String businessAddress;
-    private String district;
+    private String businessAddress;        // Hotel Owner
+    private District district;               // Hotel Owner
+
+    // Preferred Language (EN, SI, TA)
 }

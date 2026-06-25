@@ -1,5 +1,7 @@
 package com.travelhub.backend.dto.response;
 
+import com.travelhub.backend.enums.District;
+
 import lombok.Builder;
 import lombok.Data;
 
@@ -15,7 +17,7 @@ public class OwnerProfileResponse {
     private String profileImage;
     private String preferredLanguage;
     private String businessAddress;
-    private String district;
+    private District district;
     private String businessRegistrationId;
     private String status;
     private LocalDateTime updatedAt;

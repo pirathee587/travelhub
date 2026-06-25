@@ -17,7 +17,9 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
+import java.util.ArrayList;
 import java.util.stream.Collectors;
+import com.travelhub.backend.entity.HotelImage;
 
 @Service
 @RequiredArgsConstructor
@@ -53,20 +55,37 @@ public class OwnerHotelService {
     }
 
     @Transactional
-    public HotelResponse createHotel(OwnerHotelRequest request, MultipartFile hotelImage, Long ownerId) {
+    public HotelResponse createHotel(OwnerHotelRequest request, List<MultipartFile> hotelImages, Long ownerId) {
         User owner = userRepository.findById(ownerId)
                 .orElseThrow(() -> new RuntimeException("Owner not found with id: " + ownerId));
 
-        String imageUrl = request.getImageUrl();
-        if (hotelImage != null && !hotelImage.isEmpty()) {
-            try {
-                imageUrl = imageUploadService.uploadHotelImage(hotelImage).getImageUrl();
-            } catch (Exception e) {
-                System.err.println("Warning: Hotel image upload failed: " + e.getMessage());
-                if (imageUrl == null || imageUrl.isBlank()) {
-                    imageUrl = "https://images.unsplash.com/photo-1566073771259-6a8506099945?q=80&w=2070&auto=format&fit=crop";
+        List<HotelImage> imagesToSave = new ArrayList<>();
+        if (hotelImages != null && !hotelImages.isEmpty()) {
+            int displayOrder = 0;
+            for (MultipartFile file : hotelImages) {
+                if (file != null && !file.isEmpty()) {
+                    try {
+                        String uploadedUrl = imageUploadService.uploadHotelImage(file).getImageUrl();
+                        HotelImage hi = HotelImage.builder()
+                                .imageUrl(uploadedUrl)
+                                .displayOrder(displayOrder++)
+                                .originalFileName(file.getOriginalFilename())
+                                .build();
+                        imagesToSave.add(hi);
+                    } catch (Exception e) {
+                        System.err.println("Warning: Hotel image upload failed: " + e.getMessage());
+                    }
                 }
             }
+        }
+        
+        if (imagesToSave.isEmpty()) {
+             HotelImage placeholder = HotelImage.builder()
+                    .imageUrl("https://images.unsplash.com/photo-1566073771259-6a8506099945?q=80&w=2070&auto=format&fit=crop")
+                    .displayOrder(0)
+                    .originalFileName("placeholder")
+                    .build();
+             imagesToSave.add(placeholder);
         }
 
         Hotel hotel = Hotel.builder()
@@ -76,7 +95,6 @@ public class OwnerHotelService {
                 .description(request.getDescription())
                 .priceFrom(request.getPriceFrom())
                 .priceTo(request.getPriceTo())
-                .imageUrl(imageUrl)
                 .district(request.getDistrict())
                 .hotelEmail(request.getOwnerEmail())
                 .hotelContactNumber(request.getPhoneNumber())
@@ -87,7 +105,13 @@ public class OwnerHotelService {
                 .ownerNic(request.getOwnerNic())
                 .applicationStatus("Pending")
                 .owner(owner)
+                .hotelImages(new ArrayList<>())
                 .build();
+                
+        for (HotelImage hi : imagesToSave) {
+            hi.setHotel(hotel);
+            hotel.getHotelImages().add(hi);
+        }
 
         hotel = hotelRepository.save(hotel);
         eventPublisher.publishEvent(new HotelEvent(this, hotel, "CREATED"));
@@ -95,17 +119,65 @@ public class OwnerHotelService {
     }
 
     @Transactional
-    public HotelResponse updateHotel(Long id, OwnerHotelRequest request, MultipartFile hotelImage, Long ownerId) {
+    public HotelResponse updateHotel(Long id, OwnerHotelRequest request, List<MultipartFile> hotelImages, Long ownerId) {
         Hotel hotel = getOwnedHotel(id, ownerId);
 
-        String imageUrl = request.getImageUrl();
-        if (hotelImage != null && !hotelImage.isEmpty()) {
-            try {
-                imageUrl = imageUploadService.uploadHotelImage(hotelImage).getImageUrl();
-                hotel.setImageUrl(imageUrl);
-            } catch (Exception e) {
-                System.err.println("Warning: Hotel image update failed: " + e.getMessage());
+        List<HotelImage> imagesToSave = new ArrayList<>();
+        int displayOrder = 0;
+
+        // 1. Process existing images that the user wants to keep
+        if (request.getExistingImages() != null && !request.getExistingImages().isEmpty()) {
+            for (String existingUrl : request.getExistingImages()) {
+                HotelImage hi = HotelImage.builder()
+                        .hotel(hotel)
+                        .imageUrl(existingUrl)
+                        .displayOrder(displayOrder++)
+                        .originalFileName("existing_image")
+                        .build();
+                imagesToSave.add(hi);
             }
+        }
+
+        // 2. Process newly uploaded images
+        if (hotelImages != null && !hotelImages.isEmpty()) {
+            for (MultipartFile file : hotelImages) {
+                if (file != null && !file.isEmpty()) {
+                    try {
+                        String uploadedUrl = imageUploadService.uploadHotelImage(file).getImageUrl();
+                        HotelImage hi = HotelImage.builder()
+                                .hotel(hotel)
+                                .imageUrl(uploadedUrl)
+                                .displayOrder(displayOrder++)
+                                .originalFileName(file.getOriginalFilename())
+                                .build();
+                        imagesToSave.add(hi);
+                    } catch (Exception e) {
+                        System.err.println("Warning: Hotel image upload failed: " + e.getMessage());
+                    }
+                }
+            }
+        }
+
+        // Fallback: if user removed all images and uploaded none, keep a placeholder
+        if (imagesToSave.isEmpty()) {
+            HotelImage placeholder = HotelImage.builder()
+                    .hotel(hotel)
+                    .imageUrl("https://images.unsplash.com/photo-1566073771259-6a8506099945?q=80&w=2070&auto=format&fit=crop")
+                    .displayOrder(0)
+                    .originalFileName("placeholder")
+                    .build();
+            imagesToSave.add(placeholder);
+        }
+
+        // Clear existing collection and add new items to let Hibernate manage the orphans
+        if (hotel.getHotelImages() != null) {
+            hotel.getHotelImages().clear();
+        } else {
+            hotel.setHotelImages(new ArrayList<>());
+        }
+
+        for (HotelImage hi : imagesToSave) {
+            hotel.getHotelImages().add(hi);
         }
 
         hotel.setHotelName(request.getHotelName());
@@ -163,6 +235,12 @@ public class OwnerHotelService {
                     .map(amenity -> amenity.getName())
                     .collect(Collectors.toList())
                 : List.of();
+                
+        List<String> images = (hotel.getHotelImages() != null)
+                ? hotel.getHotelImages().stream()
+                    .map(HotelImage::getImageUrl)
+                    .collect(Collectors.toList())
+                : List.of();
 
         return HotelResponse.builder()
                 .id(hotel.getId())
@@ -172,7 +250,7 @@ public class OwnerHotelService {
                 .description(hotel.getDescription())
                 .priceFrom(hotel.getPriceFrom())
                 .priceTo(hotel.getPriceTo())
-                .imageUrl(hotel.getImageUrl())
+                .images(images)
                 .amenities(amenityList)
                 .district(hotel.getDistrict())
                 .applicationStatus(hotel.getApplicationStatus())

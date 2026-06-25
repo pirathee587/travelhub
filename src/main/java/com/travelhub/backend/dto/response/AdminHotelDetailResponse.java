@@ -1,5 +1,7 @@
 package com.travelhub.backend.dto.response;
 
+import com.travelhub.backend.enums.District;
+
 import java.util.List;
 
 public record AdminHotelDetailResponse(
@@ -8,10 +10,10 @@ public record AdminHotelDetailResponse(
         Long   id,
         String hotelName,
         Double rating,
-        String imageUrl,
+        List<String> images,
 
         // ── Location Details ───────────────────────────
-        String  district,
+        District  district,
         String  location,
 
         // Room Types list

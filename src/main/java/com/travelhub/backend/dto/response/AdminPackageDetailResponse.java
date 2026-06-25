@@ -1,5 +1,7 @@
 package com.travelhub.backend.dto.response;
 
+import com.travelhub.backend.enums.District;
+
 import java.util.List;
 
 public record AdminPackageDetailResponse(
@@ -8,7 +10,8 @@ public record AdminPackageDetailResponse(
         Long   id,
         String packageName,
         String destination,
-        String district,
+        District district,
+        String startPlace,
 
         // ── Price ──────────────────────────────────────
         // Frontend-ல் $450 per person

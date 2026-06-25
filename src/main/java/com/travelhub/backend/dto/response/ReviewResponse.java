@@ -1,5 +1,7 @@
 package com.travelhub.backend.dto.response;
 
+import com.travelhub.backend.enums.District;
+
 import java.util.List;
 
 import lombok.Builder;
@@ -34,7 +36,7 @@ public class ReviewResponse {
     private Long packageId;          // ✅ NEW: For navigation to package details
     private String hotelName;        // ✅ NEW: For hotel reviews
     private Long hotelId;            // ✅ NEW: For navigation to hotel details
-    private String district;         // ✅ NEW: For package/hotel district information
+    private District district;         // ✅ NEW: For package/hotel district information
     private String reply;
     private Boolean hasReply;
 }

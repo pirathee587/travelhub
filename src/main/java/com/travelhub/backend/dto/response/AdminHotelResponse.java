@@ -1,5 +1,7 @@
 package com.travelhub.backend.dto.response;
 
+import com.travelhub.backend.enums.District;
+
 public record AdminHotelResponse(
         Long    id,
         String  hotelName,
@@ -10,7 +12,7 @@ public record AdminHotelResponse(
         Double  priceTo,
         Double  rating,
         Integer reviewCount,
-        String  imageUrl,
-        String  district,
+        java.util.List<String> images,
+        District  district,
         String applicationStatus
 ) {}

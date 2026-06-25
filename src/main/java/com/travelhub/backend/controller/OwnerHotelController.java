@@ -43,22 +43,22 @@ public class OwnerHotelController {
     @PostMapping
     public ResponseEntity<HotelResponse> createHotel(
             @ModelAttribute OwnerHotelRequest request,
-            @RequestParam(value = "hotelImage", required = false) MultipartFile hotelImage,
+            @RequestParam(value = "hotelImages", required = false) List<MultipartFile> hotelImages,
             @RequestHeader(value = "X-Owner-Id", required = false) Long devOwnerId) {
         Long ownerId = requireOwnerId(devOwnerId);
         ownerAccessService.validateApprovedActiveHotelOwner(ownerId);
-        return ResponseEntity.ok(ownerHotelService.createHotel(request, hotelImage, ownerId));
+        return ResponseEntity.ok(ownerHotelService.createHotel(request, hotelImages, ownerId));
     }
 
     @PutMapping("/{id}")
     public ResponseEntity<HotelResponse> updateHotel(
             @PathVariable Long id,
             @ModelAttribute OwnerHotelRequest request,
-            @RequestParam(value = "hotelImage", required = false) MultipartFile hotelImage,
+            @RequestParam(value = "hotelImages", required = false) List<MultipartFile> hotelImages,
             @RequestHeader(value = "X-Owner-Id", required = false) Long devOwnerId) {
         Long ownerId = requireOwnerId(devOwnerId);
         ownerAccessService.validateApprovedActiveHotelOwner(ownerId);
-        return ResponseEntity.ok(ownerHotelService.updateHotel(id, request, hotelImage, ownerId));
+        return ResponseEntity.ok(ownerHotelService.updateHotel(id, request, hotelImages, ownerId));
     }
 
     @DeleteMapping("/{id}")

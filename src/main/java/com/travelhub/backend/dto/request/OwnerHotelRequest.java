@@ -4,6 +4,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import com.travelhub.backend.enums.District;
 
 @Data
 @Builder
@@ -16,8 +17,8 @@ public class OwnerHotelRequest {
     private String description;
     private Double priceFrom;
     private Double priceTo;
-    private String imageUrl;
-    private String district;
+    private java.util.List<String> existingImages;
+    private District district;
     private String phoneNumber;
     private String hotlineNumber;
     private String ownerName;

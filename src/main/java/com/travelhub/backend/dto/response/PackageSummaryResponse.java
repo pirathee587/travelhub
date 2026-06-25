@@ -1,5 +1,7 @@
 package com.travelhub.backend.dto.response;
 
+import com.travelhub.backend.enums.District;
+
 import lombok.*;
 
 import java.time.LocalDateTime;
@@ -12,7 +14,7 @@ public class PackageSummaryResponse {
     private String name;
     private String category;
     private String destination;
-    private String district;
+    private District district;
     private String duration;
     private Double priceFrom;
     private Double priceTo;

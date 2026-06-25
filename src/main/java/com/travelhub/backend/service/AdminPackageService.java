@@ -93,6 +93,7 @@ public class AdminPackageService {
                 pkg.getPackageName(),
                 pkg.getDestination(),
                 pkg.getDistrict(),
+                pkg.getStartPlace(),
                 pkg.getPriceFrom(),
                 pkg.getPriceTo(),
                 imageUrls,

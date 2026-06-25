@@ -3,6 +3,7 @@ package com.travelhub.backend.dto.request;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.*;
 import lombok.*;
+import com.travelhub.backend.enums.District;
 
 
 import java.util.List;
@@ -22,8 +23,8 @@ public class CreatePackageRequest {
     @Size(max = 200)
     private String destination;
 
-    @NotBlank(message = "District is required")
-    private String district;
+    @NotNull(message = "District is required")
+    private District district;
 
     @NotBlank(message = "Start place is required")
     @Size(max = 200)

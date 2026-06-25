@@ -1,5 +1,7 @@
 package com.travelhub.backend.dto.response;
 
+import com.travelhub.backend.enums.District;
+
 import java.util.List;
 
 import lombok.AllArgsConstructor;
@@ -15,7 +17,7 @@ public class PackageDetailResponse {
     private Long id;
     private String packageName;
     private String destination;
-    private String district;
+    private District district;
     private String startPlace;
     private String endPlace;
     private Double priceFrom;
