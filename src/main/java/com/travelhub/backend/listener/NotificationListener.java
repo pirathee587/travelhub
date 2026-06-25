@@ -74,8 +74,8 @@ public class NotificationListener {
     public void handlePackageEvent(PackageEvent event) {
         log.info("Handling package event: {} for package: {}", event.getType(), event.getPkg().getPackageName());
 
-        if (event.getPkg().getAgent() != null) {
-            emailService.sendPackageStatusNotification(event.getPkg().getAgent().getEmail(), event.getPkg().getPackageName(), event.getType(), event.getReason());
+        if (event.getPkg().getAgent() != null && event.getPkg().getAgent().getOwner() != null) {
+            emailService.sendPackageStatusNotification(event.getPkg().getAgent().getOwner().getEmail(), event.getPkg().getPackageName(), event.getType(), event.getReason());
         }
     }
 }

@@ -14,6 +14,6 @@ public class AgentProfileRequest {
     private String operatingDistricts;
     private String websiteUrl;
     private String profileImage;
-    private String companyName;
     private String agencyName;
+    private String nicImage;
 }

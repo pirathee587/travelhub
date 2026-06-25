@@ -33,7 +33,7 @@ public class AgentService {
     public List<AgentListResponse> getApprovedAgents() {
         List<Agent> agents = agentRepository.findAll()
                 .stream()
-                .filter(a -> "Approved".equalsIgnoreCase(a.getApplicationStatus())
+                .filter(a -> a.getOwner() != null && Boolean.TRUE.equals(a.getOwner().getAgentApproved())
                         && Boolean.TRUE.equals(a.getIsActive()))
                 .sorted(Comparator.comparing(
                         a -> a.getAgencyName() != null ? a.getAgencyName() : "",
@@ -50,9 +50,16 @@ public class AgentService {
                 agentId -> bookingRepository.countByAgentIdAndStatus(agentId, STATUS_COMPLETED)
         ));
 
+        // Build totalPackages map
+        Map<Long, Integer> totalPackagesMap = agentIds.stream().collect(Collectors.toMap(
+                agentId -> agentId,
+                agentId -> packageService.getPackagesByAgentId(agentId).size()
+        ));
+
         return agents.stream()
                 .map(a -> toListResponse(a, ratingMap.getOrDefault(a.getId(), 0.0),
-                        totalTripsMap.getOrDefault(a.getId(), 0L).intValue()))
+                        totalTripsMap.getOrDefault(a.getId(), 0L).intValue(),
+                        totalPackagesMap.getOrDefault(a.getId(), 0)))
                 .collect(Collectors.toList());
     }
 
@@ -62,7 +69,7 @@ public class AgentService {
                 .orElseThrow(() -> new ResponseStatusException(
                         HttpStatus.NOT_FOUND, "Agent not found with id: " + id));
 
-        if (!"Approved".equalsIgnoreCase(agent.getApplicationStatus())) {
+        if (agent.getOwner() == null || !Boolean.TRUE.equals(agent.getOwner().getAgentApproved())) {
             throw new ResponseStatusException(
                     HttpStatus.NOT_FOUND, "Agent not found with id: " + id);
         }
@@ -80,14 +87,14 @@ public class AgentService {
         return AgentDetailResponse.builder()
                 .id(agent.getId())
                 .agencyName(agent.getAgencyName())
-                .agentName(agent.getOwnerName())
-                .profileImage(agent.getProfileImage())
+                .agentName(agent.getOwner() != null ? agent.getOwner().getName() : null)
+                .profileImage(agent.getOwner() != null ? agent.getOwner().getProfileImage() : null)
                 .bio(agent.getBio())
                 .location(agent.getLocation())
-                .email(agent.getEmail())
-                .phone(agent.getPhone())
+                .email(agent.getOwner() != null ? agent.getOwner().getEmail() : null)
+                .phone(agent.getOwner() != null ? agent.getOwner().getTelephone() : null)
                 .whatsappNumber(agent.getWhatsappNumber())
-                .companyName(agent.getCompanyName())
+                .companyName(agent.getAgencyName())
                 .languages(agent.getLanguages())
                 .operatingDistricts(agent.getOperatingDistricts())
                 .websiteUrl(agent.getWebsiteUrl())
@@ -98,16 +105,17 @@ public class AgentService {
                 .build();
     }
 
-    private AgentListResponse toListResponse(Agent agent, Double computedRating, Integer computedTotalTrips) {
+    private AgentListResponse toListResponse(Agent agent, Double computedRating, Integer computedTotalTrips, Integer computedTotalPackages) {
         return AgentListResponse.builder()
                 .id(agent.getId())
                 .agencyName(agent.getAgencyName())
-                .agentName(agent.getOwnerName())
-                .profileImage(agent.getProfileImage())
+                .agentName(agent.getOwner() != null ? agent.getOwner().getName() : null)
+                .profileImage(agent.getOwner() != null ? agent.getOwner().getProfileImage() : null)
                 .bio(agent.getBio())
                 .location(agent.getLocation())
                 .rating(computedRating)
                 .totalTrips(computedTotalTrips)
+                .totalPackages(computedTotalPackages)
                 .memberSince(agent.getMemberSince() != null ? agent.getMemberSince().toString() : null)
                 .build();
     }

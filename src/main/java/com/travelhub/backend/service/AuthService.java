@@ -53,8 +53,7 @@ public class AuthService {
                 .role(request.getRole())
                 .preferredLanguage(request.getPreferredLanguage())
                 .nationality(request.getNationality())
-                .agencyName(request.getAgencyName())
-                .licenseNumber(request.getLicenseNumber())
+                .nicNumber(request.getNicNumber())
                 .hotelName(request.getHotelName())
                 .businessRegistrationId(request.getBusinessRegistrationId())
                 .businessAddress(request.getBusinessAddress())
@@ -72,8 +71,8 @@ public class AuthService {
         // Handle Role-specific profile creation
         if (user.getRole() == Role.AGENT) {
             Agent agent = Agent.builder()
-                    .userId(user.getId())      // link agent to user via userId
-                    .agencyName(user.getAgencyName())
+                    .owner(user)              // link agent to user via @ManyToOne relationship
+                    .agencyName(user.getName())
                     .isActive(true)
                     .build();
             agentRepository.save(agent);
