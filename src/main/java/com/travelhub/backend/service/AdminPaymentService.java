@@ -8,10 +8,12 @@ import com.travelhub.backend.entity.Payment;
 import com.travelhub.backend.repository.PaymentRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 
 @Service
 @RequiredArgsConstructor
+@Transactional(readOnly = true)
 public class AdminPaymentService {
 
     private final PaymentRepository paymentRepository;
@@ -95,6 +97,7 @@ public class AdminPaymentService {
     }
 
     // ── Update Payment Status ─────────────────────────
+    @Transactional
     public AdminPaymentResponse updateStatus(
             Long id, String status) {
 

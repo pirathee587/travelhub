@@ -69,25 +69,7 @@ public class AdminAgentController {
                                 .getAgentPackages(id)));
     }
 
-    // ── PATCH /api/admin/agents/{id}/approve ──────────
-    @PatchMapping("/{id}/approve")
-    public ResponseEntity<?> approveAgent(
-            @PathVariable Long id) {
-        return ResponseEntity.ok(
-                new ApiResponse(true, "Agent approved",
-                        adminAgentService
-                                .approveAgent(id)));
-    }
 
-    // ── PATCH /api/admin/agents/{id}/reject ───────────
-    @PatchMapping("/{id}/reject")
-    public ResponseEntity<?> rejectAgent(
-            @PathVariable Long id) {
-        return ResponseEntity.ok(
-                new ApiResponse(true, "Agent rejected",
-                        adminAgentService
-                                .rejectAgent(id)));
-    }
 
     // ── PATCH /api/admin/agents/{id}/toggle-active ────
     @PatchMapping("/{id}/toggle-active")

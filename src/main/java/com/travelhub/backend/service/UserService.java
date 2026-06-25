@@ -21,10 +21,21 @@ public class UserService {
                 .orElseThrow(() -> new ResourceNotFoundException("User", "id", userId));
 
         if (request.getName() != null) user.setName(request.getName());
+        if (request.getEmail() != null && !request.getEmail().trim().isEmpty()) {
+            String newEmail = request.getEmail().trim().toLowerCase();
+            if (!newEmail.equalsIgnoreCase(user.getEmail())) {
+                if (userRepository.existsByEmail(newEmail)) {
+                    throw new BadRequestException("Email is already in use by another account");
+                }
+                user.setEmail(newEmail);
+            }
+        }
         if (request.getTelephone() != null) user.setTelephone(request.getTelephone());
         if (request.getProfileImage() != null) user.setProfileImage(request.getProfileImage());
         if (request.getPreferredLanguage() != null) user.setPreferredLanguage(request.getPreferredLanguage());
         if (request.getNationality() != null) user.setNationality(request.getNationality());
+        if (request.getNicNumber() != null) user.setNicNumber(request.getNicNumber());
+        if (request.getNicImage() != null) user.setNicImage(request.getNicImage());
 
         return userRepository.save(user);
     }

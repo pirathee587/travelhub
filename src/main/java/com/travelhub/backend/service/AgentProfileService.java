@@ -8,6 +8,7 @@ import com.travelhub.backend.repository.AgentRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import com.travelhub.backend.repository.BookingRepository;
+import com.travelhub.backend.repository.UserRepository;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
@@ -16,6 +17,7 @@ public class AgentProfileService {
 
     private final AgentRepository agentRepository;
     private final BookingRepository bookingRepository;
+    private final UserRepository userRepository;
 
     /**
      * Returns the profile details for the given agent id.
@@ -38,21 +40,20 @@ public class AgentProfileService {
                 .orElseThrow(() -> new ResourceNotFoundException("Agent", "id", agentId));
 
         // Map request fields -> agent profile fields.
-        agent.setAgencyName(request.getAgentName());
-        agent.setPhone(request.getPhone());
-        agent.setSecondaryPhone(request.getSecondaryPhone());
+        agent.setAgencyName(request.getAgencyName() != null ? request.getAgencyName().trim() : (request.getAgentName() != null ? request.getAgentName().trim() : null));
+        agent.setAgencyNumber(request.getPhone());
+        agent.setSecondaryNumber(request.getSecondaryPhone());
         agent.setWhatsappNumber(request.getWhatsappNumber());
         agent.setLocation(request.getLocation());
         agent.setBio(request.getBio());
         agent.setLanguages(request.getLanguages());
         agent.setOperatingDistricts(request.getOperatingDistricts());
         agent.setWebsiteUrl(request.getWebsiteUrl());
-        agent.setCompanyName(request.getCompanyName());
-        agent.setAgencyName(request.getAgencyName() != null ? request.getAgencyName().trim() : null);
 
         // Update profile image only when explicitly provided.
-        if (request.getProfileImage() != null) {
-            agent.setProfileImage(request.getProfileImage());
+        if (request.getProfileImage() != null && agent.getOwner() != null) {
+            agent.getOwner().setProfileImage(request.getProfileImage());
+            userRepository.save(agent.getOwner());
         }
 
         // Persist and return updated profile response.
@@ -67,18 +68,18 @@ public class AgentProfileService {
         return AgentProfileResponse.builder()
                 .id(agent.getId())
                 .agentName(agent.getAgencyName())
-                .email(agent.getEmail())
-                .phone(agent.getPhone())
-                .secondaryPhone(agent.getSecondaryPhone())
+                .email(agent.getOwner() != null ? agent.getOwner().getEmail() : null)
+                .phone(agent.getAgencyNumber() != null ? agent.getAgencyNumber() : (agent.getOwner() != null ? agent.getOwner().getTelephone() : null))
+                .secondaryPhone(agent.getSecondaryNumber())
                 .whatsappNumber(agent.getWhatsappNumber())
-                .companyName(agent.getCompanyName())
+                .companyName(agent.getAgencyName())
                 .agencyName(agent.getAgencyName())
                 .location(agent.getLocation())
                 .bio(agent.getBio())
                 .languages(agent.getLanguages())
                 .operatingDistricts(agent.getOperatingDistricts())
                 .websiteUrl(agent.getWebsiteUrl())
-                .profileImage(agent.getProfileImage())
+                .profileImage(agent.getOwner() != null ? agent.getOwner().getProfileImage() : null)
                 .memberSince(agent.getMemberSince() != null ? agent.getMemberSince().toString() : null)
                 .rating(agent.getRating())
                 // Total trips = completed bookings linked to this agent.

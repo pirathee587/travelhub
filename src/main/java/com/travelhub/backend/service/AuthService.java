@@ -39,6 +39,12 @@ public class AuthService {
     private final HotelRepository hotelRepository;
 
     public ApiResponse register(RegisterRequest request) {
+        // ── Security: block public registration as ADMIN ──────────────────
+        if (request.getRole() == Role.ADMIN) {
+            throw new BadRequestException(
+                "Public registration for ADMIN role is not allowed.");
+        }
+
         if (userRepository.existsByEmail(request.getEmail())) {
             throw new BadRequestException("Email already in use");
         }
@@ -54,7 +60,7 @@ public class AuthService {
                 .preferredLanguage(request.getPreferredLanguage())
                 .nationality(request.getNationality())
                 .agencyName(request.getAgencyName())
-                .licenseNumber(request.getLicenseNumber())
+                .nicNumber(request.getNicNumber())
                 .hotelName(request.getHotelName())
                 .businessRegistrationId(request.getBusinessRegistrationId())
                 .businessAddress(request.getBusinessAddress())
@@ -66,17 +72,17 @@ public class AuthService {
                 .agentApproved(request.getRole() != Role.AGENT)
                 .build();
 
+        user = userRepository.save(user);
+
         // Handle Role-specific profile creation
         if (user.getRole() == Role.AGENT) {
             Agent agent = Agent.builder()
-                    .agencyName(user.getName())
-                    .email(user.getEmail())
-                    .phone(user.getTelephone())
-                    .agencyName(user.getAgencyName())
+                    .owner(user)
+                    .agencyName(user.getAgencyName() != null ? user.getAgencyName() : user.getName() + "'s Agency")
+                    .agencyNumber(user.getTelephone())
                     .isActive(true)
                     .build();
-            agent = agentRepository.save(agent);
-            user.setAgentId(agent.getId());
+            agentRepository.save(agent);
         } else if (user.getRole() == Role.HOTEL_OWNER) {
             Hotel hotel = Hotel.builder()
                     .hotelName(user.getHotelName() != null ? user.getHotelName() : user.getName() + "'s Hotel")
@@ -84,9 +90,8 @@ public class AuthService {
                     .build();
             hotel = hotelRepository.save(hotel);
             user.setHotelId(hotel.getId());
+            userRepository.save(user);
         }
-
-        userRepository.save(user);
 
         // Send verification email
         try {
@@ -125,13 +130,18 @@ public class AuthService {
 
         String jwt = tokenProvider.generateToken(authentication, user);
 
+        Long firstAgentId = null;
+        if (user.getRole() == Role.AGENT && user.getAgencies() != null && !user.getAgencies().isEmpty()) {
+            firstAgentId = user.getAgencies().get(0).getId();
+        }
+
         return LoginResponse.builder()
                 .token(jwt)
                 .name(user.getName())
                 .email(user.getEmail())
                 .role(user.getRole())
                 .profileImage(user.getProfileImage())
-                .agentId(user.getAgentId())
+                .agentId(firstAgentId)
                 .hotelId(user.getHotelId())
                 .id(user.getId())
                 .build();

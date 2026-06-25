@@ -8,7 +8,6 @@ import java.time.LocalDateTime;
 @Entity
 @Table(name = "agents")
 @Data
-@Getter
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
@@ -18,62 +17,37 @@ public class Agent {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    // ── Company / Agent Info ───────────────────────────
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id", nullable = false)
+    private User owner;                    // Owner mapping referencing User
+
     @Column(name = "agency_name", nullable = false)
-    private String agencyName;
+    private String agencyName;             // Brand/Business name of agency
 
-    private String companyName;
-
-    private String profileImage;
-
-    // ── Owner Information ──────────────────────────────
-    @Column(name = "owner_name")
-    private String ownerName;
-
-    @Transient
-    private String email;
-
-    private String phone;
-    private String secondaryPhone;
+    // --- Contact Details ---
+    private String agencyNumber;
+    private String secondaryNumber;
     private String whatsappNumber;
 
     private String location;
-
-    // ── Additional Info ────────────────────────────────
+    
     @Column(columnDefinition = "TEXT")
     private String bio;
-
+    
     private String languages;
-
-    // Example: "Colombo,Galle,Kandy"
     private String operatingDistricts;
-
     private String websiteUrl;
-
+    
     private LocalDate memberSince;
-
-    // ── NIC ────────────────────────────────────────────
-    @Column(name = "nic_image_url")
-    private String nicImageUrl;
-
-    // ── Application Status ─────────────────────────────
-    @Column(name = "application_status")
-    @Builder.Default
-    private String applicationStatus = "Pending";
-
-    // ── Submitted Date ─────────────────────────────────
-    @Column(name = "submitted_date", updatable = false)
     private LocalDateTime submittedDate;
 
-    // ── Stats ──────────────────────────────────────────
+    // --- Performance Metrics ---
     private Double rating;
     private Integer totalTrips;
     private Integer totalRevenue;
     private Integer experienceYears;
     private Double completionRate;
 
-
-    // ── Status ─────────────────────────────────────────
     @Column(nullable = false)
     @Builder.Default
     private Boolean isActive = true;

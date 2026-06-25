@@ -2,6 +2,7 @@ package com.travelhub.backend.dto.response;
 
 public record AdminAgentDetailResponse(
         Long    id,
+        Long    ownerId,
         String  initials,
         String  agentName,
         String  companyName,

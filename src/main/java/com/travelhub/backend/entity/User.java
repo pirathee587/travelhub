@@ -1,5 +1,6 @@
 package com.travelhub.backend.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.travelhub.backend.enums.Role;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -7,6 +8,8 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import java.time.LocalDateTime;
+import java.util.List;
+
 
 @Entity
 @Table(name = "users")
@@ -26,6 +29,7 @@ public class User {
     @Column(nullable = false, unique = true)
     private String email;
 
+    @JsonIgnore
     @Column(nullable = false)
     private String password;
 
@@ -40,7 +44,6 @@ public class User {
     // Role-specific fields (Nullable based on role)
     private String nationality;           // Tourist
     private String agencyName;            // Agent
-    private String licenseNumber;         // Agent (For Admin Verification)
     private String hotelName;             // Hotel Owner
     private String businessRegistrationId; // Hotel Owner (For Admin Verification)
     private String businessAddress;        // Hotel Owner
@@ -53,8 +56,11 @@ public class User {
     @Column(name = "is_email_verified", nullable = true)
     private boolean isEmailVerified = false;
 
+    @JsonIgnore
     private String verificationToken;
+    @JsonIgnore
     private String passwordResetToken;
+    @JsonIgnore
     private LocalDateTime passwordResetExpires;
 
     @Column(nullable = true)
@@ -69,8 +75,14 @@ public class User {
     @Builder.Default
     private Boolean agentApproved = false;
 
-    private Long agentId; // Link to the Agent table
     private Long hotelId; // Link to the Hotel table
+
+    // --- Refactored Agent Verification Fields ---
+    private String nicNumber;             // Captured at Signup
+    private String nicImage;              // Captured in Profile
+
+    @OneToMany(mappedBy = "owner", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private List<Agent> agencies;          // Owned agencies list
     
 
     @Column(updatable = false)

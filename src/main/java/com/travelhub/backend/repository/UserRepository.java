@@ -3,8 +3,9 @@ package com.travelhub.backend.repository;
 import com.travelhub.backend.entity.User;
 import com.travelhub.backend.enums.Role;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
-
 import java.util.List;
 import java.util.Optional;
 
@@ -34,5 +35,7 @@ public interface UserRepository extends JpaRepository<User, Long> {
     // Useful for showing "Total Agents" or "Total Travelers" on the dashboard
     Long countByRole(Role role);
     Optional<User> findByHotelId(Long hotelId);
-    Optional<User> findByAgentId(Long agentId);
+
+    @Query("SELECT a.owner FROM Agent a WHERE a.id = :agentId")
+    Optional<User> findByAgentId(@Param("agentId") Long agentId);
 }

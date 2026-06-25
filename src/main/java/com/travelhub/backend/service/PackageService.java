@@ -125,7 +125,7 @@ public class PackageService {
                 .trending(pkg.getTrending())
                 .agentId(pkg.getAgent() != null ? pkg.getAgent().getId() : null)
                 .agentName(pkg.getAgent() != null ? pkg.getAgent().getAgencyName() : null)
-                .agentPhone(pkg.getAgent() != null ? pkg.getAgent().getPhone() : null)
+                .agentPhone(pkg.getAgent() != null ? pkg.getAgent().getAgencyNumber() : null)
                 .agentRating(pkg.getAgent() != null ? pkg.getAgent().getRating() : null)
                 .itinerary(itineraryDays)
                 .images(imageUrls)

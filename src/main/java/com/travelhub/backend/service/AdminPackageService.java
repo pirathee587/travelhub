@@ -11,11 +11,13 @@ import com.travelhub.backend.repository.PackageRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import java.util.Arrays;
 import java.util.List;
 
 @Service
 @RequiredArgsConstructor
+@Transactional(readOnly = true)
 public class AdminPackageService {
 
     private final PackageRepository          packageRepository;
@@ -82,10 +84,9 @@ public class AdminPackageService {
 
         String providerName = "";
         if (pkg.getAgent() != null) {
-            providerName =
-                    pkg.getAgent().getCompanyName() != null
-                            ? pkg.getAgent().getCompanyName()
-                            : pkg.getAgent().getAgencyName();
+            providerName = pkg.getAgent().getAgencyName() != null
+                    ? pkg.getAgent().getAgencyName()
+                    : "";
         }
 
         return new AdminPackageDetailResponse(
@@ -114,6 +115,7 @@ public class AdminPackageService {
     }
 
     // ── Approve Package ───────────────────────────────
+    @Transactional
     public AdminPackageDetailResponse approvePackage(
             Long id) {
         Package pkg = packageRepository.findById(id)
@@ -131,6 +133,7 @@ public class AdminPackageService {
     }
 
     // ── Reject Package ────────────────────────────────
+    @Transactional
     public AdminPackageDetailResponse rejectPackage(
             Long id, String reason) {
         Package pkg = packageRepository.findById(id)
@@ -149,6 +152,7 @@ public class AdminPackageService {
     }
 
     // ── Toggle Active ─────────────────────────────────
+    @Transactional
     public AdminPackageDetailResponse toggleActive(
             Long id) {
         Package pkg = packageRepository.findById(id)
@@ -161,6 +165,7 @@ public class AdminPackageService {
     }
 
     // ── Delete Package ────────────────────────────────
+    @Transactional
     public void deletePackage(Long id) {
         Package pkg = packageRepository.findById(id)
                 .orElseThrow(() ->
@@ -211,7 +216,8 @@ public class AdminPackageService {
                         : "",
                 p.getApplicationStatus() != null
                         ? p.getApplicationStatus()
-                        : "Pending"
+                        : "Pending",
+                p.getImageUrl()
         );
     }
 }

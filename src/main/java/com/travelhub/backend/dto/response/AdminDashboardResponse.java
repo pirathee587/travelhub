@@ -10,5 +10,8 @@ public record AdminDashboardResponse(
         Long   totalBookings,
         Long   totalReviews,
         Long   pendingAgents,
-        Long   pendingBookings
+        Long   pendingBookings,
+        Long   pendingHotels,
+        Long   pendingPackages,
+        Double totalRevenue
 ) {}

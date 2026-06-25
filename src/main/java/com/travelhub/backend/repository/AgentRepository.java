@@ -15,7 +15,20 @@ public interface AgentRepository extends JpaRepository<Agent, Long> {
     // ── Agent Filters ─────────────────────────────────
     List<Agent> findByIsActiveTrue();
 
-    List<Agent> findByApplicationStatus(String applicationStatus);
+    @Query("SELECT a FROM Agent a WHERE a.owner.agentApproved = false AND a.owner.status <> 'REJECTED'")
+    List<Agent> findPendingAgents();
+
+    @Query("SELECT a FROM Agent a WHERE a.owner.agentApproved = false AND a.owner.status = 'REJECTED'")
+    List<Agent> findRejectedAgents();
+
+    @Query("SELECT a FROM Agent a WHERE a.owner.agentApproved = true")
+    List<Agent> findApprovedAgents();
+
+    @Query("SELECT COUNT(a) FROM Agent a WHERE a.owner.agentApproved = true")
+    long countApprovedAgents();
+
+    @Query("SELECT COUNT(a) FROM Agent a WHERE a.owner.agentApproved = false AND a.owner.status <> 'REJECTED'")
+    long countPendingAgents();
 
     List<Agent> findByAgencyNameContainingIgnoreCase(
             String name);

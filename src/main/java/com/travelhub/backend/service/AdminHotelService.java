@@ -19,10 +19,13 @@ import com.travelhub.backend.repository.ReviewRepository;
 import com.travelhub.backend.repository.RoomRepository;
 import com.travelhub.backend.service.HotelPricingService.PriceRange;
 
+import org.springframework.transaction.annotation.Transactional;
+
 import lombok.RequiredArgsConstructor;
 
 @Service
 @RequiredArgsConstructor
+@Transactional(readOnly = true)
 public class AdminHotelService {
 
     private final HotelRepository            hotelRepository;
@@ -124,6 +127,7 @@ public class AdminHotelService {
     }
 
     // ── Approve Hotel ─────────────────────────────────
+    @Transactional
     public AdminHotelDetailResponse approveHotel(Long id) {
         Hotel hotel = hotelRepository.findById(id)
                 .orElseThrow(() ->
@@ -140,6 +144,7 @@ public class AdminHotelService {
     }
 
     // ── Reject Hotel ──────────────────────────────────
+    @Transactional
     public AdminHotelDetailResponse rejectHotel(
             Long id, String reason) {
         Hotel hotel = hotelRepository.findById(id)
@@ -158,6 +163,7 @@ public class AdminHotelService {
     }
 
     // ── Delete Hotel ──────────────────────────────────
+    @Transactional
     public void deleteHotel(Long id) {
         Hotel hotel = hotelRepository.findById(id)
                 .orElseThrow(() ->
