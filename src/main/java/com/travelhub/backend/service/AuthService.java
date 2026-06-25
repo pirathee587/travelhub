@@ -71,8 +71,8 @@ public class AuthService {
         // Handle Role-specific profile creation
         if (user.getRole() == Role.AGENT) {
             Agent agent = Agent.builder()
-                    .userId(user.getId())      // link agent to user via userId
-                    .agencyName(user.getAgencyName())
+                    .owner(user)              // link agent to user via @ManyToOne relationship
+                    .agencyName(user.getName())
                     .isActive(true)
                     .build();
             agentRepository.save(agent);
@@ -131,7 +131,7 @@ public class AuthService {
                 .email(user.getEmail())
                 .role(user.getRole())
                 .profileImage(user.getProfileImage())
-                .agentId(user.getAgencies() != null && !user.getAgencies().isEmpty() ? user.getAgencies().get(0).getId() : null)
+                .agentId(user.getAgentId())
                 .hotelId(user.getHotelId())
                 .id(user.getId())
                 .build();
