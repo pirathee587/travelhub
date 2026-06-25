@@ -24,6 +24,7 @@ public class HotelResponse {
     private List<String> amenities;
     private String district;
     private String applicationStatus;
+    private Boolean isActive;
     private String hotelEmail;
     private String hotelContactNumber;
 }

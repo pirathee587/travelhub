@@ -141,14 +141,25 @@ public class AdminAgentService {
     @Transactional
     public AdminAgentDetailResponse toggleActive(
             Long id) {
+
         Agent agent = agentRepository.findById(id)
                 .orElseThrow(() ->
                         new ResourceNotFoundException(
                                 "Agent", "id", id));
-        agent.setIsActive(!agent.getIsActive());
+
+        boolean newActiveState = !agent.getIsActive();
+
+        // 1. Update the agents table
+        agent.setIsActive(newActiveState);
         agentRepository.save(agent);
+
+        // 2. Directly UPDATE the users table via JPQL — bypasses all lazy-proxy
+        //    and Hibernate dirty-checking issues entirely
+        userRepository.updateIsActiveByAgentId(id, newActiveState);
+
         return getAgentDetail(id);
     }
+
 
     // ── Delete Agent ──────────────────────────────────
     @Transactional
@@ -209,6 +220,20 @@ public class AdminAgentService {
     // ── Map Package → Response ────────────────────────
     private AdminAgentPackageResponse mapToPackageResponse(
             Package p) {
+        // Pick first image from the images list, fall back to legacy imageUrl
+        String coverImage = null;
+        if (p.getImages() != null && !p.getImages().isEmpty()) {
+            coverImage = p.getImages().stream()
+                    .sorted((a, b) ->
+                            (a.getDisplayOrder() != null ? a.getDisplayOrder() : 0)
+                          - (b.getDisplayOrder() != null ? b.getDisplayOrder() : 0))
+                    .map(img -> img.getImageUrl())
+                    .findFirst()
+                    .orElse(p.getImageUrl());
+        } else {
+            coverImage = p.getImageUrl();
+        }
+
         return new AdminAgentPackageResponse(
                 p.getId(),
                 p.getPackageName(),
@@ -222,7 +247,8 @@ public class AdminAgentService {
                 p.getIsActive(),
                 p.getApplicationStatus() != null
                         ? p.getApplicationStatus()
-                        : "Pending"
+                        : "Pending",
+                coverImage
         );
     }
 }

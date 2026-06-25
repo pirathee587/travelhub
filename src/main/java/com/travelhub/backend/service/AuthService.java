@@ -84,9 +84,17 @@ public class AuthService {
                     .build();
             agentRepository.save(agent);
         } else if (user.getRole() == Role.HOTEL_OWNER) {
+            String defaultImage = "https://images.unsplash.com/photo-1566073771259-6a8506099945?q=80&w=2070&auto=format&fit=crop";
             Hotel hotel = Hotel.builder()
                     .hotelName(user.getHotelName() != null ? user.getHotelName() : user.getName() + "'s Hotel")
                     .district(user.getDistrict())
+                    .owner(user)
+                    .ownerName(user.getName())
+                    .ownerEmail(user.getEmail())
+                    .ownerNic(user.getNicNumber())
+                    .phoneNumber(user.getTelephone())
+                    .hotelEmail(user.getEmail())
+                    .imageUrl(defaultImage)
                     .build();
             hotel = hotelRepository.save(hotel);
             user.setHotelId(hotel.getId());

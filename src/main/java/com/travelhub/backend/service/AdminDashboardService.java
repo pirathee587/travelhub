@@ -47,19 +47,19 @@ public class AdminDashboardService {
         Long pendingHotels = hotelRepository.countByApplicationStatus("Pending");
 
         // ── Packages ────────────────────────────────────
-        Long totalPackages = packageRepository.countByApplicationStatusAndDeletedAtIsNull("Approved");
-        Long pendingPackages = packageRepository.countByApplicationStatusAndDeletedAtIsNull("Pending");
+        Long totalPackages   = (long) packageRepository.countByApplicationStatus("Approved");
+        Long pendingPackages = (long) packageRepository.countByApplicationStatus("Pending");
 
         // ── Bookings ────────────────────────────────────
-        Long totalBookings  = bookingRepository.count();
-        Long pendingBookings =
-                bookingRepository.countByStatus("pending");
+        Long totalBookings   = bookingRepository.count();
+        Long pendingBookings = bookingRepository.countByStatus("pending");
 
         // ── Reviews ─────────────────────────────────────
         Long totalReviews = reviewRepository.count();
 
         // ── Revenue ─────────────────────────────────────
         Double totalRevenue = paymentRepository.getTotalRevenue();
+        if (totalRevenue == null) totalRevenue = 0.0;
 
         return new AdminDashboardResponse(
                 totalUsers,

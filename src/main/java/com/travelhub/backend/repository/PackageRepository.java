@@ -13,14 +13,23 @@ import java.util.Optional;
 public interface PackageRepository extends JpaRepository<Package, Long> {
 
     // ── Existing methods (kept as-is) ─────────────────────────────────────
+    @Query("SELECT p FROM Package p WHERE p.isActive = true AND p.applicationStatus = 'Approved' AND p.deletedAt IS NULL")
     List<Package> findByIsActiveTrue();
-    List<Package> findByCategory(String category);
+
+    @Query("SELECT p FROM Package p WHERE p.category = :category AND p.isActive = true AND p.applicationStatus = 'Approved' AND p.deletedAt IS NULL")
+    List<Package> findByCategory(@Param("category") String category);
+
+    @Query("SELECT p FROM Package p WHERE p.trending = true AND p.isActive = true AND p.applicationStatus = 'Approved' AND p.deletedAt IS NULL")
     List<Package> findByTrendingTrue();
+
     List<Package> findByAgentId(Long agentId);
     List<Package> findByApplicationStatus(String applicationStatus);
 
-    long countByApplicationStatusAndDeletedAtIsNull(String status);
-    long countByApplicationStatus(String status);
+    @Query("SELECT COUNT(p) FROM Package p WHERE p.applicationStatus = :status AND p.deletedAt IS NULL")
+    long countByApplicationStatusAndDeletedAtIsNull(@Param("status") String status);
+
+    @Query("SELECT COUNT(p) FROM Package p WHERE p.applicationStatus = :status")
+    long countByApplicationStatus(@Param("status") String status);
 
     // ── New methods (added for agent package management) ──────────────────
     Long countByAgentId(Long agentId);

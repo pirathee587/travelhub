@@ -148,6 +148,7 @@ public class OwnerHotelService {
                 .amenities(amenityList)
                 .district(hotel.getDistrict())
                 .applicationStatus(hotel.getApplicationStatus())
+                .isActive(hotel.getIsActive() != null ? hotel.getIsActive() : true)
                 .hotelEmail(hotel.getHotelEmail())
                 .hotelContactNumber(hotel.getHotelContactNumber())
                 .build();

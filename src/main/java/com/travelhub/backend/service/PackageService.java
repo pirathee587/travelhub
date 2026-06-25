@@ -8,6 +8,7 @@ import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.travelhub.backend.common.ResourceNotFoundException;
 import com.travelhub.backend.dto.response.PackageDetailResponse;
 import com.travelhub.backend.dto.response.PackageResponse;
 import com.travelhub.backend.entity.Package;
@@ -42,7 +43,10 @@ public class PackageService {
 
     public PackageDetailResponse getPackageById(Long id) {
         Package pkg = packageRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Package not found with id: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Package", "id", id));
+        if (!Boolean.TRUE.equals(pkg.getIsActive()) || !"Approved".equalsIgnoreCase(pkg.getApplicationStatus()) || pkg.getDeletedAt() != null) {
+            throw new ResourceNotFoundException("Package", "id", id);
+        }
         return toPackageDetailResponse(pkg);
     }
 

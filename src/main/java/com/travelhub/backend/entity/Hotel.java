@@ -71,6 +71,11 @@ public class Hotel {
     @Builder.Default
     private String applicationStatus = "Pending";
 
+    // ── Active Status (for Suspend/Activate) ───────────
+    @Column(name = "is_active")
+    @Builder.Default
+    private Boolean isActive = true;
+
     @OneToMany(mappedBy = "hotel",
             cascade = CascadeType.ALL,
             fetch = FetchType.LAZY)

@@ -36,7 +36,10 @@ public record AdminHotelDetailResponse(
 
         // ── Application Status ─────────────────────────
         // Pending, Approved, Rejected
-        String applicationStatus
+        String  applicationStatus,
+
+        // ── Suspended state ────────────────────────────
+        Boolean isActive
 
 ) {
     // Room type inner record
