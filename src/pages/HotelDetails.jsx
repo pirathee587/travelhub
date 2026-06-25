@@ -34,6 +34,7 @@ import {
     Trash2,
     ChevronLeft,
     ChevronRight,
+    Expand,
 } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { useEffect, useState, useMemo, useCallback, useRef } from "react";
@@ -309,9 +310,7 @@ const HotelDetails = () => {
                             style={{ transform: `translateX(-${carouselIndex * 100}%)` }}
                         >
                             {allImages.map((img, idx) => (
-                                <div key={idx} className="relative flex-shrink-0 w-full h-full cursor-pointer"
-                                    onClick={() => setSelectedImage(img)}
-                                >
+                                <div key={idx} className="relative flex-shrink-0 w-full h-full">
                                     <img
                                         src={img}
                                         alt={`${hotel.hotelName} image ${idx + 1}`}
@@ -343,10 +342,20 @@ const HotelDetails = () => {
                             </>
                         )}
 
-                        {/* Image counter badge */}
+                        {/* Image counter badge (top-right) */}
                         <div className="absolute top-3 right-3 z-10 bg-black/50 backdrop-blur-sm text-white text-xs font-semibold px-3 py-1 rounded-full">
                             {carouselIndex + 1} / {totalImages}
                         </div>
+
+                        {/* Expand button (top-left) — click to open fullscreen lightbox */}
+                        <button
+                            onClick={(e) => { e.stopPropagation(); setSelectedImage(allImages[carouselIndex]); }}
+                            className="absolute top-3 left-3 z-10 bg-black/40 hover:bg-black/70 backdrop-blur-sm text-white rounded-full p-2 transition-all opacity-0 group-hover:opacity-100"
+                            aria-label="View fullscreen"
+                            title="View fullscreen"
+                        >
+                            <Expand className="h-4 w-4" />
+                        </button>
 
                         {/* Dot indicators */}
                         {totalImages > 1 && (
