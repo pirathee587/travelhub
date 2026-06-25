@@ -26,6 +26,8 @@ import com.travelhub.backend.repository.PackageRepository;
 import com.travelhub.backend.repository.UserRepository;
 import com.travelhub.backend.repository.VehicleRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
+import com.travelhub.backend.event.BookingEvent;
 
 @Service
 @RequiredArgsConstructor
@@ -41,6 +43,7 @@ public class BookingCreationService {
     private final VehicleRepository vehicleRepository;
     private final BookingService bookingService;
     private final BookingHotelPreferenceRepository bookingHotelPreferenceRepository;
+    private final ApplicationEventPublisher eventPublisher;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     public BookingResponse createBooking(BookingRequest request) {
@@ -117,6 +120,7 @@ public class BookingCreationService {
 
         Booking saved = bookingRepository.save(booking);
         logger.info("✓ Booking saved: ID={}", saved.getId());
+        eventPublisher.publishEvent(new BookingEvent(this, saved, "CREATED"));
 
         // Step 7: Save hotel preferences to separate table
         if (request.getHotelIds() != null && !request.getHotelIds().isEmpty()) {
@@ -198,6 +202,7 @@ public class BookingCreationService {
         booking.setStatus("cancelled");
         Booking saved = bookingRepository.save(booking);
         logger.info("✓ Booking cancelled: {}", saved.getId());
+        eventPublisher.publishEvent(new BookingEvent(this, saved, "CANCELLED"));
 
         return bookingService.getBookingById(saved.getId());
     }

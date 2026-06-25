@@ -11,6 +11,8 @@ import com.travelhub.backend.repository.BookingRepository;
 import com.travelhub.backend.repository.DriverRepository;
 import com.travelhub.backend.repository.VehicleRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
+import com.travelhub.backend.event.BookingEvent;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
@@ -24,6 +26,7 @@ public class AgentBookingService {
     private final BookingRepository bookingRepository;
     private final VehicleRepository vehicleRepository;
     private final DriverRepository driverRepository;
+    private final ApplicationEventPublisher eventPublisher;
 
     // ── GET ALL / GET BY ID ───────────────────────────────────────────────────
 
@@ -60,7 +63,9 @@ public class AgentBookingService {
 
         booking.setStatus("confirmed");
         booking.setProgress(25);
-        return toResponse(bookingRepository.save(booking));
+        Booking saved = bookingRepository.save(booking);
+        eventPublisher.publishEvent(new BookingEvent(this, saved, "APPROVED"));
+        return toResponse(saved);
     }
 
     // ── ASSIGN VEHICLE ────────────────────────────────────────────────────────
@@ -105,7 +110,9 @@ public class AgentBookingService {
 
         booking.setStatus("cancelled");
         booking.setProgress(0);
-        return toResponse(bookingRepository.save(booking));
+        Booking saved = bookingRepository.save(booking);
+        eventPublisher.publishEvent(new BookingEvent(this, saved, "DECLINED", request != null ? request.getDeclineReason() : "Declined by agent"));
+        return toResponse(saved);
     }
 
     // ── START TRIP: confirmed → in_progress ───────────────────────────────────
@@ -149,7 +156,9 @@ public class AgentBookingService {
 
         booking.setStatus("cancelled");
         booking.setProgress(0);
-        return toResponse(bookingRepository.save(booking));
+        Booking saved = bookingRepository.save(booking);
+        eventPublisher.publishEvent(new BookingEvent(this, saved, "CANCELLED", request != null ? request.getCancelReason() : "Cancelled by agent"));
+        return toResponse(saved);
     }
 
     // ── HELPERS ───────────────────────────────────────────────────────────────
