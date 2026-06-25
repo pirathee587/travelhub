@@ -28,6 +28,7 @@ import com.travelhub.backend.repository.UserRepository;
 import com.travelhub.backend.repository.VehicleRepository;
 
 import lombok.RequiredArgsConstructor;
+import com.travelhub.backend.event.BookingEvent;
 
 @Service
 @RequiredArgsConstructor
@@ -44,6 +45,7 @@ public class BookingCreationService {
     private final BookingService bookingService;
     private final BookingHotelPreferenceRepository bookingHotelPreferenceRepository;
     private final ApplicationEventPublisher eventPublisher;
+    private final UserNotificationService userNotificationService;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     public BookingResponse createBooking(BookingRequest request) {
@@ -166,8 +168,36 @@ public class BookingCreationService {
         }
         
         // Step 10: Publish event to trigger email notifications
-        eventPublisher.publishEvent(new com.travelhub.backend.event.BookingEvent(this, saved, "CREATED"));
-        
+        eventPublisher.publishEvent(new BookingEvent(this, saved, "CREATED"));
+        logger.info("Booking CREATED event published for booking {}", saved.getId());
+
+        // Step 11: Persist in-app notification for tourist (pending approval)
+        try {
+            userNotificationService.notifyUser(
+                    saved.getUser().getId(),
+                    "booking",
+                    "Booking Received",
+                    "Your booking for " + saved.getPkg().getPackageName() + " has been received and is pending agent approval.",
+                    "/my-trips"
+            );
+        } catch (Exception e) {
+            logger.warn("Could not create tourist in-app notification for booking {}: {}", saved.getId(), e.getMessage());
+        }
+
+        // Step 12: Persist in-app notification for agent (new booking request)
+        try {
+            if (saved.getPkg() != null && saved.getPkg().getAgent() != null) {
+                userNotificationService.notifyAgent(
+                        saved.getPkg().getAgent(),
+                        "booking",
+                        "New Booking Request",
+                        "A new booking request has been received for package: " + saved.getPkg().getPackageName()
+                );
+            }
+        } catch (Exception e) {
+            logger.warn("Could not create agent in-app notification for booking {}: {}", saved.getId(), e.getMessage());
+        }
+
         logger.info("========== BOOKING CREATION SUCCESS ==========");
         logger.info("Booking ID: {}", response.getId());
         logger.info("Booking Reference: {}", response.getBookingId());

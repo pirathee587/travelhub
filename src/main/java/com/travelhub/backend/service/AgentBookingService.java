@@ -9,6 +9,7 @@ import com.travelhub.backend.entity.Booking;
 import com.travelhub.backend.repository.BookingRepository;
 import com.travelhub.backend.repository.VehicleRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -20,11 +21,13 @@ import com.travelhub.backend.entity.Vehicle;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class AgentBookingService {
 
     private final BookingRepository bookingRepository;
     private final VehicleRepository vehicleRepository;
     private final ApplicationEventPublisher eventPublisher;
+    private final UserNotificationService userNotificationService;
 
     /**
      * Returns all bookings visible to the agent.
@@ -92,6 +95,21 @@ public class AgentBookingService {
         booking.setProgress(25);
         Booking saved = bookingRepository.save(booking);
         eventPublisher.publishEvent(new BookingEvent(this, saved, "APPROVED"));
+        log.info("Booking APPROVED event published for booking {}", bookingId);
+
+        // Persist in-app notification for tourist with payment link
+        try {
+            userNotificationService.notifyUser(
+                    saved.getUser().getId(),
+                    "booking",
+                    "Booking Approved!",
+                    "Your booking for " + saved.getPkg().getPackageName() + " has been approved. Proceed to payment to confirm your trip.",
+                    "/payment/" + saved.getId()
+            );
+        } catch (Exception e) {
+            log.warn("Could not create tourist in-app notification for APPROVED booking {}: {}", bookingId, e.getMessage());
+        }
+
         return toResponse(saved);
     }
 
@@ -121,6 +139,23 @@ public class AgentBookingService {
         String reason = (request != null) ? request.getDeclineReason() : null;
         Booking saved = bookingRepository.save(booking);
         eventPublisher.publishEvent(new BookingEvent(this, saved, "DECLINED", reason));
+        log.info("Booking DECLINED event published for booking {}", bookingId);
+
+        // Persist in-app notification for tourist with decline reason
+        try {
+            String declineMessage = "Your booking for " + saved.getPkg().getPackageName() + " has been declined."
+                    + (reason != null ? " Reason: " + reason : " Please contact the agent or try another package.");
+            userNotificationService.notifyUser(
+                    saved.getUser().getId(),
+                    "booking",
+                    "Booking Declined",
+                    declineMessage,
+                    "/my-trips"
+            );
+        } catch (Exception e) {
+            log.warn("Could not create tourist in-app notification for DECLINED booking {}: {}", bookingId, e.getMessage());
+        }
+
         return toResponse(saved);
     }
 
