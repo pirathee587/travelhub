@@ -19,35 +19,55 @@ public class OwnerProfileController {
     private final OwnerProfileService ownerProfileService;
 
     @GetMapping
-    public ResponseEntity<OwnerProfileResponse> getProfile() {
-        Claims claims = SecurityUtils.getCurrentUserClaims();
-        if (claims == null) {
+    public ResponseEntity<OwnerProfileResponse> getProfile(
+            @RequestHeader(value = "X-Owner-Id", required = false) Long ownerId,
+            java.security.Principal principal) {
+        Long resolvedId = resolveOwnerId(principal, ownerId);
+        if (resolvedId == null) {
             return ResponseEntity.status(401).build();
         }
 
-        Long userId = Long.valueOf(claims.get("userId").toString());
-        return ResponseEntity.ok(ownerProfileService.getProfile(userId));
+        return ResponseEntity.ok(ownerProfileService.getProfile(resolvedId));
     }
 
     @PutMapping
-    public ResponseEntity<OwnerProfileResponse> updateProfile(@RequestBody OwnerProfileRequest request) {
-        Claims claims = SecurityUtils.getCurrentUserClaims();
-        if (claims == null) {
+    public ResponseEntity<OwnerProfileResponse> updateProfile(
+            @RequestHeader(value = "X-Owner-Id", required = false) Long ownerId,
+            java.security.Principal principal,
+            @RequestBody OwnerProfileRequest request) {
+        Long resolvedId = resolveOwnerId(principal, ownerId);
+        if (resolvedId == null) {
             return ResponseEntity.status(401).build();
         }
 
-        Long userId = Long.valueOf(claims.get("userId").toString());
-        return ResponseEntity.ok(ownerProfileService.updateProfile(userId, request));
+        return ResponseEntity.ok(ownerProfileService.updateProfile(resolvedId, request));
     }
 
     @PostMapping("/image")
-    public ResponseEntity<OwnerProfileResponse> uploadProfileImage(@RequestParam("file") MultipartFile file) {
-        Claims claims = SecurityUtils.getCurrentUserClaims();
-        if (claims == null) {
+    public ResponseEntity<OwnerProfileResponse> uploadProfileImage(
+            @RequestHeader(value = "X-Owner-Id", required = false) Long ownerId,
+            java.security.Principal principal,
+            @RequestParam("file") MultipartFile file) {
+        Long resolvedId = resolveOwnerId(principal, ownerId);
+        if (resolvedId == null) {
             return ResponseEntity.status(401).build();
         }
 
-        Long userId = Long.valueOf(claims.get("userId").toString());
-        return ResponseEntity.ok(ownerProfileService.uploadProfileImage(userId, file));
+        return ResponseEntity.ok(ownerProfileService.uploadProfileImage(resolvedId, file));
+    }
+
+    private Long resolveOwnerId(java.security.Principal principal, Long ownerId) {
+        if (principal != null) {
+            try {
+                return Long.parseLong(principal.getName());
+            } catch (NumberFormatException ignored) {
+                // If principal name is an email or username, try JWT claims.
+                Claims claims = SecurityUtils.getCurrentUserClaims();
+                if (claims != null && claims.get("userId") != null) {
+                    return Long.valueOf(claims.get("userId").toString());
+                }
+            }
+        }
+        return ownerId;
     }
 }

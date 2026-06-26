@@ -49,7 +49,13 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/packages/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/hotels/**").permitAll()
                         .requestMatchers("/api/v1/owner/hotels/**").permitAll()
+                        .requestMatchers("/api/v1/owner/session/**").permitAll()
+                        .requestMatchers("/api/v1/owner/profile/**").permitAll()
+                        .requestMatchers("/api/v1/owner/notifications/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/rooms/**").permitAll()
+                        .requestMatchers("/api/rooms/**").permitAll()
                         .requestMatchers("/api/v1/rooms/**").permitAll()
+
                         .requestMatchers("/api/v1/amenities/**").permitAll()
                         .requestMatchers("/api/reviews/**").permitAll()
                         .requestMatchers("/api/upload/**").permitAll()
@@ -74,6 +80,7 @@ public class SecurityConfig {
         configuration.setAllowedOrigins(List.of(
                 "http://localhost:5173",
                 "http://localhost:8080",
+                "http://localhost:8082",
                 "http://localhost:3000"
         ));
         configuration.setAllowedMethods(List.of("*"));
