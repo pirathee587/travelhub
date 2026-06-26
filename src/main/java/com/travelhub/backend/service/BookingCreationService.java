@@ -134,8 +134,26 @@ public class BookingCreationService {
         logger.info("✓ Booking saved: ID={}", saved.getId());
 
         // Step 7: Save hotel preferences to separate table
-        if (request.getHotelIds() != null && !request.getHotelIds().isEmpty()) {
-            logger.debug("Step 7: Saving {} hotel preferences", request.getHotelIds().size());
+        if (request.getBookingHotelPreferences() != null && !request.getBookingHotelPreferences().isEmpty()) {
+            logger.debug("Step 7: Saving {} hotel preferences with room names", request.getBookingHotelPreferences().size());
+            List<BookingHotelPreference> preferences = new ArrayList<>();
+            for (int i = 0; i < request.getBookingHotelPreferences().size(); i++) {
+                BookingRequest.HotelPreferenceDto prefDto = request.getBookingHotelPreferences().get(i);
+                Hotel hotel = hotelRepository.findById(prefDto.getHotelId()).get();
+
+                BookingHotelPreference pref = BookingHotelPreference.builder()
+                        .booking(saved)
+                        .hotel(hotel)
+                        .preferenceNumber(i)
+                        .roomName(prefDto.getRoomName())
+                        .isSelected(true)
+                        .build();
+                preferences.add(pref);
+            }
+            bookingHotelPreferenceRepository.saveAll(preferences);
+            logger.info("✓ Hotel preferences saved");
+        } else if (request.getHotelIds() != null && !request.getHotelIds().isEmpty()) {
+            logger.debug("Step 7: Saving {} hotel preferences (legacy)", request.getHotelIds().size());
             List<BookingHotelPreference> preferences = new ArrayList<>();
             for (int i = 0; i < request.getHotelIds().size(); i++) {
                 Long hotelId = request.getHotelIds().get(i);

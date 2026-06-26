@@ -42,6 +42,9 @@ public class Package {
     private String category;
     private String district;
 
+    @Column(name = "package_type")
+    private String packageType;
+
     // ── Price ─────────────────────────────────────────────────
     @Column(name = "price_from")
     private Double priceFrom;
@@ -49,6 +52,11 @@ public class Package {
     @Column(name = "price_to")
     private Double priceTo;
 
+    @Column(name = "base_price_adult")
+    private Double basePriceAdult;
+
+    @Column(name = "base_price_child")
+    private Double basePriceChild;
     // ── Content fields ─────────────────────────────────────────
     @Column(length = 2000)
     private String description;
