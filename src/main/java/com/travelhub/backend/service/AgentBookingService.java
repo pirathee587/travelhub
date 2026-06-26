@@ -232,6 +232,7 @@ public class AgentBookingService {
                 .children(booking.getChildren())
                 .specialRequests(booking.getSpecialRequests())
                 .duration(booking.getDuration())
+                .imageUrl(pkg != null ? (pkg.getImageUrl() != null ? pkg.getImageUrl() : (pkg.getImages() != null && !pkg.getImages().isEmpty() ? pkg.getImages().get(0).getImageUrl() : null)) : null)
                 .accommodationOption(booking.getAccommodationOption())
                 .packageType(booking.getPkg() != null ? booking.getPkg().getPackageType() : null)
                 .hotelIdsWithPreference(booking.getHotelIdsWithPreference())
