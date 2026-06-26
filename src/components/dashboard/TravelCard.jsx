@@ -129,18 +129,21 @@ export function TravelCard({ recommendation, className, onClick, children, showH
                             <h3 className="font-semibold text-foreground group-hover:text-primary transition-colors line-clamp-2 leading-snug">
                                 {recommendation.packageName}  {/*Package name*/}
                             </h3>
-                            <p className="text-sm text-muted-foreground line-clamp-1">
-                                {recommendation.destination}  {/*Destination*/}
-                                {recommendation.district ? `, ${recommendation.district}` : ""}  {/*District*/}
-                            </p>
+                            <div className="flex items-center gap-1.5 text-sm text-muted-foreground mt-1 line-clamp-1">
+                                <MapPin className="h-3.5 w-3.5 flex-shrink-0" />
+                                <span>{recommendation.district}</span>
+                            </div>
                         </div>
 
                         <div className="flex items-center justify-between pt-2 border-t-2 border-border mt-auto">
                             <div className="flex flex-col text-sm text-foreground">
-                                {recommendation.priceFrom && (
-                                    <span className="text-base font-bold text-foreground">  {/*Price range*/}
-                                         ${recommendation.priceFrom} - ${recommendation.priceTo}
-                                    </span>
+                                {recommendation.basePriceAdult && (
+                                    <div className="flex flex-col">
+                                        <span className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider mb-0.5">Starts from</span>
+                                        <span className="text-base font-bold text-foreground">
+                                             ${recommendation.basePriceAdult}
+                                        </span>
+                                    </div>
                                 )}
                                 <div className="flex items-center gap-3 mt-1">
                                     {(() => {

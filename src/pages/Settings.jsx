@@ -190,7 +190,7 @@ const SettingsPage = () => {
     if (!profile.email && !profile.name) {
         return (
             <DashboardLayout>
-                <div className="max-w-6xl mx-auto pb-10 space-y-6 animate-slide-up">
+                <div className="max-w-[1600px] mx-auto pb-10 space-y-6 animate-slide-up">
                     <div>
                         <h1 className="text-3xl font-bold tracking-tight mb-2">Settings</h1>
                         <p className="text-muted-foreground">
@@ -216,7 +216,7 @@ const SettingsPage = () => {
 
     return (
         <DashboardLayout>
-            <div className="animate-slide-up space-y-6 max-w-6xl mx-auto pb-10">
+            <div className="animate-slide-up space-y-6 max-w-[1600px] mx-auto pb-10">
                 <div>
                     <h1 className="text-3xl font-bold tracking-tight mb-2">Settings</h1>
                     <p className="text-muted-foreground">

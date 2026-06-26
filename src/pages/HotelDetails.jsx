@@ -32,9 +32,12 @@ import {
     User,
     Pencil,
     Trash2,
+    ChevronLeft,
+    ChevronRight,
+    Grid,
 } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { useEffect, useState, useMemo, useCallback } from "react";
+import { useEffect, useState, useMemo, useCallback, useRef } from "react";
 import { cn } from "@/lib/utils";
 import { useHotelById, useHotelReviews, useHotelRating, useHotelRooms, useHotelImages } from "@/hooks/useApi";
 import { HotelDetailSkeleton } from "@/components/ui/skeletons";
@@ -58,6 +61,12 @@ const HotelDetails = () => {
     const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
     const [isDeleting, setIsDeleting] = useState(false);
     const [showAllReviews, setShowAllReviews] = useState(false);
+
+    // Lightbox State
+    const [isLightboxOpen, setIsLightboxOpen] = useState(false);
+    const [lightboxIndex, setLightboxIndex] = useState(0);
+    const touchStartX = useRef(null);
+    const touchEndX = useRef(null);
 
     // SWR hooks — parallel cached fetching
     const { data: hotel, isLoading: hotelLoading } = useHotelById(id);
@@ -217,6 +226,27 @@ const HotelDetails = () => {
     const galleryImages = [0, 1, 2].map((index) => allImages[index] || null);
     const remainingCount = allImages.length - 3;
 
+    // Lightbox Handlers
+    const openLightbox = (index = 0) => {
+        setLightboxIndex(index);
+        setIsLightboxOpen(true);
+    };
+    const closeLightbox = () => setIsLightboxOpen(false);
+    const goLightboxPrev = (e) => {
+        if (e) e.stopPropagation();
+        setLightboxIndex((i) => (i - 1 + allImages.length) % allImages.length);
+    };
+    const goLightboxNext = (e) => {
+        if (e) e.stopPropagation();
+        setLightboxIndex((i) => (i + 1) % allImages.length);
+    };
+    const onTouchStart = (e) => { touchStartX.current = e.touches[0].clientX; };
+    const onTouchEnd = (e) => {
+        touchEndX.current = e.changedTouches[0].clientX;
+        const diff = touchStartX.current - touchEndX.current;
+        if (Math.abs(diff) > 40) diff > 0 ? goLightboxNext() : goLightboxPrev();
+    };
+
     return (
         <DashboardLayout>
             <div className="animate-slide-up space-y-6 max-w-[1440px] mx-auto pb-10">
@@ -282,50 +312,43 @@ const HotelDetails = () => {
                 </div>
 
                 {/* Image Gallery */}
-                <div className="grid grid-cols-1 lg:grid-cols-[2fr_1fr] gap-4 lg:h-[440px] mb-8 lg:mb-10 items-stretch">
-                    <div
-                        className={cn(
-                            "relative group rounded-2xl overflow-hidden shadow-lg h-[340px] lg:h-full cursor-pointer",
-                            activeImage === 0 && "ring-2 ring-primary ring-offset-2 ring-offset-background"
-                        )}
-                        onClick={() => {
-                            setActiveImage(0);
-                            setSelectedImage(galleryImages[0]);
-                        }}
-                    >
-                        {galleryImages[0] ? (
-                            <img
-                                src={galleryImages[0]}
-                                alt={`${hotel.hotelName} main view`}
-                                className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-                                loading="eager"
-                            />
-                        ) : (
-                            <div className="w-full h-full flex flex-col items-center justify-center text-muted-foreground/40 bg-muted/20 gap-2">
-                                <ImageOff className="h-12 w-12" />
-                                <span className="text-sm">No Images Available</span>
-                            </div>
-                        )}
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent" />
-                    </div>
+                <div className="relative">
+                    <div className="grid grid-cols-1 lg:grid-cols-[2fr_1fr] gap-4 lg:h-[440px] mb-8 lg:mb-10 items-stretch">
+                        <div
+                            className={cn(
+                                "relative group rounded-2xl overflow-hidden shadow-lg h-[340px] lg:h-full cursor-pointer",
+                                activeImage === 0 && "ring-2 ring-primary ring-offset-2 ring-offset-background"
+                            )}
+                            onClick={() => openLightbox(0)}
+                        >
+                            {galleryImages[0] ? (
+                                <img
+                                    src={galleryImages[0]}
+                                    alt={`${hotel.hotelName} main view`}
+                                    className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                                    loading="eager"
+                                />
+                            ) : (
+                                <div className="w-full h-full flex flex-col items-center justify-center text-muted-foreground/40 bg-muted/20 gap-2">
+                                    <ImageOff className="h-12 w-12" />
+                                    <span className="text-sm">No Images Available</span>
+                                </div>
+                            )}
+                            <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent" />
+                        </div>
 
-                    <div className="grid grid-cols-2 lg:grid-cols-1 lg:grid-rows-2 gap-4 lg:h-full min-h-0">
-                        {galleryImages.slice(1, 3).map((img, idx) => {
-                            const imageIndex = idx + 1;
-                            return (
-                                <div
-                                    key={imageIndex}
-                                    className={cn(
-                                        "relative group rounded-2xl overflow-hidden shadow-md cursor-pointer h-[160px] lg:h-full min-h-0",
-                                        activeImage === imageIndex && "ring-2 ring-primary ring-offset-2 ring-offset-background"
-                                    )}
-                                    onClick={() => {
-                                        if (img) {
-                                            setActiveImage(imageIndex);
-                                            setSelectedImage(img);
-                                        }
-                                    }}
-                                >
+                        <div className="grid grid-cols-2 lg:grid-cols-1 lg:grid-rows-2 gap-4 lg:h-full min-h-0">
+                            {galleryImages.slice(1, 3).map((img, idx) => {
+                                const imageIndex = idx + 1;
+                                return (
+                                    <div
+                                        key={imageIndex}
+                                        className={cn(
+                                            "relative group rounded-2xl overflow-hidden shadow-md cursor-pointer h-[160px] lg:h-full min-h-0",
+                                            activeImage === imageIndex && "ring-2 ring-primary ring-offset-2 ring-offset-background"
+                                        )}
+                                        onClick={() => img && openLightbox(imageIndex)}
+                                    >
                                     {img ? (
                                         <>
                                             <img
@@ -345,33 +368,19 @@ const HotelDetails = () => {
                             );
                         })}
                     </div>
+                    
+                    {/* See More Button */}
+                    {allImages.length > 0 && (
+                        <Button
+                            variant="secondary"
+                            className="absolute bottom-4 right-4 z-10 gap-2 font-semibold shadow-md hover:bg-white hover:text-black transition-colors"
+                            onClick={() => openLightbox(0)}
+                        >
+                            <Grid className="w-4 h-4" /> See all {allImages.length} photos
+                        </Button>
+                    )}
                 </div>
-                        {/* Extra images strip — shown only when there are more than 3 images */}
-                        {allImages.length > 3 && (
-                            <div className="flex gap-2 overflow-x-auto pb-1">
-                                {allImages.slice(3).map((img, idx) => (
-                                    <div
-                                        key={idx + 3}
-                                        className="relative flex-shrink-0 h-16 w-24 rounded-lg overflow-hidden cursor-pointer group"
-                                        onClick={() => setSelectedImage(img)}
-                                    >
-                                        <img
-                                            src={img}
-                                            alt={`${hotel.hotelName} photo ${idx + 4}`}
-                                            className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
-                                            loading="lazy"
-                                        />
-                                        {idx === allImages.slice(3).length - 1 && remainingCount > 1 && (
-                                            <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
-                                                <span className="text-white text-xs font-bold">+{remainingCount - 1} more</span>
-                                            </div>
-                                        )}
-                                    </div>
-                                ))}
-                            </div>
-                        )}
-                {/* IMAGE END */}
-
+                </div>
 
                 {/* Content Section */}
                 <div className="relative z-10 w-full space-y-12 mt-10 lg:mt-14">
@@ -654,23 +663,52 @@ const HotelDetails = () => {
             </div>
 
             {/* Image Lightbox */}
-            {selectedImage && (
+            {isLightboxOpen && (
                 <div
-                    className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4"
-                    onClick={() => setSelectedImage(null)}
+                    className="fixed inset-0 z-50 bg-black/95 flex flex-col items-center justify-center select-none"
+                    onTouchStart={onTouchStart}
+                    onTouchEnd={onTouchEnd}
                 >
-                    <div className="relative max-w-3xl max-h-[90vh]">
-                        <img
-                            src={selectedImage}
-                            alt="Full view"
-                            className="max-w-full max-h-[90vh] rounded-xl object-contain"
-                        />
+                    {/* Header */}
+                    <div className="absolute top-0 left-0 right-0 p-4 flex justify-between items-center z-10 text-white">
+                        <div className="font-medium text-sm">
+                            {lightboxIndex + 1} / {allImages.length}
+                        </div>
                         <button
-                            className="absolute top-2 right-2 bg-black/50 text-white rounded-full p-2 hover:bg-black/80 transition-colors"
-                            onClick={() => setSelectedImage(null)}
+                            className="bg-white/10 hover:bg-white/20 rounded-full p-2 transition-colors"
+                            onClick={closeLightbox}
                         >
                             ✕
                         </button>
+                    </div>
+
+                    {/* Image Container */}
+                    <div className="relative w-full h-full flex items-center justify-center overflow-hidden">
+                        <img
+                            src={allImages[lightboxIndex]}
+                            alt={`Image ${lightboxIndex + 1}`}
+                            className="max-w-full max-h-full object-contain pointer-events-none select-none transition-transform duration-300"
+                        />
+                        
+                        {/* Navigation Arrows */}
+                        {allImages.length > 1 && (
+                            <>
+                                <button
+                                    onClick={goLightboxPrev}
+                                    className="absolute left-4 top-1/2 -translate-y-1/2 bg-white/10 hover:bg-white/20 text-white rounded-full p-3 transition-colors"
+                                    aria-label="Previous image"
+                                >
+                                    <ChevronLeft className="h-8 w-8" />
+                                </button>
+                                <button
+                                    onClick={goLightboxNext}
+                                    className="absolute right-4 top-1/2 -translate-y-1/2 bg-white/10 hover:bg-white/20 text-white rounded-full p-3 transition-colors"
+                                    aria-label="Next image"
+                                >
+                                    <ChevronRight className="h-8 w-8" />
+                                </button>
+                            </>
+                        )}
                     </div>
                 </div>
             )}

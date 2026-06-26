@@ -6,6 +6,14 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select";
 import {
     Card,
     CardContent,
@@ -20,48 +28,116 @@ import {
     Building2,
     MapPin,
     DollarSign,
-    Plus,
-    X,
-    CheckCircle2,
     AlertCircle,
-    MessageSquare,
+    X
 } from "lucide-react";
-import { cn } from "@/lib/utils";
 import { api } from "@/services/api";
-import { useToast } from "@/hooks/use-toast";
+import { useAllHotels, useHotelRooms } from "@/hooks/useApi";
 import { defaultUserId } from "@/lib/userHelpers";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+
+const HotelPreferenceCard = ({ selection, index, onRemove, onUpdate, allHotels }) => {
+    const { data: rooms } = useHotelRooms(selection.hotelId);
+    const h = allHotels?.find(hotel => hotel.id.toString() === selection.hotelId);
+
+    return (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 p-4 border rounded-lg bg-white relative">
+            <button type="button" onClick={() => onRemove(selection.hotelId)} className="absolute top-2 right-2 hover:bg-muted rounded-full p-1 text-muted-foreground transition-colors">
+                <X className="h-4 w-4" />
+            </button>
+            <div className="space-y-2 lg:col-span-1">
+                <Label>Preference {index + 1}</Label>
+                <div className="mt-1">
+                    <Badge variant="secondary" className="bg-primary/10 text-primary border-primary/20 py-1.5 px-3 whitespace-normal text-left">
+                        {h?.hotelName || selection.hotelId}
+                    </Badge>
+                </div>
+            </div>
+            <div className="space-y-2 lg:col-span-3">
+                <Label>Available Rooms</Label>
+                <Select value={selection.roomName || ""} onValueChange={(v) => onUpdate(selection.hotelId, 'roomName', v)}>
+                    <SelectTrigger className="bg-white">
+                        <SelectValue placeholder={rooms?.length > 0 ? "Select a Room" : "No rooms found"} />
+                    </SelectTrigger>
+                    <SelectContent>
+                        {rooms?.map(room => (
+                            <SelectItem key={room.id} value={room.name}>
+                                {room.name} {room.price ? `($${room.price})` : ""}
+                            </SelectItem>
+                        ))}
+                    </SelectContent>
+                </Select>
+            </div>
+        </div>
+    );
+};
 
 const PackageReservation = () => {
     const { id } = useParams();
     const navigate = useNavigate();
-    const [searchParams] = useSearchParams();
+    const [searchParams, setSearchParams] = useSearchParams();
+
+    const today = (() => {
+        const d = new Date();
+        const year = d.getFullYear();
+        const month = String(d.getMonth() + 1).padStart(2, "0");
+        const day = String(d.getDate()).padStart(2, "0");
+        return `${year}-${month}-${day}`;
+    })();
+
+    const getSavedState = (key, defaultVal) => {
+        try {
+            const saved = sessionStorage.getItem(`reservation_state_${id}`);
+            if (saved) {
+                const parsed = JSON.parse(saved);
+                return parsed[key] !== undefined ? parsed[key] : defaultVal;
+            }
+        } catch(e) {}
+        return defaultVal;
+    };
 
     const [pkg, setPkg] = useState(null);
     const [loading, setLoading] = useState(true);
     const [submitting, setSubmitting] = useState(false);
 
-    const [startDate, setStartDate] = useState("");
-    const [adults, setAdults] = useState(1);
-    const [children, setChildren] = useState(0);
-    const [specialRequests, setSpecialRequests] = useState("");
+    const [startDate, setStartDate] = useState(() => getSavedState('startDate', ""));
+    const [adults, setAdults] = useState(() => getSavedState('adults', 1));
+    const [children, setChildren] = useState(() => getSavedState('children', 0));
+    const [specialRequests, setSpecialRequests] = useState(() => getSavedState('specialRequests', ""));
     
+    const [accommodationOption, setAccommodationOption] = useState(() => getSavedState('accommodationOption', "BY_MY_OWN"));
+    const [hotelSelections, setHotelSelections] = useState(() => getSavedState('hotelSelections', []));
 
-    const [hotelPreferences, setHotelPreferences] = useState(() => {
-        const saved = sessionStorage.getItem(`hotelPrefs_${id}`);           {/* Hotel preferences */}
-        if (saved) {
-            try {
-                return JSON.parse(saved);
-            } catch (e) {}
-        }
-        return [
-            { id: "pref-1", preferenceNumber: 1, hotel: null, isMandatory: false },
-            { id: "pref-2", preferenceNumber: 2, hotel: null, isMandatory: false },
-        ];
-    });
+    const { data: allHotels } = useAllHotels(null);
+
+    const handleRemoveHotel = (val) => {
+        setHotelSelections(hotelSelections.filter(s => s.hotelId !== val));
+    };
+
+    const updateSelection = (hotelId, key, value) => {
+        setHotelSelections(hotelSelections.map(s => s.hotelId === hotelId ? { ...s, [key]: value } : s));
+    };
 
     useEffect(() => {
-        sessionStorage.setItem(`hotelPrefs_${id}`, JSON.stringify(hotelPreferences));
-    }, [hotelPreferences, id]);
+        sessionStorage.setItem(`reservation_state_${id}`, JSON.stringify({
+            startDate, adults, children, specialRequests, accommodationOption, hotelSelections
+        }));
+    }, [startDate, adults, children, specialRequests, accommodationOption, hotelSelections, id]);
+
+    useEffect(() => {
+        const selectedHotelId = searchParams.get("selectedHotel");
+        if (selectedHotelId) {
+            if (hotelSelections.length < 5 && !hotelSelections.some(s => s.hotelId === selectedHotelId)) {
+                setHotelSelections(prev => [...prev, {
+                    hotelId: selectedHotelId,
+                    roomName: ""
+                }]);
+            }
+            searchParams.delete("selectedHotel");
+            searchParams.delete("preference");
+            setSearchParams(searchParams, { replace: true });
+        }
+    }, [searchParams, hotelSelections, setSearchParams]);
 
     useEffect(() => {
         api.getPackageById(id).then(data => {
@@ -70,58 +146,10 @@ const PackageReservation = () => {
         });
     }, [id]);
 
-    useEffect(() => {
-        const selectedHotelId = searchParams.get("selectedHotel");
-        const preferenceNumber = searchParams.get("preference");
-
-        if (selectedHotelId && preferenceNumber) {
-            api.getHotelById(selectedHotelId).then(hotel => {
-                if (hotel) {
-                    setHotelPreferences((prev) =>
-                        prev.map((pref) =>
-                            pref.preferenceNumber === parseInt(preferenceNumber)
-                                ? { ...pref, hotel }
-                                : pref
-                        )
-                    );
-                    navigate(`/explore/package/${id}/reserve`, { replace: true });
-                }
-            });
-        }
-    }, [searchParams, id, navigate]);
-
-    const handleSelectHotel = (preferenceNumber) => {
-    navigate(
-        `/hotels?mode=select&preference=${preferenceNumber}&returnTo=/explore/package/${id}/reserve&district=${pkg.district}`
-    );
-};
-
-    const handleAddOptionalHotel = () => {
-        const nextNumber = hotelPreferences.length > 0 ? Math.max(...hotelPreferences.map(p => p.preferenceNumber)) + 1 : 1;
-        setHotelPreferences([
-            ...hotelPreferences,
-            {
-                id: `pref-${Date.now()}`,
-                preferenceNumber: nextNumber,
-                hotel: null,
-                isMandatory: false,
-            },
-        ]);
-    };
-
-    const handleRemoveOptionalHotel = (prefId) => {
-        setHotelPreferences((prev) => prev.filter((pref) => pref.id !== prefId));
-    };
-
-    const calculateTotalPrice = () => {                                     //Price Calculation
-        const basePrice = pkg?.priceFrom || 0;
-        const hotelTotal = hotelPreferences.reduce((sum, pref) => {
-            if (pref.hotel) {
-                return sum + (pref.hotel.priceFrom || 0);
-            }
-            return sum;
-        }, 0);
-        return basePrice + hotelTotal;
+    const calculateTotalPrice = () => {
+        const adultTotal = (adults || 0) * (pkg?.basePriceAdult || 0);
+        const childTotal = (children || 0) * (pkg?.basePriceChild || 0);
+        return adultTotal + childTotal;
     };
 
     const handleConfirmReservation = async () => {
@@ -131,41 +159,31 @@ const PackageReservation = () => {
         }
 
         setSubmitting(true);
-
         const userId = defaultUserId();
-        const selectedHotels = hotelPreferences.filter(p => p.hotel).map(p => p.hotel.id);
 
         const bookingData = {
             userId: userId,
             packageId: parseInt(id),
-            hotelIds: selectedHotels,
             startDate: startDate,
             totalPrice: calculateTotalPrice(),
             adults: adults || 1,
             children: children || 0,
             specialRequests: specialRequests,
             duration: pkg?.duration || "",
+            hotelIds: hotelSelections.length > 0 ? hotelSelections.map(s => parseInt(s.hotelId)) : null,
+            accommodationOption: pkg?.packageType === "SINGLE_DISTRICT" ? accommodationOption : null,
+            bookingHotelPreferences: pkg?.packageType === "SINGLE_DISTRICT" && accommodationOption === "AGENCY_ARRANGE" ? hotelSelections : null,
         };
 
-        console.log("[Booking] Sending booking request:", {
-            userId: userId,
-            packageId: parseInt(id),
-            selectedHotels: selectedHotels.length,
-            startDate: startDate,
-            totalPrice: calculateTotalPrice(),
-            adults: adults || 1,
-            children: children || 0
-        });
-
         try {
-            const booking = await api.createBooking(bookingData);                               {/* Api call for booking creation */}
+            const booking = await api.createBooking(bookingData);
             if (booking && booking.id) {
-                sessionStorage.removeItem(`hotelPrefs_${id}`);  
+                sessionStorage.removeItem(`reservation_state_${id}`);
                 alert(`Booking confirmed! Booking ID: BK${String(booking.id).padStart(5, "0")}`);
                 navigate("/trips");
             }
         } catch (error) {
-            const errorMsg = error.message || "Booking failed. Please try again.";                      {/* Error handling */}
+            const errorMsg = error.message || "Booking failed. Please try again.";
             console.error("[Booking] Error:", errorMsg);
             alert(errorMsg);
         } finally {
@@ -201,8 +219,7 @@ const PackageReservation = () => {
 
     return (
         <DashboardLayout>
-            <div className="animate-slide-up space-y-6 max-w-6xl mx-auto pb-10">
-                {/* Navigation */}
+            <div className="animate-slide-up space-y-6 max-w-[1600px] mx-auto pb-10">
                 <Button
                     variant="ghost"
                     onClick={() => navigate(`/explore/package/${id}`)}
@@ -211,43 +228,44 @@ const PackageReservation = () => {
                     <ArrowLeft className="mr-2 h-4 w-4" /> Back to Package Details
                 </Button>
 
-                {/* Header */}
                 <div>
                     <h1 className="text-3xl font-bold tracking-tight mb-2">
                         Reserve Your Package
                     </h1>
                     <p className="text-muted-foreground">
-                        Complete your booking details and select your preferred hotels
+                        Complete your booking details for the trip
                     </p>
                 </div>
 
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                    {/* Main Form */}
                     <div className="lg:col-span-2 space-y-6">
-                        {/* Package Summary */}
                         <Card>
                             <CardHeader>
                                 <CardTitle className="flex items-center gap-2">
                                     <MapPin className="h-5 w-5 text-primary" />
-                                    {pkg.packageName}                   {/* Package Name */}
+                                    {pkg.packageName}
                                 </CardTitle>
                                 <CardDescription>
-                                    {pkg.destination} • {pkg.duration}  {/* Package Destination, Duration*/}
+                                    {pkg.destination} • {pkg.duration}
                                 </CardDescription>
                             </CardHeader>
                             <CardContent>
-                                <div className="flex items-center gap-2">
-                                    <Badge variant="outline" className="border-primary/20 text-primary">                {/* Package Category */}
-                                        {pkg.category?.charAt(0).toUpperCase() + pkg.category?.slice(1)}        
+                                <div className="flex flex-wrap items-center gap-2">
+                                    <Badge variant="outline" className="border-primary/20 text-primary">
+                                        {pkg.category?.charAt(0).toUpperCase() + pkg.category?.slice(1)}
                                     </Badge>
-                                    <span className="text-sm text-muted-foreground">
-                                        ★ {pkg.rating} ({pkg.reviewCount} reviews)                                     {/* Package rating */}
+                                    {pkg.packageType && (
+                                        <Badge variant="outline" className="bg-primary/10 border-primary/20 text-primary">
+                                            {pkg.packageType.replace('_', ' ')}
+                                        </Badge>
+                                    )}
+                                    <span className="text-sm text-muted-foreground ml-2">
+                                        ★ {pkg.rating} ({pkg.reviewCount} reviews)
                                     </span>
                                 </div>
                             </CardContent>
                         </Card>
 
-                        {/* Booking Details */}
                         <Card>
                             <CardHeader>
                                 <CardTitle className="flex items-center gap-2">
@@ -261,6 +279,7 @@ const PackageReservation = () => {
                                     <Input
                                         id="startDate"
                                         type="date"
+                                        min={today}
                                         value={startDate}
                                         onChange={(e) => setStartDate(e.target.value)}
                                         className="bg-background"
@@ -303,102 +322,81 @@ const PackageReservation = () => {
                             </CardContent>
                         </Card>
 
-                        {/* Hotel Preferences */}
-                        <Card>
-                            <CardHeader>
-                                <CardTitle className="flex items-center gap-2">
-                                    <Building2 className="h-5 w-5 text-primary" />
-                                    Hotel Preferences
-                                </CardTitle>
-                                <CardDescription>
-                                    Add optional hotels for your stay
-                                </CardDescription>
-                            </CardHeader>
-                            <CardContent className="space-y-4">
-                                {hotelPreferences.map((pref) => (
-                                    <div
-                                        key={pref.id}
-                                        className={cn(
-                                            "p-4 rounded-lg border transition-all",
-                                            pref.hotel
-                                                ? "bg-primary/5 border-primary/20"
-                                                : "bg-muted/30 border-border"
-                                        )}
-                                    >
-                                        <div className="flex items-start justify-between mb-3">
-                                            <div className="flex items-center gap-2">
-                                                <span className="font-semibold">
-                                                    Hotel Preference {pref.preferenceNumber}
-                                                </span>
-                                                {pref.isMandatory && (
-                                                    <Badge variant="destructive" className="text-xs">
-                                                        Required
-                                                    </Badge>
+                        {pkg.packageType === "SINGLE_DISTRICT" && (
+                            <Card>
+                                <CardHeader>
+                                    <CardTitle className="flex items-center gap-2">
+                                        <Building2 className="h-5 w-5 text-primary" />
+                                        Accommodation Preferences
+                                    </CardTitle>
+                                    <CardDescription>
+                                        This is a single-district tour. You can arrange your own accommodation or let us handle it.
+                                    </CardDescription>
+                                </CardHeader>
+                                <CardContent className="space-y-4">
+                                    <RadioGroup value={accommodationOption} onValueChange={setAccommodationOption}>
+                                        <div className="flex items-center space-x-2">
+                                            <RadioGroupItem value="BY_MY_OWN" id="by_my_own" />
+                                            <Label htmlFor="by_my_own">I will decide my own accommodation</Label>
+                                        </div>
+                                        <div className="flex items-center space-x-2">
+                                            <RadioGroupItem value="AGENCY_ARRANGE" id="agency_arrange" />
+                                            <Label htmlFor="agency_arrange">Agency will arrange accommodation</Label>
+                                        </div>
+                                    </RadioGroup>
+
+                                    {accommodationOption === "AGENCY_ARRANGE" && (
+                                        <div className="mt-4 p-4 border rounded-lg bg-muted/30 space-y-4">
+                                            <Alert variant="default" className="bg-primary/5 text-primary border-primary/20">
+                                                <AlertCircle className="h-4 w-4" />
+                                                <AlertDescription>
+                                                    Hotel cost is not included in the package total. It will be handled externally on arrival based on your preferences.
+                                                </AlertDescription>
+                                            </Alert>
+                                            <div className="space-y-4">
+                                                {hotelSelections.map((sel, index) => (
+                                                    <HotelPreferenceCard
+                                                        key={sel.hotelId}
+                                                        selection={sel}
+                                                        index={index}
+                                                        onRemove={handleRemoveHotel}
+                                                        onUpdate={updateSelection}
+                                                        allHotels={allHotels}
+                                                    />
+                                                ))}
+
+                                                {hotelSelections.length < 5 && (
+                                                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 p-4 border border-dashed rounded-lg bg-white/50">
+                                                        <div className="space-y-2 lg:col-span-1">
+                                                            <Label>Preference {hotelSelections.length + 1}</Label>
+                                                            <Button 
+                                                                type="button" 
+                                                                variant="outline" 
+                                                                className="w-full justify-start text-left font-normal bg-white"
+                                                                onClick={() => {
+                                                                    const nextPref = hotelSelections.length + 1;
+                                                                    const currentPath = `/explore/package/${id}/reserve`;
+                                                                    const districtParam = pkg?.district ? `&district=${encodeURIComponent(pkg.district)}` : "";
+                                                                    navigate(`/hotels?mode=select&preference=${nextPref}&returnTo=${encodeURIComponent(currentPath)}${districtParam}`);
+                                                                }}
+                                                            >
+                                                                + {hotelSelections.length > 0 ? "Add Another Hotel" : "Select Hotel"}
+                                                            </Button>
+                                                        </div>
+                                                        <div className="space-y-2 lg:col-span-3 opacity-50 pointer-events-none">
+                                                            <Label>Available Rooms</Label>
+                                                            <Select disabled><SelectTrigger className="bg-white"><SelectValue placeholder="Select a Room"/></SelectTrigger></Select>
+                                                        </div>
+                                                    </div>
                                                 )}
                                             </div>
-                                            {!pref.isMandatory && (
-                                                <Button
-                                                    variant="ghost"
-                                                    size="sm"
-                                                    onClick={() => handleRemoveOptionalHotel(pref.id)}
-                                                    className="h-8 w-8 p-0"
-                                                >
-                                                    <X className="h-4 w-4" />
-                                                </Button>
-                                            )}
                                         </div>
-
-                                        {pref.hotel ? (
-                                            <div className="space-y-2">
-                                                <div className="flex items-start justify-between">
-                                                    <div className="flex-1">
-                                                        <h4 className="font-medium flex items-center gap-2">
-                                                            <CheckCircle2 className="h-4 w-4 text-primary" />
-                                                            {pref.hotel.hotelName}
-                                                        </h4>
-                                                        <p className="text-sm text-muted-foreground flex items-center gap-1 mt-1">
-                                                            <MapPin className="h-3 w-3" />
-                                                            {pref.hotel.destination}
-                                                        </p>
-                                                        <p className="text-sm font-medium text-primary mt-1">
-                                                            ${pref.hotel.priceFrom} - ${pref.hotel.priceTo} per night
-                                                        </p>
-                                                    </div>
-                                                    <Button
-                                                        variant="outline"
-                                                        size="sm"
-                                                        onClick={() => handleSelectHotel(pref.preferenceNumber)}
-                                                    >
-                                                        Change
-                                                    </Button>
-                                                </div>
-                                            </div>
-                                        ) : (
-                                            <Button
-                                                variant="outline"
-                                                className="w-full"
-                                                onClick={() => handleSelectHotel(pref.preferenceNumber)}
-                                            >
-                                                <Building2 className="mr-2 h-4 w-4" />
-                                                Select Hotel
-                                            </Button>
-                                        )}
-                                    </div>
-                                ))}
-
-                                <Button
-                                    variant="outline"
-                                    className="w-full border-dashed"
-                                    onClick={handleAddOptionalHotel}
-                                >
-                                    <Plus className="mr-2 h-4 w-4" />
-                                    Add Optional Hotel
-                                </Button>
-                            </CardContent>
-                        </Card>
+                                    )}
+                                </CardContent>
+                            </Card>
+                        )}
                     </div>
 
-                    {/* Summary Sidebar */}
                     <div className="lg:col-span-1">
                         <Card className="sticky top-24">
                             <CardHeader>
@@ -407,38 +405,25 @@ const PackageReservation = () => {
                             <CardContent className="space-y-4">
                                 <div className="space-y-2">
                                     <div className="flex justify-between text-sm">
-                                        <span className="text-muted-foreground">Package</span>
-                                        <span className="font-medium">${pkg.priceFrom}</span>           {/* Total price*/}
-                                    </div>
-                                    <div className="flex justify-between text-sm">
                                         <span className="text-muted-foreground flex items-center gap-1">
                                             <Users className="h-3 w-3" />
                                             Guests
                                         </span>
                                         <span className="font-medium">
-                                            {adults} Adults, {children} Children                    {/* Adult, children count */}
+                                            {adults} Adults, {children} Children
                                         </span>
                                     </div>
-                                    {hotelPreferences.filter((p) => p.hotel).length > 0 && (
-                                        <div className="pt-2 border-t">
-                                            <p className="text-sm font-medium mb-2">Selected Hotels</p>     {/* Hotel name and price */}
-                                            {hotelPreferences
-                                                .filter((p) => p.hotel)
-                                                .map((pref) => (
-                                                    <div key={pref.id} className="flex justify-between text-sm mb-1">
-                                                        <span className="text-muted-foreground truncate mr-2">
-                                                            {pref.hotel?.hotelName}
-                                                        </span>
-                                                        <span className="font-medium whitespace-nowrap">
-                                                            ${pref.hotel?.priceFrom}
-                                                        </span>
-                                                    </div>
-                                                ))}
-                                        </div>
-                                    )}
+                                    <div className="flex justify-between text-sm pt-2">
+                                        <span className="text-muted-foreground">Adults Total</span>
+                                        <span className="font-medium">${(adults || 0) * (pkg.basePriceAdult || 0)}</span>
+                                    </div>
+                                    <div className="flex justify-between text-sm pt-2 border-b pb-2">
+                                        <span className="text-muted-foreground">Children Total</span>
+                                        <span className="font-medium">${(children || 0) * (pkg.basePriceChild || 0)}</span>
+                                    </div>
                                 </div>
 
-                                <div className="pt-4 border-t">
+                                <div className="pt-2">
                                     <div className="flex justify-between items-center mb-4">
                                         <span className="font-semibold">Estimated Total</span>
                                         <span className="text-2xl font-bold text-primary">
@@ -449,21 +434,12 @@ const PackageReservation = () => {
                                     <Button
                                         className="w-full gradient-ocean text-white shadow-lg"
                                         size="lg"
-                                        disabled={!startDate || submitting}                 //without start date, button will be disabled
+                                        disabled={!startDate || submitting}
                                         onClick={handleConfirmReservation}
                                     >
                                         <DollarSign className="mr-2 h-4 w-4" />
                                         {submitting ? "Confirming..." : "Confirm Reservation"}
                                     </Button>
-
-                                    {/* <Button
-                                        variant="outline"
-                                        className="w-full mt-2"
-                                        size="sm"
-                                    >
-                                        <MessageSquare className="mr-2 h-4 w-4" />
-                                        Contact Agent
-                                    </Button> */}
 
                                     <p className="text-xs text-muted-foreground text-center mt-3">
                                         You won't be charged yet

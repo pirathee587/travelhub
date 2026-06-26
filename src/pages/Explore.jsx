@@ -57,19 +57,18 @@ const Explore = () => {
         if (searchQuery.trim().length > 0) {
             const suggestions = allPackages
                 .filter((pkg) =>
-                    pkg.destination?.toLowerCase().includes(searchQuery.toLowerCase()) ||   //Search by destination
+                    pkg.district?.toLowerCase().includes(searchQuery.toLowerCase()) ||   //Search by district
                     pkg.packageName?.toLowerCase().includes(searchQuery.toLowerCase()) ||   //Search by package name
-                    pkg.category?.toLowerCase().includes(searchQuery.toLowerCase()) ||   //Search by category
-                    pkg.district?.toLowerCase().includes(searchQuery.toLowerCase())   //Search by district
+                    pkg.category?.toLowerCase().includes(searchQuery.toLowerCase())   //Search by category
                 )
                 .map((pkg) => ({
                     id: pkg.id,
-                    destination: pkg.destination,       // filter important detail
-                    packageName: pkg.packageName,       // package name to display in search suggestions
+                    district: pkg.district,
+                    packageName: pkg.packageName,
                 }))
                 .filter(
                     (item, index, self) =>
-                        index === self.findIndex((t) => t.destination === item.destination) //removed duplicates ( "findIndex()" is used to remove duplicates)
+                        index === self.findIndex((t) => t.district === item.district)
                 );
             setSearchSuggestions(suggestions);
             setShowSuggestions(true);   //Show Results
@@ -93,10 +92,9 @@ const Explore = () => {
         return allPackages
             .filter((pkg) => {
                 const matchesSearch =
-                    pkg.destination?.toLowerCase().includes(query) ||
+                    pkg.district?.toLowerCase().includes(query) ||
                     pkg.packageName?.toLowerCase().includes(query) ||
-                    pkg.category?.toLowerCase().includes(query) ||
-                    pkg.district?.toLowerCase().includes(query);
+                    pkg.category?.toLowerCase().includes(query);
                 const matchesCategory =
                     selectedCategory === "all" || (pkg.category && pkg.category.toLowerCase() === selectedCategory.toLowerCase());
                 const matchesDistrict =
@@ -104,8 +102,8 @@ const Explore = () => {
                 return matchesSearch && matchesCategory && matchesDistrict;
             })
             .sort((a, b) => {                                                    //Sorting
-                if (sortBy === "price-low") return a.priceFrom - b.priceFrom;
-                if (sortBy === "price-high") return b.priceFrom - a.priceFrom;
+                if (sortBy === "price-low") return (a.basePriceAdult || 0) - (b.basePriceAdult || 0);
+                if (sortBy === "price-high") return (b.basePriceAdult || 0) - (a.basePriceAdult || 0);
                 if (sortBy === "rating") return (b.rating || 0) - (a.rating || 0);
                 if (sortBy === "rating-low") return (a.rating || 0) - (b.rating || 0);
                 return 0;
@@ -181,8 +179,8 @@ const Explore = () => {
                                         <button
                                             key={suggestion.id}
                                             onClick={() => {
-                                                setSearchQuery(suggestion.destination); {/* Search will go to there */ }
-                                                setShowSuggestions(false); {/* Show Auto sugessstion */ }
+                                                setSearchQuery(suggestion.district || "");
+                                                setShowSuggestions(false);
                                             }}
                                             className="w-full px-4 py-4 text-left hover:bg-primary/5 flex items-center gap-4 transition-colors border-b border-border/30 last:border-b-0 group"
                                         >
@@ -190,8 +188,8 @@ const Explore = () => {
                                                 <Compass className="h-5 w-5 text-primary" />
                                             </div>
                                             <div className="flex-1 min-w-0">
-                                                <p className="font-bold text-foreground truncate text-base">{suggestion.packageName}</p>            {/* Search result Package Name*/}
-                                                <p className="text-sm text-muted-foreground truncate">{suggestion.destination}</p>                  {/* Search Result Destination */}
+                                                <p className="font-bold text-foreground truncate text-base">{suggestion.packageName}</p>
+                                                <p className="text-sm text-muted-foreground truncate">{suggestion.district}</p>
                                             </div>
                                         </button>
                                     ))}
