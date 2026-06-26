@@ -175,8 +175,14 @@ public class AdminHotelService {
         // The query filters by u.hotelId which stores the hotel's own ID, so always pass `id` (hotel ID)
         userRepository.updateIsActiveByHotelId(id, newActiveState);
 
+        // Fire SUSPENDED event when a hotel is being suspended (active → inactive)
+        if (!newActiveState) {
+            eventPublisher.publishEvent(new HotelEvent(this, hotel, "SUSPENDED"));
+        }
+
         return getHotelDetail(id);
     }
+
 
     // ── Approve Hotel ─────────────────────────────────
     @Transactional

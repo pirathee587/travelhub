@@ -2,9 +2,11 @@ package com.travelhub.backend.service;
 
 import com.travelhub.backend.dto.request.OwnerHotelRequest;
 import com.travelhub.backend.dto.response.HotelResponse;
+import com.travelhub.backend.dto.response.HotelSummaryResponse;
 import com.travelhub.backend.entity.Hotel;
 import com.travelhub.backend.entity.User;
 import com.travelhub.backend.event.HotelEvent;
+import com.travelhub.backend.repository.HotelImageRepository;
 import com.travelhub.backend.repository.HotelRepository;
 import com.travelhub.backend.repository.ReviewRepository;
 import com.travelhub.backend.repository.UserRepository;
@@ -25,12 +27,11 @@ public class OwnerHotelService {
     private final HotelRepository hotelRepository;
     private final UserRepository userRepository;
     private final ReviewRepository reviewRepository;
+    private final HotelImageRepository hotelImageRepository;
     private final ImageUploadService imageUploadService;
     private final ApplicationEventPublisher eventPublisher;
 
-    public List<HotelResponse> getOwnerHotels(String status) {
-        // Fetch all hotels matching the status (Global View)
-        // Ensure the status matches the database values: "Approved", "Pending", "Rejected"
+    public List<HotelResponse> getOwnerHotels(Long ownerId, String status) {
         String targetStatus = "Approved"; // Default to Approved
         
         if ("Pending".equalsIgnoreCase(status)) {
@@ -41,9 +42,40 @@ public class OwnerHotelService {
             targetStatus = "Approved";
         }
 
+        if (ownerId != null) {
+            return hotelRepository.findByOwnerIdAndApplicationStatus(ownerId, targetStatus).stream()
+                    .map(this::toHotelResponse)
+                    .collect(Collectors.toList());
+        }
+
         return hotelRepository.findByApplicationStatus(targetStatus).stream()
                 .map(this::toHotelResponse)
                 .collect(Collectors.toList());
+    }
+
+    public HotelSummaryResponse getHotelSummary(Long ownerId) {
+        long approved = 0;
+        long pending = 0;
+        long rejected = 0;
+
+        if (ownerId != null) {
+            approved = hotelRepository.findByOwnerIdAndApplicationStatus(ownerId, "Approved").size();
+            pending = hotelRepository.findByOwnerIdAndApplicationStatus(ownerId, "Pending").size();
+            rejected = hotelRepository.findByOwnerIdAndApplicationStatus(ownerId, "Rejected").size();
+        } else {
+            approved = hotelRepository.countByApplicationStatus("Approved");
+            pending = hotelRepository.countByApplicationStatus("Pending");
+            rejected = hotelRepository.countByApplicationStatus("Rejected");
+        }
+
+        long total = approved + pending + rejected;
+
+        return HotelSummaryResponse.builder()
+                .approved(approved)
+                .pending(pending)
+                .rejected(rejected)
+                .total(total)
+                .build();
     }
 
     @Transactional
@@ -136,6 +168,14 @@ public class OwnerHotelService {
                     .collect(Collectors.toList())
                 : List.of();
 
+        List<String> images = hotelImageRepository.findByHotelIdOrdered(hotel.getId()).stream()
+                .map(img -> img.getImageUrl())
+                .collect(Collectors.toList());
+
+        if (images.isEmpty() && hotel.getImageUrl() != null) {
+            images = List.of(hotel.getImageUrl());
+        }
+
         return HotelResponse.builder()
                 .id(hotel.getId())
                 .hotelName(hotel.getHotelName())
@@ -145,6 +185,7 @@ public class OwnerHotelService {
                 .priceFrom(hotel.getPriceFrom())
                 .priceTo(hotel.getPriceTo())
                 .imageUrl(hotel.getImageUrl())
+                .images(images)
                 .amenities(amenityList)
                 .district(hotel.getDistrict())
                 .applicationStatus(hotel.getApplicationStatus())
