@@ -82,6 +82,11 @@ public class Hotel {
             fetch = FetchType.LAZY)
     private List<Room> rooms;
 
+    @OneToMany(mappedBy = "hotel",
+            cascade = CascadeType.ALL,
+            fetch = FetchType.LAZY)
+    private List<HotelImage> hotelImages;
+
 
     // ── Link to Owner (User entity) ──
     @ManyToOne(fetch = FetchType.LAZY)
