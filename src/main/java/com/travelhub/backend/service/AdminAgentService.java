@@ -111,6 +111,7 @@ public class AdminAgentService {
                 agent.getOwner() != null && agent.getOwner().getAgentApproved() != null && agent.getOwner().getAgentApproved() ? "Approved" : ("REJECTED".equalsIgnoreCase(agent.getOwner() != null ? agent.getOwner().getStatus() : null) ? "Rejected" : "Pending"),
                 submittedDate,
                 agent.getOwner() != null ? agent.getOwner().getNicImage() : null,
+                agent.getOwner() != null ? agent.getOwner().getNicNumber() : null,
                 agent.getRating(),
                 agent.getTotalTrips(),
                 agent.getExperienceYears(),
