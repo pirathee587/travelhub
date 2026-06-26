@@ -66,22 +66,7 @@ public class RecommendationService {
         }
 
         // Fallback: Only when the user has NO completed bookings
-        List<PackageResponse> trending = packageService.getTrendingPackages()
-                .stream()
-                .filter(p -> p.getRating() != null && p.getRating() >= 3.0)
-                .sorted((a, b) -> Double.compare(
-                        b.getRating() != null ? b.getRating() : 0.0,
-                        a.getRating() != null ? a.getRating() : 0.0))
-                .collect(Collectors.toList());
-
-        for (PackageResponse pkg : trending) {
-            if (recommendations.size() >= 5) break;
-            if (recommendations.stream().noneMatch(r -> r.getId().equals(pkg.getId()))) {
-                recommendations.add(pkg);
-            }
-        }
-
-        // Final Fallback: Fill remaining slots from all packages if still less than 5
+        // Fill remaining slots from all packages if less than 5
         if (recommendations.size() < 5) {
             List<PackageResponse> allPackages = packageService.getAllPackages()
                     .stream()

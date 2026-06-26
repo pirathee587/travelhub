@@ -73,19 +73,19 @@ public class AgentAnalyticsService {
         tripStatusData.put("pending", filtered.stream().filter(b -> b.getStatus().equals("pending")).count());
         tripStatusData.put("cancelled", cancelled);
 
-        // Top destinations: group bookings by package destination and take the top 5 by count.
+        // Top districts: group bookings by package district and take the top 5 by count.
         List<Map<String, Object>> topDestinations = filtered.stream()
                 .filter(b -> {
-                    try { return b.getPkg() != null && b.getPkg().getDestination() != null; }
+                    try { return b.getPkg() != null && b.getPkg().getDistrict() != null; }
                     catch (Exception e) { return false; }
                 })
-                .collect(Collectors.groupingBy(b -> b.getPkg().getDestination(), Collectors.counting()))
+                .collect(Collectors.groupingBy(b -> b.getPkg().getDistrict(), Collectors.counting()))
                 .entrySet().stream()
                 .sorted(Map.Entry.<String, Long>comparingByValue().reversed())
                 .limit(5)
                 .map(e -> {
                     Map<String, Object> m = new LinkedHashMap<>();
-                    m.put("destination", e.getKey());
+                    m.put("district", e.getKey());
                     m.put("count", e.getValue());
                     return m;
                 })

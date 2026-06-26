@@ -15,7 +15,7 @@ public interface PackageRepository extends JpaRepository<Package, Long> {
     // ── Existing methods (kept as-is) ─────────────────────────────────────
     List<Package> findByIsActiveTrue();
     List<Package> findByCategory(String category);
-    List<Package> findByTrendingTrue();
+
 
     /** Finds packages by the agent's surrogate PK (agents.id). */
     List<Package> findByAgentId(Long agentId);
@@ -34,11 +34,11 @@ public interface PackageRepository extends JpaRepository<Package, Long> {
     // Find by human-readable packageId (e.g. PKG001)
     Optional<Package> findByPackageIdAndDeletedAtIsNull(String packageId);
 
-    // Search by name or destination
+    // Search by name or district
     @Query("SELECT p FROM Package p WHERE p.agent.id = :agentId " +
             "AND p.deletedAt IS NULL " +
             "AND (LOWER(p.packageName) LIKE LOWER(CONCAT('%', :search, '%')) " +
-            "OR LOWER(p.destination) LIKE LOWER(CONCAT('%', :search, '%')))")
+            "OR LOWER(p.district) LIKE LOWER(CONCAT('%', :search, '%')))")
     List<Package> searchByAgentId(@Param("agentId") Long agentId,
                                   @Param("search") String search);
 

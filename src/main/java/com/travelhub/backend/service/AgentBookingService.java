@@ -64,6 +64,18 @@ public class AgentBookingService {
         booking.setStatus("confirmed");
         booking.setProgress(25);
         Booking saved = bookingRepository.save(booking);
+
+        // Force load lazy-loaded proxies before publishing event to async listener
+        if (saved.getUser() != null) {
+            saved.getUser().getEmail();
+        }
+        if (saved.getPkg() != null) {
+            saved.getPkg().getPackageName();
+            if (saved.getPkg().getAgent() != null) {
+                saved.getPkg().getAgent().getAgencyName();
+            }
+        }
+
         eventPublisher.publishEvent(new BookingEvent(this, saved, "APPROVED"));
         return toResponse(saved);
     }
@@ -111,6 +123,18 @@ public class AgentBookingService {
         booking.setStatus("cancelled");
         booking.setProgress(0);
         Booking saved = bookingRepository.save(booking);
+
+        // Force load lazy-loaded proxies before publishing event to async listener
+        if (saved.getUser() != null) {
+            saved.getUser().getEmail();
+        }
+        if (saved.getPkg() != null) {
+            saved.getPkg().getPackageName();
+            if (saved.getPkg().getAgent() != null) {
+                saved.getPkg().getAgent().getAgencyName();
+            }
+        }
+
         eventPublisher.publishEvent(new BookingEvent(this, saved, "DECLINED", request != null ? request.getDeclineReason() : "Declined by agent"));
         return toResponse(saved);
     }
@@ -157,6 +181,18 @@ public class AgentBookingService {
         booking.setStatus("cancelled");
         booking.setProgress(0);
         Booking saved = bookingRepository.save(booking);
+
+        // Force load lazy-loaded proxies before publishing event to async listener
+        if (saved.getUser() != null) {
+            saved.getUser().getEmail();
+        }
+        if (saved.getPkg() != null) {
+            saved.getPkg().getPackageName();
+            if (saved.getPkg().getAgent() != null) {
+                saved.getPkg().getAgent().getAgencyName();
+            }
+        }
+
         eventPublisher.publishEvent(new BookingEvent(this, saved, "CANCELLED", request != null ? request.getCancelReason() : "Cancelled by agent"));
         return toResponse(saved);
     }
@@ -174,16 +210,31 @@ public class AgentBookingService {
 
     private BookingResponse toResponse(Booking booking) {
         Driver d = booking.getDriver();
+        com.travelhub.backend.entity.User tourist = booking.getUser();
+        com.travelhub.backend.entity.Package pkg = booking.getPkg();
+
         return BookingResponse.builder()
                 .id(booking.getId())
                 .bookingId(String.format("BK%05d", booking.getId()))
-                .packageName(booking.getPkg() != null ? booking.getPkg().getPackageName() : null)
-                .destination(booking.getPkg() != null ? booking.getPkg().getDestination() : null)
+                .packageName(pkg != null ? pkg.getPackageName() : null)
+                .touristName(tourist != null ? tourist.getName() : null)
+                .touristEmail(tourist != null ? tourist.getEmail() : null)
+                .touristPhone(tourist != null ? tourist.getTelephone() : null)
+                .basePriceAdult(pkg != null ? pkg.getBasePriceAdult() : null)
+                .basePriceChild(pkg != null ? pkg.getBasePriceChild() : null)
+
                 .startDate(booking.getStartDate())
                 .endDate(booking.getEndDate())
                 .status(booking.getStatus())
                 .totalPrice(booking.getTotalPrice())
                 .progress(booking.getProgress())
+                .adults(booking.getAdults())
+                .children(booking.getChildren())
+                .specialRequests(booking.getSpecialRequests())
+                .duration(booking.getDuration())
+                .accommodationOption(booking.getAccommodationOption())
+                .packageType(booking.getPkg() != null ? booking.getPkg().getPackageType() : null)
+                .hotelIdsWithPreference(booking.getHotelIdsWithPreference())
                 .vehicleType(booking.getVehicle() != null ? booking.getVehicle().getVehicleType() : null)
                 .vehicleModel(booking.getVehicle() != null ? booking.getVehicle().getModel() : null)
                 .vehicleRegistration(booking.getVehicle() != null ? booking.getVehicle().getRegistration() : null)

@@ -14,19 +14,18 @@ import lombok.NoArgsConstructor;
 public class PackageDetailResponse {
     private Long id;
     private String packageName;
-    private String destination;
+
     private String district;
     private String startPlace;
     private String endPlace;
-    private Double priceFrom;
-    private Double priceTo;
+
     private String duration;
     private String category;
     private String imageUrl;
     private Double rating;
     private Integer reviewCount;
-    private String festivalDetails;
-    private Boolean trending;
+
+    private List<String> inclusions;
     private Long agentId;
     private String agentName;
     private String agentPhone;
@@ -42,6 +41,15 @@ public class PackageDetailResponse {
         private Integer dayNumber;
         private String title;
         private String description;
-        private List<String> activities;
+        private List<PackageActivityResponse> activities;
+    }
+
+    @Data
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class PackageActivityResponse {
+        private String description;
+        private String imageUrl;
     }
 }

@@ -43,13 +43,6 @@ public class PackageService {
         return toPackageResponses(packages);
     }
 
-    public List<PackageResponse> getTrendingPackages() {
-        List<Package> packages = packageRepository.findByTrendingTrue()
-                .stream()
-                .filter(p -> "Approved".equalsIgnoreCase(p.getApplicationStatus()) && Boolean.TRUE.equals(p.getIsActive()))
-                .collect(Collectors.toList());
-        return toPackageResponses(packages);
-    }
 
     /**
      * Returns all active packages belonging to a given agent (by surrogate agent id).
@@ -102,18 +95,19 @@ public class PackageService {
         return PackageResponse.builder()
                 .id(pkg.getId())
                 .packageName(pkg.getPackageName())
-                .destination(pkg.getDestination())
+
                 .startPlace(pkg.getStartPlace())
                 .endPlace(pkg.getEndPlace())
-                .priceFrom(pkg.getPriceFrom())
-                .priceTo(pkg.getPriceTo())
+
+                .basePriceAdult(pkg.getBasePriceAdult())
+                .basePriceChild(pkg.getBasePriceChild())
                 .duration(pkg.getDuration())
                 .category(pkg.getCategory())
                 .imageUrl(pkg.getImageUrl())
                 .rating(Math.round(rating * 10.0) / 10.0)
                 .reviewCount(reviewCount)
-                .festivalDetails(pkg.getFestivalDetails())
-                .trending(pkg.getTrending())
+
+
                 .agentName(getSafeAgentName(pkg.getAgent()))
                 .district(pkg.getDistrict())
                 .build();
@@ -160,18 +154,16 @@ public class PackageService {
         return PackageDetailResponse.builder()
                 .id(pkg.getId())
                 .packageName(pkg.getPackageName())
-                .destination(pkg.getDestination())
+
                 .startPlace(pkg.getStartPlace())
                 .endPlace(pkg.getEndPlace())
-                .priceFrom(pkg.getPriceFrom())
-                .priceTo(pkg.getPriceTo())
+
                 .duration(pkg.getDuration())
                 .category(pkg.getCategory())
                 .imageUrl(pkg.getImageUrl())
                 .rating(avgRating != null ? Math.round(avgRating * 10.0) / 10.0 : 0.0)
                 .reviewCount(count != null ? count.intValue() : 0)
-                .festivalDetails(pkg.getFestivalDetails())
-                .trending(pkg.getTrending())
+                .inclusions(pkg.getInclusions() != null && !pkg.getInclusions().isEmpty() ? java.util.Arrays.asList(pkg.getInclusions().split(",")) : new java.util.ArrayList<>())
                 .agentId(aId)
                 .agentName(aName)
                 .agentPhone(aPhone)
@@ -183,18 +175,37 @@ public class PackageService {
     }
 
     private PackageDetailResponse.ItineraryDayResponse toItineraryDayResponse(PackageItinerary day) {
-        List<String> activities = null;
+        List<PackageDetailResponse.PackageActivityResponse> activities = new java.util.ArrayList<>();
         if (day.getActivities() != null) {
             String raw = day.getActivities().trim();
-            // ✅ FIXED: DB stores JSON array ["activity1","activity2"]
-            // Remove [ ] brackets, split by comma, clean quotes and whitespace
             if (raw.startsWith("[")) {
-                raw = raw.substring(1, raw.length() - 1);
+                try {
+                    com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
+                    com.fasterxml.jackson.databind.JsonNode arrayNode = mapper.readTree(raw);
+                    for (com.fasterxml.jackson.databind.JsonNode node : arrayNode) {
+                        if (node.isObject()) {
+                            activities.add(PackageDetailResponse.PackageActivityResponse.builder()
+                                    .description(node.has("description") ? node.get("description").asText() : "")
+                                    .imageUrl(node.has("imageUrl") && !node.get("imageUrl").isNull() ? node.get("imageUrl").asText() : null)
+                                    .build());
+                        } else if (node.isTextual()) {
+                            activities.add(PackageDetailResponse.PackageActivityResponse.builder()
+                                    .description(node.asText())
+                                    .build());
+                        }
+                    }
+                } catch (Exception e) {
+                    // fallback if parsing fails
+                }
+            } else {
+                for (String a : raw.split(",")) {
+                    if (!a.trim().isEmpty()) {
+                        activities.add(PackageDetailResponse.PackageActivityResponse.builder()
+                                .description(a.trim())
+                                .build());
+                    }
+                }
             }
-            activities = Arrays.stream(raw.split(",(?=(?:[^\"]*\"[^\"]*\")*[^\"]*$)"))
-                    .map(s -> s.trim().replaceAll("^\"|\"$", "").trim())
-                    .filter(s -> !s.isEmpty())
-                    .collect(Collectors.toList());
         }
         return PackageDetailResponse.ItineraryDayResponse.builder()
                 .dayNumber(day.getDayNumber())
@@ -215,14 +226,13 @@ public class PackageService {
                 Map<String, Object> map = new java.util.HashMap<>();
                 map.put("id",              pkg.getId());
                 map.put("packageName",     pkg.getPackageName());
-                map.put("destination",     pkg.getDestination());
+
                 map.put("district",        pkg.getDistrict());
                 map.put("category",        pkg.getCategory());
-                map.put("priceFrom",       pkg.getPriceFrom());
-                map.put("priceTo",         pkg.getPriceTo());
+
                 map.put("duration",        pkg.getDuration());
                 map.put("rating",          pkg.getRating());
-                map.put("festivalDetails", pkg.getFestivalDetails());
+
                 map.put("startPlace",      pkg.getStartPlace());
                 map.put("endPlace",        pkg.getEndPlace());
                 // Safely get agent name — avoid null pointer if agent is null

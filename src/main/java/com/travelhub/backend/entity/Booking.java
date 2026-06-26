@@ -59,6 +59,10 @@ public class Booking {
     @Column(columnDefinition = "TEXT")
     private String specialRequests;
 
+    // SELF_ARRANGE, AGENCY, or NULL (for multi-district)
+    @Column(name = "accommodation_option")
+    private String accommodationOption;
+
     private String duration;
 
     @Column(columnDefinition = "TEXT")

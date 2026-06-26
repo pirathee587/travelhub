@@ -25,10 +25,7 @@ public class PackageController {
         return ResponseEntity.ok(packageService.getAllPackages());
     }
 
-    @GetMapping("/trending")
-    public ResponseEntity<List<PackageResponse>> getTrendingPackages() {
-        return ResponseEntity.ok(packageService.getTrendingPackages());
-    }
+
 
     @GetMapping("/{id}")
     public ResponseEntity<PackageDetailResponse> getPackageById(@PathVariable Long id) {

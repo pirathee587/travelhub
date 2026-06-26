@@ -146,4 +146,10 @@ public class HotelService {
             })
             .collect(Collectors.toList());
     }
+
+    // ── Hotel search for package creation autocomplete ─────────────────────
+    public List<HotelResponse> searchHotels(String query, String district) {
+        List<Hotel> hotels = hotelRepository.searchByNameAndDistrict(query, district);
+        return toHotelResponses(hotels);
+    }
 }

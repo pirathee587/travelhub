@@ -19,6 +19,17 @@ public class PackageDayRequest {
     @Size(max = 2000)
     private String description;
 
-    // Activities stored as simple string list — joined with ", " before saving
-    private List<String> activities;
+    // Activities stored as serialized JSON array of objects
+    private List<PackageActivityRequest> activities;
+
+    // ── Multi-district fields ─────────────────────────────────
+    private String district;          // which district for this day
+    private Long hotelId;             // FK to hotel (if in DB), nullable
+    private String hotelNameCustom;   // free text hotel name (if not in DB), nullable
+
+    @Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
+    public static class PackageActivityRequest {
+        private String description;
+        private String imageUrl;
+    }
 }

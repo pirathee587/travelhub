@@ -88,10 +88,9 @@ public class AdminPackageService {
         return new AdminPackageDetailResponse(
                 pkg.getId(),
                 pkg.getPackageName(),
-                pkg.getDestination(),
+
                 pkg.getDistrict(),
-                pkg.getPriceFrom(),
-                pkg.getPriceTo(),
+
                 imageUrls,
                 pkg.getImageUrl(),
                 pkg.getDuration(),
@@ -99,13 +98,13 @@ public class AdminPackageService {
                 pkg.getApplicationStatus() != null
                         ? pkg.getApplicationStatus()
                         : "Pending",
-                pkg.getFestivalDetails(),
+                pkg.getDescription(),
                 inclusions,
                 itinerary,
                 pkg.getRating(),
                 pkg.getReviewCount(),
                 pkg.getCategory(),
-                pkg.getTrending(),
+
                 pkg.getIsActive()
         );
     }
@@ -120,6 +119,13 @@ public class AdminPackageService {
         pkg.setApplicationStatus("Approved");
         packageRepository.save(pkg);
 
+        // Force load lazy-loaded proxies before publishing event to async listener
+        if (pkg.getAgent() != null) {
+            pkg.getAgent().getAgencyName();
+            if (pkg.getAgent().getOwner() != null) {
+                pkg.getAgent().getOwner().getEmail();
+            }
+        }
 
         eventPublisher.publishEvent(
                 new PackageEvent(this, pkg, "APPROVED"));
@@ -137,6 +143,13 @@ public class AdminPackageService {
         pkg.setApplicationStatus("Rejected");
         packageRepository.save(pkg);
 
+        // Force load lazy-loaded proxies before publishing event to async listener
+        if (pkg.getAgent() != null) {
+            pkg.getAgent().getAgencyName();
+            if (pkg.getAgent().getOwner() != null) {
+                pkg.getAgent().getOwner().getEmail();
+            }
+        }
 
         eventPublisher.publishEvent(
                 new PackageEvent(
@@ -164,6 +177,14 @@ public class AdminPackageService {
                         new ResourceNotFoundException(
                                 "Package", "id", id));
 
+
+        // Force load lazy-loaded proxies before publishing event to async listener
+        if (pkg.getAgent() != null) {
+            pkg.getAgent().getAgencyName();
+            if (pkg.getAgent().getOwner() != null) {
+                pkg.getAgent().getOwner().getEmail();
+            }
+        }
 
         eventPublisher.publishEvent(
                 new PackageEvent(this, pkg, "DELETED"));
@@ -194,14 +215,13 @@ public class AdminPackageService {
         return new AdminPackageResponse(
                 p.getId(),
                 p.getPackageName(),
-                p.getDestination(),
-                p.getPriceFrom(),
-                p.getPriceTo(),
+
+
                 p.getDuration(),
                 p.getCategory(),
                 p.getRating(),
                 p.getReviewCount(),
-                p.getTrending(),
+
                 p.getIsActive(),
                 p.getAgent() != null
                         ? p.getAgent().getAgencyName()

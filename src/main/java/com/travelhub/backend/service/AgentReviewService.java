@@ -70,7 +70,7 @@ public class AgentReviewService {
                 .comment(r.getComment())
                 .date(r.getReviewDate() != null ? r.getReviewDate().toLocalDate().toString() : null)
                 .trip(r.getBooking() != null && r.getBooking().getPkg() != null ?
-                        r.getBooking().getPkg().getDestination() : null)
+                        r.getBooking().getPkg().getDistrict() : null)
                 .packageName(r.getBooking() != null && r.getBooking().getPkg() != null ?
                         r.getBooking().getPkg().getPackageName() : null)
                 .imageUrls(imageUrls)

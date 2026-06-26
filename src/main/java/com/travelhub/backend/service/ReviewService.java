@@ -254,7 +254,7 @@ public class ReviewService {
                 // For backward-compat with agent dashboard & package reviews
                 .customerName(displayName)
                 .date(dateStr)
-                .trip(review.getPkg() != null ? review.getPkg().getDestination() : null)
+                .trip(review.getPkg() != null ? review.getPkg().getDistrict() : null)
                 .packageName(review.getPkg() != null ? review.getPkg().getPackageName() : null)
                 .packageId(review.getPkg() != null ? review.getPkg().getId() : null)
                 // ✅ NEW: Include hotel details for hotel reviews

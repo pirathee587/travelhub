@@ -2,8 +2,10 @@ package com.travelhub.backend.controller;
 
 import com.travelhub.backend.dto.request.UpdatePackageStatusRequest;
 import com.travelhub.backend.dto.response.AgentPackageDetailResponse;
+import com.travelhub.backend.dto.response.ImageUploadResponse;
 import com.travelhub.backend.dto.response.PackageSummaryResponse;
 import com.travelhub.backend.service.AgentPackageService;
+import com.travelhub.backend.service.ImageUploadService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -20,6 +22,7 @@ import java.util.List;
 public class AgentPackageController {
 
     private final AgentPackageService packageService;
+    private final ImageUploadService imageUploadService;
 
     // GET /api/v1/agent/{agentId}/packages
     @GetMapping
@@ -49,6 +52,15 @@ public class AgentPackageController {
 
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(packageService.createPackage(agentId, dataJson, images));
+    }
+
+    // POST /api/v1/agent/{agentId}/packages/upload-image
+    @PostMapping(value = "/upload-image", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<ImageUploadResponse> uploadActivityImage(
+            @PathVariable Long agentId,
+            @RequestPart("image") MultipartFile image) {
+
+        return ResponseEntity.ok(imageUploadService.uploadPackageImage(image));
     }
 
     // PUT /api/v1/agent/{agentId}/packages/{packageId}

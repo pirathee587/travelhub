@@ -31,4 +31,13 @@ public interface HotelRepository
             String ownerEmail, String status);
 
     long countByOwnerIdAndApplicationStatus(Long ownerId, String applicationStatus);
+
+    // ── Hotel search for package creation (autocomplete) ─────
+    @org.springframework.data.jpa.repository.Query(
+        "SELECT h FROM Hotel h WHERE h.applicationStatus = 'Approved' " +
+        "AND LOWER(h.hotelName) LIKE LOWER(CONCAT('%', :query, '%')) " +
+        "AND (:district IS NULL OR LOWER(h.district) = LOWER(:district))")
+    List<Hotel> searchByNameAndDistrict(
+        @org.springframework.data.repository.query.Param("query") String query,
+        @org.springframework.data.repository.query.Param("district") String district);
 }

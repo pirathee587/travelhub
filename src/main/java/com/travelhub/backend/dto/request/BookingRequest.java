@@ -16,4 +16,5 @@ public class BookingRequest {
     private Integer children;
     private String specialRequests;
     private String duration;
+    private String accommodationOption;  // "SELF_ARRANGE" or "AGENCY"
 }

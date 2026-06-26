@@ -99,8 +99,17 @@ public class BookingCreationService {
         String hotelIdsWithPreference = convertHotelIdsToJson(request.getHotelIds());
         logger.debug("Step 5: Hotel IDs JSON: {}", hotelIdsWithPreference);
 
-        // Step 6: Create Booking
-        logger.debug("Step 6: Creating booking entity");
+        // Step 6: Calculate price server-side from per-person rates
+        Double calculatedPrice = request.getTotalPrice(); // fallback to client price
+        if (pkg.getBasePriceAdult() != null) {
+            int adults = request.getAdults() != null ? request.getAdults() : 1;
+            int children = request.getChildren() != null ? request.getChildren() : 0;
+            double childRate = pkg.getBasePriceChild() != null ? pkg.getBasePriceChild() : 0;
+            calculatedPrice = (pkg.getBasePriceAdult() * adults) + (childRate * children);
+        }
+
+        // Step 7: Create Booking
+        logger.debug("Step 7: Creating booking entity");
         Booking booking = Booking.builder()
                 .user(user)
                 .pkg(pkg)
@@ -109,17 +118,27 @@ public class BookingCreationService {
                 .status("pending")
                 .startDate(request.getStartDate())
                 .endDate(endDate)
-                .totalPrice(request.getTotalPrice())
+                .totalPrice(calculatedPrice)
                 .progress(0)
                 .adults(request.getAdults() != null ? request.getAdults() : 0)
                 .children(request.getChildren() != null ? request.getChildren() : 0)
                 .specialRequests(request.getSpecialRequests())
+                .accommodationOption(request.getAccommodationOption())
                 .duration(pkg.getDuration())
                 .hotelIdsWithPreference(hotelIdsWithPreference)
                 .build();
 
         Booking saved = bookingRepository.save(booking);
         logger.info("✓ Booking saved: ID={}", saved.getId());
+
+        // Force load lazy-loaded proxies before publishing event to async listener
+        if (saved.getPkg() != null) {
+            saved.getPkg().getPackageName();
+            if (saved.getPkg().getAgent() != null) {
+                saved.getPkg().getAgent().getAgencyName();
+            }
+        }
+
         eventPublisher.publishEvent(new BookingEvent(this, saved, "CREATED"));
 
         // Step 7: Save hotel preferences to separate table
@@ -202,6 +221,15 @@ public class BookingCreationService {
         booking.setStatus("cancelled");
         Booking saved = bookingRepository.save(booking);
         logger.info("✓ Booking cancelled: {}", saved.getId());
+
+        // Force load lazy-loaded proxies before publishing event to async listener
+        if (saved.getPkg() != null) {
+            saved.getPkg().getPackageName();
+            if (saved.getPkg().getAgent() != null) {
+                saved.getPkg().getAgent().getAgencyName();
+            }
+        }
+
         eventPublisher.publishEvent(new BookingEvent(this, saved, "CANCELLED"));
 
         return bookingService.getBookingById(saved.getId());
