@@ -26,12 +26,24 @@ public class OwnerProfileService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("Owner not found with id: " + userId));
 
-        user.setName(request.getName());
-        user.setTelephone(request.getTelephone());
-        user.setProfileImage(request.getProfileImage());
-        user.setPreferredLanguage(request.getPreferredLanguage());
-        user.setBusinessAddress(request.getBusinessAddress());
-        user.setDistrict(request.getDistrict());
+        if (request.getName() != null) {
+            user.setName(request.getName());
+        }
+        if (request.getTelephone() != null) {
+            user.setTelephone(request.getTelephone());
+        }
+        if (request.getProfileImage() != null) {
+            user.setProfileImage(request.getProfileImage());
+        }
+        if (request.getPreferredLanguage() != null) {
+            user.setPreferredLanguage(request.getPreferredLanguage());
+        }
+        if (request.getBusinessAddress() != null) {
+            user.setBusinessAddress(request.getBusinessAddress());
+        }
+        if (request.getDistrict() != null) {
+            user.setDistrict(request.getDistrict());
+        }
 
         user = userRepository.save(user);
 
