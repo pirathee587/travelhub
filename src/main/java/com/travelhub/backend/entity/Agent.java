@@ -22,8 +22,6 @@ public class Agent {
     private User owner;
 
     // ── Company / Agent Info ───────────────────────────
-    private User owner;                    // Owner mapping referencing User
-
     @Column(name = "agency_name", nullable = false)
     private String agencyName;             // Brand/Business name of agency
 

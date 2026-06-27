@@ -81,9 +81,6 @@ public class User {
     
     private Long hotelId; // Link to the Hotel table
 
-    // --- Refactored Agent Verification Fields ---
-    private String nicNumber;             // Captured at Signup
-    private String nicImage;              // Captured in Profile
 
     @JsonIgnore
     @OneToMany(mappedBy = "owner", cascade = CascadeType.ALL, fetch = FetchType.LAZY)

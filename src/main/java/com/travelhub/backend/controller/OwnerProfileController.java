@@ -26,14 +26,6 @@ public class OwnerProfileController {
         Long ownerId = requireOwnerId(devOwnerId);
         ownerAccessService.validateApprovedActiveHotelOwner(ownerId);
         return ResponseEntity.ok(ownerProfileService.getProfile(ownerId));
-            @RequestHeader(value = "X-Owner-Id", required = false) Long ownerId,
-            java.security.Principal principal) {
-        Long resolvedId = resolveOwnerId(principal, ownerId);
-        if (resolvedId == null) {
-            return ResponseEntity.status(401).build();
-        }
-
-        return ResponseEntity.ok(ownerProfileService.getProfile(resolvedId));
     }
 
     @PutMapping
@@ -43,15 +35,6 @@ public class OwnerProfileController {
         Long ownerId = requireOwnerId(devOwnerId);
         ownerAccessService.validateApprovedActiveHotelOwner(ownerId);
         return ResponseEntity.ok(ownerProfileService.updateProfile(ownerId, request));
-            @RequestHeader(value = "X-Owner-Id", required = false) Long ownerId,
-            java.security.Principal principal,
-            @RequestBody OwnerProfileRequest request) {
-        Long resolvedId = resolveOwnerId(principal, ownerId);
-        if (resolvedId == null) {
-            return ResponseEntity.status(401).build();
-        }
-
-        return ResponseEntity.ok(ownerProfileService.updateProfile(resolvedId, request));
     }
 
     @PostMapping("/image")
@@ -67,28 +50,6 @@ public class OwnerProfileController {
         Long ownerId = ownerContextResolver.resolveOwnerId(devOwnerId);
         if (ownerId == null) {
             throw new BadRequestException("No owner identity provided. Set X-Owner-Id header or authenticate.");
-            @RequestHeader(value = "X-Owner-Id", required = false) Long ownerId,
-            java.security.Principal principal,
-            @RequestParam("file") MultipartFile file) {
-        Long resolvedId = resolveOwnerId(principal, ownerId);
-        if (resolvedId == null) {
-            return ResponseEntity.status(401).build();
-        }
-
-        return ResponseEntity.ok(ownerProfileService.uploadProfileImage(resolvedId, file));
-    }
-
-    private Long resolveOwnerId(java.security.Principal principal, Long ownerId) {
-        if (principal != null) {
-            try {
-                return Long.parseLong(principal.getName());
-            } catch (NumberFormatException ignored) {
-                // If principal name is an email or username, try JWT claims.
-                Claims claims = SecurityUtils.getCurrentUserClaims();
-                if (claims != null && claims.get("userId") != null) {
-                    return Long.valueOf(claims.get("userId").toString());
-                }
-            }
         }
         return ownerId;
     }

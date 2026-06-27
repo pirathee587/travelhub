@@ -24,9 +24,6 @@ public class HotelImage {
     @JsonIgnore
     private Hotel hotel;
 
-    @Column(name = "image_url", nullable = false)
-    private Hotel hotel;
-
     @Column(name = "image_url", nullable = false, columnDefinition = "TEXT")
     private String imageUrl;
 

@@ -38,24 +38,6 @@ public class OwnerHotelService {
         List<Hotel> hotels = hotelRepository.findByOwnerIdAndApplicationStatus(ownerId, targetStatus);
 
         return hotels.stream()
-    public List<HotelResponse> getOwnerHotels(Long ownerId, String status) {
-        String targetStatus = "Approved"; // Default to Approved
-        
-        if ("Pending".equalsIgnoreCase(status)) {
-            targetStatus = "Pending";
-        } else if ("Rejected".equalsIgnoreCase(status)) {
-            targetStatus = "Rejected";
-        } else if ("Approved".equalsIgnoreCase(status)) {
-            targetStatus = "Approved";
-        }
-
-        if (ownerId != null) {
-            return hotelRepository.findByOwnerIdAndApplicationStatus(ownerId, targetStatus).stream()
-                    .map(this::toHotelResponse)
-                    .collect(Collectors.toList());
-        }
-
-        return hotelRepository.findByApplicationStatus(targetStatus).stream()
                 .map(this::toHotelResponse)
                 .collect(Collectors.toList());
     }
@@ -70,28 +52,6 @@ public class OwnerHotelService {
                 .pending(pending)
                 .rejected(rejected)
                 .total(approved + pending + rejected)
-    public HotelSummaryResponse getHotelSummary(Long ownerId) {
-        long approved = 0;
-        long pending = 0;
-        long rejected = 0;
-
-        if (ownerId != null) {
-            approved = hotelRepository.findByOwnerIdAndApplicationStatus(ownerId, "Approved").size();
-            pending = hotelRepository.findByOwnerIdAndApplicationStatus(ownerId, "Pending").size();
-            rejected = hotelRepository.findByOwnerIdAndApplicationStatus(ownerId, "Rejected").size();
-        } else {
-            approved = hotelRepository.countByApplicationStatus("Approved");
-            pending = hotelRepository.countByApplicationStatus("Pending");
-            rejected = hotelRepository.countByApplicationStatus("Rejected");
-        }
-
-        long total = approved + pending + rejected;
-
-        return HotelSummaryResponse.builder()
-                .approved(approved)
-                .pending(pending)
-                .rejected(rejected)
-                .total(total)
                 .build();
     }
 

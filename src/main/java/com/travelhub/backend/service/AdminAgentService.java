@@ -25,11 +25,9 @@ import java.util.Locale;
 @Transactional(readOnly = true)
 public class AdminAgentService {
 
-    private final AgentRepository   agentRepository;
-    private final PackageRepository packageRepository;
-    private final AgentRatingCalculator agentRatingCalculator;
     private final AgentRepository           agentRepository;
     private final PackageRepository         packageRepository;
+    private final AgentRatingCalculator     agentRatingCalculator;
     private final UserRepository            userRepository;
     private final ApplicationEventPublisher eventPublisher;
 
@@ -111,15 +109,6 @@ public class AdminAgentService {
                 agent.getOwner() != null ? agent.getOwner().getTelephone() : null,
                 agent.getLocation(),
                 memberSince,
-                agent.getOwner() != null && Boolean.TRUE.equals(agent.getOwner().getAgentApproved())
-                        ? "Approved"
-                        : "Pending",
-                submittedDate,
-                agent.getOwner() != null ? agent.getOwner().getNicImage() : null,
-                agentRatingCalculator.getAgentRating(id),
-                agent.getAgencyNumber() != null ? agent.getAgencyNumber() : (agent.getOwner() != null ? agent.getOwner().getTelephone() : null),
-                agent.getLocation(),
-                memberSince,
                 agent.getOwner() != null && agent.getOwner().getAgentApproved() != null && agent.getOwner().getAgentApproved() ? "Approved" : ("REJECTED".equalsIgnoreCase(agent.getOwner() != null ? agent.getOwner().getStatus() : null) ? "Rejected" : "Pending"),
                 submittedDate,
                 agent.getOwner() != null ? agent.getOwner().getNicImage() : null,
@@ -127,7 +116,7 @@ public class AdminAgentService {
                 agent.getRating(),
                 agent.getTotalTrips(),
                 agent.getExperienceYears(),
-                agent.getIsActive()
+                agent.getIsActive() != null && agent.getIsActive()
         );
     }
 
@@ -222,16 +211,11 @@ public class AdminAgentService {
                 a.getAgencyName(),
                 a.getOwner() != null ? a.getOwner().getName() : null,
                 a.getOwner() != null ? a.getOwner().getEmail() : null,
-                a.getOwner() != null ? a.getOwner().getTelephone() : null,
-                a.getLocation(),
-                a.getOwner() != null && Boolean.TRUE.equals(a.getOwner().getAgentApproved())
-                        ? "Approved"
-                        : "Pending",
                 a.getAgencyNumber() != null ? a.getAgencyNumber() : (a.getOwner() != null ? a.getOwner().getTelephone() : null),
                 a.getLocation(),
                 a.getOwner() != null && a.getOwner().getAgentApproved() != null && a.getOwner().getAgentApproved() ? "Approved" : ("REJECTED".equalsIgnoreCase(a.getOwner() != null ? a.getOwner().getStatus() : null) ? "Rejected" : "Pending"),
                 submittedDate,
-                a.getIsActive()
+                a.getIsActive() != null && a.getIsActive()
         );
     }
 

@@ -148,14 +148,11 @@ public class AdminAgentAnalyticsService {
                 a.getAgencyName(),
                 a.getOwner() != null ? a.getOwner().getName() : null,
                 a.getOwner() != null ? a.getOwner().getEmail() : null,
-                a.getOwner() != null ? a.getOwner().getTelephone() : null,
-                a.getLocation(),
-                a.getOwner() != null && Boolean.TRUE.equals(a.getOwner().getAgentApproved()) ? "Approved" : "Pending",
                 a.getAgencyNumber() != null ? a.getAgencyNumber() : (a.getOwner() != null ? a.getOwner().getTelephone() : null),
                 a.getLocation(),
                 a.getOwner() != null && a.getOwner().getAgentApproved() != null && a.getOwner().getAgentApproved() ? "Approved" : ("REJECTED".equalsIgnoreCase(a.getOwner() != null ? a.getOwner().getStatus() : null) ? "Rejected" : "Pending"),
                 a.getSubmittedDate() != null ? a.getSubmittedDate().toString() : null,
-                a.getIsActive()
+                a.getIsActive() != null && a.getIsActive()
         );
     }
 }

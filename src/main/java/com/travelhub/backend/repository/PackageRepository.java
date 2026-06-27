@@ -53,7 +53,6 @@ public interface PackageRepository extends JpaRepository<Package, Long> {
     List<Package> searchByAgentId(@Param("agentId") Long agentId,
                                   @Param("search") String search);
 
-<<<<<<< HEAD
     /**
      * Finds packages by the value stored in packages.agent_id column
      * (which equals agents.user_id due to the @JoinColumn referencedColumnName).
@@ -61,7 +60,7 @@ public interface PackageRepository extends JpaRepository<Package, Long> {
      */
     @Query(value = "SELECT * FROM packages WHERE agent_id = :agentUserId", nativeQuery = true)
     List<Package> findByAgentUserId(@Param("agentUserId") Long agentUserId);
-=======
+
     // For generating PKG001, PKG002 etc.
     @Query("SELECT COUNT(p) FROM Package p")
     Long countAll();
@@ -70,5 +69,4 @@ public interface PackageRepository extends JpaRepository<Package, Long> {
 
     @Query("SELECT p.category, COUNT(p) FROM Package p WHERE p.deletedAt IS NULL GROUP BY p.category")
     List<Object[]> countPackagesByCategory();
->>>>>>> develop
 }

@@ -69,14 +69,7 @@ public class PackageService {
 
     public PackageDetailResponse getPackageById(Long id) {
         Package pkg = packageRepository.findById(id)
-<<<<<<< HEAD
                 .orElseThrow(() -> new RuntimeException("Package not found with id: " + id));   //Error handling for package not found
-=======
-                .orElseThrow(() -> new ResourceNotFoundException("Package", "id", id));
-        if (!Boolean.TRUE.equals(pkg.getIsActive()) || !"Approved".equalsIgnoreCase(pkg.getApplicationStatus()) || pkg.getDeletedAt() != null) {
-            throw new ResourceNotFoundException("Package", "id", id);
-        }
->>>>>>> develop
         return toPackageDetailResponse(pkg);
     }
 
@@ -206,17 +199,10 @@ public class PackageService {
                 .reviewCount(count != null ? count.intValue() : 0)
                 .festivalDetails(pkg.getFestivalDetails())
                 .trending(pkg.getTrending())
-<<<<<<< HEAD
                 .agentId(aId)
                 .agentName(aName)
                 .agentPhone(aPhone)
                 .agentRating(aRating)
-=======
-                .agentId(pkg.getAgent() != null ? pkg.getAgent().getId() : null)
-                .agentName(pkg.getAgent() != null ? pkg.getAgent().getAgencyName() : null)
-                .agentPhone(pkg.getAgent() != null ? pkg.getAgent().getAgencyNumber() : null)
-                .agentRating(pkg.getAgent() != null ? pkg.getAgent().getRating() : null)
->>>>>>> develop
                 .itinerary(itineraryDays)
                 .images(imageUrls)
                 .inclusions(inclusionsList)

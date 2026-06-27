@@ -57,7 +57,6 @@ public class ImageUploadService {
 
     // Old method — keeps working for agent image uploads
     public ImageUploadResponse uploadRoomImage(MultipartFile file) {
-        return uploadToBucket(file, roomBucket);   //  pointing to reviewBucket
         return uploadToBucket(file, roomBucket, null);
     }
 
@@ -79,10 +78,9 @@ public class ImageUploadService {
     }
 
     public ImageUploadResponse uploadPackageImage(MultipartFile file) {
-        return uploadToBucket(file, "package-images");
+        return uploadToBucket(file, "package-images", null);
     }
 
-    private ImageUploadResponse uploadToBucket(MultipartFile file, String bucketName) {
     private ImageUploadResponse uploadToBucket(MultipartFile file, String bucketName, String folder) {
 
         // ── Step 1: Validate ──────────────────────────────────────────────────

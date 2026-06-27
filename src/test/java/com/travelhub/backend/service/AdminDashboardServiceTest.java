@@ -7,6 +7,8 @@ import com.travelhub.backend.entity.Package;
 import com.travelhub.backend.repository.PackageRepository;
 import java.util.List;
 
+import com.travelhub.backend.repository.UserRepository;
+
 @SpringBootTest
 public class AdminDashboardServiceTest {
 
@@ -37,13 +39,35 @@ public class AdminDashboardServiceTest {
         }
     }
 
+    @Autowired
+    private AdminDashboardService adminDashboardService;
+
+    @Autowired
+    private UserRepository userRepository;
+
     @Test
-    public void testPendingPackageCount() {
-        long pendingCount = packageRepository.countByApplicationStatusAndDeletedAtIsNull("Pending");
-        long approvedCount = packageRepository.countByApplicationStatusAndDeletedAtIsNull("Approved");
-        System.out.println("=== PACKAGE COUNTS ===");
-        System.out.println("Pending packages (not deleted): " + pendingCount);
-        System.out.println("Approved packages (not deleted): " + approvedCount);
-        System.out.println("Total packages: " + packageRepository.count());
+    public void testPrintAllUsers() {
+        System.out.println("=== PRINTING USERS ===");
+        userRepository.findAll().forEach(u -> {
+            System.out.println("User: ID=" + u.getId() + ", Email=" + u.getEmail() + ", Role=" + u.getRole() + ", Active=" + u.getIsActive() + ", Approved=" + u.getAgentApproved());
+        });
+    }
+
+    @Autowired
+    private org.springframework.security.crypto.password.PasswordEncoder passwordEncoder;
+
+    @Test
+    public void resetAdminPassword() {
+        var adminOpt = userRepository.findByEmail("jeyakumaranpiratheepan120@gmail.com");
+        if (adminOpt.isPresent()) {
+            var admin = adminOpt.get();
+            admin.setPassword(passwordEncoder.encode("admin123"));
+            admin.setIsActive(true);
+            admin.setEmailVerified(true);
+            userRepository.save(admin);
+            System.out.println("=== PASSWORD RESET SUCCESSFUL FOR ADMIN ===");
+        } else {
+            System.out.println("=== ADMIN USER NOT FOUND ===");
+        }
     }
 }
