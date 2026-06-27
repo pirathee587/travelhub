@@ -29,7 +29,7 @@ public interface PackageRepository extends JpaRepository<Package, Long> {
     @Query("SELECT COUNT(p) FROM Package p WHERE p.applicationStatus = :status AND p.deletedAt IS NULL")
     long countByApplicationStatusAndDeletedAtIsNull(@Param("status") String status);
 
-    @Query("SELECT COUNT(p) FROM Package p WHERE p.applicationStatus = :status")
+    @Query("SELECT COUNT(p) FROM Package p WHERE LOWER(p.applicationStatus) = LOWER(:status) AND p.deletedAt IS NULL")
     long countByApplicationStatus(@Param("status") String status);
 
     // ── New methods (added for agent package management) ──────────────────
