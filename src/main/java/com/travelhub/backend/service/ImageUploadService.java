@@ -78,7 +78,8 @@ public class ImageUploadService {
     }
 
     public ImageUploadResponse uploadPackageImage(MultipartFile file) {
-        return uploadToBucket(file, "package-images", null);
+        // Use roomBucket since that's what AgentPackageService uses for main package images
+        return uploadToBucket(file, roomBucket, null);
     }
 
     private ImageUploadResponse uploadToBucket(MultipartFile file, String bucketName, String folder) {

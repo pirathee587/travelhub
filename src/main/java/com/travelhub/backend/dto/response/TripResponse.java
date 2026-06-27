@@ -15,7 +15,7 @@ public class TripResponse {
     private Long packageId;
     private Long hotelId;
     private String packageName;
-    private String destination;
+
     private LocalDate startDate;
     private LocalDate endDate;
     private String status;

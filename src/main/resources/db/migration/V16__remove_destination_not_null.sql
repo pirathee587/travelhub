@@ -1,0 +1,2 @@
+ALTER TABLE packages
+ALTER COLUMN destination DROP NOT NULL;

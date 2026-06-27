@@ -21,18 +21,9 @@ public class AgentDashboardService {
     private final AgentRepository agentRepository;
     private final AgentRatingCalculator agentRatingCalculator;
 
-    /**
-     * Builds the Agent Dashboard "stats" snapshot for a single agent.
-     * <p>
-     * Notes:
-     * - Most metrics are simple counts from repositories.
-     * - Revenue is computed as the sum of totalPrice for completed bookings (null-safe).
-     * - Rating is read from the Agent entity (defaults to 0.0 if not present).
-     */
     @Transactional
     public AgentDashboardStatsResponse getStats(Long agentId) {
 
-        // Count trips that are currently ongoing/active for this agent.
         long activeTrips = bookingRepository.findByAgentId(agentId)
                 .stream()
                 .filter(b -> b.getStatus().equals("active") ||
@@ -41,22 +32,16 @@ public class AgentDashboardService {
                         b.getStatus().equals("In_progress"))
                 .count();
 
-        // Completed/pending counts are pulled via status-specific repository methods.
         long completedTrips = bookingRepository
                 .findByAgentIdAndStatus(agentId, "completed").size();
         long pendingRequests = bookingRepository
                 .findByAgentIdAndStatus(agentId, "pending").size();
-
-        // Inventory counts for the agent.
         long totalVehicles = vehicleRepository
                 .findByAgentId(agentId).size();
         long totalDrivers = driverRepository
                 .findByAgentId(agentId).size();
-
-        // Total packages created/owned by this agent.
         long totalPackages = packageRepository.countByAgentId(agentId);
 
-        // Revenue = sum of totalPrice across completed bookings (treat null as 0).
         Double totalRevenue = bookingRepository
                 .findByAgentIdAndStatus(agentId, "completed")
                 .stream()
@@ -65,7 +50,6 @@ public class AgentDashboardService {
 
         Double averageRating = agentRatingCalculator.getAgentRating(agentId);
 
-        // Assemble the DTO response for the dashboard.
         return AgentDashboardStatsResponse.builder()
                 .totalPackages(totalPackages)
                 .activeTrips(activeTrips)

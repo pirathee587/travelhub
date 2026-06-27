@@ -11,7 +11,7 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/admin/bookings")
 @RequiredArgsConstructor
-@CrossOrigin(origins = "*")
+
 @PreAuthorize("hasRole('ADMIN')")
 public class AdminBookingController {
 

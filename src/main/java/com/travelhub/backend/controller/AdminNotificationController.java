@@ -10,7 +10,7 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/api/admin/notifications")
 @RequiredArgsConstructor
-@CrossOrigin(origins = "*")
+
 @PreAuthorize("hasRole('ADMIN')")
 public class AdminNotificationController {
 

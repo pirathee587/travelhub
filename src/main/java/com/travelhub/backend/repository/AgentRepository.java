@@ -34,7 +34,7 @@ public interface AgentRepository extends JpaRepository<Agent, Long> {
             String name);
 
     // ── Analytics Queries ─────────────────────────────
-    @Query("SELECT COALESCE(SUM(b.totalPrice), 0) " +
+    @Query("SELECT COALESCE(SUM(b.totalPrice), 0.0) " +
             "FROM Booking b " +
             "WHERE b.pkg.agent.id = :agentId " +
             "AND b.status = 'completed'")
@@ -44,7 +44,7 @@ public interface AgentRepository extends JpaRepository<Agent, Long> {
             "WHERE b.pkg.agent.id = :agentId")
     Long getTotalTripsByAgentId(@Param("agentId") Long agentId);
 
-    @Query("SELECT COALESCE(AVG(r.rating), 0) " +
+    @Query("SELECT COALESCE(AVG(r.rating), 0.0) " +
             "FROM Review r " +
             "WHERE r.pkg.agent.id = :agentId")
     Double getAvgRatingByAgentId(@Param("agentId") Long agentId);
@@ -54,7 +54,7 @@ public interface AgentRepository extends JpaRepository<Agent, Long> {
             "AND b.status = 'cancelled'")
     Long getCancelledTripsByAgentId(@Param("agentId") Long agentId);
 
-    @Query("SELECT COALESCE(SUM(b.totalPrice), 0) " +
+    @Query("SELECT COALESCE(SUM(b.totalPrice), 0.0) " +
             "FROM Booking b " +
             "WHERE b.pkg.agent.id = :agentId " +
             "AND MONTH(b.createdAt) = :month " +
