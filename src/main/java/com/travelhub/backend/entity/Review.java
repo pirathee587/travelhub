@@ -18,7 +18,6 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
-
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -37,7 +36,7 @@ public class Review {
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "package_id")   // ✅ FIXED: DB column is package_id, not pkg_id
+    @JoinColumn(name = "package_id")   
     private Package pkg;
 
     @ManyToOne(fetch = FetchType.LAZY)

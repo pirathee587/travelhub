@@ -84,6 +84,7 @@ public class AdminPackageService {
 
         String providerName = "";
         if (pkg.getAgent() != null) {
+            providerName = pkg.getAgent().getAgencyName();
             providerName = pkg.getAgent().getAgencyName() != null
                     ? pkg.getAgent().getAgencyName()
                     : "";

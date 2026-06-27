@@ -1,10 +1,14 @@
 package com.travelhub.backend.service;
 
+import com.travelhub.backend.common.ForbiddenException;
 import com.travelhub.backend.dto.request.OwnerHotelRequest;
 import com.travelhub.backend.dto.response.HotelResponse;
+import com.travelhub.backend.dto.response.OwnerHotelSummaryResponse;
+import com.travelhub.backend.dto.response.HotelSummaryResponse;
 import com.travelhub.backend.entity.Hotel;
 import com.travelhub.backend.entity.User;
 import com.travelhub.backend.event.HotelEvent;
+import com.travelhub.backend.repository.HotelImageRepository;
 import com.travelhub.backend.repository.HotelRepository;
 import com.travelhub.backend.repository.ReviewRepository;
 import com.travelhub.backend.repository.UserRepository;
@@ -25,12 +29,16 @@ public class OwnerHotelService {
     private final HotelRepository hotelRepository;
     private final UserRepository userRepository;
     private final ReviewRepository reviewRepository;
+    private final HotelImageRepository hotelImageRepository;
     private final ImageUploadService imageUploadService;
     private final ApplicationEventPublisher eventPublisher;
 
-    public List<HotelResponse> getOwnerHotels(String status) {
-        // Fetch all hotels matching the status (Global View)
-        // Ensure the status matches the database values: "Approved", "Pending", "Rejected"
+    public List<HotelResponse> getOwnerHotels(String status, Long ownerId) {
+        String targetStatus = normalizeStatus(status);
+        List<Hotel> hotels = hotelRepository.findByOwnerIdAndApplicationStatus(ownerId, targetStatus);
+
+        return hotels.stream()
+    public List<HotelResponse> getOwnerHotels(Long ownerId, String status) {
         String targetStatus = "Approved"; // Default to Approved
         
         if ("Pending".equalsIgnoreCase(status)) {
@@ -41,16 +49,56 @@ public class OwnerHotelService {
             targetStatus = "Approved";
         }
 
+        if (ownerId != null) {
+            return hotelRepository.findByOwnerIdAndApplicationStatus(ownerId, targetStatus).stream()
+                    .map(this::toHotelResponse)
+                    .collect(Collectors.toList());
+        }
+
         return hotelRepository.findByApplicationStatus(targetStatus).stream()
                 .map(this::toHotelResponse)
                 .collect(Collectors.toList());
     }
 
+    public OwnerHotelSummaryResponse getOwnerHotelSummary(Long ownerId) {
+        int approved = (int) hotelRepository.countByOwnerIdAndApplicationStatus(ownerId, "Approved");
+        int pending = (int) hotelRepository.countByOwnerIdAndApplicationStatus(ownerId, "Pending");
+        int rejected = (int) hotelRepository.countByOwnerIdAndApplicationStatus(ownerId, "Rejected");
+
+        return OwnerHotelSummaryResponse.builder()
+                .approved(approved)
+                .pending(pending)
+                .rejected(rejected)
+                .total(approved + pending + rejected)
+    public HotelSummaryResponse getHotelSummary(Long ownerId) {
+        long approved = 0;
+        long pending = 0;
+        long rejected = 0;
+
+        if (ownerId != null) {
+            approved = hotelRepository.findByOwnerIdAndApplicationStatus(ownerId, "Approved").size();
+            pending = hotelRepository.findByOwnerIdAndApplicationStatus(ownerId, "Pending").size();
+            rejected = hotelRepository.findByOwnerIdAndApplicationStatus(ownerId, "Rejected").size();
+        } else {
+            approved = hotelRepository.countByApplicationStatus("Approved");
+            pending = hotelRepository.countByApplicationStatus("Pending");
+            rejected = hotelRepository.countByApplicationStatus("Rejected");
+        }
+
+        long total = approved + pending + rejected;
+
+        return HotelSummaryResponse.builder()
+                .approved(approved)
+                .pending(pending)
+                .rejected(rejected)
+                .total(total)
+                .build();
+    }
+
     @Transactional
-    public HotelResponse createHotel(OwnerHotelRequest request, MultipartFile hotelImage, String email) {
-        User owner = (email != null && !email.isBlank())
-                ? userRepository.findByEmail(email).orElse(null)
-                : null;
+    public HotelResponse createHotel(OwnerHotelRequest request, MultipartFile hotelImage, Long ownerId) {
+        User owner = userRepository.findById(ownerId)
+                .orElseThrow(() -> new RuntimeException("Owner not found with id: " + ownerId));
 
         String imageUrl = request.getImageUrl();
         if (hotelImage != null && !hotelImage.isEmpty()) {
@@ -58,7 +106,6 @@ public class OwnerHotelService {
                 imageUrl = imageUploadService.uploadHotelImage(hotelImage).getImageUrl();
             } catch (Exception e) {
                 System.err.println("Warning: Hotel image upload failed: " + e.getMessage());
-                // Fallback to placeholder if upload fails
                 if (imageUrl == null || imageUrl.isBlank()) {
                     imageUrl = "https://images.unsplash.com/photo-1566073771259-6a8506099945?q=80&w=2070&auto=format&fit=crop";
                 }
@@ -79,7 +126,7 @@ public class OwnerHotelService {
                 .phoneNumber(request.getPhoneNumber())
                 .hotlineNumber(request.getHotlineNumber())
                 .ownerName(request.getOwnerName())
-                .ownerEmail(email)
+                .ownerEmail(owner.getEmail())
                 .ownerNic(request.getOwnerNic())
                 .applicationStatus("Pending")
                 .owner(owner)
@@ -91,9 +138,8 @@ public class OwnerHotelService {
     }
 
     @Transactional
-    public HotelResponse updateHotel(Long id, OwnerHotelRequest request, MultipartFile hotelImage) {
-        Hotel hotel = hotelRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Hotel not found with id: " + id));
+    public HotelResponse updateHotel(Long id, OwnerHotelRequest request, MultipartFile hotelImage, Long ownerId) {
+        Hotel hotel = getOwnedHotel(id, ownerId);
 
         String imageUrl = request.getImageUrl();
         if (hotelImage != null && !hotelImage.isEmpty()) {
@@ -123,10 +169,35 @@ public class OwnerHotelService {
     }
 
     @Transactional
-    public void deleteHotel(Long id) {
+    public void deleteHotel(Long id, Long ownerId) {
+        Hotel hotel = getOwnedHotel(id, ownerId);
+        hotelRepository.delete(hotel);
+    }
+
+    private Hotel getOwnedHotel(Long id, Long ownerId) {
         Hotel hotel = hotelRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Hotel not found with id: " + id));
-        hotelRepository.delete(hotel);
+
+        Long hotelOwnerId = hotel.getOwnerId();
+        if (hotelOwnerId == null && hotel.getOwner() != null) {
+            hotelOwnerId = hotel.getOwner().getId();
+        }
+
+        if (hotelOwnerId == null || !hotelOwnerId.equals(ownerId)) {
+            throw new ForbiddenException("You do not have permission to manage this hotel.");
+        }
+
+        return hotel;
+    }
+
+    private String normalizeStatus(String status) {
+        if ("Pending".equalsIgnoreCase(status)) {
+            return "Pending";
+        }
+        if ("Rejected".equalsIgnoreCase(status)) {
+            return "Rejected";
+        }
+        return "Approved";
     }
 
     private HotelResponse toHotelResponse(Hotel hotel) {
@@ -135,6 +206,14 @@ public class OwnerHotelService {
                     .map(amenity -> amenity.getName())
                     .collect(Collectors.toList())
                 : List.of();
+
+        List<String> images = hotelImageRepository.findByHotelIdOrdered(hotel.getId()).stream()
+                .map(img -> img.getImageUrl())
+                .collect(Collectors.toList());
+
+        if (images.isEmpty() && hotel.getImageUrl() != null) {
+            images = List.of(hotel.getImageUrl());
+        }
 
         return HotelResponse.builder()
                 .id(hotel.getId())
@@ -145,6 +224,7 @@ public class OwnerHotelService {
                 .priceFrom(hotel.getPriceFrom())
                 .priceTo(hotel.getPriceTo())
                 .imageUrl(hotel.getImageUrl())
+                .images(images)
                 .amenities(amenityList)
                 .district(hotel.getDistrict())
                 .applicationStatus(hotel.getApplicationStatus())

@@ -3,6 +3,8 @@ package com.travelhub.backend.dto.response;
 import lombok.Builder;
 import lombok.Data;
 
+import java.time.LocalDateTime;
+
 @Data
 @Builder
 public class OwnerProfileResponse {
@@ -16,4 +18,5 @@ public class OwnerProfileResponse {
     private String district;
     private String businessRegistrationId;
     private String status;
+    private LocalDateTime updatedAt;
 }

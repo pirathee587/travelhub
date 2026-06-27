@@ -72,11 +72,14 @@ public class AuthService {
                 .agentApproved(request.getRole() != Role.AGENT)
                 .build();
 
+        // Save User first to generate the ID (required for @MapsId child entities)
         user = userRepository.save(user);
 
         // Handle Role-specific profile creation
         if (user.getRole() == Role.AGENT) {
             Agent agent = Agent.builder()
+                    .owner(user)              // link agent to user via @ManyToOne relationship
+                    .agencyName(user.getName())
                     .owner(user)
                     .agencyName(user.getAgencyName() != null ? user.getAgencyName() : user.getName() + "'s Agency")
                     .agencyNumber(user.getTelephone())
@@ -100,6 +103,9 @@ public class AuthService {
             user.setHotelId(hotel.getId());
             userRepository.save(user);
         }
+
+        // Save User again to cascade the linked profile relationships
+        user = userRepository.save(user);
 
         // Send verification email
         try {

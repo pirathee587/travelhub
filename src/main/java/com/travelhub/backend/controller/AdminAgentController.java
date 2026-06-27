@@ -11,7 +11,7 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/api/admin/agents")
 @RequiredArgsConstructor
-@CrossOrigin(origins = "*")
+
 @PreAuthorize("hasRole('ADMIN')")
 public class AdminAgentController {
 
@@ -24,17 +24,6 @@ public class AdminAgentController {
         return ResponseEntity.ok(
                 new ApiResponse(true, "Agents found",
                         adminAgentService.getAllAgents()));
-    }
-
-    // ── GET /api/admin/agents/status?status=Pending ───
-    // Filter by status
-    @GetMapping("/status")
-    public ResponseEntity<?> getByStatus(
-            @RequestParam String status) {
-        return ResponseEntity.ok(
-                new ApiResponse(true, "Agents found",
-                        adminAgentService
-                                .getByStatus(status)));
     }
 
     // ── GET /api/admin/agents/search?keyword= ─────────

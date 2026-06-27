@@ -43,6 +43,7 @@ public class AgentPackageService {
     /**
      * Lists packages for an agent with optional search and active-state filters.
      */
+    @Transactional(readOnly = true)
     public List<PackageSummaryResponse> listPackages(Long agentId,
                                                      String search,
                                                      Boolean isActive) {
@@ -67,6 +68,7 @@ public class AgentPackageService {
     /**
      * Returns one package detail after ownership validation.
      */
+    @Transactional(readOnly = true)
     public AgentPackageDetailResponse getPackage(Long agentId, String packageId) {
         Package pkg = findAndValidateOwnership(agentId, packageId);
         return toDetail(pkg);
@@ -103,11 +105,10 @@ public class AgentPackageService {
                 .images(new ArrayList<>())
                 .build();
 
-        // Upload and attach images; first image becomes cover.
         if (imageFiles != null && !imageFiles.isEmpty()) {
             int order = 0;
             for (MultipartFile file : imageFiles) {
-                String url = imageUploadService.uploadRoomImage(file, "packages").getImageUrl();
+                String url = imageUploadService.uploadPackageImage(file).getImageUrl();
                 PackageImage image = PackageImage.builder()
                         .pkg(pkg)
                         .imageUrl(url)
@@ -166,7 +167,7 @@ public class AgentPackageService {
         // Append newly uploaded images after current max display order.
         if (imageFiles != null && !imageFiles.isEmpty()) {
             for (MultipartFile file : imageFiles) {
-                String url = imageUploadService.uploadRoomImage(file, "packages").getImageUrl();
+                String url = imageUploadService.uploadPackageImage(file).getImageUrl();
                 pkg.getImages().add(PackageImage.builder()
                         .pkg(pkg)
                         .imageUrl(url)
@@ -282,7 +283,7 @@ public class AgentPackageService {
      * Generates the next public package id.
      */
     private String generatePackageId() {
-        long count = packageRepository.countAll() + 1;
+        long count = packageRepository.count() + 1;
         return String.format("PKG%03d", count);
     }
 

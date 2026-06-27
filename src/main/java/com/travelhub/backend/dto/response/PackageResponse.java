@@ -17,6 +17,8 @@ public class PackageResponse {
     private String endPlace;
     private Double priceFrom;
     private Double priceTo;
+    private Double basePriceAdult;
+    private Double basePriceChild;
     private String duration;
     private String category;
     private String imageUrl;
@@ -26,4 +28,5 @@ public class PackageResponse {
     private Boolean trending;
     private String agentName;
     private String district;
+    private String packageType;
 }

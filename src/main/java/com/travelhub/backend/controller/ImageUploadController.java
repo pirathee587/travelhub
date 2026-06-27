@@ -18,7 +18,7 @@ import org.springframework.web.multipart.MultipartFile;
 @RestController
 @RequestMapping("/api/upload")
 @RequiredArgsConstructor
-@CrossOrigin(origins = {"http://localhost:8080", "http://localhost:5173", "http://localhost:3000"})
+
 public class ImageUploadController {
 
     private final ImageUploadService imageUploadService;
@@ -35,7 +35,8 @@ public class ImageUploadController {
     @PostMapping("/image")
     public ResponseEntity<ApiResponse> uploadImage(
             @RequestParam("file") MultipartFile file) {
-        ImageUploadResponse uploadResponse = imageUploadService.uploadRoomImage(file);
+
+        ImageUploadResponse uploadResponse = imageUploadService.uploadRoomImage(file);          
 
         return ResponseEntity.ok(
                 new ApiResponse(true, "Image uploaded successfully", uploadResponse)

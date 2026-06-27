@@ -15,14 +15,14 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
+import lombok.RequiredArgsConstructor;
 
 import com.travelhub.backend.dto.response.RoomResponse;
 import com.travelhub.backend.entity.Room;
 import com.travelhub.backend.service.RoomService;
 
 @RestController
-@RequestMapping("/api/v1/rooms")
-@CrossOrigin(origins = "*")
+@RequestMapping("/api/rooms")
 public class RoomController {
 
     @Autowired
@@ -39,8 +39,9 @@ public class RoomController {
                                         @RequestParam double price,
                                         @RequestParam(required = false) String description,
                                         @RequestParam(required = false) MultipartFile image,
-                                        @RequestParam(defaultValue = "true") boolean availability) {
-        Room room = roomService.addRoom(name, type, price, description, image, availability);
+                                        @RequestParam(defaultValue = "true") boolean availability,
+                                        @RequestParam Long hotelId) {
+        Room room = roomService.addRoom(name, type, price, description, image, availability, hotelId);
         return ResponseEntity.ok(room);
     }
 

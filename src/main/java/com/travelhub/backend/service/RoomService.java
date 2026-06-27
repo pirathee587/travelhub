@@ -1,6 +1,8 @@
 package com.travelhub.backend.service;
 
+import com.travelhub.backend.entity.Hotel;
 import com.travelhub.backend.entity.Room;
+import com.travelhub.backend.repository.HotelRepository;
 import com.travelhub.backend.repository.RoomRepository;
 import com.travelhub.backend.service.ImageUploadService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,7 +22,13 @@ public class RoomService {
     @Autowired
     private ImageUploadService imageUploadService;
 
-    public Room addRoom(String name, String type, double price, String description, MultipartFile image, boolean availability) {
+    @Autowired
+    private HotelRepository hotelRepository;
+
+    public Room addRoom(String name, String type, double price, String description, MultipartFile image, boolean availability, Long hotelId) {
+        Hotel hotel = hotelRepository.findById(hotelId)
+                .orElseThrow(() -> new RuntimeException("Hotel not found"));
+
         String imageUrl = null;
         if (image != null && !image.isEmpty()) {
             imageUrl = imageUploadService.uploadRoomImage(image).getImageUrl();
@@ -34,6 +42,7 @@ public class RoomService {
         room.setDescription(description);
         room.setImageUrl(imageUrl);
         room.setAvailability(availability);
+        room.setHotel(hotel);
 
         return roomRepository.save(room);
     }

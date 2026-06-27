@@ -36,6 +36,9 @@ public class Hotel {
     private String imageUrl;
     private String district;
 
+    @Column(name = "number_of_rooms")
+    private Integer numberOfRooms;
+
     // ── Owner Information ──────────────────────────────
     @Column(name = "owner_name")
     private String ownerName;
@@ -86,6 +89,11 @@ public class Hotel {
             cascade = CascadeType.ALL,
             fetch = FetchType.LAZY)
     private List<Room> rooms;
+
+    @OneToMany(mappedBy = "hotel",
+            cascade = CascadeType.ALL,
+            fetch = FetchType.LAZY)
+    private List<HotelImage> hotelImages;
 
 
     // ── Link to Owner (User entity) ──

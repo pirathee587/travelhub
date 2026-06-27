@@ -113,10 +113,11 @@ public class AdminHotelService {
 
         Double avgRating = reviewRepository.getAverageRatingByHotelId(id);
         
-        // Fetch owner from UserRepository by hotelId
-        User owner = userRepository.findByHotelId(id).orElse(null);
-
-
+        // Fetch owner from UserRepository by hotelId, or from the hotel's owner relationship
+        User owner = hotel.getOwner();
+        if (owner == null) {
+            owner = userRepository.findByHotelId(id).orElse(null);
+        }
 
         String ownerName = owner != null ? owner.getName() : hotel.getOwnerName();
         String ownerEmail = owner != null ? owner.getEmail() : hotel.getOwnerEmail();
@@ -143,6 +144,7 @@ public class AdminHotelService {
                 imageUrl,
                 hotel.getDistrict(),
                 hotel.getLocation(),
+                hotel.getNumberOfRooms(),
                 roomTypes,
                 ownerName,
                 ownerEmail,
@@ -175,8 +177,14 @@ public class AdminHotelService {
         // The query filters by u.hotelId which stores the hotel's own ID, so always pass `id` (hotel ID)
         userRepository.updateIsActiveByHotelId(id, newActiveState);
 
+        // Fire SUSPENDED event when a hotel is being suspended (active → inactive)
+        if (!newActiveState) {
+            eventPublisher.publishEvent(new HotelEvent(this, hotel, "SUSPENDED"));
+        }
+
         return getHotelDetail(id);
     }
+
 
     // ── Approve Hotel ─────────────────────────────────
     @Transactional
@@ -254,6 +262,7 @@ public class AdminHotelService {
                 reviewCount,
                 imageUrl,
                 h.getDistrict(),
+                h.getNumberOfRooms(),
                 h.getApplicationStatus(),
                 h.getIsActive() != null ? h.getIsActive() : true
         );

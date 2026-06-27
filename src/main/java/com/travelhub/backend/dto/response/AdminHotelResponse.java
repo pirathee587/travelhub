@@ -12,6 +12,7 @@ public record AdminHotelResponse(
         Integer reviewCount,
         String  imageUrl,
         String  district,
+        Integer numberOfRooms,
         String  applicationStatus,
         Boolean isActive
 ) {}

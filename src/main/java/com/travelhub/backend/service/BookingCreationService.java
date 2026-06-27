@@ -6,6 +6,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -25,11 +28,14 @@ import com.travelhub.backend.repository.UserRepository;
 import com.travelhub.backend.repository.VehicleRepository;
 
 import lombok.RequiredArgsConstructor;
+import com.travelhub.backend.event.BookingEvent;
 
 @Service
 @RequiredArgsConstructor
 @Transactional
 public class BookingCreationService {
+
+    private static final Logger logger = LoggerFactory.getLogger(BookingCreationService.class);
 
     private final BookingRepository bookingRepository;
     private final UserRepository userRepository;
@@ -38,36 +44,75 @@ public class BookingCreationService {
     private final VehicleRepository vehicleRepository;
     private final BookingService bookingService;
     private final BookingHotelPreferenceRepository bookingHotelPreferenceRepository;
+    private final ApplicationEventPublisher eventPublisher;
+    private final UserNotificationService userNotificationService;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     public BookingResponse createBooking(BookingRequest request) {
+        logger.info("========== BOOKING CREATION START ==========");
+        logger.info("User ID: {}", request.getUserId());
+        logger.info("Package ID: {}", request.getPackageId());
+        logger.info("Hotels: {}", request.getHotelIds() != null ? request.getHotelIds().size() : "None");
+        logger.info("Start Date: {}", request.getStartDate());
+        logger.info("Guests: {} adults, {} children", request.getAdults(), request.getChildren());
 
+        logger.debug("Step 1: Validating user ID {}", request.getUserId());
+        {
+            /* User validate */}
         User user = userRepository.findById(request.getUserId())
-                .orElseThrow(() -> new RuntimeException("User with ID " + request.getUserId() + " not found. Please ensure you are logged in."));
+                .orElseThrow(() -> {
+                    logger.error("User not found: {}", request.getUserId());
+                    return new RuntimeException(
+                            "User with ID " + request.getUserId() + " not found. Please ensure you are logged in.");
+                });
+        logger.info("✓ User validated: {}", user.getEmail());
 
+        logger.debug("Step 2: Validating package ID {}", request.getPackageId());
+        {
+            /* Package validate */}
         Package pkg = packageRepository.findById(request.getPackageId())
-                .orElseThrow(() -> new RuntimeException("Package with ID " + request.getPackageId() + " not found"));
+                .orElseThrow(() -> {
+                    logger.error("Package not found: {}", request.getPackageId());
+                    return new RuntimeException("Package with ID " + request.getPackageId() + " not found");
+                });
+        logger.info("✓ Package validated: {}", pkg.getPackageName());
 
         // Validate hotel preferences if hotelIds provided
         if (request.getHotelIds() != null && !request.getHotelIds().isEmpty()) {
+            logger.debug("Step 3: Validating {} hotels", request.getHotelIds().size());
             for (Long hotelId : request.getHotelIds()) {
-                Hotel h = hotelRepository.findById(hotelId)
-                        .orElseThrow(() -> new RuntimeException("Hotel not found: " + hotelId));
+                Hotel h = hotelRepository.findById(hotelId) // Hotel District Validation
+                        .orElseThrow(() -> {
+                            logger.error("Hotel not found: {}", hotelId);
+                            return new RuntimeException("Hotel not found: " + hotelId);
+                        });
 
                 // District Matching Validation
-                if (h.getDistrict() != null && pkg.getDistrict() != null
-                        && !h.getDistrict().equalsIgnoreCase(pkg.getDistrict())) {
-                    throw new RuntimeException("Selected hotel's district does not match package's district");
+                if (h.getDistrict() != null && pkg.getDistrict() != null) {
+                    String hDist = h.getDistrict().replaceAll("(?i)\\s*district$", "").trim();
+                    String pDist = pkg.getDistrict().replaceAll("(?i)\\s*district$", "").trim();
+                    if (!hDist.equalsIgnoreCase(pDist)) {
+                        logger.error("District mismatch: hotel={}, package={}", h.getDistrict(), pkg.getDistrict());
+                        throw new RuntimeException("Selected hotel's district does not match package's district");
+                    }
                 }
+                logger.debug("  ✓ Hotel validated: {} ({})", h.getHotelName(), h.getDistrict());
             }
+            logger.info("✓ All hotels validated");
         }
 
-        // Calculate end date from start date + duration
-        LocalDate endDate = calculateEndDate(request.getStartDate(), request.getDuration() != null ? request.getDuration() : pkg.getDuration());
+        // Step 4: Calculate end date from start date + duration
+        logger.debug("Step 4: Calculating end date from {} + {}", request.getStartDate(), request.getDuration());
+        LocalDate endDate = calculateEndDate(request.getStartDate(),
+                request.getDuration() != null ? request.getDuration() : pkg.getDuration());
+        logger.info("✓ End date calculated: {}", endDate);
 
-        // Convert hotelIds list with preference order to JSON string
+        // Step 5: Convert hotelIds list with preference order to JSON string
         String hotelIdsWithPreference = convertHotelIdsToJson(request.getHotelIds());
+        logger.debug("Step 5: Hotel IDs JSON: {}", hotelIdsWithPreference);
 
+        // Step 6: Create Booking //Booking Here
+        logger.debug("Step 6: Creating booking entity");
         Booking booking = Booking.builder()
                 .user(user)
                 .pkg(pkg)
@@ -86,9 +131,29 @@ public class BookingCreationService {
                 .build();
 
         Booking saved = bookingRepository.save(booking);
+        logger.info("✓ Booking saved: ID={}", saved.getId());
 
-        // Save hotel preferences to separate table
-        if (request.getHotelIds() != null && !request.getHotelIds().isEmpty()) {
+        // Step 7: Save hotel preferences to separate table
+        if (request.getBookingHotelPreferences() != null && !request.getBookingHotelPreferences().isEmpty()) {
+            logger.debug("Step 7: Saving {} hotel preferences with room names", request.getBookingHotelPreferences().size());
+            List<BookingHotelPreference> preferences = new ArrayList<>();
+            for (int i = 0; i < request.getBookingHotelPreferences().size(); i++) {
+                BookingRequest.HotelPreferenceDto prefDto = request.getBookingHotelPreferences().get(i);
+                Hotel hotel = hotelRepository.findById(prefDto.getHotelId()).get();
+
+                BookingHotelPreference pref = BookingHotelPreference.builder()
+                        .booking(saved)
+                        .hotel(hotel)
+                        .preferenceNumber(i)
+                        .roomName(prefDto.getRoomName())
+                        .isSelected(true)
+                        .build();
+                preferences.add(pref);
+            }
+            bookingHotelPreferenceRepository.saveAll(preferences);
+            logger.info("✓ Hotel preferences saved");
+        } else if (request.getHotelIds() != null && !request.getHotelIds().isEmpty()) {
+            logger.debug("Step 7: Saving {} hotel preferences (legacy)", request.getHotelIds().size());
             List<BookingHotelPreference> preferences = new ArrayList<>();
             for (int i = 0; i < request.getHotelIds().size(); i++) {
                 Long hotelId = request.getHotelIds().get(i);
@@ -103,9 +168,59 @@ public class BookingCreationService {
                 preferences.add(pref);
             }
             bookingHotelPreferenceRepository.saveAll(preferences);
+            logger.info("✓ Hotel preferences saved");
         }
 
-        return bookingService.getBookingById(saved.getId());
+        // Step 8: Fetch and return response
+        logger.debug("Step 8: Fetching booking response");
+        BookingResponse response = bookingService.getBookingById(saved.getId());
+        
+        // Step 9: Initialize lazy properties before publishing event to prevent LazyInitializationException in async listener
+        try {
+            if (saved.getPkg() != null && saved.getPkg().getAgent() != null && saved.getPkg().getAgent().getOwner() != null) {
+                saved.getPkg().getAgent().getOwner().getEmail(); // Force fetch email
+                saved.getPkg().getAgent().getOwner().getName(); // Force fetch name
+            }
+        } catch (Exception e) {
+            logger.warn("Could not initialize agent details for notification (agent may not exist in DB): {}", e.getMessage());
+        }
+        
+        // Step 10: Publish event to trigger email notifications
+        eventPublisher.publishEvent(new BookingEvent(this, saved, "CREATED"));
+        logger.info("Booking CREATED event published for booking {}", saved.getId());
+
+        // Step 11: Persist in-app notification for tourist (pending approval)
+        try {
+            userNotificationService.notifyUser(
+                    saved.getUser().getId(),
+                    "booking",
+                    "Booking Received",
+                    "Your booking for " + saved.getPkg().getPackageName() + " has been received and is pending agent approval.",
+                    "/my-trips"
+            );
+        } catch (Exception e) {
+            logger.warn("Could not create tourist in-app notification for booking {}: {}", saved.getId(), e.getMessage());
+        }
+
+        // Step 12: Persist in-app notification for agent (new booking request)
+        try {
+            if (saved.getPkg() != null && saved.getPkg().getAgent() != null) {
+                userNotificationService.notifyAgent(
+                        saved.getPkg().getAgent(),
+                        "booking",
+                        "New Booking Request",
+                        "A new booking request has been received for package: " + saved.getPkg().getPackageName()
+                );
+            }
+        } catch (Exception e) {
+            logger.warn("Could not create agent in-app notification for booking {}: {}", saved.getId(), e.getMessage());
+        }
+
+        logger.info("========== BOOKING CREATION SUCCESS ==========");
+        logger.info("Booking ID: {}", response.getId());
+        logger.info("Booking Reference: {}", response.getBookingId());
+
+        return response;
     }
 
     private LocalDate calculateEndDate(LocalDate startDate, String duration) {
@@ -146,11 +261,19 @@ public class BookingCreationService {
     }
 
     public BookingResponse cancelBooking(Long bookingId) {
+        logger.info("========== BOOKING CANCELLATION START ==========");
+        logger.info("Booking ID: {}", bookingId);
+
         Booking booking = bookingRepository.findById(bookingId)
-                .orElseThrow(() -> new RuntimeException("Booking not found"));
+                .orElseThrow(() -> {
+                    logger.error("Booking not found: {}", bookingId);
+                    return new RuntimeException("Booking not found");
+                });
 
         booking.setStatus("cancelled");
         Booking saved = bookingRepository.save(booking);
+        logger.info("✓ Booking cancelled: {}", saved.getId());
+
         return bookingService.getBookingById(saved.getId());
     }
 }

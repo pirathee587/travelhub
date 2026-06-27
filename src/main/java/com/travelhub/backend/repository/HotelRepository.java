@@ -32,5 +32,6 @@ public interface HotelRepository
     List<Hotel> findByOwnerEmailIgnoreCaseAndApplicationStatus(
             String ownerEmail, String status);
 
+    long countByOwnerIdAndApplicationStatus(Long ownerId, String applicationStatus);
     List<Hotel> findTop5ByOrderByIdDesc();
 }

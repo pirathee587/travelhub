@@ -43,6 +43,8 @@ public class User {
 
     // Role-specific fields (Nullable based on role)
     private String nationality;           // Tourist
+    private String nicNumber;             // Agent (Captured at Signup)
+    private String nicImage;              // Agent (Captured in Profile)
     private String agencyName;            // Agent
     private String hotelName;             // Hotel Owner
     private String businessRegistrationId; // Hotel Owner (For Admin Verification)
@@ -75,6 +77,8 @@ public class User {
     @Builder.Default
     private Boolean agentApproved = false;
 
+    private Long agentId; // Legacy Link to the Agent table (To be removed after Agent refactor)
+    
     private Long hotelId; // Link to the Hotel table
 
     // --- Refactored Agent Verification Fields ---
@@ -89,11 +93,19 @@ public class User {
     @Column(updatable = false)
     private LocalDateTime createdAt;
 
+    @Column(name = "updated_at")
+    private LocalDateTime updatedAt;
+
     @PrePersist
     protected void onCreate() {
         this.createdAt = LocalDateTime.now();
-        // Fallback checks for non-builder instantiation
+        this.updatedAt = LocalDateTime.now();
         if (this.isActive == null) this.isActive = true;
         if (this.agentApproved == null) this.agentApproved = false;
+    }
+
+    @PreUpdate
+    protected void onUpdate() {
+        this.updatedAt = LocalDateTime.now();
     }
 }

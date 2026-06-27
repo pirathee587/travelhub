@@ -19,11 +19,15 @@ public class Agent {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
+    private User owner;
+
+    // ── Company / Agent Info ───────────────────────────
     private User owner;                    // Owner mapping referencing User
 
     @Column(name = "agency_name", nullable = false)
     private String agencyName;             // Brand/Business name of agency
 
+    // ── Contact Information ──────────────────────────────
     // --- Contact Details ---
     private String agencyNumber;
     private String secondaryNumber;
@@ -39,6 +43,9 @@ public class Agent {
     private String websiteUrl;
     
     private LocalDate memberSince;
+
+    // ── Submitted Date ─────────────────────────────────
+    @Column(name = "submitted_date", updatable = false)
     private LocalDateTime submittedDate;
 
     // --- Performance Metrics ---
@@ -48,6 +55,7 @@ public class Agent {
     private Integer experienceYears;
     private Double completionRate;
 
+    // ── Status ─────────────────────────────────────────
     @Column(nullable = false)
     @Builder.Default
     private Boolean isActive = true;

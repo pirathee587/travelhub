@@ -12,7 +12,6 @@ public class AgentProfileResponse {
     private String phone;
     private String secondaryPhone;
     private String whatsappNumber;
-    private String companyName;
     private String agencyName;
     private String location;
     private String bio;
@@ -20,6 +19,7 @@ public class AgentProfileResponse {
     private String operatingDistricts;
     private String websiteUrl;
     private String profileImage;
+    private String nicImage;
     private String memberSince;
     private Double rating;
     private Integer totalTrips;

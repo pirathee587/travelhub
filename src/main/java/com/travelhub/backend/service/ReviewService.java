@@ -1,5 +1,6 @@
 package com.travelhub.backend.service;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -57,6 +58,15 @@ public class ReviewService {
                 .collect(Collectors.toList());
     }
 
+    /** Returns all reviews created by a specific user */
+    @Transactional(readOnly = true)
+    public List<ReviewResponse> getUserReviews(Long userId) {
+        return reviewRepository.findByUser_Id(userId)
+                .stream()
+                .map(this::toReviewResponse)
+                .collect(Collectors.toList());
+    }
+
     // ─────────────────────────────────────────────────────────────────────────
     // POST reviews
     // ─────────────────────────────────────────────────────────────────────────
@@ -65,20 +75,16 @@ public class ReviewService {
     @Transactional
     public ReviewResponse addPackageReview(Long packageId, ReviewRequest request, List<org.springframework.web.multipart.MultipartFile> images) {
 
-        // ✅ FIXED: removed mandatory "completed booking" check that was
-        //    blocking ALL reviews because booking status is "CONFIRMED" / "PENDING"
-        //    in the DB (not lowercase "completed"). Remove or make it optional.
-
         Package pkg = packageRepository.findById(packageId)
                 .orElseThrow(() -> new RuntimeException("Package not found: " + packageId));
 
-        // ✅ FIXED: user lookup is optional — fall back to userName from request
+        // user lookup is optional — fall back to userName from request
         User user = null;
         if (request.getUserId() != null) {
             user = userRepository.findById(request.getUserId()).orElse(null);
         }
 
-        // ✅ FIXED: title and userName are now persisted in the entity
+        //  title and userName are now persisted in the entity
         Review review = Review.builder()
                 .user(user)
                 .pkg(pkg)
@@ -89,7 +95,7 @@ public class ReviewService {
                 .build();
 
         Review saved = reviewRepository.save(review);
-        // ✅ NEW: Save images if provided (from MultipartFile list)
+        //  Save images if provided (from MultipartFile list)
         if (images != null && !images.isEmpty()) {
             log.info("[DEBUG] Saving {} images for package review {}", images.size(), saved.getId());
             for (org.springframework.web.multipart.MultipartFile file : images) {
@@ -104,7 +110,7 @@ public class ReviewService {
                         saved.getImages().add(img);  // ✅ FIXED: sync in-memory list for response
                         log.info("[DEBUG] Saved image: {}", imageUrl);
                     } catch (Exception e) {
-                        log.error("[DEBUG] Failed to upload image for review {}", saved.getId(), e);
+                        log.error("[DEBUG] Failed to upload image for review {}", saved.getId(), e);            //Image save error handle
                         throw new RuntimeException("Image upload failed: " + e.getMessage(), e);
                     }
                 }
@@ -129,7 +135,7 @@ public class ReviewService {
             user = userRepository.findById(request.getUserId()).orElse(null);
         }
 
-        Review review = Review.builder()
+        Review review = Review.builder()                //Review Data
                 .user(user)
                 .hotel(hotel)
                 .comment(request.getComment())
@@ -139,7 +145,7 @@ public class ReviewService {
                 .build();
 
         Review saved = reviewRepository.save(review);
-        // ✅ NEW: Save images if provided (from MultipartFile list)
+        //  Save images if provided (from MultipartFile list)
         if (images != null && !images.isEmpty()) {
             log.info("[DEBUG] Saving {} images for hotel review {}", images.size(), saved.getId());
             for (org.springframework.web.multipart.MultipartFile file : images) {
@@ -148,19 +154,19 @@ public class ReviewService {
                         String imageUrl = imageUploadService.uploadReviewImage(file).getImageUrl();
                         ReviewImage img = ReviewImage.builder()
                                 .review(saved)
-                                .imageUrl(imageUrl)
+                                .imageUrl(imageUrl)     //ImageUploadService.java ->uploadReviewImage
                                 .build();
                         reviewImageRepository.save(img);
                         saved.getImages().add(img);  // ✅ FIXED: sync in-memory list for response
                         log.info("[DEBUG] Saved image: {}", imageUrl);
                     } catch (Exception e) {
                         log.error("[DEBUG] Failed to upload image for hotel review {}", saved.getId(), e);
-                        throw new RuntimeException("Image upload failed: " + e.getMessage(), e);
+                        throw new RuntimeException("Image upload failed: " + e.getMessage(), e);   //Image save Error Handle
                     }
                 }
             }
         } else {
-            log.info("[DEBUG] No images provided for hotel review {}", saved.getId());
+            log.info("[DEBUG] No images provided for hotel review {}", saved.getId());  
         }
         
         return toReviewResponse(saved);
@@ -176,7 +182,6 @@ public class ReviewService {
         Double avg = reviewRepository.getAverageRatingByPackageId(packageId);
         return avg != null ? Math.round(avg * 10.0) / 10.0 : 0.0;
     }
-
     //Get Package Review Count
     public long getPackageReviewCount(Long packageId) {
         Long count = reviewRepository.getReviewCountByPackageId(packageId);
@@ -188,7 +193,6 @@ public class ReviewService {
         Double avg = reviewRepository.getAverageRatingByHotelId(hotelId);
         return avg != null ? Math.round(avg * 10.0) / 10.0 : 0.0;
     }
-
     //Get Hotel Review Count
     public long getHotelReviewCount(Long hotelId) {
         Long count = reviewRepository.getReviewCountByHotelId(hotelId);
@@ -235,13 +239,112 @@ public class ReviewService {
                 .comment(review.getComment())
                 // ✅ NEW: Include imageUrls for frontend display
                 .imageUrls(imageUrls)
-                // For backward-compat with agent dashboard
+                // For backward-compat with agent dashboard & package reviews
                 .customerName(displayName)
                 .date(dateStr)
                 .trip(review.getPkg() != null ? review.getPkg().getDestination() : null)
                 .packageName(review.getPkg() != null ? review.getPkg().getPackageName() : null)
+                .packageId(review.getPkg() != null ? review.getPkg().getId() : null)
+                // ✅ NEW: Include hotel details for hotel reviews
+                .hotelName(review.getHotel() != null ? review.getHotel().getHotelName() : null)
+                .hotelId(review.getHotel() != null ? review.getHotel().getId() : null)
+                .district(review.getPkg() != null ? review.getPkg().getDistrict() : (review.getHotel() != null ? review.getHotel().getDistrict() : null))
                 .reply(review.getReply())
                 .hasReply(review.getReply() != null && !review.getReply().isEmpty())
                 .build();
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // PUT review (update) - with authorization
+    // ─────────────────────────────────────────────────────────────────────────
+
+    /** Update an existing review - only the owner can update */
+    @Transactional
+    public ReviewResponse updateReview(Long reviewId, Long userId, ReviewRequest request, List<org.springframework.web.multipart.MultipartFile> newImages) {
+
+        Review review = reviewRepository.findById(reviewId)
+                .orElseThrow(() -> new RuntimeException("Review not found: " + reviewId));
+
+        // ✅ AUTHORIZATION: Verify the logged-in user is the review owner
+        if (review.getUser() == null || !review.getUser().getId().equals(userId)) {
+            throw new RuntimeException("Unauthorized: You can only edit your own reviews");
+        }
+
+        // Update allowed fields
+        if (request.getRating() != null) {
+            review.setRating(request.getRating());
+        }
+        if (request.getTitle() != null && !request.getTitle().isBlank()) {
+            review.setTitle(request.getTitle());
+        }
+        if (request.getComment() != null && !request.getComment().isBlank()) {
+            review.setComment(request.getComment());
+        }
+
+        Review updated = reviewRepository.save(review);
+
+        // Handle image updates: remove old images and add new ones if provided
+        if (newImages != null && !newImages.isEmpty()) {
+            log.info("[DEBUG] Updating {} images for review {}", newImages.size(), updated.getId());
+            
+            // Delete old image records from database (files will remain in storage - garbage collection)
+            if (updated.getImages() != null && !updated.getImages().isEmpty()) {
+                for (ReviewImage oldImg : new ArrayList<>(updated.getImages())) {
+                    reviewImageRepository.delete(oldImg);
+                    updated.getImages().remove(oldImg);
+                    log.info("[DEBUG] Deleted old image record: {}", oldImg.getId());
+                }
+            }
+
+            // Add new images
+            for (org.springframework.web.multipart.MultipartFile file : newImages) {
+                if (file != null && !file.isEmpty()) {
+                    try {
+                        String imageUrl = imageUploadService.uploadReviewImage(file).getImageUrl();
+                        ReviewImage img = ReviewImage.builder()
+                                .review(updated)
+                                .imageUrl(imageUrl)
+                                .build();
+                        reviewImageRepository.save(img);
+                        updated.getImages().add(img);
+                        log.info("[DEBUG] Added new image: {}", imageUrl);
+                    } catch (Exception e) {
+                        log.error("[DEBUG] Failed to upload new image for review {}", updated.getId(), e);
+                        throw new RuntimeException("Image upload failed: " + e.getMessage(), e);
+                    }
+                }
+            }
+        }
+
+        return toReviewResponse(updated);
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // DELETE review - with authorization
+    // ─────────────────────────────────────────────────────────────────────────
+
+    /** Delete a review - only the owner can delete */
+    @Transactional
+    public void deleteReview(Long reviewId, Long userId) {
+
+        Review review = reviewRepository.findById(reviewId)
+                .orElseThrow(() -> new RuntimeException("Review not found: " + reviewId));
+
+        // ✅ AUTHORIZATION: Verify the logged-in user is the review owner
+        if (review.getUser() == null || !review.getUser().getId().equals(userId)) {
+            throw new RuntimeException("Unauthorized: You can only delete your own reviews");
+        }
+
+        // Delete associated image records from database (files will remain in storage - garbage collection)
+        if (review.getImages() != null && !review.getImages().isEmpty()) {
+            for (ReviewImage img : review.getImages()) {
+                log.info("[DEBUG] Deleting image record: {}", img.getId());
+                reviewImageRepository.delete(img);
+            }
+        }
+
+        // Delete the review (cascade will handle ReviewImage records)
+        reviewRepository.delete(review);
+        log.info("[DEBUG] Review {} deleted successfully", reviewId);
     }
 }
