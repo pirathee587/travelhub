@@ -34,8 +34,7 @@ public class Package {
     @Column(nullable = false)
     private String packageName;
 
-    @Column(nullable = false)
-    private String destination;
+
 
     private String startPlace;
     private String endPlace;
@@ -43,8 +42,14 @@ public class Package {
     private String category;
     private String district;
 
+    public String getDestination() {
+        return this.endPlace;
+    }
+
+    // ── Package Type ──────────────────────────────────────────
     @Column(name = "package_type")
-    private String packageType;
+    @Builder.Default
+    private String packageType = "SINGLE_DISTRICT"; // SINGLE_DISTRICT or MULTI_DISTRICT
 
     // ── Price ─────────────────────────────────────────────────
     @Column(name = "price_from")
@@ -53,6 +58,7 @@ public class Package {
     @Column(name = "price_to")
     private Double priceTo;
 
+    // ── Per-person pricing ────────────────────────────────────
     @Column(name = "base_price_adult")
     private Double basePriceAdult;
 
@@ -63,17 +69,11 @@ public class Package {
     private String description;
 
     @Column(columnDefinition = "TEXT")
-    private String festivalDetails;
-
-    @Column(columnDefinition = "TEXT")
     private String inclusions;
 
     // ── Status fields ──────────────────────────────────────────
     @Builder.Default
     private Boolean isActive = true;
-
-    @Builder.Default
-    private Boolean trending = false;
 
     @Column(name = "application_status")
     @Builder.Default

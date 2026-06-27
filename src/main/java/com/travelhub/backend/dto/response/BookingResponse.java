@@ -16,12 +16,22 @@ public class BookingResponse {
     private Long id;
     private String bookingId;
     private String packageName;
-    private String destination;
+
     private LocalDate startDate;
     private LocalDate endDate;
     private String status;
     private Double totalPrice;
     private Integer progress;
+    
+    // Tourist Info
+    private String touristName;
+    private String touristEmail;
+    private String touristPhone;
+
+    // Pricing
+    private Double basePriceAdult;
+    private Double basePriceChild;
+
     private String imageUrl;
     private String category;
     private String startPlace;
@@ -48,4 +58,6 @@ public class BookingResponse {
 
     // Booking details
     private String hotelIdsWithPreference;
+    private String accommodationOption;   // SELF_ARRANGE, AGENCY, or null
+    private String packageType;           // SINGLE_DISTRICT or MULTI_DISTRICT
 }

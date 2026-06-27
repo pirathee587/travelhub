@@ -138,7 +138,6 @@ public class AdminAgentService {
     }
 
 
-
     // ── Toggle Active ─────────────────────────────────
     @Transactional
     public AdminAgentDetailResponse toggleActive(
@@ -239,13 +238,12 @@ public class AdminAgentService {
         return new AdminAgentPackageResponse(
                 p.getId(),
                 p.getPackageName(),
-                p.getDestination(),
-                p.getPriceFrom(),
-                p.getPriceTo(),
+
+
                 p.getDuration(),
                 p.getCategory(),
                 p.getRating(),
-                p.getTrending(),
+
                 p.getIsActive(),
                 p.getApplicationStatus() != null
                         ? p.getApplicationStatus()

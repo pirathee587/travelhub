@@ -11,13 +11,15 @@ public class PackageSummaryResponse {
     private String packageId;
     private String name;
     private String category;
-    private String destination;
+
     private String district;
     private String duration;
-    private Double priceFrom;
-    private Double priceTo;
+
+    private Double basePriceAdult;
+    private Double basePriceChild;
     private Boolean isActive;
-    private Boolean trending;
+    private String applicationStatus;
+
     private String coverImageUrl;
     private LocalDateTime createdAt;
 }

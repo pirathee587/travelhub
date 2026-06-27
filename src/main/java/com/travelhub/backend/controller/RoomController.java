@@ -23,6 +23,7 @@ import com.travelhub.backend.service.RoomService;
 
 @RestController
 @RequestMapping("/api/rooms")
+@RequiredArgsConstructor
 public class RoomController {
 
     @Autowired

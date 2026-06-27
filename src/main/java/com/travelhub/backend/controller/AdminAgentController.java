@@ -59,7 +59,6 @@ public class AdminAgentController {
     }
 
 
-
     // ── PATCH /api/admin/agents/{id}/toggle-active ────
     @PatchMapping("/{id}/toggle-active")
     public ResponseEntity<?> toggleActive(

@@ -1,11 +1,17 @@
 package com.travelhub.backend.listener;
 
+import com.travelhub.backend.entity.Booking;
+import com.travelhub.backend.entity.Payment;
+import com.travelhub.backend.entity.User;
+import com.travelhub.backend.entity.Agent;
 import com.travelhub.backend.event.BookingEvent;
 import com.travelhub.backend.event.HotelEvent;
 import com.travelhub.backend.event.PackageEvent;
+import com.travelhub.backend.event.PaymentEvent;
 import com.travelhub.backend.event.UserAccountEvent;
 import com.travelhub.backend.repository.UserRepository;
 import com.travelhub.backend.service.EmailService;
+import com.travelhub.backend.service.UserNotificationService;
 import com.travelhub.backend.service.OwnerNotificationService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -20,22 +26,78 @@ public class NotificationListener {
 
     private final EmailService emailService;
     private final UserRepository userRepository;
+    private final UserNotificationService userNotificationService;
     private final OwnerNotificationService ownerNotificationService;
 
     @Async
     @EventListener
     public void handleBookingEvent(BookingEvent event) {
         log.info("Handling booking event: {} for booking ID: {}", event.getType(), event.getBooking().getId());
+        Booking booking = event.getBooking();
 
         switch (event.getType()) {
             case "CREATED":
-                emailService.sendBookingConfirmation(event.getBooking());
+                emailService.sendBookingConfirmation(booking);
+                if (booking.getPkg() != null && booking.getPkg().getAgent() != null) {
+                    userNotificationService.notifyAgent(
+                        booking.getPkg().getAgent(),
+                        "booking",
+                        "New Package Booking",
+                        "You have received a new booking request for package: " + booking.getPkg().getPackageName()
+                    );
+                }
+                if (booking.getUser() != null) {
+                    userNotificationService.notifyUser(
+                        booking.getUser().getId(),
+                        "booking",
+                        "Booking Pending",
+                        "Your booking request for " + booking.getPkg().getPackageName() + " is pending agent confirmation.",
+                        "/tourist/bookings"
+                    );
+                }
                 break;
             case "APPROVED":
-                emailService.sendBookingApprovalNotification(event.getBooking());
+                emailService.sendBookingApprovalNotification(booking);
+                if (booking.getUser() != null) {
+                    userNotificationService.notifyUser(
+                        booking.getUser().getId(),
+                        "booking",
+                        "Booking Confirmed",
+                        "Your booking " + String.format("BK%05d", booking.getId()) + " for " + booking.getPkg().getPackageName() + " has been confirmed by the agent.",
+                        "/tourist/bookings"
+                    );
+                }
                 break;
             case "DECLINED":
-                emailService.sendBookingDeclineNotification(event.getBooking(), event.getReason());
+                emailService.sendBookingDeclineNotification(booking, event.getReason());
+                if (booking.getUser() != null) {
+                    userNotificationService.notifyUser(
+                        booking.getUser().getId(),
+                        "booking",
+                        "Booking Declined",
+                        "Your booking " + String.format("BK%05d", booking.getId()) + " has been declined. Reason: " + event.getReason(),
+                        "/tourist/bookings"
+                    );
+                }
+                break;
+            case "CANCELLED":
+                if (booking.getPkg() != null && booking.getPkg().getAgent() != null) {
+                    userNotificationService.notifyAgent(
+                        booking.getPkg().getAgent(),
+                        "booking",
+                        "Booking Cancelled",
+                        "Booking " + String.format("BK%05d", booking.getId()) + " has been cancelled."
+                    );
+                }
+                if (booking.getUser() != null) {
+                    userNotificationService.notifyUser(
+                        booking.getUser().getId(),
+                        "booking",
+                        "Booking Cancelled",
+                        "Your booking " + String.format("BK%05d", booking.getId()) + " has been cancelled.",
+                        "/tourist/bookings"
+                    );
+                }
                 break;
         }
     }
@@ -117,8 +179,79 @@ public class NotificationListener {
     public void handlePackageEvent(PackageEvent event) {
         log.info("Handling package event: {} for package: {}", event.getType(), event.getPkg().getPackageName());
 
-        if (event.getPkg().getAgent() != null && event.getPkg().getAgent().getOwner() != null) {
-            emailService.sendPackageStatusNotification(event.getPkg().getAgent().getOwner().getEmail(), event.getPkg().getPackageName(), event.getType(), event.getReason());
+        if (event.getPkg().getAgent() != null) {
+            String agentEmail = event.getPkg().getAgent().getOwner() != null
+                    ? event.getPkg().getAgent().getOwner().getEmail()
+                    : null;
+            if (agentEmail != null) {
+                emailService.sendPackageStatusNotification(agentEmail, event.getPkg().getPackageName(), event.getType(), event.getReason());
+            } else {
+                System.err.println("Skipping package status email — agent has no email (agentId: " + event.getPkg().getAgent().getId() + ")");
+            }
+
+            if ("APPROVED".equals(event.getType())) {
+                userNotificationService.notifyAgent(
+                    event.getPkg().getAgent(),
+                    "package",
+                    "Package Approved",
+                    "Your package '" + event.getPkg().getPackageName() + "' has been approved by admin."
+                );
+            } else if ("REJECTED".equals(event.getType())) {
+                userNotificationService.notifyAgent(
+                    event.getPkg().getAgent(),
+                    "package",
+                    "Package Rejected",
+                    "Your package '" + event.getPkg().getPackageName() + "' was rejected by admin. Reason: " + event.getReason()
+                );
+            }
+        }
+    }
+
+    @Async
+    @EventListener
+    public void handlePaymentEvent(PaymentEvent event) {
+        log.info("Handling payment event: {} for payment ID: {}", event.getType(), event.getPayment().getId());
+        Payment payment = event.getPayment();
+        Booking booking = payment.getBooking();
+        Agent agent = (booking != null && booking.getPkg() != null) ? booking.getPkg().getAgent() : payment.getAgent();
+        User tourist = payment.getUser();
+
+        if ("COMPLETED".equals(event.getType())) {
+            if (agent != null) {
+                userNotificationService.notifyAgent(
+                    agent,
+                    "payment",
+                    "Payment Received",
+                    "Payment of $" + payment.getAmount() + " received for booking " + (booking != null ? String.format("BK%05d", booking.getId()) : "")
+                );
+            }
+            if (tourist != null) {
+                userNotificationService.notifyUser(
+                    tourist.getId(),
+                    "payment",
+                    "Payment Successful",
+                    "Your payment of $" + payment.getAmount() + " for booking " + (booking != null ? String.format("BK%05d", booking.getId()) : "") + " was successful.",
+                    "/tourist/bookings"
+                );
+            }
+        } else if ("FAILED".equals(event.getType())) {
+            if (agent != null) {
+                userNotificationService.notifyAgent(
+                    agent,
+                    "payment",
+                    "Payment Failed",
+                    "Payment of $" + payment.getAmount() + " failed for booking " + (booking != null ? String.format("BK%05d", booking.getId()) : "")
+                );
+            }
+            if (tourist != null) {
+                userNotificationService.notifyUser(
+                    tourist.getId(),
+                    "payment",
+                    "Payment Failed",
+                    "Your payment of $" + payment.getAmount() + " for booking " + (booking != null ? String.format("BK%05d", booking.getId()) : "") + " has failed.",
+                    "/tourist/bookings"
+                );
+            }
         }
     }
 }

@@ -18,9 +18,6 @@ public class CreatePackageRequest {
     @NotBlank(message = "Category is required")
     private String category; // CULTURE, BEACH, MOUNTAIN, CITY, WILDLIFE
 
-    @NotBlank(message = "Destination is required")
-    @Size(max = 200)
-    private String destination;
 
     @NotBlank(message = "District is required")
     private String district;
@@ -37,22 +34,22 @@ public class CreatePackageRequest {
     @Size(max = 50)
     private String duration;
 
-    @NotNull(message = "Price from is required")
 
-    private Double priceFrom;
-
-    @NotNull(message = "Price to is required")
-    private Double priceTo;
 
     @Size(max = 2000)
     private String description;
 
-    @Size(max = 1000)
-    private String festivalDetails;
-
     private Boolean isActive = true;
 
-    private Boolean trending = false;
+
+
+    // ── Package type & per-person pricing ─────────────────────
+    private String packageType;       // "SINGLE_DISTRICT" or "MULTI_DISTRICT"
+    private Double basePriceAdult;    // price per adult
+    private Double basePriceChild;    // price per child
+
+    private List<String> inclusions;
+
 
     // For PUT — existing image URLs to keep (omit to delete)
     private List<String> existingImageUrls;

@@ -89,8 +89,13 @@ public interface ReviewRepository extends JpaRepository<Review, Long> {
 
     // ── Agent queries ────────────────────────────────
 
-    List<Review> findByAgent_Id(Long agentId);
-    List<Review> findByAgent_IdAndRating(Long agentId, Integer rating);
+    @EntityGraph(attributePaths = {"pkg", "user"})
+    @Query("SELECT r FROM Review r WHERE r.agent.id = :agentId OR (r.pkg IS NOT NULL AND r.pkg.agent.id = :agentId)")
+    List<Review> findByAgent_Id(@Param("agentId") Long agentId);
+
+    @EntityGraph(attributePaths = {"pkg", "user"})
+    @Query("SELECT r FROM Review r WHERE (r.agent.id = :agentId OR (r.pkg IS NOT NULL AND r.pkg.agent.id = :agentId)) AND r.rating = :rating")
+    List<Review> findByAgent_IdAndRating(@Param("agentId") Long agentId, @Param("rating") Integer rating);
 
     // ── Agent rating aggregation (computed from package reviews) ──
 

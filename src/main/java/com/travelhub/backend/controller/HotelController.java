@@ -40,5 +40,13 @@ public class HotelController {
     public ResponseEntity<List<Map<String, Object>>> getHotelsForChatbot() {
     return ResponseEntity.ok(hotelService.getAllHotelsForChatbot());
     }
+
+    // ── Hotel search for package creation (autocomplete) ──────────────────
+    @GetMapping("/search")
+    public ResponseEntity<List<HotelResponse>> searchHotels(
+            @RequestParam String query,
+            @RequestParam(required = false) String district) {
+        return ResponseEntity.ok(hotelService.searchHotels(query, district));
+    }
 }
  

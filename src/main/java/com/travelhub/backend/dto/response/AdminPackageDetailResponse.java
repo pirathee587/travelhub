@@ -7,13 +7,12 @@ public record AdminPackageDetailResponse(
         // ── Basic Info ─────────────────────────────────
         Long   id,
         String packageName,
-        String destination,
+
         String district,
 
         // ── Price ──────────────────────────────────────
         // Frontend-ல் $450 per person
-        Double priceFrom,
-        Double priceTo,
+
 
         // ── Gallery ────────────────────────────────────
         // Multiple images — 1/3, 2/3, 3/3
@@ -45,7 +44,7 @@ public record AdminPackageDetailResponse(
         Double  rating,
         Integer reviewCount,
         String  category,
-        Boolean trending,
+
         Boolean isActive
 
 ) {

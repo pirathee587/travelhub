@@ -12,7 +12,7 @@ import lombok.NoArgsConstructor;
 public class PackageResponse {
     private Long id;
     private String packageName;
-    private String destination;
+
     private String startPlace;
     private String endPlace;
     private Double priceFrom;
@@ -24,8 +24,7 @@ public class PackageResponse {
     private String imageUrl;
     private Double rating;
     private Integer reviewCount;
-    private String festivalDetails;
-    private Boolean trending;
+
     private String agentName;
     private String district;
     private String packageType;
