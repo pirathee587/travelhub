@@ -58,19 +58,24 @@ public class ImageUploadService {
     // Old method — keeps working for agent image uploads
     public ImageUploadResponse uploadRoomImage(MultipartFile file) {
         return uploadToBucket(file, roomBucket);   //  pointing to reviewBucket
+        return uploadToBucket(file, roomBucket, null);
+    }
+
+    public ImageUploadResponse uploadRoomImage(MultipartFile file, String folder) {
+        return uploadToBucket(file, roomBucket, folder);
     }
 
     public ImageUploadResponse uploadHotelImage(MultipartFile file) {
-        return uploadToBucket(file, hotelBucket);
+        return uploadToBucket(file, hotelBucket, null);
     }
 
     public ImageUploadResponse uploadProfileImage(MultipartFile file) {
-        return uploadToBucket(file, userBucket);
+        return uploadToBucket(file, userBucket, null);
     }
 
                                                             //Dedicated method for review image uploads
     public ImageUploadResponse uploadReviewImage(MultipartFile file) {
-        return uploadToBucket(file, reviewBucket);
+        return uploadToBucket(file, reviewBucket, null);
     }
 
     public ImageUploadResponse uploadPackageImage(MultipartFile file) {
@@ -78,6 +83,7 @@ public class ImageUploadService {
     }
 
     private ImageUploadResponse uploadToBucket(MultipartFile file, String bucketName) {
+    private ImageUploadResponse uploadToBucket(MultipartFile file, String bucketName, String folder) {
 
         // ── Step 1: Validate ──────────────────────────────────────────────────
         if (file == null || file.isEmpty()) {
@@ -106,6 +112,9 @@ public class ImageUploadService {
 
         // ── Step 2: Generate unique filename ─────────────────────────────────
         String uniqueFileName = UUID.randomUUID().toString() + extension;
+        if (folder != null && !folder.isBlank()) {
+            uniqueFileName = folder + "/" + uniqueFileName;
+        }
 
         // ── Step 3 & 4: Upload to Supabase ───────────────────────────────────
         try {

@@ -10,6 +10,7 @@ public class OwnerSessionResponse {
     private String name;
     private String email;
     private String role;
+<<<<<<< HEAD
     /** users.status — PENDING, ACTIVE, DEACTIVATED */
     private String status;
     /** users.is_active */
@@ -18,5 +19,11 @@ public class OwnerSessionResponse {
     private Boolean isApproved;
     /** true when role is HOTEL_OWNER, approved, and active */
     private Boolean accessGranted;
+=======
+    private String status;
+    private Boolean isActive;
+    private Boolean isApproved;
+    private boolean accessGranted;
+>>>>>>> develop
     private String message;
 }

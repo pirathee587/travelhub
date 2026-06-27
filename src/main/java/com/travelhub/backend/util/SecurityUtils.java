@@ -14,7 +14,7 @@ import java.security.Key;
 @Component
 public class SecurityUtils {
 
-    @Value("${app.jwt.secret:travelhub_secret_key_minimum_32_chars_long}")
+    @Value("${jwt.secret:travelhub_secret_key_minimum_32_chars_long}")
     private String jwtSecret;
 
     private static String staticJwtSecret;

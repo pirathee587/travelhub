@@ -57,6 +57,13 @@ public class SecurityConfig {
                         .requestMatchers("/api/v1/owner/profile/**").permitAll()
                         .requestMatchers("/api/v1/rooms/**").permitAll()
                         .requestMatchers("/api/rooms/**").permitAll()
+                        .requestMatchers("/api/v1/owner/session/**").permitAll()
+                        .requestMatchers("/api/v1/owner/profile/**").permitAll()
+                        .requestMatchers("/api/v1/owner/notifications/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/rooms/**").permitAll()
+                        .requestMatchers("/api/rooms/**").permitAll()
+                        .requestMatchers("/api/v1/rooms/**").permitAll()
+
                         .requestMatchers("/api/v1/amenities/**").permitAll()
                         .requestMatchers("/api/reviews/**").permitAll()
                         .requestMatchers("/api/upload/**").permitAll()
@@ -87,12 +94,20 @@ public class SecurityConfig {
                 "http://localhost:5173",
                 "http://localhost:5174",
                 "http://localhost:8080",
+<<<<<<< HEAD
                 "http://localhost:8001",
                 "http://localhost:8082",
                 "http://localhost:3000"
         ));
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("Authorization", "Content-Type", "X-Owner-Id", "X-Owner-Email"));
+=======
+                "http://localhost:8082",
+                "http://localhost:3000"
+        ));
+        configuration.setAllowedMethods(List.of("*"));
+        configuration.setAllowedHeaders(List.of("*"));
+>>>>>>> develop
         configuration.setAllowCredentials(true);
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);

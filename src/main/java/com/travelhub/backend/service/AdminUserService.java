@@ -6,19 +6,25 @@ import com.travelhub.backend.dto.response.AdminUserResponse;
 import com.travelhub.backend.entity.User;
 import com.travelhub.backend.enums.Role;
 import com.travelhub.backend.event.UserAccountEvent;
+import com.travelhub.backend.repository.AgentRepository;
 import com.travelhub.backend.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
+import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
+@Transactional(readOnly = true)
 public class AdminUserService {
 
-    private final UserRepository         userRepository;
-    private final ApplicationEventPublisher eventPublisher; // ← சேர்க்கணும்
+    private final UserRepository            userRepository;
+    private final AgentRepository           agentRepository;
+    private final ApplicationEventPublisher eventPublisher;
+    private final PasswordEncoder           passwordEncoder;
 
     // ── Get All Users ─────────────────────────────────
     public List<AdminUserResponse> getAllUsers() {
@@ -111,8 +117,8 @@ public class AdminUserService {
                     "User is not an Agent");
 
         user.setAgentApproved(true);
+        user.setStatus("ACTIVE");
         userRepository.save(user);
-
 
         eventPublisher.publishEvent(
                 new UserAccountEvent(
@@ -135,8 +141,8 @@ public class AdminUserService {
                     "User is not an Agent");
 
         user.setAgentApproved(false);
+        user.setStatus("REJECTED");
         userRepository.save(user);
-
 
         eventPublisher.publishEvent(
                 new UserAccountEvent(
@@ -145,7 +151,7 @@ public class AdminUserService {
         return mapToResponse(user);
     }
 
-    // ── Delete User ───────────────────────────────────
+    // ── Delete User ───────────────────────────────────────────────────────────
     @Transactional
     public void deleteUser(Long id) {
         User user = userRepository.findById(id)
@@ -158,6 +164,44 @@ public class AdminUserService {
                     "Cannot delete Admin accounts");
 
         userRepository.delete(user);
+    }
+
+    // ── Create Admin (internal only — max 1 admin allowed) ────────────────────
+    @Transactional
+    public AdminUserResponse createAdmin(Map<String, String> body) {
+        // ── Enforce single-admin rule ──────────────────────────────────────────
+        long existingAdminCount = userRepository.countByRole(Role.ADMIN);
+        if (existingAdminCount >= 1) {
+            throw new BadRequestException(
+                "Only one Admin account is allowed in the system. " +
+                "An Admin already exists. Please use the existing Admin account.");
+        }
+
+        String name     = body.getOrDefault("name", "Admin");
+        String email    = body.getOrDefault("email", "");
+        String password = body.getOrDefault("password", "");
+
+        if (email.isBlank())
+            throw new BadRequestException("Email is required");
+        if (password.isBlank())
+            throw new BadRequestException("Password is required");
+        if (userRepository.existsByEmail(email))
+            throw new BadRequestException("Email already in use: " + email);
+
+        User admin = User.builder()
+                .name(name)
+                .email(email)
+                .password(passwordEncoder.encode(password))
+                .role(Role.ADMIN)
+                .isEmailVerified(true)  // Skip email verification
+                .status("ACTIVE")
+                .isActive(true)
+                .agentApproved(true)
+                .build();
+
+        userRepository.save(admin);
+        System.out.println("[AdminUserService] New admin created: " + email);
+        return mapToResponse(admin);
     }
 
     // ── Map Entity to Response ────────────────────────

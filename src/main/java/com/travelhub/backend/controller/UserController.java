@@ -18,6 +18,7 @@ import org.springframework.web.bind.annotation.*;
 public class UserController {
 
     private final UserService userService;
+    private final PasswordEncoder passwordEncoder;
 
     @GetMapping("/me")
     public ResponseEntity<User> getCurrentUser() {
@@ -42,15 +43,14 @@ public class UserController {
     }
 
     @PostMapping("/change-password")
-    public ResponseEntity<?> changePassword(@RequestBody UpdatePasswordRequest request,
-                                           PasswordEncoder passwordEncoder) {
+    public ResponseEntity<?> changePassword(@RequestBody UpdatePasswordRequest request) {
         Claims claims = SecurityUtils.getCurrentUserClaims();
         if (claims == null) {
             return ResponseEntity.status(401).build();
         }
 
         Long userId = Long.valueOf(claims.get("userId").toString());
-        userService.changePassword(userId, request, passwordEncoder);
+        userService.changePassword(userId, request);
         return ResponseEntity.ok(new ApiResponse(true, "Password changed successfully"));
     }
 }

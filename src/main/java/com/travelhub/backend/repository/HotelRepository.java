@@ -18,6 +18,8 @@ public interface HotelRepository
     // Pending, Approved, Rejected Hotel
     List<Hotel> findByApplicationStatus(String applicationStatus);
 
+    long countByApplicationStatus(String applicationStatus);
+
     // Approved hotels filtered by district
     List<Hotel> findByApplicationStatusAndDistrictIgnoreCase(
             String applicationStatus, String district);
@@ -31,4 +33,5 @@ public interface HotelRepository
             String ownerEmail, String status);
 
     long countByOwnerIdAndApplicationStatus(Long ownerId, String applicationStatus);
+    List<Hotel> findTop5ByOrderByIdDesc();
 }

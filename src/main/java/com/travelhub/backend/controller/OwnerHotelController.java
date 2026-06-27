@@ -5,6 +5,7 @@ import com.travelhub.backend.dto.request.OwnerHotelRequest;
 import com.travelhub.backend.dto.response.HotelResponse;
 import com.travelhub.backend.dto.response.OwnerHotelSummaryResponse;
 import com.travelhub.backend.service.OwnerAccessService;
+import com.travelhub.backend.dto.response.HotelSummaryResponse;
 import com.travelhub.backend.service.OwnerHotelService;
 import com.travelhub.backend.util.OwnerContextResolver;
 import lombok.RequiredArgsConstructor;
@@ -38,6 +39,15 @@ public class OwnerHotelController {
         Long ownerId = requireOwnerId(devOwnerId);
         ownerAccessService.validateApprovedActiveHotelOwner(ownerId);
         return ResponseEntity.ok(ownerHotelService.getOwnerHotelSummary(ownerId));
+            @RequestHeader(value = "X-Owner-Id", required = false) Long ownerId,
+            @RequestParam(defaultValue = "Approved") String status) {
+        return ResponseEntity.ok(ownerHotelService.getOwnerHotels(ownerId, status));
+    }
+
+    @GetMapping("/summary")
+    public ResponseEntity<HotelSummaryResponse> getHotelSummary(
+            @RequestHeader(value = "X-Owner-Id", required = false) Long ownerId) {
+        return ResponseEntity.ok(ownerHotelService.getHotelSummary(ownerId));
     }
 
     @PostMapping

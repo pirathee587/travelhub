@@ -15,26 +15,43 @@ import org.springframework.stereotype.Service;
 public class UserService {
 
     private final UserRepository userRepository;
+    private final PasswordEncoder passwordEncoder;
+
 
     public User updateProfile(Long userId, UpdateProfileRequest request) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User", "id", userId));
 
         if (request.getName() != null) user.setName(request.getName());
+        if (request.getEmail() != null && !request.getEmail().trim().isEmpty()) {
+            String newEmail = request.getEmail().trim().toLowerCase();
+            if (!newEmail.equalsIgnoreCase(user.getEmail())) {
+                if (userRepository.existsByEmail(newEmail)) {
+                    throw new BadRequestException("Email is already in use by another account");
+                }
+                user.setEmail(newEmail);
+            }
+        }
         if (request.getTelephone() != null) user.setTelephone(request.getTelephone());
         if (request.getProfileImage() != null) user.setProfileImage(request.getProfileImage());
         if (request.getPreferredLanguage() != null) user.setPreferredLanguage(request.getPreferredLanguage());
         if (request.getNationality() != null) user.setNationality(request.getNationality());
+        if (request.getNicNumber() != null) user.setNicNumber(request.getNicNumber());
+        if (request.getNicImage() != null) user.setNicImage(request.getNicImage());
 
         return userRepository.save(user);
     }
 
-    public void changePassword(Long userId, UpdatePasswordRequest request, PasswordEncoder passwordEncoder) {
+    public void changePassword(Long userId, UpdatePasswordRequest request) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User", "id", userId));
 
         if (!passwordEncoder.matches(request.getCurrentPassword(), user.getPassword())) {
             throw new BadRequestException("Current password is incorrect");
+        }
+
+        if (passwordEncoder.matches(request.getNewPassword(), user.getPassword())) {
+            throw new BadRequestException("New password cannot be the same as the current password");
         }
 
         user.setPassword(passwordEncoder.encode(request.getNewPassword()));

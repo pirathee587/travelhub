@@ -14,7 +14,11 @@ import org.springframework.jdbc.core.JdbcTemplate;
 public class ConnectionCheckConfig {
 
     @Bean
-    public CommandLineRunner checkConnection(JdbcTemplate jdbcTemplate) {
+    public CommandLineRunner checkConnection(
+            JdbcTemplate jdbcTemplate,
+            com.travelhub.backend.repository.UserRepository userRepository,
+            com.travelhub.backend.security.JwtTokenProvider jwtTokenProvider
+    ) {
         return args -> {
             System.out.println("\n" + "=".repeat(50));
             System.out.println("[CONNECTION CHECK] Starting room/hotel integrity verification...");
@@ -71,6 +75,33 @@ public class ConnectionCheckConfig {
                                 throw new RuntimeException(e);
                             }
                         });
+
+                System.out.println("[DB] Listing all users in database:");
+                jdbcTemplate.query(
+                        "SELECT id, name, email, role, status, agent_approved FROM users",
+                        (org.springframework.jdbc.core.RowCallbackHandler) rs -> {
+                            try {
+                                System.out.println(
+                                        "   - id=" + rs.getLong("id")
+                                                + ", name=" + rs.getString("name")
+                                                + ", email=" + rs.getString("email")
+                                                + ", role=" + rs.getString("role")
+                                                + ", status=" + rs.getString("status")
+                                                + ", agent_approved=" + rs.getBoolean("agent_approved"));
+                            } catch (SQLException e) {
+                                throw new RuntimeException(e);
+                            }
+                        });
+
+                userRepository.findByEmail("saras69wathy+superadmin@gmail.com").ifPresent(admin -> {
+                    String token = jwtTokenProvider.generateToken(null, admin);
+                    System.out.println("\n🔑 [ADMIN AUTH TOKEN]");
+                    System.out.println("Copy the token below and run this in your browser console on http://localhost:5173 to log in as admin:");
+                    System.out.println("localStorage.setItem('token', '" + token + "'); localStorage.setItem('user', JSON.stringify({name: '" + admin.getName() + "', email: '" + admin.getEmail() + "', role: '" + admin.getRole().name() + "'})); window.location.reload();");
+                    System.out.println("Token: " + token);
+                    System.out.println("🔑 ====================\n");
+                });
+
             } catch (RuntimeException e) {
                 System.err.println("[FAILED]  Room/hotel integrity check: " + e.getMessage());
             }

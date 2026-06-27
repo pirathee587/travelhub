@@ -77,4 +77,14 @@ public class AdminUserController {
                         adminUserService
                                 .rejectAgent(id, reason)));
     }
+
+    // POST /api/admin/users/create-admin
+    // Only accessible by an existing Admin — creates another admin account instantly
+    @PostMapping("/create-admin")
+    public ResponseEntity<?> createAdmin(
+            @RequestBody Map<String, String> body) {
+        return ResponseEntity.ok(
+                new ApiResponse(true, "Admin account created",
+                        adminUserService.createAdmin(body)));
+    }
 }

@@ -39,6 +39,12 @@ public class AuthService {
     private final HotelRepository hotelRepository;
 
     public ApiResponse register(RegisterRequest request) {
+        // ── Security: block public registration as ADMIN ──────────────────
+        if (request.getRole() == Role.ADMIN) {
+            throw new BadRequestException(
+                "Public registration for ADMIN role is not allowed.");
+        }
+
         if (userRepository.existsByEmail(request.getEmail())) {
             throw new BadRequestException("Email already in use");
         }
@@ -53,6 +59,7 @@ public class AuthService {
                 .role(request.getRole())
                 .preferredLanguage(request.getPreferredLanguage())
                 .nationality(request.getNationality())
+                .agencyName(request.getAgencyName())
                 .nicNumber(request.getNicNumber())
                 .hotelName(request.getHotelName())
                 .businessRegistrationId(request.getBusinessRegistrationId())
@@ -73,16 +80,28 @@ public class AuthService {
             Agent agent = Agent.builder()
                     .owner(user)              // link agent to user via @ManyToOne relationship
                     .agencyName(user.getName())
+                    .owner(user)
+                    .agencyName(user.getAgencyName() != null ? user.getAgencyName() : user.getName() + "'s Agency")
+                    .agencyNumber(user.getTelephone())
                     .isActive(true)
                     .build();
             agentRepository.save(agent);
         } else if (user.getRole() == Role.HOTEL_OWNER) {
+            String defaultImage = "https://images.unsplash.com/photo-1566073771259-6a8506099945?q=80&w=2070&auto=format&fit=crop";
             Hotel hotel = Hotel.builder()
                     .hotelName(user.getHotelName() != null ? user.getHotelName() : user.getName() + "'s Hotel")
                     .district(user.getDistrict())
+                    .owner(user)
+                    .ownerName(user.getName())
+                    .ownerEmail(user.getEmail())
+                    .ownerNic(user.getNicNumber())
+                    .phoneNumber(user.getTelephone())
+                    .hotelEmail(user.getEmail())
+                    .imageUrl(defaultImage)
                     .build();
             hotel = hotelRepository.save(hotel);
             user.setHotelId(hotel.getId());
+            userRepository.save(user);
         }
 
         // Save User again to cascade the linked profile relationships
@@ -125,13 +144,18 @@ public class AuthService {
 
         String jwt = tokenProvider.generateToken(authentication, user);
 
+        Long firstAgentId = null;
+        if (user.getRole() == Role.AGENT && user.getAgencies() != null && !user.getAgencies().isEmpty()) {
+            firstAgentId = user.getAgencies().get(0).getId();
+        }
+
         return LoginResponse.builder()
                 .token(jwt)
                 .name(user.getName())
                 .email(user.getEmail())
                 .role(user.getRole())
                 .profileImage(user.getProfileImage())
-                .agentId(user.getAgentId())
+                .agentId(firstAgentId)
                 .hotelId(user.getHotelId())
                 .id(user.getId())
                 .build();
