@@ -30,7 +30,11 @@ public class JwtTokenProvider {
         Map<String, Object> claims = new HashMap<>();
         claims.put("role", user.getRole().name());
         claims.put("userId", user.getId());
-        claims.put("agentId", user.getAgencies() != null && !user.getAgencies().isEmpty() ? user.getAgencies().get(0).getId() : null);
+        Long agentId = null;
+        if (user.getRole() == Role.AGENT && user.getAgencies() != null && !user.getAgencies().isEmpty()) {
+            agentId = user.getAgencies().get(0).getId();
+        }
+        claims.put("agentId", agentId);
         claims.put("hotelId", user.getHotelId());
 
         return Jwts.builder()

@@ -79,6 +79,9 @@ public class Package {
     @Builder.Default
     private String applicationStatus = "Pending";
 
+    @Builder.Default
+    private Boolean trending = false;
+
     // ── Stats (set by review system) ───────────────────────────
     private Double rating;
     private Integer reviewCount;
