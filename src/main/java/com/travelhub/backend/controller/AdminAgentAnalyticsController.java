@@ -13,7 +13,7 @@ import java.time.LocalDateTime;
 @RestController
 @RequestMapping("/api/admin/analytics")
 @RequiredArgsConstructor
-@CrossOrigin(origins = "*")
+
 @PreAuthorize("hasRole('ADMIN')")
 public class AdminAgentAnalyticsController {
 

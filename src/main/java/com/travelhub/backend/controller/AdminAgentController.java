@@ -11,7 +11,7 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/api/admin/agents")
 @RequiredArgsConstructor
-@CrossOrigin(origins = "*")
+
 @PreAuthorize("hasRole('ADMIN')")
 public class AdminAgentController {
 
@@ -57,6 +57,7 @@ public class AdminAgentController {
                         adminAgentService
                                 .getAgentPackages(id)));
     }
+
 
     // ── PATCH /api/admin/agents/{id}/toggle-active ────
     @PatchMapping("/{id}/toggle-active")

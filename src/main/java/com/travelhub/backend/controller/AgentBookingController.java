@@ -84,12 +84,12 @@ public class AgentBookingController {
         return ResponseEntity.ok(agentBookingService.completeBooking(agentId, bookingId));
     }
 
-    // PATCH: confirmed or in_progress → cancelled (emergency cancellation)
+    // PATCH: confirmed or in_progress → cancelled (emergency cancellation by agent)
     @PatchMapping("/{agentId}/bookings/{bookingId}/cancel")
     public ResponseEntity<BookingResponse> cancelBooking(
             @PathVariable Long agentId,
             @PathVariable Long bookingId,
-            @RequestBody BookingActionRequest request) {
+            @RequestBody(required = false) BookingActionRequest request) {
         return ResponseEntity.ok(agentBookingService.cancelBooking(agentId, bookingId, request));
     }
 }

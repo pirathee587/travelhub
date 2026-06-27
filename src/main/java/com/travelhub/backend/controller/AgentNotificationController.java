@@ -2,41 +2,57 @@ package com.travelhub.backend.controller;
 
 import com.travelhub.backend.dto.response.NotificationResponse;
 import com.travelhub.backend.service.AgentNotificationService;
+import com.travelhub.backend.util.SecurityUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
 import java.util.List;
 
+/**
+ * AgentNotificationController
+ *
+ * Base path : /api/v1/agent/notifications
+ * Security  : agentId resolved from JWT — NOT from URL path (safe ✅)
+ *
+ * Frontend  : agentNotificationApi.js calls /v1/agent/notifications (no agentId in URL)
+ */
 @RestController
-@RequestMapping("/api/v1/agent")
+@RequestMapping("/api/v1/agent/notifications")
 @RequiredArgsConstructor
 public class AgentNotificationController {
 
     private final AgentNotificationService agentNotificationService;
 
-    @GetMapping("/{agentId}/notifications")
-    public ResponseEntity<List<NotificationResponse>> getNotifications(
-            @PathVariable Long agentId) {
+    // GET /api/v1/agent/notifications
+    @GetMapping
+    public ResponseEntity<List<NotificationResponse>> getNotifications() {
+        Long agentId = SecurityUtils.getCurrentAgentId();
         return ResponseEntity.ok(agentNotificationService.getNotifications(agentId));
     }
 
-    @PatchMapping("/{agentId}/notifications/{notificationId}/read")
+    // PATCH /api/v1/agent/notifications/{id}/read
+    @PatchMapping("/{notificationId}/read")
     public ResponseEntity<NotificationResponse> markAsRead(
-            @PathVariable Long agentId,
             @PathVariable Long notificationId) {
-        return ResponseEntity.ok(agentNotificationService.markAsRead(agentId, notificationId));
+        Long agentId = SecurityUtils.getCurrentAgentId();
+        return ResponseEntity.ok(
+                agentNotificationService.markAsRead(agentId, notificationId));
     }
 
-    @PatchMapping("/{agentId}/notifications/read-all")
-    public ResponseEntity<Void> markAllAsRead(@PathVariable Long agentId) {
+    // PATCH /api/v1/agent/notifications/read-all
+    @PatchMapping("/read-all")
+    public ResponseEntity<Void> markAllAsRead() {
+        Long agentId = SecurityUtils.getCurrentAgentId();
         agentNotificationService.markAllAsRead(agentId);
         return ResponseEntity.ok().build();
     }
 
-    @DeleteMapping("/{agentId}/notifications/{notificationId}")
+    // DELETE /api/v1/agent/notifications/{id}
+    @DeleteMapping("/{notificationId}")
     public ResponseEntity<Void> deleteNotification(
-            @PathVariable Long agentId,
             @PathVariable Long notificationId) {
+        Long agentId = SecurityUtils.getCurrentAgentId();
         agentNotificationService.deleteNotification(agentId, notificationId);
         return ResponseEntity.noContent().build();
     }

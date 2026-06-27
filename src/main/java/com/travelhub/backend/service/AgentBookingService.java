@@ -11,6 +11,7 @@ import com.travelhub.backend.repository.BookingRepository;
 import com.travelhub.backend.repository.DriverRepository;
 import com.travelhub.backend.repository.VehicleRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
 import com.travelhub.backend.event.BookingEvent;
 import org.springframework.stereotype.Service;
@@ -20,6 +21,7 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 @Transactional
 public class AgentBookingService {
 
@@ -27,6 +29,7 @@ public class AgentBookingService {
     private final VehicleRepository vehicleRepository;
     private final DriverRepository driverRepository;
     private final ApplicationEventPublisher eventPublisher;
+    private final UserNotificationService userNotificationService;
 
     // ── GET ALL / GET BY ID ───────────────────────────────────────────────────
 
@@ -51,7 +54,7 @@ public class AgentBookingService {
     public BookingResponse acceptBooking(Long agentId, Long bookingId, Long vehicleId) {
         Booking booking = findAndValidate(agentId, bookingId);
 
-        if (!booking.getStatus().equals("pending")) {
+        if (!booking.getStatus().equals("pending") && !booking.getStatus().equals("confirmed")) {
             throw new BadRequestException("Only pending bookings can be accepted");
         }
 
@@ -77,6 +80,21 @@ public class AgentBookingService {
         }
 
         eventPublisher.publishEvent(new BookingEvent(this, saved, "APPROVED"));
+        log.info("Booking APPROVED event published for booking {}", bookingId);
+
+        // Persist in-app notification for tourist with payment link
+        try {
+            userNotificationService.notifyUser(
+                    saved.getUser().getId(),
+                    "booking",
+                    "Booking Approved!",
+                    "Your booking for " + saved.getPkg().getPackageName() + " has been approved. Proceed to payment to confirm your trip.",
+                    "/payment/" + saved.getId()
+            );
+        } catch (Exception e) {
+            log.warn("Could not create tourist in-app notification for APPROVED booking {}: {}", bookingId, e.getMessage());
+        }
+
         return toResponse(saved);
     }
 
@@ -116,7 +134,7 @@ public class AgentBookingService {
                                           BookingActionRequest request) {
         Booking booking = findAndValidate(agentId, bookingId);
 
-        if (!booking.getStatus().equals("pending")) {
+        if (!booking.getStatus().equals("pending") && !booking.getStatus().equals("confirmed")) {
             throw new BadRequestException("Only pending bookings can be declined");
         }
 
@@ -135,7 +153,25 @@ public class AgentBookingService {
             }
         }
 
-        eventPublisher.publishEvent(new BookingEvent(this, saved, "DECLINED", request != null ? request.getDeclineReason() : "Declined by agent"));
+        String reason = (request != null) ? request.getDeclineReason() : null;
+        eventPublisher.publishEvent(new BookingEvent(this, saved, "DECLINED", reason));
+        log.info("Booking DECLINED event published for booking {}", bookingId);
+
+        // Persist in-app notification for tourist with decline reason
+        try {
+            String declineMessage = "Your booking for " + saved.getPkg().getPackageName() + " has been declined."
+                    + (reason != null ? " Reason: " + reason : " Please contact the agent or try another package.");
+            userNotificationService.notifyUser(
+                    saved.getUser().getId(),
+                    "booking",
+                    "Booking Declined",
+                    declineMessage,
+                    "/my-trips"
+            );
+        } catch (Exception e) {
+            log.warn("Could not create tourist in-app notification for DECLINED booking {}: {}", bookingId, e.getMessage());
+        }
+
         return toResponse(saved);
     }
 
@@ -174,7 +210,7 @@ public class AgentBookingService {
         Booking booking = findAndValidate(agentId, bookingId);
 
         String status = booking.getStatus();
-        if (!status.equals("confirmed") && !status.equals("in_progress")) {
+        if (!status.equals("confirmed") && !status.equals("in_progress") && !status.equals("active")) {
             throw new BadRequestException("Only confirmed or in-progress bookings can be cancelled");
         }
 
@@ -208,6 +244,16 @@ public class AgentBookingService {
         return booking;
     }
 
+    private boolean isOwnedByAgent(Booking booking, Long agentId) {
+        try {
+            return booking.getPkg() != null
+                    && booking.getPkg().getAgent() != null
+                    && booking.getPkg().getAgent().getId().equals(agentId);
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
     private BookingResponse toResponse(Booking booking) {
         Driver d = booking.getDriver();
         com.travelhub.backend.entity.User tourist = booking.getUser();
@@ -222,7 +268,6 @@ public class AgentBookingService {
                 .touristPhone(tourist != null ? tourist.getTelephone() : null)
                 .basePriceAdult(pkg != null ? pkg.getBasePriceAdult() : null)
                 .basePriceChild(pkg != null ? pkg.getBasePriceChild() : null)
-
                 .startDate(booking.getStartDate())
                 .endDate(booking.getEndDate())
                 .status(booking.getStatus())

@@ -54,4 +54,6 @@ public interface PaymentRepository
 
     // User-ஆல் தேடு
     List<Payment> findByUserId(Long userId);
+
+    List<Payment> findByCreatedAtAfter(java.time.LocalDateTime startDate);
 }

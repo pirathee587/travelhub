@@ -3,8 +3,10 @@ package com.travelhub.backend.repository;
 import com.travelhub.backend.entity.User;
 import com.travelhub.backend.enums.Role;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
-
 import java.util.List;
 import java.util.Optional;
 
@@ -35,4 +37,16 @@ public interface UserRepository extends JpaRepository<User, Long> {
     Long countByRole(Role role);
     Optional<User> findByHotelId(Long hotelId);
 
+    @Query("SELECT a.owner FROM Agent a WHERE a.id = :agentId")
+    Optional<User> findByAgentId(@Param("agentId") Long agentId);
+
+    // ── Direct update for agent suspension (bypasses entity-loading/proxy issues) ──
+    @Modifying
+    @Query("UPDATE User u SET u.isActive = :isActive WHERE u.id = (SELECT a.owner.id FROM Agent a WHERE a.id = :agentId)")
+    int updateIsActiveByAgentId(@Param("agentId") Long agentId, @Param("isActive") Boolean isActive);
+
+    // ── Direct update for hotel owner suspension ────────────────────────────────
+    @Modifying
+    @Query("UPDATE User u SET u.isActive = :isActive WHERE u.hotelId = :hotelId")
+    int updateIsActiveByHotelId(@Param("hotelId") Long hotelId, @Param("isActive") Boolean isActive);
 }

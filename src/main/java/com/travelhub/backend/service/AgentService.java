@@ -29,15 +29,29 @@ public class AgentService {
 
     private static final String STATUS_COMPLETED = "completed";
 
-    /** Returns all Approved + active agents sorted A→Z by agencyName. */
+    /** Returns all Approved agents that have approved packages, sorted by package count descending (then A→Z by agencyName). */
     public List<AgentListResponse> getApprovedAgents() {
-        List<Agent> agents = agentRepository.findAll()
-                .stream()
+        List<Agent> allAgents = agentRepository.findAll();
+
+        // Build totalPackages map for all agents first to use in filter and sort
+        Map<Long, Integer> totalPackagesMap = allAgents.stream().collect(Collectors.toMap(
+                Agent::getId,
+                a -> packageService.getPackagesByAgentId(a.getId()).size()
+        ));
+
+        List<Agent> agents = allAgents.stream()
                 .filter(a -> a.getOwner() != null && Boolean.TRUE.equals(a.getOwner().getAgentApproved())
-                        && Boolean.TRUE.equals(a.getIsActive()))
-                .sorted(Comparator.comparing(
-                        a -> a.getAgencyName() != null ? a.getAgencyName() : "",
-                        String.CASE_INSENSITIVE_ORDER))
+                        && totalPackagesMap.getOrDefault(a.getId(), 0) > 0)
+                .sorted((a1, a2) -> {
+                    int count1 = totalPackagesMap.getOrDefault(a1.getId(), 0);
+                    int count2 = totalPackagesMap.getOrDefault(a2.getId(), 0);
+                    if (count1 != count2) {
+                        return Integer.compare(count2, count1); // Descending package count
+                    }
+                    String name1 = a1.getAgencyName() != null ? a1.getAgencyName() : "";
+                    String name2 = a2.getAgencyName() != null ? a2.getAgencyName() : "";
+                    return name1.compareToIgnoreCase(name2); // A-Z tie-breaker
+                })
                 .collect(Collectors.toList());
 
         // Bulk dynamic rating + totalTrips calculation to avoid N+1 queries
@@ -52,8 +66,13 @@ public class AgentService {
 
         return agents.stream()
                 .map(a -> toListResponse(a, ratingMap.getOrDefault(a.getId(), 0.0),
-                        totalTripsMap.getOrDefault(a.getId(), 0L).intValue()))
+                        totalTripsMap.getOrDefault(a.getId(), 0L).intValue(),
+                        totalPackagesMap.getOrDefault(a.getId(), 0)))
                 .collect(Collectors.toList());
+    }
+
+    public List<Agent> getDebugAgents() {
+        return agentRepository.findAll();
     }
 
     /** Returns a single agent profile with their approved active packages. */
@@ -98,7 +117,7 @@ public class AgentService {
                 .build();
     }
 
-    private AgentListResponse toListResponse(Agent agent, Double computedRating, Integer computedTotalTrips) {
+    private AgentListResponse toListResponse(Agent agent, Double computedRating, Integer computedTotalTrips, Integer computedTotalPackages) {
         return AgentListResponse.builder()
                 .id(agent.getId())
                 .agencyName(agent.getAgencyName())
@@ -108,6 +127,7 @@ public class AgentService {
                 .location(agent.getLocation())
                 .rating(computedRating)
                 .totalTrips(computedTotalTrips)
+                .totalPackages(computedTotalPackages)
                 .memberSince(agent.getMemberSince() != null ? agent.getMemberSince().toString() : null)
                 .build();
     }

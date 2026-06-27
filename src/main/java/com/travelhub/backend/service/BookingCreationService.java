@@ -1,16 +1,5 @@
 package com.travelhub.backend.service;
 
-import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.travelhub.backend.dto.request.BookingRequest;
 import com.travelhub.backend.dto.response.BookingResponse;
@@ -26,8 +15,20 @@ import com.travelhub.backend.repository.PackageRepository;
 import com.travelhub.backend.repository.UserRepository;
 import com.travelhub.backend.repository.VehicleRepository;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import com.travelhub.backend.event.BookingEvent;
+
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
@@ -44,6 +45,8 @@ public class BookingCreationService {
     private final BookingService bookingService;
     private final BookingHotelPreferenceRepository bookingHotelPreferenceRepository;
     private final ApplicationEventPublisher eventPublisher;
+    private final UserNotificationService userNotificationService;
+
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     public BookingResponse createBooking(BookingRequest request) {
@@ -58,7 +61,8 @@ public class BookingCreationService {
         User user = userRepository.findById(request.getUserId())
                 .orElseThrow(() -> {
                     logger.error("User not found: {}", request.getUserId());
-                    return new RuntimeException("User with ID " + request.getUserId() + " not found. Please ensure you are logged in.");
+                    return new RuntimeException(
+                            "User with ID " + request.getUserId() + " not found. Please ensure you are logged in.");
                 });
         logger.info("✓ User validated: {}", user.getEmail());
 
@@ -80,10 +84,14 @@ public class BookingCreationService {
                             return new RuntimeException("Hotel not found: " + hotelId);
                         });
 
-                if (h.getDistrict() != null && pkg.getDistrict() != null
-                        && !h.getDistrict().equalsIgnoreCase(pkg.getDistrict())) {
-                    logger.error("District mismatch: hotel={}, package={}", h.getDistrict(), pkg.getDistrict());
-                    throw new RuntimeException("Selected hotel's district does not match package's district");
+                // District Matching Validation
+                if (h.getDistrict() != null && pkg.getDistrict() != null) {
+                    String hDist = h.getDistrict().replaceAll("(?i)\\s*district$", "").trim();
+                    String pDist = pkg.getDistrict().replaceAll("(?i)\\s*district$", "").trim();
+                    if (!hDist.equalsIgnoreCase(pDist)) {
+                        logger.error("District mismatch: hotel={}, package={}", h.getDistrict(), pkg.getDistrict());
+                        throw new RuntimeException("Selected hotel's district does not match package's district");
+                    }
                 }
                 logger.debug("  ✓ Hotel validated: {} ({})", h.getHotelName(), h.getDistrict());
             }
@@ -92,7 +100,8 @@ public class BookingCreationService {
 
         // Step 4: Calculate end date from start date + duration
         logger.debug("Step 4: Calculating end date from {} + {}", request.getStartDate(), request.getDuration());
-        LocalDate endDate = calculateEndDate(request.getStartDate(), request.getDuration() != null ? request.getDuration() : pkg.getDuration());
+        LocalDate endDate = calculateEndDate(request.getStartDate(),
+                request.getDuration() != null ? request.getDuration() : pkg.getDuration());
         logger.info("✓ End date calculated: {}", endDate);
 
         // Step 5: Convert hotelIds list with preference order to JSON string
@@ -141,9 +150,27 @@ public class BookingCreationService {
 
         eventPublisher.publishEvent(new BookingEvent(this, saved, "CREATED"));
 
-        // Step 7: Save hotel preferences to separate table
-        if (request.getHotelIds() != null && !request.getHotelIds().isEmpty()) {
-            logger.debug("Step 7: Saving {} hotel preferences", request.getHotelIds().size());
+        // Step 8: Save hotel preferences to separate table
+        if (request.getBookingHotelPreferences() != null && !request.getBookingHotelPreferences().isEmpty()) {
+            logger.debug("Step 8: Saving {} hotel preferences with room names", request.getBookingHotelPreferences().size());
+            List<BookingHotelPreference> preferences = new ArrayList<>();
+            for (int i = 0; i < request.getBookingHotelPreferences().size(); i++) {
+                BookingRequest.HotelPreferenceDto prefDto = request.getBookingHotelPreferences().get(i);
+                Hotel hotel = hotelRepository.findById(prefDto.getHotelId()).get();
+
+                BookingHotelPreference pref = BookingHotelPreference.builder()
+                        .booking(saved)
+                        .hotel(hotel)
+                        .preferenceNumber(i)
+                        .roomName(prefDto.getRoomName())
+                        .isSelected(true)
+                        .build();
+                preferences.add(pref);
+            }
+            bookingHotelPreferenceRepository.saveAll(preferences);
+            logger.info("✓ Hotel preferences saved");
+        } else if (request.getHotelIds() != null && !request.getHotelIds().isEmpty()) {
+            logger.debug("Step 8: Saving {} hotel preferences (legacy)", request.getHotelIds().size());
             List<BookingHotelPreference> preferences = new ArrayList<>();
             for (int i = 0; i < request.getHotelIds().size(); i++) {
                 Long hotelId = request.getHotelIds().get(i);
@@ -153,45 +180,30 @@ public class BookingCreationService {
                         .booking(saved)
                         .hotel(hotel)
                         .preferenceNumber(i)
+                        .roomName("Standard Room") // Default fallback
                         .isSelected(true)
                         .build();
                 preferences.add(pref);
             }
             bookingHotelPreferenceRepository.saveAll(preferences);
-            logger.info("✓ Hotel preferences saved");
+            logger.info("✓ Hotel preferences (legacy) saved");
         }
 
-        // Step 8: Fetch and return response
-        logger.debug("Step 8: Fetching booking response");
-        BookingResponse response = bookingService.getBookingById(saved.getId());
-        logger.info("========== BOOKING CREATION SUCCESS ==========");
-        logger.info("Booking ID: {}", response.getId());
-        logger.info("Booking Reference: {}", response.getBookingId());
-
-        return response;
+        logger.info("========== BOOKING CREATION END SUCCESS ==========");
+        return bookingService.getBookingById(saved.getId());
     }
 
     private LocalDate calculateEndDate(LocalDate startDate, String duration) {
-        if (duration == null || duration.isEmpty()) {
-            return startDate;
-        }
+        int days = 1;
 
-        try {
-            String[] parts = duration.toLowerCase().trim().split(" ");
-            int value = Integer.parseInt(parts[0]);
-
-            if (duration.toLowerCase().contains("week")) {
-                return startDate.plusWeeks(value);
-            } else if (duration.toLowerCase().contains("day")) {
-                return startDate.plusDays(value);
-            } else if (duration.toLowerCase().contains("month")) {
-                return startDate.plusMonths(value);
-            } else {
-                return startDate.plusDays(value);
+        if (duration != null) {
+            String clean = duration.toLowerCase().replaceAll("[^0-9]", "");
+            if (!clean.isEmpty()) {
+                days = Integer.parseInt(clean);
             }
-        } catch (Exception e) {
-            return startDate;
         }
+
+        return startDate.plusDays(days - 1);
     }
 
     private String convertHotelIdsToJson(List<Long> hotelIds) {

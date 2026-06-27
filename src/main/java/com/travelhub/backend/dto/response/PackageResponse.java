@@ -15,7 +15,8 @@ public class PackageResponse {
 
     private String startPlace;
     private String endPlace;
-
+    private Double priceFrom;
+    private Double priceTo;
     private Double basePriceAdult;
     private Double basePriceChild;
     private String duration;
@@ -24,7 +25,7 @@ public class PackageResponse {
     private Double rating;
     private Integer reviewCount;
 
-
     private String agentName;
     private String district;
+    private String packageType;
 }

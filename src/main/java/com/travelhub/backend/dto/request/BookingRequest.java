@@ -17,4 +17,11 @@ public class BookingRequest {
     private String specialRequests;
     private String duration;
     private String accommodationOption;  // "SELF_ARRANGE" or "AGENCY"
+    private List<HotelPreferenceDto> bookingHotelPreferences;
+
+    @Data
+    public static class HotelPreferenceDto {
+        private Long hotelId;
+        private String roomName;
+    }
 }

@@ -10,6 +10,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/tourist")
 @RequiredArgsConstructor
+
 public class DocumentController {
 
     private final DocumentService documentService;

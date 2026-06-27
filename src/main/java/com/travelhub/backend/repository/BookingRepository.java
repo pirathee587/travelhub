@@ -51,5 +51,27 @@ public interface BookingRepository
 
     @Query("SELECT b FROM Booking b JOIN FETCH b.pkg WHERE LOWER(b.status) IN ('completed', 'finished', 'done')")
     List<Booking> findCompletedBookingsWithPackages();
+    // ── Admin eager-fetch queries ─────────────────────
+    @Query("SELECT b FROM Booking b " +
+            "LEFT JOIN FETCH b.user " +
+            "LEFT JOIN FETCH b.pkg p " +
+            "LEFT JOIN FETCH p.agent " +
+            "LEFT JOIN FETCH b.hotel " +
+            "LEFT JOIN FETCH b.vehicle " +
+            "ORDER BY b.createdAt DESC")
+    List<Booking> findAllWithDetails();
+
+    @Query("SELECT b FROM Booking b " +
+            "LEFT JOIN FETCH b.user " +
+            "LEFT JOIN FETCH b.pkg p " +
+            "LEFT JOIN FETCH p.agent " +
+            "LEFT JOIN FETCH b.hotel " +
+            "LEFT JOIN FETCH b.vehicle " +
+            "WHERE b.status = :status " +
+            "ORDER BY b.createdAt DESC")
+    List<Booking> findByStatusWithDetails(@Param("status") String status);
+
+    List<Booking> findByCreatedAtAfter(java.time.LocalDateTime startDate);
+    List<Booking> findTop5ByOrderByCreatedAtDesc();
 }
 

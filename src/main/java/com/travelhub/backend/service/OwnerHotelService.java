@@ -4,9 +4,11 @@ import com.travelhub.backend.common.ForbiddenException;
 import com.travelhub.backend.dto.request.OwnerHotelRequest;
 import com.travelhub.backend.dto.response.HotelResponse;
 import com.travelhub.backend.dto.response.OwnerHotelSummaryResponse;
+import com.travelhub.backend.dto.response.HotelSummaryResponse;
 import com.travelhub.backend.entity.Hotel;
 import com.travelhub.backend.entity.User;
 import com.travelhub.backend.event.HotelEvent;
+import com.travelhub.backend.repository.HotelImageRepository;
 import com.travelhub.backend.repository.HotelRepository;
 import com.travelhub.backend.repository.ReviewRepository;
 import com.travelhub.backend.repository.UserRepository;
@@ -27,6 +29,7 @@ public class OwnerHotelService {
     private final HotelRepository hotelRepository;
     private final UserRepository userRepository;
     private final ReviewRepository reviewRepository;
+    private final HotelImageRepository hotelImageRepository;
     private final ImageUploadService imageUploadService;
     private final ApplicationEventPublisher eventPublisher;
 
@@ -164,6 +167,14 @@ public class OwnerHotelService {
                     .collect(Collectors.toList())
                 : List.of();
 
+        List<String> images = hotelImageRepository.findByHotelIdOrdered(hotel.getId()).stream()
+                .map(img -> img.getImageUrl())
+                .collect(Collectors.toList());
+
+        if (images.isEmpty() && hotel.getImageUrl() != null) {
+            images = List.of(hotel.getImageUrl());
+        }
+
         return HotelResponse.builder()
                 .id(hotel.getId())
                 .hotelName(hotel.getHotelName())
@@ -173,9 +184,11 @@ public class OwnerHotelService {
                 .priceFrom(hotel.getPriceFrom())
                 .priceTo(hotel.getPriceTo())
                 .imageUrl(hotel.getImageUrl())
+                .images(images)
                 .amenities(amenityList)
                 .district(hotel.getDistrict())
                 .applicationStatus(hotel.getApplicationStatus())
+                .isActive(hotel.getIsActive() != null ? hotel.getIsActive() : true)
                 .hotelEmail(hotel.getHotelEmail())
                 .hotelContactNumber(hotel.getHotelContactNumber())
                 .build();

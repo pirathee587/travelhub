@@ -9,6 +9,7 @@ import com.travelhub.backend.repository.AgentRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import com.travelhub.backend.repository.BookingRepository;
+import com.travelhub.backend.repository.UserRepository;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
@@ -17,6 +18,8 @@ public class AgentProfileService {
 
     private final AgentRepository agentRepository;
     private final AgentRatingCalculator agentRatingCalculator;
+    private final BookingRepository bookingRepository;
+    private final UserRepository userRepository;
 
     /**
      * Returns the profile details for the given agent id.
@@ -57,7 +60,6 @@ public class AgentProfileService {
         if (request.getPhone() != null) {
             user.setTelephone(request.getPhone());
         }
-
         // Profile image now lives on User.
         if (request.getProfileImage() != null) {
             user.setProfileImage(request.getProfileImage());
@@ -72,7 +74,7 @@ public class AgentProfileService {
 
     /**
      * Maps Agent entity -> profile response DTO.
-     * Common fields (name, email, phone, profileImage) now read through agent.getUser().
+     * Common fields (name, email, phone, profileImage) now read through agent.getOwner().
      */
     private AgentProfileResponse toResponse(Agent agent) {
         User user = agent.getOwner();

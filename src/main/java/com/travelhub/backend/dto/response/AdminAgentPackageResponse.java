@@ -10,5 +10,6 @@ public record AdminAgentPackageResponse(
         Double rating,
 
         Boolean isActive,
-        String applicationStatus
+        String applicationStatus,
+        String imageUrl
 ) {}

@@ -16,9 +16,13 @@ public class PackageDetailResponse {
     private String packageName;
 
     private String district;
+    private String packageType;
     private String startPlace;
     private String endPlace;
-
+    private Double priceFrom;
+    private Double priceTo;
+    private Double basePriceAdult;
+    private Double basePriceChild;
     private String duration;
     private String category;
     private String imageUrl;
@@ -42,6 +46,8 @@ public class PackageDetailResponse {
         private String title;
         private String description;
         private List<PackageActivityResponse> activities;
+        private String hotelName;
+        private Long hotelId;
     }
 
     @Data

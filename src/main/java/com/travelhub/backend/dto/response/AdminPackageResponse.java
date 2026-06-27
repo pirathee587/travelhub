@@ -12,5 +12,6 @@ public record AdminPackageResponse(
 
         boolean isActive,
         String  agentName,
-        String  applicationStatus
+        String  applicationStatus,
+        String  imageUrl
 ) {}

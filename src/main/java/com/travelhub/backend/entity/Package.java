@@ -27,6 +27,7 @@ public class Package {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "agent_id", nullable = false)
+    @org.hibernate.annotations.NotFound(action = org.hibernate.annotations.NotFoundAction.IGNORE)
     private Agent agent;
 
     // ── Core fields ───────────────────────────────────────────
@@ -41,10 +42,21 @@ public class Package {
     private String category;
     private String district;
 
+    public String getDestination() {
+        return this.endPlace;
+    }
+
     // ── Package Type ──────────────────────────────────────────
     @Column(name = "package_type")
     @Builder.Default
     private String packageType = "SINGLE_DISTRICT"; // SINGLE_DISTRICT or MULTI_DISTRICT
+
+    // ── Price ─────────────────────────────────────────────────
+    @Column(name = "price_from")
+    private Double priceFrom;
+
+    @Column(name = "price_to")
+    private Double priceTo;
 
     // ── Per-person pricing ────────────────────────────────────
     @Column(name = "base_price_adult")
@@ -52,7 +64,6 @@ public class Package {
 
     @Column(name = "base_price_child")
     private Double basePriceChild;
-
     // ── Content fields ─────────────────────────────────────────
     @Column(length = 2000)
     private String description;
