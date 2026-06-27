@@ -2,7 +2,7 @@ import axios from 'axios';
 
 // ── Base URL ───────────────────────────────────────
 const BASE_URL = import.meta.env.VITE_API_URL
-    || 'http://localhost:8082';
+    || 'http://localhost:8080';
 
 // ── Axios Instance ─────────────────────────────────
 const api = axios.create({
@@ -27,11 +27,11 @@ api.interceptors.request.use(
 );
 
 // ── Response Interceptor ───────────────────────────
-// On 401 Unauthorized → clear session and redirect to /login
+// On 401 Unauthorized or 403 Forbidden → clear session and redirect to /login
 api.interceptors.response.use(
     (response) => response,
     (error) => {
-        if (error.response?.status === 401) {
+        if (error.response?.status === 401 || error.response?.status === 403) {
             localStorage.removeItem('token');
             localStorage.removeItem('user');
             // Only redirect if not already on login page

@@ -6,9 +6,10 @@ import { useModal } from '../components/ModalContext'
 const STATUSES = ['All', 'Pending', 'Approved', 'Rejected']
 
 const STATUS_STYLES = {
-  Pending:  'bg-orange-100 text-orange-700 border-orange-200',
-  Approved: 'bg-emerald-100 text-emerald-700 border-emerald-200',
-  Rejected: 'bg-red-100 text-red-700 border-red-200',
+  Pending:   'bg-orange-100 text-orange-700 border-orange-200',
+  Approved:  'bg-emerald-100 text-emerald-700 border-emerald-200',
+  Rejected:  'bg-red-100 text-red-700 border-red-200',
+  Suspended: 'bg-gray-100 text-gray-600 border-gray-200',
 }
 
 const STATUS_DOT = {
@@ -39,12 +40,12 @@ const CardSkeleton = () => (
 )
 
 // ── Hotel Detail View ───────────────────────────────────────────────────────
-const HotelDetailView = ({ hotel, onBack, onApprove, onReject, onDelete, loading }) => {
+const HotelDetailView = ({ hotel, onBack, onApprove, onReject, onToggle, onDelete, loading }) => {
   if (!hotel) return null
 
   const { hotelName, imageUrl, district, location, rating, numberOfRooms,
     ownerName, ownerEmail, ownerNic, nicImageUrl, phoneNumber, hotlineNumber,
-    amenities, roomTypes, applicationStatus, id } = hotel
+    amenities, roomTypes, applicationStatus, isActive, id } = hotel
 
   return (
     <div className="animate-fade-in max-w-5xl mx-auto">
@@ -114,8 +115,8 @@ const HotelDetailView = ({ hotel, onBack, onApprove, onReject, onDelete, loading
               <div className="font-bold text-emerald-600">{phoneNumber || '—'}</div>
             </div>
             <div>
-              <div className="text-xs text-gray-500 font-medium mb-1">Hotline Number</div>
-              <div className="font-bold text-emerald-600">{hotlineNumber || '—'}</div>
+              <div className="text-xs text-gray-500 font-medium mb-1">NIC Number</div>
+              <div className="font-bold text-emerald-600">{ownerNic || '—'}</div>
             </div>
           </div>
         </div>
@@ -139,26 +140,43 @@ const HotelDetailView = ({ hotel, onBack, onApprove, onReject, onDelete, loading
           <div className="flex justify-between items-start">
             <div>
               <h3 className="text-lg font-bold text-gray-900 mb-4">Application Status</h3>
-              <span className={`px-4 py-1.5 rounded-full text-xs font-bold ${
-                applicationStatus === 'Approved' ? 'bg-[#e6f4ea] text-[#1e8e3e]' :
-                applicationStatus === 'Pending' ? 'bg-[#ffedd5] text-[#ea580c]' :
-                'bg-red-100 text-red-600'
-              }`}>
-                {applicationStatus}
-              </span>
+              {isActive === false && applicationStatus === 'Approved' ? (
+                <span className="px-4 py-1.5 rounded-full text-xs font-bold bg-gray-100 text-gray-600">
+                  Suspended
+                </span>
+              ) : (
+                <span className={`px-4 py-1.5 rounded-full text-xs font-bold ${
+                  String(applicationStatus).trim().toLowerCase() === 'approved' ? 'bg-[#e6f4ea] text-[#1e8e3e]' :
+                  String(applicationStatus).trim().toLowerCase() === 'pending' ? 'bg-[#ffedd5] text-[#ea580c]' :
+                  'bg-red-100 text-red-600'
+                }`}>
+                  {String(applicationStatus || 'Pending').trim()}
+                </span>
+              )}
             </div>
             
             {/* Admin Actions */}
             <div className="flex gap-3">
-              {applicationStatus !== 'Approved' && (
+              {String(applicationStatus).trim().toLowerCase() !== 'approved' && (
                 <button onClick={() => onApprove(hotel)} disabled={loading} className="px-5 py-2 rounded-lg font-semibold text-sm bg-emerald-500 text-white hover:bg-emerald-600 transition shadow-sm disabled:opacity-60">
                   Approve Hotel
                 </button>
               )}
-              {applicationStatus !== 'Rejected' && (
+              {String(applicationStatus).trim().toLowerCase() !== 'rejected' && (
                 <button onClick={() => onReject(hotel)} disabled={loading} className="px-5 py-2 rounded-lg font-semibold text-sm bg-orange-100 text-orange-700 hover:bg-orange-200 transition shadow-sm disabled:opacity-60">
                   Reject Hotel
                 </button>
+              )}
+              {String(applicationStatus).trim().toLowerCase() === 'approved' && (
+                isActive === false ? (
+                  <button onClick={() => onToggle(hotel)} disabled={loading} className="px-5 py-2 rounded-lg font-semibold text-sm bg-emerald-500 text-white hover:bg-emerald-600 transition shadow-sm disabled:opacity-60">
+                    Activate Hotel
+                  </button>
+                ) : (
+                  <button onClick={() => onToggle(hotel)} disabled={loading} className="px-5 py-2 rounded-lg font-semibold text-sm bg-red-500 text-white hover:bg-red-600 transition shadow-sm disabled:opacity-60">
+                    Suspend Hotel
+                  </button>
+                )
               )}
               <button onClick={() => onDelete(hotel)} disabled={loading} className="px-5 py-2 rounded-lg font-semibold text-sm bg-gray-100 text-gray-600 hover:bg-red-50 hover:text-red-600 transition shadow-sm disabled:opacity-60">
                 Delete Hotel
@@ -183,7 +201,7 @@ const HotelDetailView = ({ hotel, onBack, onApprove, onReject, onDelete, loading
 }
 
 // ── Hotel Card ────────────────────────────────────────────────────────────────
-const HotelCard = ({ hotel, onView, onApprove, onReject, onDelete, actionLoading }) => {
+const HotelCard = ({ hotel, onView, onApprove, onReject, onToggle, onDelete, actionLoading }) => {
   const { hotelName, imageUrl, district, location, rating, reviewCount,
     priceFrom, priceTo, applicationStatus, numberOfRooms } = hotel
 
@@ -205,7 +223,7 @@ const HotelCard = ({ hotel, onView, onApprove, onReject, onDelete, actionLoading
           {district || location || '—'} • {numberOfRooms ?? 0} rooms
         </p>
 
-        {applicationStatus === 'Approved' && (
+        {String(applicationStatus).trim().toLowerCase() === 'approved' && (
           <div className="flex items-center gap-1 text-sm text-gray-500 mb-4">
             <span>Rating:</span>
             <span className="text-yellow-400 ml-1">⭐</span>
@@ -214,17 +232,23 @@ const HotelCard = ({ hotel, onView, onApprove, onReject, onDelete, actionLoading
         )}
 
         <div className="mb-4">
-          <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-            applicationStatus === 'Approved' ? 'bg-[#e6f4ea] text-[#1e8e3e]' :
-            applicationStatus === 'Pending' ? 'bg-[#fef0db] text-[#e37400]' :
-            'bg-red-100 text-red-600'
-          }`}>
-            {applicationStatus}
-          </span>
+          {hotel.isActive === false && String(hotel.applicationStatus).trim().toLowerCase() === 'approved' ? (
+            <span className="px-3 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-600">
+              Suspended
+            </span>
+          ) : (
+            <span className={`px-3 py-1 rounded-full text-xs font-medium ${
+              String(applicationStatus).trim().toLowerCase() === 'approved' ? 'bg-[#e6f4ea] text-[#1e8e3e]' :
+              String(applicationStatus).trim().toLowerCase() === 'pending' ? 'bg-[#fef0db] text-[#e37400]' :
+              'bg-red-100 text-red-600'
+            }`}>
+              {String(applicationStatus || 'Pending').trim()}
+            </span>
+          )}
         </div>
 
         <div className="mt-auto pt-4 flex gap-3 border-t border-gray-50">
-          {applicationStatus === 'Pending' ? (
+          {String(applicationStatus).trim().toLowerCase() === 'pending' ? (
             <>
               <button
                 onClick={(e) => { e.stopPropagation(); onView(hotel); }}
@@ -247,7 +271,7 @@ const HotelCard = ({ hotel, onView, onApprove, onReject, onDelete, actionLoading
                 ✕
               </button>
             </>
-          ) : applicationStatus === 'Approved' ? (
+          ) : String(applicationStatus).trim().toLowerCase() === 'approved' ? (
             <>
               <button
                 onClick={(e) => { e.stopPropagation(); onView(hotel); }}
@@ -255,13 +279,23 @@ const HotelCard = ({ hotel, onView, onApprove, onReject, onDelete, actionLoading
               >
                 👁 View
               </button>
-              <button
-                onClick={(e) => { e.stopPropagation(); onReject(hotel); }}
-                disabled={actionLoading}
-                className="flex-1 py-2 text-sm font-medium bg-[#ef4444] text-white rounded hover:bg-red-600 transition flex items-center justify-center gap-2 disabled:opacity-60"
-              >
-                ⭕ Suspend
-              </button>
+              {hotel.isActive === false ? (
+                <button
+                  onClick={(e) => { e.stopPropagation(); onToggle(hotel); }}
+                  disabled={actionLoading}
+                  className="flex-1 py-2 text-sm font-medium bg-emerald-500 text-white rounded hover:bg-emerald-600 transition flex items-center justify-center gap-2 disabled:opacity-60"
+                >
+                  ▶ Activate
+                </button>
+              ) : (
+                <button
+                  onClick={(e) => { e.stopPropagation(); onToggle(hotel); }}
+                  disabled={actionLoading}
+                  className="flex-1 py-2 text-sm font-medium bg-[#ef4444] text-white rounded hover:bg-red-600 transition flex items-center justify-center gap-2 disabled:opacity-60"
+                >
+                  ⭕ Suspend
+                </button>
+              )}
             </>
           ) : (
              <>
@@ -404,6 +438,29 @@ export default function HotelApprovals() {
     }
   }
 
+  const handleToggle = async (hotel) => {
+    const isSuspending = hotel.isActive !== false
+    const action = isSuspending ? 'Suspend' : 'Activate'
+    const ok = await modal.showConfirm({
+      title:   `${action} Hotel`,
+      message: `${action} "${hotel.hotelName}"?`,
+    })
+    if (!ok) return
+    try {
+      setActionLoading(true)
+      const res = await adminHotelApi.toggleHotelActive(hotel.id)
+      const updatedIsActive = res?.data?.isActive ?? res?.isActive ?? !isSuspending
+      modal.addToast(`✅ "${hotel.hotelName}" ${isSuspending ? 'suspended' : 'activated'}`)
+      setHotels(prev => prev.map(h => h.id === hotel.id ? { ...h, isActive: updatedIsActive, applicationStatus: updatedIsActive ? 'Approved' : 'Suspended' } : h))
+      if (drawerDetail?.id === hotel.id)
+        setDrawerDetail(d => ({ ...d, isActive: updatedIsActive, applicationStatus: updatedIsActive ? 'Approved' : 'Suspended' }))
+    } catch (err) {
+      modal.addToast(`❌ ${err?.response?.data?.message || 'Toggle failed'}`)
+    } finally {
+      setActionLoading(false)
+    }
+  }
+
   // ── Client-side search filter ────────────────────────────────────────────
   const displayed = hotels.filter(h => {
     if (!search.trim()) return true
@@ -419,9 +476,9 @@ export default function HotelApprovals() {
   // ── Counts ───────────────────────────────────────────────────────────────
   const counts = {
     total:    hotels.length,
-    pending:  hotels.filter(h => h.applicationStatus === 'Pending').length,
-    approved: hotels.filter(h => h.applicationStatus === 'Approved').length,
-    rejected: hotels.filter(h => h.applicationStatus === 'Rejected').length,
+    pending:  hotels.filter(h => String(h.applicationStatus).trim().toLowerCase() === 'pending').length,
+    approved: hotels.filter(h => String(h.applicationStatus).trim().toLowerCase() === 'approved').length,
+    rejected: hotels.filter(h => String(h.applicationStatus).trim().toLowerCase() === 'rejected').length,
   }
 
   return (
@@ -440,6 +497,7 @@ export default function HotelApprovals() {
             onBack={closeDrawer}
             onApprove={handleApprove}
             onReject={handleReject}
+            onToggle={handleToggle}
             onDelete={handleDelete}
             loading={actionLoading}
           />
@@ -510,6 +568,7 @@ export default function HotelApprovals() {
                   onView={openDrawer}
                   onApprove={handleApprove}
                   onReject={handleReject}
+                  onToggle={handleToggle}
                   onDelete={handleDelete}
                   actionLoading={actionLoading}
                 />

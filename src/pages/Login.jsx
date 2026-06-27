@@ -21,6 +21,7 @@ export default function Login() {
         name:  res?.name  || res?.data?.name  || email,
         email: res?.email || res?.data?.email || email,
         role:  res?.role  || res?.data?.role  || 'ADMIN',
+        profileImage: res?.profileImage || res?.data?.profileImage || '',
       }
       if (!token) throw new Error('No token received from server.')
 

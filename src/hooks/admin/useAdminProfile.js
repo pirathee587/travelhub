@@ -62,6 +62,7 @@ export const useAdminProfile = () => {
             }
 
             setSaveSuccess('Profile updated successfully!');
+            window.dispatchEvent(new Event('user-profile-updated'));
             return true;
         } catch (err) {
             setSaveError(
@@ -116,6 +117,7 @@ export const useAdminProfile = () => {
                     localStorage.setItem('user', JSON.stringify(user));
                 }
                 setSaveSuccess('Photo uploaded successfully!');
+                window.dispatchEvent(new Event('user-profile-updated'));
                 return imageUrl;   // ← return URL so modal can sync preview immediately
             } else {
                 setSaveError('Failed to parse uploaded image URL');
@@ -146,6 +148,11 @@ export const useAdminProfile = () => {
 
         if (newPassword !== confirmPassword) {
             setSaveError('New password and confirm password do not match');
+            return false;
+        }
+
+        if (oldPassword === newPassword) {
+            setSaveError('New password cannot be the same as the old password');
             return false;
         }
 

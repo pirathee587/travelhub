@@ -17,7 +17,7 @@ export default function AgentDetailsPage() {
             onClick={() => navigate('/agents')}
             className="px-4 py-2 bg-white border border-gray-200 rounded-lg shadow-sm hover:bg-gray-50 text-lg font-medium"
           >
-            {'< '}Back to Agents
+            {'< '}Back to Agencies
           </button>
         </div>
 
@@ -27,7 +27,7 @@ export default function AgentDetailsPage() {
           </div>
         ) : (
           <div className="bg-white rounded-xl shadow p-6">
-            <p className="text-gray-700">Agent not found.</p>
+            <p className="text-gray-700">Agency not found.</p>
           </div>
         )}
       </div>

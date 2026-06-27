@@ -297,7 +297,7 @@ export default function Payments() {
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="border-b border-gray-100">
-                {['Transaction ID', 'Booking', 'Tourist / Agent', 'Type', 'Amount', 'Status'].map(h => (
+                {['Transaction ID', 'Booking', 'Tourist / Agency', 'Type', 'Amount', 'Status'].map(h => (
                   <th key={h} className="py-4 px-6 font-bold text-sm text-gray-700">{h}</th>
                 ))}
               </tr>

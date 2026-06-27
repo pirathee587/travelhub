@@ -46,6 +46,13 @@ const adminHotelApi = {
         return res.data;
     },
 
+    // PATCH /api/admin/hotels/{id}/toggle-active
+    toggleHotelActive: async (id) => {
+        const res = await api.patch(
+            `/admin/hotels/${id}/toggle-active`);
+        return res.data;
+    },
+
     // View NIC Photocopy
     viewNicPhotocopy: (nicImageUrl) => {
         window.open(nicImageUrl, '_blank');

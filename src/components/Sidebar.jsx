@@ -87,7 +87,7 @@ export default function Sidebar() {
       {/* Navigation */}
       <nav className="flex flex-col gap-3 flex-1">
         <MenuItem icon={<LayoutDashboard size={24} />} label="Dashboard"  to="/"         />
-        <MenuItem icon={<Users size={24} />}           label="Agents"     to="/agents"   />
+        <MenuItem icon={<Users size={24} />}           label="Agency"     to="/agents"   />
         <MenuItem icon={<Hotel size={24} />}           label="Hotels"     to="/hotels"   />
         <MenuItem icon={<Package size={24} />}         label="Packages"   to="/packages" />
         <MenuItem icon={<CreditCard size={24} />}      label="Payments"   to="/payments" />

@@ -115,9 +115,15 @@ export default function HotelDetailsView({ hotel, onClose, showClose = true }) {
         <div className="bg-orange-50 p-4 rounded-lg border border-orange-200">
           <h4 className="font-bold text-gray-900 mb-3">Application Status</h4>
           <div className="text-sm">
-            <span className={`inline-block px-3 py-1 rounded-full text-xs font-semibold ${
-              hotel.status === 'Approved' ? 'bg-green-100 text-green-700' : 'bg-orange-100 text-orange-700'
-            }`}>{hotel.status}</span>
+            {hotel.isActive === false && hotel.status === 'Approved' ? (
+              <span className="inline-block px-3 py-1 rounded-full text-xs font-semibold bg-gray-100 text-gray-600">
+                Suspended
+              </span>
+            ) : (
+              <span className={`inline-block px-3 py-1 rounded-full text-xs font-semibold ${
+                hotel.status === 'Approved' ? 'bg-green-100 text-green-700' : 'bg-orange-100 text-orange-700'
+              }`}>{hotel.status}</span>
+            )}
           </div>
         </div>
 

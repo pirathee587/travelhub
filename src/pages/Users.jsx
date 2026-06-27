@@ -512,9 +512,10 @@ export default function Users() {
                       {/* Status */}
                       <td className="px-5 py-3.5">
                         <div className="flex flex-col gap-1">
-                          <StatusBadge active={user.isActive} />
-                          {user.role === 'AGENT' && (
+                          {user.role === 'AGENT' ? (
                             <AgentBadge approved={user.agentApproved} />
+                          ) : (
+                            <StatusBadge active={user.isActive} />
                           )}
                         </div>
                       </td>

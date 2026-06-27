@@ -64,18 +64,20 @@ const adminAgentApi = {
         return res.data;
     },
 
-    // PATCH /api/admin/agents/{id}/approve
-    approveAgent: async (id) => {
+    // PATCH /api/admin/users/agents/{ownerId}/approve
+    // Per architecture schema: {id} is User/Owner ID — handled by AdminUserController
+    approveAgent: async (ownerId) => {
         const res = await api.patch(
-            `/admin/agents/${id}/approve`);
+            `/admin/users/agents/${ownerId}/approve`);
         return res.data;
     },
 
-    // PATCH /api/admin/agents/{id}/reject
-    rejectAgent: async (id, reason) => {
+    // PATCH /api/admin/users/agents/{ownerId}/reject
+    // Per architecture schema: {id} is User/Owner ID — handled by AdminUserController
+    rejectAgent: async (ownerId, reason) => {
         const res = await api.patch(
-            `/admin/agents/${id}/reject`,
-            { reason });
+            `/admin/users/agents/${ownerId}/reject`,
+            reason ? { reason } : {});
         return res.data;
     },
 

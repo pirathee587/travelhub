@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { useModal } from './ModalContext'
 import { Settings, LogOut, Bell, Check, CheckCheck } from 'lucide-react'
 import { useAdminNotifications } from '../hooks/admin/useAdminNotifications'
@@ -18,7 +18,28 @@ export default function Header() {
   } = useAdminNotifications()
 
   // Read real user info from localStorage (set on login)
-  const storedUser  = (() => { try { return JSON.parse(localStorage.getItem('user') || '{}') } catch { return {} } })()
+  const [storedUser, setStoredUser] = useState(() => {
+    try {
+      return JSON.parse(localStorage.getItem('user') || '{}')
+    } catch {
+      return {}
+    }
+  })
+
+  useEffect(() => {
+    const handleUpdate = () => {
+      try {
+        setStoredUser(JSON.parse(localStorage.getItem('user') || '{}'))
+      } catch (e) {
+        console.error('Error updating header user state:', e)
+      }
+    }
+    window.addEventListener('user-profile-updated', handleUpdate)
+    return () => {
+      window.removeEventListener('user-profile-updated', handleUpdate)
+    }
+  }, [])
+
   const displayName = storedUser?.name || 'Admin User'
   const displayRole = storedUser?.role ? storedUser.role.replace('ROLE_', '') : 'Super Admin'
 
@@ -142,9 +163,17 @@ export default function Header() {
             className="flex items-center gap-3 pl-4 border-l border-gray-200"
             onClick={() => { setShowUserMenu(!showUserMenu); setShowNotifications(false) }}
           >
-            <div className="w-10 h-10 rounded-full bg-teal-700 flex items-center justify-center text-white font-bold text-sm">
-              {displayName.charAt(0).toUpperCase()}
-            </div>
+            {storedUser?.profileImage ? (
+              <img 
+                src={storedUser.profileImage} 
+                alt="Profile" 
+                className="w-10 h-10 rounded-full object-cover border border-gray-200" 
+              />
+            ) : (
+              <div className="w-10 h-10 rounded-full bg-teal-700 flex items-center justify-center text-white font-bold text-sm">
+                {displayName.charAt(0).toUpperCase()}
+              </div>
+            )}
             <div className="text-left">
               <div className="text-sm font-bold text-gray-900">{displayName}</div>
               <div className="text-xs text-gray-500">{displayRole}</div>

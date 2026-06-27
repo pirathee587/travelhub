@@ -213,7 +213,7 @@ describe('PATCH /admin/agents/{id}/approve — approveAgent()', () => {
   it('calls correct URL', async () => {
     api.patch.mockResolvedValueOnce(wrap({...mockDetail, applicationStatus:'Approved'}))
     const result = await adminAgentApi.approveAgent(1)
-    expect(api.patch).toHaveBeenCalledWith('/admin/agents/1/approve')
+    expect(api.patch).toHaveBeenCalledWith('/admin/users/agents/1/approve')
     expect(result.data.applicationStatus).toBe('Approved')
   })
 
@@ -239,14 +239,14 @@ describe('PATCH /admin/agents/{id}/reject — rejectAgent()', () => {
   it('rejects with a reason', async () => {
     api.patch.mockResolvedValueOnce(wrap({...mockDetail, applicationStatus:'Rejected'}))
     const result = await adminAgentApi.rejectAgent(1, 'Incomplete docs')
-    expect(api.patch).toHaveBeenCalledWith('/admin/agents/1/reject', {reason:'Incomplete docs'})
+    expect(api.patch).toHaveBeenCalledWith('/admin/users/agents/1/reject', {reason:'Incomplete docs'})
     expect(result.data.applicationStatus).toBe('Rejected')
   })
 
   it('sends reason: null when omitted', async () => {
     api.patch.mockResolvedValueOnce(wrap({...mockDetail, applicationStatus:'Rejected'}))
     await adminAgentApi.rejectAgent(1, null)
-    expect(api.patch).toHaveBeenCalledWith('/admin/agents/1/reject', {reason:null})
+    expect(api.patch).toHaveBeenCalledWith('/admin/users/agents/1/reject', {reason:null})
   })
 
   it('propagates 404', async () => {

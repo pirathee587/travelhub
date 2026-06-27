@@ -5,9 +5,10 @@ import { useModal } from '../components/ModalContext'
 const STATUSES = ['All', 'Pending', 'Approved', 'Rejected']
 
 const STATUS_STYLES = {
-  Pending:  'bg-orange-100 text-orange-700 border-orange-200',
-  Approved: 'bg-emerald-100 text-emerald-700 border-emerald-200',
-  Rejected: 'bg-red-100 text-red-700 border-red-200',
+  Pending:   'bg-orange-100 text-orange-700 border-orange-200',
+  Approved:  'bg-emerald-100 text-emerald-700 border-emerald-200',
+  Rejected:  'bg-red-100 text-red-700 border-red-200',
+  Suspended: 'bg-gray-100 text-gray-600 border-gray-200',
 }
 
 const fmtPrice = (v) => v != null ? `$${Number(v).toLocaleString()}` : '—'
@@ -139,11 +140,12 @@ const PackageDetailView = ({ pkg, onBack, onApprove, onReject, onToggle, onDelet
                 <div>
                   <div className="text-xs text-gray-500 font-medium mb-2">Status</div>
                   <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-                    applicationStatus === 'Approved' ? 'bg-[#e6f4ea] text-[#1e8e3e]' :
-                    applicationStatus === 'Pending' ? 'bg-[#fef0db] text-[#e37400]' :
+                    String(applicationStatus).trim().toLowerCase() === 'approved' ? 'bg-[#e6f4ea] text-[#1e8e3e]' :
+                    String(applicationStatus).trim().toLowerCase() === 'pending' ? 'bg-[#fef0db] text-[#e37400]' :
+                    String(applicationStatus).trim().toLowerCase() === 'suspended' ? 'bg-gray-100 text-gray-600 border border-gray-200' :
                     'bg-red-100 text-red-600'
                   }`}>
-                    {applicationStatus}
+                    {String(applicationStatus || 'Pending').trim()}
                   </span>
                 </div>
                 <div>
@@ -159,21 +161,23 @@ const PackageDetailView = ({ pkg, onBack, onApprove, onReject, onToggle, onDelet
             <div className="bg-white rounded-xl p-6 border border-gray-100 space-y-3 shadow-sm mt-2">
               <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wide mb-4">Admin Actions</h4>
               
-              {applicationStatus !== 'Approved' && (
+              {String(applicationStatus).trim().toLowerCase() !== 'approved' && (
                 <button onClick={() => onApprove(pkg)} disabled={loading} className="w-full py-2.5 rounded-lg font-semibold text-sm bg-emerald-500 text-white hover:bg-emerald-600 transition disabled:opacity-60">
                   Approve Package
                 </button>
               )}
               
-              {applicationStatus !== 'Rejected' && (
+              {String(applicationStatus).trim().toLowerCase() !== 'rejected' && (
                 <button onClick={() => onReject(pkg)} disabled={loading} className="w-full py-2.5 rounded-lg font-semibold text-sm bg-orange-50 text-orange-700 border border-orange-200 hover:bg-orange-100 transition disabled:opacity-60">
                   Reject Package
                 </button>
               )}
               
-              <button onClick={() => onToggle(pkg)} disabled={loading} className={`w-full py-2.5 rounded-lg font-semibold text-sm border transition disabled:opacity-60 ${isActive ? 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-orange-50 hover:text-orange-700 hover:border-orange-200' : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-emerald-50 hover:text-emerald-700 hover:border-emerald-200'}`}>
-                {isActive ? 'Deactivate Package' : 'Activate Package'}
-              </button>
+              {String(applicationStatus).trim().toLowerCase() === 'approved' && (
+                <button onClick={() => onToggle(pkg)} disabled={loading} className={`w-full py-2.5 rounded-lg font-semibold text-sm border transition disabled:opacity-60 ${isActive ? 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-orange-50 hover:text-orange-700 hover:border-orange-200' : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-emerald-50 hover:text-emerald-700 hover:border-emerald-200'}`}>
+                  {isActive ? 'Deactivate Package' : 'Activate Package'}
+                </button>
+              )}
               
               <button onClick={() => onDelete(pkg)} disabled={loading} className="w-full py-2.5 rounded-lg font-semibold text-sm bg-gray-50 text-gray-600 border border-gray-200 hover:bg-red-50 hover:text-red-700 hover:border-red-200 transition disabled:opacity-60 mt-4">
                 Delete Package
@@ -210,7 +214,7 @@ const PackageCard = ({ pkg, onView, onApprove, onReject, onToggle, onDelete, act
           {[destination, duration].filter(Boolean).join(' • ') || '—'}
         </p>
 
-        {applicationStatus === 'Approved' && (
+        {String(applicationStatus).trim().toLowerCase() === 'approved' && (
           <div className="flex items-center gap-1 text-sm text-gray-500 mb-4">
             <span>Rating:</span>
             <span className="text-yellow-400 ml-1">⭐</span>
@@ -220,19 +224,17 @@ const PackageCard = ({ pkg, onView, onApprove, onReject, onToggle, onDelete, act
 
         <div className="mb-4">
           <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-            applicationStatus === 'Approved' ? 'bg-[#e6f4ea] text-[#1e8e3e]' :
-            applicationStatus === 'Pending' ? 'bg-[#fef0db] text-[#e37400]' :
+            String(applicationStatus).trim().toLowerCase() === 'approved' ? 'bg-[#e6f4ea] text-[#1e8e3e]' :
+            String(applicationStatus).trim().toLowerCase() === 'pending' ? 'bg-[#fef0db] text-[#e37400]' :
+            String(applicationStatus).trim().toLowerCase() === 'suspended' ? 'bg-gray-100 text-gray-600 border border-gray-200' :
             'bg-red-100 text-red-600'
           }`}>
-            {applicationStatus}
+            {String(applicationStatus || 'Pending').trim()}
           </span>
-          {isActive === false && (
-             <span className="ml-2 px-3 py-1 rounded-full text-xs font-medium bg-red-100 text-red-600">Inactive</span>
-          )}
         </div>
 
         <div className="mt-auto pt-4 flex gap-3 border-t border-gray-50">
-          {applicationStatus === 'Pending' ? (
+          {String(applicationStatus).trim().toLowerCase() === 'pending' ? (
             <>
               <button
                 onClick={(e) => { e.stopPropagation(); onView(pkg); }}
@@ -255,7 +257,7 @@ const PackageCard = ({ pkg, onView, onApprove, onReject, onToggle, onDelete, act
                 ✕
               </button>
             </>
-          ) : applicationStatus === 'Approved' ? (
+          ) : (String(applicationStatus).trim().toLowerCase() === 'approved' || String(applicationStatus).trim().toLowerCase() === 'suspended') ? (
             <>
               <button
                 onClick={(e) => { e.stopPropagation(); onView(pkg); }}
@@ -263,13 +265,23 @@ const PackageCard = ({ pkg, onView, onApprove, onReject, onToggle, onDelete, act
               >
                 👁 View
               </button>
-              <button
-                onClick={(e) => { e.stopPropagation(); onToggle(pkg); }}
-                disabled={actionLoading}
-                className="flex-1 py-2 text-sm font-medium bg-[#ef4444] text-white rounded hover:bg-red-600 transition flex items-center justify-center gap-2 disabled:opacity-60"
-              >
-                ⭕ Suspend
-              </button>
+              {String(applicationStatus).trim().toLowerCase() === 'suspended' ? (
+                <button
+                  onClick={(e) => { e.stopPropagation(); onToggle(pkg); }}
+                  disabled={actionLoading}
+                  className="flex-1 py-2 text-sm font-medium bg-emerald-500 text-white rounded hover:bg-emerald-600 transition flex items-center justify-center gap-2 disabled:opacity-60"
+                >
+                  ▶ Activate
+                </button>
+              ) : (
+                <button
+                  onClick={(e) => { e.stopPropagation(); onToggle(pkg); }}
+                  disabled={actionLoading}
+                  className="flex-1 py-2 text-sm font-medium bg-[#ef4444] text-white rounded hover:bg-red-600 transition flex items-center justify-center gap-2 disabled:opacity-60"
+                >
+                  ⭕ Suspend
+                </button>
+              )}
             </>
           ) : (
              <>
@@ -369,7 +381,10 @@ export default function PackageApprovals() {
       setActionLoading(true)
       await adminPackageApi.togglePackageActive(pkg.id)
       modal.addToast(`✅ "${pkg.packageName}" ${action}d`)
-      patchLocal(pkg.id, { isActive: !pkg.isActive })
+      patchLocal(pkg.id, { 
+        isActive: !pkg.isActive,
+        applicationStatus: !pkg.isActive ? 'Approved' : 'Suspended'
+      })
     } catch (err) { modal.addToast(`❌ ${err?.response?.data?.message || 'Failed'}`) }
     finally { setActionLoading(false) }
   }
@@ -395,8 +410,8 @@ export default function PackageApprovals() {
   const counts = {
     total:    packages.length,
     pending:  packages.filter(p => p.applicationStatus === 'Pending').length,
-    approved: packages.filter(p => p.applicationStatus === 'Approved').length,
-    rejected: packages.filter(p => p.applicationStatus === 'Rejected').length,
+    approved: packages.filter(p => String(p.applicationStatus).trim().toLowerCase() === 'approved').length,
+    rejected: packages.filter(p => String(p.applicationStatus).trim().toLowerCase() === 'rejected').length,
   }
 
   return (

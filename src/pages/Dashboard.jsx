@@ -1,5 +1,24 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import adminDashboardApi from '../api/admin/adminDashboardApi';
+
+
+const formatTimeAgo = (dateStr) => {
+  if (!dateStr) return '—';
+  try {
+    const date = new Date(dateStr);
+    const now = new Date();
+    const diffMs = now - date;
+    const diffMins = Math.floor(diffMs / 60000);
+    if (diffMins < 1) return 'Just now';
+    if (diffMins < 60) return `${diffMins} min ago`;
+    const diffHours = Math.floor(diffMins / 60);
+    if (diffHours < 24) return `${diffHours} hour${diffHours > 1 ? 's' : ''} ago`;
+    const diffDays = Math.floor(diffHours / 24);
+    return `${diffDays} day${diffDays > 1 ? 's' : ''} ago`;
+  } catch (e) {
+    return 'Recently';
+  }
+};
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -76,25 +95,45 @@ export default function Dashboard() {
     (stats?.pendingPackages ?? 0) +
     (stats?.pendingBookings ?? 0);
 
-  // Mock data for charts
-  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'];
-  const bookingData = [30, 45, 50, 48, 60, 75];
-  const maxBooking = Math.max(...bookingData);
+  // Dynamic data from backend with fallbacks
+  const months = stats?.months || ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'];
+  const bookingData = stats?.monthlyBookings || [0, 0, 0, 0, 0, 0];
+  const maxBooking = Math.max(...bookingData, 1);
 
-  const recentActivity = [
-    { title: 'New agent registration', desc: 'Pinnacle Tours', status: 'Pending', time: '2 min ago', icon: '👤', color: 'bg-orange-100 text-orange-700' },
-    { title: 'Hotel approved', desc: 'Cinnamon Lakeside', status: 'Approved', time: '15 min ago', icon: '🏢', color: 'bg-[#ccfbf1] text-[#0f766e]' },
-    { title: 'Package rejected', desc: 'Extreme Rafting', status: 'Rejected', time: '1 hour ago', icon: '📦', color: 'bg-red-100 text-red-700' },
-    { title: 'Booking completed', desc: 'BK-2024-001', status: 'Completed', time: '2 hours ago', icon: '📅', color: 'bg-[#ccfbf1] text-[#0f766e]' },
-  ];
+  const recentActivity = stats?.recentActivities?.map(act => ({
+    title: act.title,
+    desc: act.desc,
+    status: act.status,
+    time: formatTimeAgo(act.timestamp),
+    icon: act.icon,
+    color: act.color
+  })) || [];
 
-  const packageDistribution = [
-    { label: 'Cultural Tours', value: 38, color: '#10b981' },
-    { label: 'Adventure', value: 28, color: '#eab308' },
-    { label: 'Beach Tours', value: 20, color: '#f97316' },
-    { label: 'Wildlife Safari', value: 18, color: '#3b82f6' },
-    { label: 'Wellness', value: 8, color: '#ec4899' },
-  ];
+  const categoryColors = {
+    CULTURE: '#10b981', // Cultural Tours
+    BEACH: '#f97316',    // Beach Tours
+    MOUNTAIN: '#eab308', // Adventure
+    CITY: '#3b82f6',     // City
+    WILDLIFE: '#ec4899', // Wildlife Safari
+    Default: '#8b5cf6'   // Others
+  };
+
+  const rawDist = stats?.packageDistribution || {};
+  const distTotal = Object.values(rawDist).reduce((sum, v) => sum + v, 0);
+
+  const displayDist = Object.keys(rawDist).map(key => {
+    const val = rawDist[key];
+    const pct = distTotal > 0 ? Math.round((val / distTotal) * 100) : 0;
+    return {
+      label: key.charAt(0).toUpperCase() + key.slice(1).toLowerCase() + ' Tours',
+      value: pct,
+      color: categoryColors[key.toUpperCase()] || categoryColors.Default
+    };
+  });
+
+  if (displayDist.length === 0) {
+    displayDist.push({ label: 'No Packages', value: 100, color: '#e5e7eb' });
+  }
 
   return (
     <div className="p-8 bg-gray-50 min-h-screen space-y-6">
@@ -199,7 +238,8 @@ export default function Dashboard() {
           <div className="flex-1 flex items-end justify-between gap-3 px-4">
             {bookingData.map((val, i) => (
               <div key={i} className="flex flex-col items-center flex-1 gap-3 h-full justify-end">
-                <div className="w-full bg-[#14b8a6] rounded-sm" style={{ height: `${(val / maxBooking) * 160}px` }} />
+                <span className="text-[10px] font-semibold text-gray-500">{val}</span>
+                <div className="w-full bg-[#14b8a6] rounded-sm" style={{ height: `${(val / maxBooking) * 130}px`, minHeight: '4px' }} />
                 <span className="text-xs font-medium text-gray-400">{months[i]}</span>
               </div>
             ))}
@@ -210,12 +250,17 @@ export default function Dashboard() {
         <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100 flex flex-col">
           <h3 className="text-lg font-bold text-gray-900 mb-8">Revenue Overview</h3>
           <div className="flex-1 flex items-end justify-between gap-3 px-4">
-            {months.map((m, i) => (
-              <div key={i} className="flex flex-col items-center flex-1 gap-3 h-full justify-end">
-                <div className="w-1.5 h-1.5 bg-orange-400 rounded-full" />
-                <span className="text-xs font-medium text-gray-400">{m}</span>
-              </div>
-            ))}
+            {months.map((m, i) => {
+              const revVal = stats?.monthlyRevenues?.[i] ?? 0;
+              const maxRev = Math.max(...(stats?.monthlyRevenues ?? [1]), 1);
+              return (
+                <div key={i} className="flex flex-col items-center flex-1 gap-3 h-full justify-end">
+                  <span className="text-[10px] font-semibold text-gray-500">{fmtCurrency(revVal)}</span>
+                  <div className="w-full bg-[#f97316] rounded-sm" style={{ height: `${(revVal / maxRev) * 130}px`, minHeight: '4px' }} />
+                  <span className="text-xs font-medium text-gray-400">{m}</span>
+                </div>
+              );
+            })}
           </div>
         </div>
 
@@ -223,27 +268,28 @@ export default function Dashboard() {
         <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
           <h3 className="text-lg font-bold text-gray-900 mb-6">Recent Activity</h3>
           <div className="space-y-6">
-            {recentActivity.map((act, i) => (
-              <div key={i} className="flex items-start justify-between">
-                <div className="flex gap-4">
-                  <div className="w-9 h-9 rounded-lg bg-blue-50 flex items-center justify-center text-lg">{act.icon}</div>
-                  <div>
-                    <div className="text-sm font-bold text-gray-900">{act.title}</div>
-                    <div className="text-xs text-gray-500 mt-0.5">{act.desc}</div>
+            {recentActivity.length === 0 ? (
+              <div className="text-sm text-gray-400 text-center py-8">No recent activity found.</div>
+            ) : (
+              recentActivity.map((act, i) => (
+                <div key={i} className="flex items-start justify-between">
+                  <div className="flex gap-4">
+                    <div className="w-9 h-9 rounded-lg bg-blue-50 flex items-center justify-center text-lg">{act.icon}</div>
+                    <div>
+                      <div className="text-sm font-bold text-gray-900">{act.title}</div>
+                      <div className="text-xs text-gray-500 mt-0.5">{act.desc}</div>
+                    </div>
+                  </div>
+                  <div className="flex flex-col items-end gap-1">
+                    <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${act.color}`}>
+                      {act.status}
+                    </span>
+                    <span className="text-[10px] text-gray-400 font-medium">{act.time}</span>
                   </div>
                 </div>
-                <div className="flex flex-col items-end gap-1">
-                  <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${act.color}`}>
-                    {act.status}
-                  </span>
-                  <span className="text-[10px] text-gray-400 font-medium">{act.time}</span>
-                </div>
-              </div>
-            ))}
+              ))
+            )}
           </div>
-          <button className="w-full mt-8 text-sm text-gray-500 font-medium hover:text-gray-900 transition">
-            View All Activity →
-          </button>
         </div>
 
         {/* Package Distribution */}
@@ -254,13 +300,13 @@ export default function Dashboard() {
             <div className="flex justify-center mb-8">
               <svg viewBox="0 0 100 100" className="w-52 h-52">
                 {(() => {
-                  const total = packageDistribution.reduce((sum, p) => sum + p.value, 0);
+                  const total = displayDist.reduce((sum, p) => sum + p.value, 0);
                   const r = 35;
                   const cx = 50;
                   const cy = 50;
                   const circ = 2 * Math.PI * r;
                   let offset = 0;
-                  return packageDistribution.map((s, i) => {
+                  return displayDist.map((s, i) => {
                     const dash = (s.value / total) * circ;
                     const gap = circ - dash;
                     const el = (
@@ -284,7 +330,7 @@ export default function Dashboard() {
             </div>
             {/* Legend */}
             <div className="space-y-3 px-8 w-full max-w-xs mx-auto">
-              {packageDistribution.map((p, i) => (
+              {displayDist.map((p, i) => (
                 <div key={i} className="flex items-center gap-3">
                   <div className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: p.color }} />
                   <span className="text-sm font-medium text-gray-600 flex-1">{p.label}</span>
