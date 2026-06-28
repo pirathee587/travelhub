@@ -292,6 +292,9 @@ public class PackageService {
                     map.put("rating",          pkg.getRating());
                     map.put("startPlace",      pkg.getStartPlace());
                     map.put("endPlace",        pkg.getEndPlace());
+                    map.put("priceFrom",       pkg.getPriceFrom());
+                    map.put("priceTo",         pkg.getPriceTo());
+                    map.put("destination",     pkg.getDestination());
                     try {
                         map.put("agentName", pkg.getAgent() != null ? pkg.getAgent().getAgencyName() : "");
                     } catch (Exception e) {
