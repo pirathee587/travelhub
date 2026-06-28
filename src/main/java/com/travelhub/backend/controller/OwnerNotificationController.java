@@ -2,14 +2,13 @@ package com.travelhub.backend.controller;
 
 import com.travelhub.backend.dto.response.OwnerNotificationResponse;
 import com.travelhub.backend.service.OwnerNotificationService;
+import com.travelhub.backend.util.OwnerContextResolver;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Map;
-
-import com.travelhub.backend.util.OwnerContextResolver;
 
 /**
  * OwnerNotificationController

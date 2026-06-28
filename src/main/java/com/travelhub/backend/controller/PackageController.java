@@ -26,7 +26,10 @@ public class PackageController {
         return ResponseEntity.ok(packageService.getAllPackages());
     }
 
-
+    @GetMapping("/trending")
+    public ResponseEntity<List<PackageResponse>> getTrendingPackages() {
+        return ResponseEntity.ok(packageService.getTrendingPackages());
+    }
 
     @GetMapping("/{id}")
     public ResponseEntity<PackageDetailResponse> getPackageById(@PathVariable Long id) {
@@ -38,6 +41,6 @@ public class PackageController {
     // Called by Python AI service on startup and every 30 min to sync ChromaDB
     @GetMapping("/chatbot-data")
     public ResponseEntity<List<Map<String, Object>>> getPackagesForChatbot() {
-    return ResponseEntity.ok(packageService.getAllPackagesForChatbot());
+        return ResponseEntity.ok(packageService.getAllPackagesForChatbot());
     }
 }

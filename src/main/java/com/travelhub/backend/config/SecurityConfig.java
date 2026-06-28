@@ -55,12 +55,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/rooms/**").permitAll()
                         .requestMatchers("/api/v1/owner/session/**").permitAll()
                         .requestMatchers("/api/v1/owner/profile/**").permitAll()
-                        .requestMatchers("/api/v1/rooms/**").permitAll()
-                        .requestMatchers("/api/rooms/**").permitAll()
-                        .requestMatchers("/api/v1/owner/session/**").permitAll()
-                        .requestMatchers("/api/v1/owner/profile/**").permitAll()
                         .requestMatchers("/api/v1/owner/notifications/**").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/rooms/**").permitAll()
                         .requestMatchers("/api/rooms/**").permitAll()
                         .requestMatchers("/api/v1/rooms/**").permitAll()
 

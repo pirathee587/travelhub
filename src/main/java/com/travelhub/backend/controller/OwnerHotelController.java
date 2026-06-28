@@ -5,7 +5,6 @@ import com.travelhub.backend.dto.request.OwnerHotelRequest;
 import com.travelhub.backend.dto.response.HotelResponse;
 import com.travelhub.backend.dto.response.OwnerHotelSummaryResponse;
 import com.travelhub.backend.service.OwnerAccessService;
-import com.travelhub.backend.dto.response.HotelSummaryResponse;
 import com.travelhub.backend.service.OwnerHotelService;
 import com.travelhub.backend.util.OwnerContextResolver;
 import lombok.RequiredArgsConstructor;
@@ -45,10 +44,14 @@ public class OwnerHotelController {
     public ResponseEntity<HotelResponse> createHotel(
             @ModelAttribute OwnerHotelRequest request,
             @RequestParam(value = "hotelImage", required = false) MultipartFile hotelImage,
+            @RequestParam(value = "hotelImages", required = false) List<MultipartFile> hotelImages,
             @RequestHeader(value = "X-Owner-Id", required = false) Long devOwnerId) {
         Long ownerId = requireOwnerId(devOwnerId);
         ownerAccessService.validateApprovedActiveHotelOwner(ownerId);
-        return ResponseEntity.ok(ownerHotelService.createHotel(request, hotelImage, ownerId));
+        List<MultipartFile> files = hotelImages != null && !hotelImages.isEmpty()
+                ? hotelImages
+                : (hotelImage != null && !hotelImage.isEmpty() ? List.of(hotelImage) : List.of());
+        return ResponseEntity.ok(ownerHotelService.createHotel(request, hotelImage, ownerId, files));
     }
 
     @PutMapping("/{id}")
@@ -56,10 +59,14 @@ public class OwnerHotelController {
             @PathVariable Long id,
             @ModelAttribute OwnerHotelRequest request,
             @RequestParam(value = "hotelImage", required = false) MultipartFile hotelImage,
+            @RequestParam(value = "hotelImages", required = false) List<MultipartFile> hotelImages,
             @RequestHeader(value = "X-Owner-Id", required = false) Long devOwnerId) {
         Long ownerId = requireOwnerId(devOwnerId);
         ownerAccessService.validateApprovedActiveHotelOwner(ownerId);
-        return ResponseEntity.ok(ownerHotelService.updateHotel(id, request, hotelImage, ownerId));
+        List<MultipartFile> files = hotelImages != null && !hotelImages.isEmpty()
+                ? hotelImages
+                : (hotelImage != null && !hotelImage.isEmpty() ? List.of(hotelImage) : List.of());
+        return ResponseEntity.ok(ownerHotelService.updateHotel(id, request, hotelImage, ownerId, files));
     }
 
     @DeleteMapping("/{id}")

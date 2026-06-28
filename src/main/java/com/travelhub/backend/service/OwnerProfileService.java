@@ -32,24 +32,6 @@ public class OwnerProfileService {
         if (request.getPreferredLanguage() != null) user.setPreferredLanguage(request.getPreferredLanguage());
         if (request.getBusinessAddress() != null) user.setBusinessAddress(request.getBusinessAddress());
         if (request.getDistrict() != null) user.setDistrict(request.getDistrict());
-        if (request.getName() != null) {
-            user.setName(request.getName());
-        }
-        if (request.getTelephone() != null) {
-            user.setTelephone(request.getTelephone());
-        }
-        if (request.getProfileImage() != null) {
-            user.setProfileImage(request.getProfileImage());
-        }
-        if (request.getPreferredLanguage() != null) {
-            user.setPreferredLanguage(request.getPreferredLanguage());
-        }
-        if (request.getBusinessAddress() != null) {
-            user.setBusinessAddress(request.getBusinessAddress());
-        }
-        if (request.getDistrict() != null) {
-            user.setDistrict(request.getDistrict());
-        }
 
         user = userRepository.save(user);
 
