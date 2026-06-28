@@ -1,172 +1,186 @@
+"""
+main.py — TravelHUB Chatbot AI Service
+========================================
+Architecture: Direct Live Fetch (Real-Time)
+
+On every /chat request:
+  1. Fetch the current packages and hotels from Spring Boot (live database).
+  2. Format the data as readable text context.
+  3. Send [system_prompt + live_context + user_question] to Groq LLM.
+  4. Return the AI-generated answer.
+
+There is NO ChromaDB, NO vector embeddings, NO background scheduler,
+and NO sync process. Every answer is always based on the current database.
+"""
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from langchain_groq import ChatGroq
 from langchain.schema import HumanMessage, SystemMessage
-from apscheduler.schedulers.background import BackgroundScheduler
-from data_sync import sync_all_data, search_relevant_data
+from data_sync import fetch_all_live_data, fetch_live_packages
 from dotenv import load_dotenv
-from datetime import datetime
 import os
 from typing import Optional
 
 load_dotenv()
 
-app = FastAPI(title="TravelHUB Chatbot AI Service")
+app = FastAPI(title="TravelHUB Chatbot AI Service — Real-Time Mode")
 
-# Allow Spring Boot to call this Python service
+# Allow frontend to call this Python service directly
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"], # Allow direct frontend access for testing
+    allow_origins=["*"],
     allow_methods=["POST", "GET"],
     allow_headers=["*"],
 )
 
-# Groq LLM — free, extremely fast (under 1 second)
+# Groq LLM — free tier, extremely fast
 llm = ChatGroq(
     groq_api_key=os.getenv("GROQ_API_KEY"),
     model_name="llama-3.3-70b-versatile",
     temperature=0.3,
-    max_tokens=500
+    max_tokens=600
 )
 
-# Request model — field name must be "prompt" to match ChatbotService.java
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Request / Response Models
+# ─────────────────────────────────────────────────────────────────────────────
+
 class ChatRequest(BaseModel):
-    prompt: str
+    prompt: str   # Field name matches what ChatbotButton.jsx sends
 
-# Response model — field name must be "response" to match ChatbotWidget.jsx
+
 class ChatResponse(BaseModel):
-    response: str
+    response: str   # Field name matches what ChatbotButton.jsx reads
 
 
-SYSTEM_PROMPT = """You are a friendly and helpful tourist assistant for TravelHUB,
+# ─────────────────────────────────────────────────────────────────────────────
+# System Prompt
+# ─────────────────────────────────────────────────────────────────────────────
+
+SYSTEM_PROMPT = """You are a friendly and knowledgeable tourist assistant for TravelHUB,
 a travel platform for Sri Lanka.
 
 You help tourists with:
-- Finding travel packages that match their interests
+- Finding travel packages that match their interests and budget
 - Recommending hotels and accommodations
-- Providing information about destinations in Sri Lanka
-- Giving travel tips and advice
+- Providing information about destinations across Sri Lanka
+- Sharing travel tips and advice
 
 IMPORTANT RULES:
-1. Answer ONLY using the travel data provided to you in each message
-2. If the data does not have enough information, say so honestly
-3. Always mention specific package or hotel names when recommending
-4. Format prices as dollar amounts
-5. Be friendly, helpful, and concise
-6. Only answer questions related to Sri Lanka travel"""
+1. Answer ONLY using the live TravelHUB data provided to you in each message
+2. The data you receive is fetched directly from the live database right now — it is always current
+3. If you cannot find relevant information in the provided data, say so honestly
+4. Always mention specific package or hotel names when making recommendations
+5. Format prices clearly (e.g. "$150 - $300 per person")
+6. Be friendly, helpful, and concise
+7. Only answer questions related to Sri Lanka travel and TravelHUB offerings"""
 
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Endpoints
+# ─────────────────────────────────────────────────────────────────────────────
 
 @app.post("/chat", response_model=ChatResponse)
 async def chat(request: ChatRequest):
     """
-    Main chatbot endpoint.
-    1. Receive tourist question from Spring Boot
-    2. Search ChromaDB for relevant travel data
-    3. Send data + question to Groq LLM
-    4. Return AI answer
+    Main chatbot endpoint — REAL-TIME mode.
+
+    Flow:
+      1. Receive user question from the frontend.
+      2. Fetch ALL current packages and hotels from Spring Boot (live database).
+      3. Build LLM prompt: system prompt + live data + user question.
+      4. Send to Groq LLM and return the answer.
+
+    Data is ALWAYS fetched fresh from the database on every single request.
+    No caching. No ChromaDB. No staleness possible.
     """
     user_question = request.prompt.strip()
+    print(f"\n[Chat] User question: {user_question}")
 
-    # Search ChromaDB for top 5 most relevant packages/hotels
-    relevant_docs = search_relevant_data(user_question, top_k=5)
+    # ── Step 1: Fetch live data from the database ──────────────────────────
+    live_context, pkg_count, hotel_count = fetch_all_live_data()
+    print(f"[Chat] Live data loaded — {pkg_count} packages, {hotel_count} hotels")
 
-    if relevant_docs:
-        context = "\n\n".join(relevant_docs)
-        context_block = f"""Here is the relevant TravelHUB data:
----
-{context}
+    # ── Step 2: Build context block ────────────────────────────────────────
+    if live_context:
+        context_block = f"""The following is LIVE data fetched directly from the TravelHUB database right now.
+This data reflects the current state of all packages and hotels as of this moment.
+
+{live_context}
+
 ---"""
     else:
-        context_block = "No specific travel data found for this query."
+        context_block = (
+            "⚠️  Unable to fetch live data from the database at this moment. "
+            "Please ensure the backend server is running and try again."
+        )
 
-    # Build prompt: system identity + relevant data + tourist question
+    # ── Step 3: Build full prompt ──────────────────────────────────────────
     full_prompt = f"""{context_block}
 
 Tourist question: {user_question}
 
-Please answer based on the TravelHUB data shown above."""
+Please answer based solely on the live TravelHUB data shown above."""
 
+    # ── Step 4: Call Groq LLM ──────────────────────────────────────────────
     messages = [
         SystemMessage(content=SYSTEM_PROMPT),
-        HumanMessage(content=full_prompt)
+        HumanMessage(content=full_prompt),
     ]
 
     ai_response = llm.invoke(messages)
+    print(f"[Chat] ✅ Response generated successfully")
 
     return ChatResponse(response=ai_response.content)
 
 
-@app.post("/sync")
-async def sync():
-    """
-    Re-sync all data from Spring Boot into ChromaDB.
-    Spring Boot calls this when admin creates or updates a package or hotel.
-    Also called on startup and periodically (every 5 minutes) to catch any missed updates.
-    """
-    sync_all_data()
-    return {"status": "Sync completed"}
-
-
-@app.post("/notify-update")
-async def notify_update(data: dict = None):
-    """
-    ✅ REAL-TIME PUSH ENDPOINT: Spring Boot calls this when packages/hotels are created, updated, or deleted.
-    Triggers immediate sync instead of waiting for the 5-minute interval.
-    Ensures chatbot has latest data within seconds, not minutes.
-    
-    Usage by Spring Boot:
-    - When package created: POST /notify-update {"type": "package", "action": "create"}
-    - When hotel updated: POST /notify-update {"type": "hotel", "action": "update"}
-    - When package deleted: POST /notify-update {"type": "package", "action": "delete"}
-    """
-    print(f"[Notify] Real-time update received: {data}")
-    # Immediately sync all data instead of waiting for scheduled interval
-    sync_all_data()
-    return {"status": "Update synced immediately", "timestamp": str(datetime.now())}
-
-
 @app.get("/health")
 async def health():
-    """Health check — open http://localhost:8001/health to verify service is running"""
-    return {"status": "ok", "service": "TravelHUB Chatbot"}
+    """
+    Health check endpoint.
+    Also verifies connectivity to the Spring Boot backend.
+    Visit http://localhost:8001/health to confirm the service is running.
+    """
+    backend_status = "unknown"
+    backend_url = os.getenv("SPRING_BOOT_URL", "http://localhost:8080")
+
+    try:
+        import httpx
+        resp = httpx.get(f"{backend_url}/api/packages/chatbot-data", timeout=5.0)
+        backend_status = "reachable" if resp.status_code == 200 else f"error_{resp.status_code}"
+    except Exception as e:
+        backend_status = f"unreachable ({type(e).__name__})"
+
+    return {
+        "status": "ok",
+        "service": "TravelHUB Chatbot — Real-Time Mode",
+        "mode": "direct_live_fetch",
+        "backend": backend_status,
+        "note": "Every /chat request fetches live data from the database. No caching."
+    }
 
 
 @app.get("/packages")
 async def packages(destination: Optional[str] = None):
     """
-    Live packages endpoint.
-    - If `destination` provided, returns packages matching that destination (case-insensitive).
-    - Returns full package JSON from Spring Boot (no LLM summarization) for accuracy.
+    Live packages lookup endpoint.
+    Fetches current packages directly from Spring Boot.
+    If `destination` is provided, filters by destination (case-insensitive).
     """
-    from data_sync import get_live_packages
+    all_packages = fetch_live_packages()
 
-    pkgs = get_live_packages(destination)
-    if not pkgs:
-        return {"status": "no_data", "packages": []}
-    return {"status": "ok", "packages": pkgs}
+    if destination:
+        filtered = [
+            p for p in all_packages
+            if isinstance(p.get("destination"), str)
+            and p["destination"].lower() == destination.lower()
+        ]
+        return {"status": "ok", "packages": filtered, "count": len(filtered)}
 
+    if not all_packages:
+        return {"status": "no_data", "packages": [], "count": 0}
 
-@app.on_event("startup")
-async def on_startup():
-    """
-    Runs when Python service starts:
-    1. Immediately sync all data from Spring Boot into ChromaDB
-    2. Schedule auto-sync every 5 minutes as a safety net
-    3. Spring Boot will call /notify-update for real-time changes, so 5 min interval is just a fallback
-    """
-    print("[Startup] TravelHUB Chatbot AI service starting...")
-
-    sync_all_data()
-
-    # ✅ REDUCED FROM 30 MIN TO 5 MIN: Safety net sync in case push notifications are missed
-    # Primary update mechanism is now push-based via /notify-update endpoint
-    scheduler = BackgroundScheduler()
-    scheduler.add_job(
-        func=sync_all_data,
-        trigger="interval",
-        minutes=5,
-        id="auto_sync"
-    )
-    scheduler.start()
-    print("[Startup] ✅ Chatbot ready! Primary: push-based updates via /notify-update. Fallback: auto-sync every 5 minutes.")
+    return {"status": "ok", "packages": all_packages, "count": len(all_packages)}
