@@ -65,6 +65,10 @@ public class OwnerHotelService {
             files = List.of(hotelImage);
         }
 
+        if (files.size() < 3) {
+            throw new IllegalArgumentException("Minimum 3 hotel images are required.");
+        }
+
         if (!files.isEmpty()) {
             try {
                 imageUrl = imageUploadService.uploadHotelImage(files.get(0)).getImageUrl();

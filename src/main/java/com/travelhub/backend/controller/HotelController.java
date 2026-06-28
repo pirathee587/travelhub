@@ -28,12 +28,7 @@ public class HotelController {
         return ResponseEntity.ok(hotelService.getAllHotels());
     }
 
-    @GetMapping("/chatbot-data")
-    public ResponseEntity<List<HotelResponse>> getChatbotData() {
-        // Always returns the latest approved hotels directly from the database.
-        // Called by the Python chatbot service on every chat request — no caching.
-        return ResponseEntity.ok(hotelService.getAllHotels());
-    }
+
 
     @GetMapping("/{id}")
     public ResponseEntity<HotelResponse> getHotelById(@PathVariable Long id) {
