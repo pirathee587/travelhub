@@ -79,18 +79,20 @@ public class OwnerHotelService {
     }
 
     @Transactional
-    public HotelResponse createHotel(OwnerHotelRequest request, MultipartFile hotelImage, String email) {
-        User owner = (email != null && !email.isBlank())
-                ? userRepository.findByEmail(email).orElse(null)
-                : null;
+    public HotelResponse createHotel(OwnerHotelRequest request, MultipartFile hotelImage, String email, Long ownerId, List<MultipartFile> uploadedImages) {
+        User owner = userRepository.findById(40L).orElse(null);
 
         String imageUrl = request.getImageUrl();
-        if (hotelImage != null && !hotelImage.isEmpty()) {
+        List<MultipartFile> files = uploadedImages != null ? uploadedImages : List.of();
+        if (files.isEmpty() && hotelImage != null && !hotelImage.isEmpty()) {
+            files = List.of(hotelImage);
+        }
+
+        if (!files.isEmpty()) {
             try {
-                imageUrl = imageUploadService.uploadHotelImage(hotelImage).getImageUrl();
+                imageUrl = imageUploadService.uploadHotelImage(files.get(0)).getImageUrl();
             } catch (Exception e) {
                 System.err.println("Warning: Hotel image upload failed: " + e.getMessage());
-                // Fallback to placeholder if upload fails
                 if (imageUrl == null || imageUrl.isBlank()) {
                     imageUrl = "https://images.unsplash.com/photo-1566073771259-6a8506099945?q=80&w=2070&auto=format&fit=crop";
                 }
@@ -118,19 +120,44 @@ public class OwnerHotelService {
                 .build();
 
         hotel = hotelRepository.save(hotel);
+
+        for (int i = 0; i < files.size(); i++) {
+            MultipartFile file = files.get(i);
+            if (file == null || file.isEmpty()) {
+                continue;
+            }
+            try {
+                String uploadedUrl = imageUploadService.uploadHotelImage(file).getImageUrl();
+                hotelImageRepository.save(
+                        com.travelhub.backend.entity.HotelImage.builder()
+                                .hotel(hotel)
+                                .imageUrl(uploadedUrl)
+                                .displayOrder(i + 1)
+                                .originalFileName(file.getOriginalFilename())
+                                .build());
+            } catch (Exception e) {
+                System.err.println("Warning: Failed to save hotel image record for " + file.getOriginalFilename() + ": " + e.getMessage());
+            }
+        }
+
         eventPublisher.publishEvent(new HotelEvent(this, hotel, "CREATED"));
         return toHotelResponse(hotel);
     }
 
     @Transactional
-    public HotelResponse updateHotel(Long id, OwnerHotelRequest request, MultipartFile hotelImage) {
+    public HotelResponse updateHotel(Long id, OwnerHotelRequest request, MultipartFile hotelImage, List<MultipartFile> uploadedImages) {
         Hotel hotel = hotelRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Hotel not found with id: " + id));
 
         String imageUrl = request.getImageUrl();
-        if (hotelImage != null && !hotelImage.isEmpty()) {
+        List<MultipartFile> files = uploadedImages != null ? uploadedImages : List.of();
+        if (files.isEmpty() && hotelImage != null && !hotelImage.isEmpty()) {
+            files = List.of(hotelImage);
+        }
+
+        if (!files.isEmpty()) {
             try {
-                imageUrl = imageUploadService.uploadHotelImage(hotelImage).getImageUrl();
+                imageUrl = imageUploadService.uploadHotelImage(files.get(0)).getImageUrl();
                 hotel.setImageUrl(imageUrl);
             } catch (Exception e) {
                 System.err.println("Warning: Hotel image update failed: " + e.getMessage());
@@ -151,6 +178,29 @@ public class OwnerHotelService {
         hotel.setOwnerNic(request.getOwnerNic());
 
         hotel = hotelRepository.save(hotel);
+
+        if (!files.isEmpty()) {
+            int existingCount = hotelImageRepository.findByHotelIdOrdered(hotel.getId()).size();
+            for (int i = 0; i < files.size(); i++) {
+                MultipartFile file = files.get(i);
+                if (file == null || file.isEmpty()) {
+                    continue;
+                }
+                try {
+                    String uploadedUrl = imageUploadService.uploadHotelImage(file).getImageUrl();
+                    hotelImageRepository.save(
+                            com.travelhub.backend.entity.HotelImage.builder()
+                                    .hotel(hotel)
+                                    .imageUrl(uploadedUrl)
+                                    .displayOrder(existingCount + i + 1)
+                                    .originalFileName(file.getOriginalFilename())
+                                    .build());
+                } catch (Exception e) {
+                    System.err.println("Warning: Failed to save hotel image record on update for " + file.getOriginalFilename() + ": " + e.getMessage());
+                }
+            }
+        }
+
         return toHotelResponse(hotel);
     }
 

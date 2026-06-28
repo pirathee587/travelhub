@@ -39,8 +39,9 @@ public class RoomController {
                                         @RequestParam double price,
                                         @RequestParam(required = false) String description,
                                         @RequestParam(required = false) MultipartFile image,
-                                        @RequestParam(defaultValue = "true") boolean availability) {
-        Room room = roomService.addRoom(name, type, price, description, image, availability);
+                                        @RequestParam(defaultValue = "true") boolean availability,
+                                        @RequestParam(required = false) Long hotelId) {
+        Room room = roomService.addRoom(name, type, price, description, image, availability, hotelId);
         return ResponseEntity.ok(room);
     }
 

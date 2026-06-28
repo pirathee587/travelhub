@@ -36,17 +36,26 @@ public class OwnerHotelController {
     public ResponseEntity<HotelResponse> createHotel(
             @ModelAttribute OwnerHotelRequest request,
             @RequestParam(value = "hotelImage", required = false) MultipartFile hotelImage,
+            @RequestParam(value = "hotelImages", required = false) List<MultipartFile> hotelImages,
+            @RequestHeader(value = "X-Owner-Id", required = false) Long ownerId,
             java.security.Principal principal) {
         String email = principal != null ? principal.getName() : request.getOwnerEmail();
-        return ResponseEntity.ok(ownerHotelService.createHotel(request, hotelImage, email));
+        List<MultipartFile> files = hotelImages != null && !hotelImages.isEmpty()
+                ? hotelImages
+                : (hotelImage != null && !hotelImage.isEmpty() ? List.of(hotelImage) : List.of());
+        return ResponseEntity.ok(ownerHotelService.createHotel(request, hotelImage, email, ownerId, files));
     }
 
     @PutMapping("/{id}")
     public ResponseEntity<HotelResponse> updateHotel(
             @PathVariable Long id,
             @ModelAttribute OwnerHotelRequest request,
-            @RequestParam(value = "hotelImage", required = false) MultipartFile hotelImage) {
-        return ResponseEntity.ok(ownerHotelService.updateHotel(id, request, hotelImage));
+            @RequestParam(value = "hotelImage", required = false) MultipartFile hotelImage,
+            @RequestParam(value = "hotelImages", required = false) List<MultipartFile> hotelImages) {
+        List<MultipartFile> files = hotelImages != null && !hotelImages.isEmpty()
+                ? hotelImages
+                : (hotelImage != null && !hotelImage.isEmpty() ? List.of(hotelImage) : List.of());
+        return ResponseEntity.ok(ownerHotelService.updateHotel(id, request, hotelImage, files));
     }
 
     @DeleteMapping("/{id}")

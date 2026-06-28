@@ -25,6 +25,13 @@ public class PackageController {
         return ResponseEntity.ok(packageService.getAllPackages());
     }
 
+    @GetMapping("/chatbot-data")
+    public ResponseEntity<List<PackageResponse>> getChatbotData() {
+        // Always returns the latest active packages directly from the database.
+        // Called by the Python chatbot service on every chat request — no caching.
+        return ResponseEntity.ok(packageService.getAllPackages());
+    }
+
     @GetMapping("/trending")
     public ResponseEntity<List<PackageResponse>> getTrendingPackages() {
         return ResponseEntity.ok(packageService.getTrendingPackages());
