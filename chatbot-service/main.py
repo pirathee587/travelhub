@@ -1,31 +1,30 @@
 """
 main.py — TravelHUB Chatbot AI Service
 ========================================
-Architecture: Direct Live Fetch (Real-Time)
+Architecture: Dynamic SQL Agent (Real-Time)
 
 On every /chat request:
-  1. Fetch the current packages and hotels from Spring Boot (live database).
-  2. Format the data as readable text context.
-  3. Send [system_prompt + live_context + user_question] to Groq LLM.
-  4. Return the AI-generated answer.
-
-There is NO ChromaDB, NO vector embeddings, NO background scheduler,
-and NO sync process. Every answer is always based on the current database.
+  1. The user question is received.
+  2. The LangChain SQL Agent translates the question into a SQL query.
+  3. The agent executes the query securely against the live PostgreSQL database.
+  4. The agent formulates a friendly natural language response.
 """
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-from langchain_groq import ChatGroq
-from langchain.schema import HumanMessage, SystemMessage
-from data_sync import fetch_all_live_data, fetch_live_packages
 from dotenv import load_dotenv
 import os
-from typing import Optional
+import re
+
+from langchain_groq import ChatGroq
+from langchain_community.utilities import SQLDatabase
+from langchain_community.agent_toolkits import SQLDatabaseToolkit
+from langchain.agents import create_sql_agent
 
 load_dotenv()
 
-app = FastAPI(title="TravelHUB Chatbot AI Service — Real-Time Mode")
+app = FastAPI(title="TravelHUB Chatbot AI Service — Dynamic SQL Mode")
 
 # Allow frontend to call this Python service directly
 app.add_middleware(
@@ -39,8 +38,54 @@ app.add_middleware(
 llm = ChatGroq(
     groq_api_key=os.getenv("GROQ_API_KEY"),
     model_name="llama-3.3-70b-versatile",
-    temperature=0.3,
+    temperature=0.0,
     max_tokens=600
+)
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Database Connection & Agent Setup
+# ─────────────────────────────────────────────────────────────────────────────
+db_url = os.getenv("DATABASE_URL")
+if db_url and db_url.startswith("postgresql://"):
+    # Force use of psycopg3 (psycopg) instead of psycopg2
+    db_url = db_url.replace("postgresql://", "postgresql+psycopg://", 1)
+
+# Only allow the agent to see tables related to tourism data
+TOURIST_TABLES = [
+    "packages", 
+    "hotels", 
+    "rooms", 
+    "amenities", 
+    "package_itinerary", 
+    "hotel_images", 
+    "package_images",
+    "reviews"
+]
+
+db = SQLDatabase.from_uri(db_url, include_tables=TOURIST_TABLES, sample_rows_in_table_info=3)
+toolkit = SQLDatabaseToolkit(db=db, llm=llm)
+
+SYSTEM_PROMPT = """You are a friendly and highly knowledgeable tourist assistant for TravelHUB, a premier travel platform for Sri Lanka.
+You have direct access to our live database to answer user queries about travel packages, hotels, rooms, amenities, and more.
+
+IMPORTANT RULES:
+1. You MUST generate and execute SQL queries to fetch real-time information to answer the user's question.
+2. The database contains up-to-date prices, availability, and details. **NEVER make up data, packages, or hotels.** If a SQL query returns no results, you MUST reply that you could not find any matching packages or hotels. Do NOT use general knowledge to recommend places if they are not in the database results.
+3. If the user asks for a hotel, search the `hotels` and `rooms` tables. If they ask for a package, search the `packages` table.
+4. When filtering by a place (destination, district, or city), you MUST search across multiple columns (e.g. `destination`, `district`, `location`, `package_name`, `hotel_name`) using ILIKE, because some columns might be NULL or empty in the database.
+5. Always mention specific package or hotel names exactly as they appear in the database.
+6. **ALL prices in the database are in USD ($).** You MUST format prices clearly with the $ symbol (e.g. "$150" or "150 USD"). DO NOT use LKR and DO NOT attempt to convert the prices to LKR.
+7. Be conversational, friendly, and helpful. If no results match the user's query, politely inform them and suggest an alternative if possible.
+8. NEVER reveal database schema details, table names, or SQL queries to the user.
+9. Limit the rows returned from the database to 10 unless specifically asked for more.
+"""
+
+agent_executor = create_sql_agent(
+    llm=llm,
+    toolkit=toolkit,
+    agent_type="openai-tools",
+    verbose=True,
+    prefix=SYSTEM_PROMPT
 )
 
 
@@ -57,130 +102,31 @@ class ChatResponse(BaseModel):
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# System Prompt
-# ─────────────────────────────────────────────────────────────────────────────
-
-SYSTEM_PROMPT = """You are a friendly and knowledgeable tourist assistant for TravelHUB,
-a travel platform for Sri Lanka.
-
-You help tourists with:
-- Finding travel packages that match their interests and budget
-- Recommending hotels and accommodations
-- Providing information about destinations across Sri Lanka
-- Sharing travel tips and advice
-
-IMPORTANT RULES:
-1. Answer ONLY using the live TravelHUB data provided to you in each message
-2. The data you receive is fetched directly from the live database right now — it is always current
-3. If you cannot find relevant information in the provided data, say so honestly
-4. Always mention specific package or hotel names when making recommendations
-5. Format prices clearly (e.g. "$150 - $300 per person")
-6. Be friendly, helpful, and concise
-7. Only answer questions related to Sri Lanka travel and TravelHUB offerings"""
-
-
-# ─────────────────────────────────────────────────────────────────────────────
 # Endpoints
 # ─────────────────────────────────────────────────────────────────────────────
 
 @app.post("/chat", response_model=ChatResponse)
 async def chat(request: ChatRequest):
     """
-    Main chatbot endpoint — REAL-TIME mode.
-
-    Flow:
-      1. Receive user question from the frontend.
-      2. Fetch ALL current packages and hotels from Spring Boot (live database).
-      3. Build LLM prompt: system prompt + live data + user question.
-      4. Send to Groq LLM and return the answer.
-
-    Data is ALWAYS fetched fresh from the database on every single request.
-    No caching. No ChromaDB. No staleness possible.
+    Main chatbot endpoint — DYNAMIC SQL mode.
+    Flow: User Question -> LLM generates SQL -> Executes SQL -> LLM formats answer.
     """
     user_question = request.prompt.strip()
     print(f"\n[Chat] User question: {user_question}")
 
-    # ── Step 1: Fetch live data from the database ──────────────────────────
-    live_context, pkg_count, hotel_count = fetch_all_live_data()
-    print(f"[Chat] Live data loaded — {pkg_count} packages, {hotel_count} hotels")
-
-    # ── Step 2: Build context block ────────────────────────────────────────
-    if live_context:
-        context_block = f"""The following is LIVE data fetched directly from the TravelHUB database right now.
-This data reflects the current state of all packages and hotels as of this moment.
-
-{live_context}
-
----"""
-    else:
-        context_block = (
-            "⚠️  Unable to fetch live data from the database at this moment. "
-            "Please ensure the backend server is running and try again."
-        )
-
-    # ── Step 3: Build full prompt ──────────────────────────────────────────
-    full_prompt = f"""{context_block}
-
-Tourist question: {user_question}
-
-Please answer based solely on the live TravelHUB data shown above."""
-
-    # ── Step 4: Call Groq LLM ──────────────────────────────────────────────
-    messages = [
-        SystemMessage(content=SYSTEM_PROMPT),
-        HumanMessage(content=full_prompt),
-    ]
-
-    ai_response = llm.invoke(messages)
-    print(f"[Chat] ✅ Response generated successfully")
-
-    return ChatResponse(response=ai_response.content)
+    try:
+        result = agent_executor.invoke({"input": user_question})
+        return ChatResponse(response=result["output"])
+    except Exception as e:
+        print(f"[Chat] Error generating response: {e}")
+        return ChatResponse(response="I'm sorry, I encountered an error while trying to fetch that information. Please try asking in a different way or contact support.")
 
 
 @app.get("/health")
 async def health():
-    """
-    Health check endpoint.
-    Also verifies connectivity to the Spring Boot backend.
-    Visit http://localhost:8001/health to confirm the service is running.
-    """
-    backend_status = "unknown"
-    backend_url = os.getenv("SPRING_BOOT_URL", "http://localhost:8080")
-
-    try:
-        import httpx
-        resp = httpx.get(f"{backend_url}/api/packages/chatbot-data", timeout=5.0)
-        backend_status = "reachable" if resp.status_code == 200 else f"error_{resp.status_code}"
-    except Exception as e:
-        backend_status = f"unreachable ({type(e).__name__})"
-
+    """Health check endpoint."""
     return {
         "status": "ok",
-        "service": "TravelHUB Chatbot — Real-Time Mode",
-        "mode": "direct_live_fetch",
-        "backend": backend_status,
-        "note": "Every /chat request fetches live data from the database. No caching."
+        "service": "TravelHUB Chatbot — Dynamic SQL Mode",
+        "tables_accessible": TOURIST_TABLES
     }
-
-
-@app.get("/packages")
-async def packages(destination: Optional[str] = None):
-    """
-    Live packages lookup endpoint.
-    Fetches current packages directly from Spring Boot.
-    If `destination` is provided, filters by destination (case-insensitive).
-    """
-    all_packages = fetch_live_packages()
-
-    if destination:
-        filtered = [
-            p for p in all_packages
-            if isinstance(p.get("destination"), str)
-            and p["destination"].lower() == destination.lower()
-        ]
-        return {"status": "ok", "packages": filtered, "count": len(filtered)}
-
-    if not all_packages:
-        return {"status": "no_data", "packages": [], "count": 0}
-
-    return {"status": "ok", "packages": all_packages, "count": len(all_packages)}
