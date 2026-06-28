@@ -1,5 +1,4 @@
-import { Search, Bell, User } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Search } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 
 type DashboardHeaderProps = {
@@ -54,16 +53,6 @@ const DashboardHeader = ({
             value={roomSearch}
             onChange={(e) => onRoomSearchChange(e.target.value)}
           />
-        </div>
-
-        <div className="flex items-center gap-3">
-          <Button variant="outline" size="icon" className="relative">
-            <Bell className="h-4 w-4" />
-            <span className="absolute top-2 right-2 h-2 w-2 rounded-full bg-red-500 ring-2 ring-background block" />
-          </Button>
-          <Button variant="outline" size="icon" className="rounded-full">
-            <User className="h-4 w-4" />
-          </Button>
         </div>
       </div>
     </header>

@@ -42,14 +42,18 @@ function EditHotelPage() {
     );
   }
 
-  const handleSubmit = (values: HotelFormValues) => {
-  updateHotel(hotelId, {
-    ...values,
-    district: values.district as District,
-  });
-  toast.success("Hotel updated successfully.");
-  navigate({ to: "/" });
-};
+  const handleSubmit = async (values: HotelFormValues, files?: Record<string, File>) => {
+    try {
+      await updateHotel(hotelId, {
+        ...values,
+        district: values.district as District,
+      }, files);
+      toast.success("Hotel updated successfully.");
+      navigate({ to: "/" });
+    } catch (e) {
+      toast.error("Failed to update hotel.");
+    }
+  };
 
   return (
     <AppShell>

@@ -26,7 +26,7 @@ export const Route = createFileRoute("/settings")({
 // ── Validation schema ─────────────────────────────────────────────────────────
 const schema = z.object({
   name: z.string().trim().min(2, "Name must be at least 2 characters").max(80),
-  email: z.string().trim().email("Enter a valid email address").max(120),
+  email: z.string().trim().max(120).optional(),
   phone: z
     .string()
     .trim()
@@ -191,11 +191,7 @@ function SettingsPage() {
                 className="inline-flex h-9 items-center gap-1.5 rounded-[10px] border border-border bg-card px-3 text-xs font-semibold text-foreground shadow-sm transition hover:bg-secondary disabled:opacity-60"
               >
                 <ImagePlus className="h-3.5 w-3.5" />
-                {uploadingPhoto
-                  ? "Uploading…"
-                  : values.avatar
-                  ? "Change photo"
-                  : "Upload photo"}
+                {uploadingPhoto ? "Uploading…" : values.avatar ? "Change photo" : "Upload photo"}
               </button>
               {values.avatar && !uploadingPhoto && (
                 <button
@@ -233,12 +229,7 @@ function SettingsPage() {
             />
           </Field>
 
-          <Field
-            label="Email Address"
-            error={errors.email}
-            required
-            className="md:col-span-2"
-          >
+          <Field label="Email Address" error={errors.email} required className="md:col-span-2">
             <input
               type="email"
               value={values.email}
@@ -306,9 +297,7 @@ function Field({
         {required && <span className="ml-0.5 text-destructive">*</span>}
       </label>
       {children}
-      {error && (
-        <p className="mt-1.5 text-xs font-medium text-destructive">{error}</p>
-      )}
+      {error && <p className="mt-1.5 text-xs font-medium text-destructive">{error}</p>}
     </div>
   );
 }

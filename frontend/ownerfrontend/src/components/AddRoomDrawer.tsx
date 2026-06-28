@@ -59,7 +59,7 @@ export function AddRoomDrawer({ hotelId, onSuccess, children }: AddRoomDrawerPro
         data.append("image", image);
       }
 
-      const res = await fetch("http://localhost:8080/api/rooms", {
+      const res = await fetch("http://localhost:8080/api/v1/rooms", {
         method: "POST",
         body: data,
       });
@@ -71,8 +71,13 @@ export function AddRoomDrawer({ hotelId, onSuccess, children }: AddRoomDrawerPro
         setImage(null);
         onSuccess();
       } else {
-        const err = await res.text();
-        toast.error(err || "Failed to add room");
+        const errText = await res.text();
+        try {
+          const errObj = JSON.parse(errText);
+          toast.error(errObj.message || "Failed to add room");
+        } catch (e) {
+          toast.error(errText || "Failed to add room");
+        }
       }
     } catch (error) {
       console.error("Error adding room:", error);

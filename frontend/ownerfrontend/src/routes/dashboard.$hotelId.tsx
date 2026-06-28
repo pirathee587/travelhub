@@ -21,6 +21,8 @@ function HotelDashboardPage() {
   const { hotel, loading } = useHotel(hotelId);
 
   const isPending = hotel?.applicationStatus === "Pending";
+  const isSuspended = hotel?.applicationStatus === "Approved" && hotel?.isActive === false;
+  const isLocked = isPending || isSuspended;
 
   if (loading) {
     return (
@@ -49,12 +51,12 @@ function HotelDashboardPage() {
 
   return (
     <AppShell>
-      {/* Full-page lock when Pending */}
-      <div className={`relative h-[calc(100vh-180px)] flex flex-col ${isPending ? "overflow-hidden" : ""}`}>
-        {isPending && <LockedOverlay />}
+      {/* Full-page lock when Pending or Suspended */}
+      <div className={`relative h-[calc(100vh-180px)] flex flex-col ${isLocked ? "overflow-hidden" : ""}`}>
+        {isLocked && <LockedOverlay reason={isSuspended ? "suspended" : "pending"} />}
 
-        {/* Content — pointer-events disabled when pending */}
-        <div className={`flex flex-col flex-1 min-h-0 ${isPending ? "pointer-events-none select-none" : ""}`}>
+        {/* Content — pointer-events disabled when pending or suspended */}
+        <div className={`flex flex-col flex-1 min-h-0 ${isLocked ? "pointer-events-none select-none" : ""}`}>
           <DashboardHeader
             roomSearch={roomSearch}
             onRoomSearchChange={setRoomSearch}
@@ -63,11 +65,11 @@ function HotelDashboardPage() {
 
           <div className="mt-6 flex flex-col gap-6 flex-1 min-h-0">
             <div className="flex-1 min-h-0">
-              <RoomManagement searchQuery={roomSearch} hotelId={hotelId} isLocked={isPending} />
+              <RoomManagement searchQuery={roomSearch} hotelId={hotelId} isLocked={isLocked} />
             </div>
 
             <div className="grid gap-6 lg:grid-cols-2 flex-1 min-h-0">
-              <AmenitiesGrid hotelId={hotelId} isLocked={isPending} />
+              <AmenitiesGrid hotelId={hotelId} isLocked={isLocked} />
               <ReviewsList hotelId={hotelId} />
             </div>
           </div>

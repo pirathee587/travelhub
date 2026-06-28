@@ -13,6 +13,7 @@ import {
 import { getInitials, useProfile } from "@/lib/profile-store";
 import { useOwnerSession } from "@/lib/owner-session";
 import { isUsingMockAuth, MOCK_USER_ID } from "@/lib/mock-auth";
+import { NotificationBell } from "@/components/NotificationBell";
 
 const nav = [
   { label: "Dashboard", to: "/" as const, icon: LayoutDashboard, exact: true },
@@ -72,7 +73,6 @@ export function AppShell({ children }: { children: ReactNode }) {
           </ul>
         </nav>
 
-        <OwnerSessionChip />
         <div className="px-6 pb-6 text-[11px] text-white/30">
           © {new Date().getFullYear()} TravelHUB
         </div>
@@ -92,7 +92,8 @@ export function AppShell({ children }: { children: ReactNode }) {
       {/* Main */}
       <main className="lg:pl-[260px]">
         {/* Desktop top bar with profile */}
-        <div className="sticky top-0 z-20 hidden h-16 items-center justify-end border-b border-border bg-background/80 px-8 backdrop-blur-md lg:flex lg:px-10">
+        <div className="sticky top-0 z-20 hidden h-16 items-center justify-end border-b border-border bg-background/80 px-8 backdrop-blur-md lg:flex lg:px-10 gap-3">
+          <NotificationBell />
           <ProfileMenu />
         </div>
 

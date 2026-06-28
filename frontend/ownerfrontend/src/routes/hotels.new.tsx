@@ -39,12 +39,13 @@ function AddHotelPage() {
           formData.append("priceFrom", "0");
           formData.append("description", values.description);
 
-          // Get the cover image file (first in the images array)
-          const coverImageSrc = values.images[0];
-          const coverFile = files?.[coverImageSrc];
-          if (coverFile) {
-            formData.append("hotelImage", coverFile);
-          }
+          // Append all images
+          values.images.forEach((imgSrc) => {
+            const file = files?.[imgSrc];
+            if (file) {
+              formData.append("hotelImages", file);
+            }
+          });
 
           const promise = fetch("http://localhost:8080/api/v1/owner/hotels", {
             method: "POST",
@@ -59,7 +60,7 @@ function AddHotelPage() {
             loading: "Adding hotel...",
             success: (data) => {
               sessionStorage.setItem("travelhub:lastHotelFilterStatus", "Pending");
-              navigate({ to: "/" });
+              navigate({ to: "/", search: { status: "Pending" } });
               return `${values.name} has been added successfully.`;
             },
             error: "Failed to add hotel. Please try again.",

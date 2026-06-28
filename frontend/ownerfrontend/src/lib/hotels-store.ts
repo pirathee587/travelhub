@@ -11,7 +11,9 @@ export type Hotel = {
   description: string;
   priceFrom: number;
   priceTo: number;
-  imageUrl: string;
+  rating: number | null;
+  reviewCount: number | null;
+  images: string[];
   amenities: string[];
   district: string;
   hotelEmail: string;
@@ -19,6 +21,7 @@ export type Hotel = {
   phoneNumber?: string;
   hotlineNumber?: string;
   applicationStatus: "Pending" | "Approved" | "Rejected";
+  isActive: boolean;
 };
 
 export type HotelSummary = {
@@ -29,31 +32,31 @@ export type HotelSummary = {
 };
 
 export const DISTRICTS: District[] = [
-  "Colombo District",
-  "Gampaha District",
-  "Kalutara District",
-  "Kandy District",
-  "Matale District",
-  "Nuwara Eliya District",
-  "Galle District",
-  "Matara District",
-  "Hambantota District",
-  "Jaffna District",
-  "Kilinochchi District",
-  "Mannar District",
-  "Vavuniya District",
-  "Mullaitivu District",
-  "Batticaloa District",
-  "Ampara District",
-  "Trincomalee District",
-  "Kurunegala District",
-  "Puttalam District",
-  "Anuradhapura District",
-  "Polonnaruwa District",
-  "Badulla District",
-  "Moneragala District",
-  "Ratnapura District",
-  "Kegalle District",
+  "Ampara",
+  "Anuradhapura",
+  "Badulla",
+  "Batticaloa",
+  "Colombo",
+  "Galle",
+  "Gampaha",
+  "Hambantota",
+  "Jaffna",
+  "Kalutara",
+  "Kandy",
+  "Kegalle",
+  "Kilinochchi",
+  "Kurunegala",
+  "Mannar",
+  "Matale",
+  "Matara",
+  "Monaragala",
+  "Mullaitivu",
+  "Nuwara Eliya",
+  "Polonnaruwa",
+  "Puttalam",
+  "Ratnapura",
+  "Trincomalee",
+  "Vavuniya",
 ];
 
 const API_BASE = "http://localhost:8080/api/v1/owner/hotels";
@@ -190,7 +193,7 @@ export function useHotel(hotelId: string) {
   return { hotel, loading };
 }
 
-export async function updateHotel(id: string, patch: Record<string, unknown>) {
+export async function updateHotel(id: string, patch: Record<string, unknown>, rawFiles?: Record<string, File>) {
   const formData = new FormData();
 
   const hotelName = patch.hotelName || patch.name;
@@ -207,10 +210,24 @@ export async function updateHotel(id: string, patch: Record<string, unknown>) {
 
   if (priceFrom !== undefined) formData.append("priceFrom", String(priceFrom));
   if (patch.priceTo !== undefined) formData.append("priceTo", String(patch.priceTo));
-
-  if (patch.imageUrl) formData.append("imageUrl", String(patch.imageUrl));
   if (phone) formData.append("phoneNumber", String(phone));
+  if (email) formData.append("ownerEmail", String(email));   // ← was missing
   if (patch.hotlineNumber) formData.append("hotlineNumber", String(patch.hotlineNumber));
+
+  // Append images
+  const images = patch.images as string[] | undefined;
+  if (images && images.length > 0) {
+    images.forEach(img => {
+      const file = rawFiles && rawFiles[img];
+      if (file) {
+        // This is a new file (stored as a data: URL key)
+        formData.append("hotelImages", file);
+      } else if (img.startsWith("http")) {
+        // This is an existing URL from the backend – preserve it
+        formData.append("existingImages", img);
+      }
+    });
+  }
 
   const response = await fetch(`${API_BASE}/${id}`, {
     method: "PUT",
@@ -218,7 +235,9 @@ export async function updateHotel(id: string, patch: Record<string, unknown>) {
     body: formData,
   });
   if (!response.ok) {
-    throw new Error("Failed to update hotel");
+    const body = await response.json().catch(() => ({}));
+    throw new Error(body.message ?? `Failed to update hotel (${response.status})`);
   }
   return (await response.json()) as Hotel;
 }
+

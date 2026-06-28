@@ -3,8 +3,20 @@ import { motion } from "framer-motion";
 import { Lock, Clock, ShieldAlert, ArrowLeft } from "lucide-react";
 import { useNavigate } from "@tanstack/react-router";
 
-const LockedOverlay: React.FC = () => {
+interface LockedOverlayProps {
+  reason?: "pending" | "suspended";
+}
+
+const LockedOverlay: React.FC<LockedOverlayProps> = ({ reason = "pending" }) => {
   const navigate = useNavigate();
+  const pending = reason === "pending";
+  const title = pending ? "Dashboard Locked" : "Hotel Suspended";
+  const description = pending
+    ? "Your hotel is currently under admin review. You can view your dashboard, but all actions are disabled until approval."
+    : "Your hotel has been suspended by an administrator. All management actions are disabled until it is reactivated.";
+  const actionLabel = pending ? "Waiting for Approval…" : "Suspended by Admin";
+  const statusIcon = pending ? <Clock className="h-10 w-10 text-amber-600" /> : <Lock className="h-10 w-10 text-red-600" />;
+
   return (
     <motion.div
       initial={{ opacity: 0 }}
@@ -19,9 +31,9 @@ const LockedOverlay: React.FC = () => {
       >
         <div className="mb-6 flex justify-center">
           <div className="relative">
-            <div className="absolute inset-0 animate-ping rounded-full bg-amber-400/20" />
-            <div className="relative rounded-full bg-amber-50 p-4">
-              <Lock className="h-10 w-10 text-amber-600" />
+            <div className={`absolute inset-0 animate-ping rounded-full ${pending ? "bg-amber-400/20" : "bg-red-400/20"}`} />
+            <div className={`relative rounded-full p-4 ${pending ? "bg-amber-50" : "bg-red-50"}`}>
+              {statusIcon}
             </div>
           </div>
         </div>
@@ -31,12 +43,7 @@ const LockedOverlay: React.FC = () => {
         </h2>
 
         <p className="mb-8 text-[15px] leading-relaxed text-muted-foreground">
-          Your hotel is currently{" "}
-          <span className="font-semibold text-amber-600 italic">
-            under admin review
-          </span>
-          . You can view your dashboard, but all actions are disabled until
-          approval.
+          {description}
         </p>
 
         <div className="space-y-3">
@@ -59,7 +66,7 @@ const LockedOverlay: React.FC = () => {
             disabled
             className="w-full rounded-xl bg-muted py-3 text-sm font-semibold text-muted-foreground cursor-not-allowed"
           >
-            Waiting for Approval…
+            {actionLabel}
           </button>
           
           <button

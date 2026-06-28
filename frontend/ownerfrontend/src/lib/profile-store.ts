@@ -37,7 +37,7 @@ export async function fetchProfile(): Promise<Profile> {
 }
 
 export async function updateProfile(
-  patch: Partial<Pick<Profile, "name" | "phone">>
+  patch: Partial<Pick<Profile, "name" | "phone">>,
 ): Promise<Profile> {
   const body: Record<string, string> = {};
   if (patch.name !== undefined) body.name = patch.name;

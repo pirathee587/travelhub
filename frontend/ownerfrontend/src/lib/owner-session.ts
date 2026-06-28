@@ -32,14 +32,25 @@ export function invalidateOwnerSession() {
 
 export async function fetchOwnerSession(): Promise<OwnerSession | null> {
   try {
-    const res = await fetch(API_BASE, { headers: getOwnerAuthHeaders() });
+    const res = await fetch(API_BASE, {
+      headers: {
+        "Accept": "application/json",
+        ...getOwnerAuthHeaders(),
+      },
+      mode: "cors",
+      cache: "no-store",
+    });
+
     if (!res.ok) {
       const body = await res.json().catch(() => ({}));
-      throw new Error(body.message ?? `Session check failed (${res.status})`);
+      const message = body.message ?? `Session check failed (${res.status})`;
+      console.error("Failed to fetch owner session:", message);
+      return null;
     }
     return (await res.json()) as OwnerSession;
   } catch (err) {
-    console.error("Failed to fetch owner session:", err);
+    const message = err instanceof Error ? err.message : String(err);
+    console.error("Failed to fetch owner session:", message);
     return null;
   }
 }

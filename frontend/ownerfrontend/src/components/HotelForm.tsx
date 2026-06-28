@@ -25,7 +25,7 @@ const schema = z.object({
     .max(2000, "Description is too long"),
   images: z
     .array(z.string().min(1))
-    .max(10, "You can upload up to 10 images")
+    .min(3, "You must upload at least 3 images")
     .default([]),
 });
 
@@ -44,8 +44,8 @@ export function HotelForm({
 }) {
   const navigate = useNavigate();
   const initialImages =
-    initial?.imageUrl && initial.imageUrl.length > 0
-      ? [initial.imageUrl]
+    initial?.images && initial.images.length > 0
+      ? initial.images
       : [];
 
   const [values, setValues] = useState<HotelFormValues>({
@@ -80,7 +80,10 @@ export function HotelForm({
     }
 
     if (initial) {
-      const imgs = initial.imageUrl ? [initial.imageUrl] : [];
+      const imgs =
+        initial.images && initial.images.length > 0
+          ? initial.images
+          : [];
       setValues({
         name: initial.hotelName ?? "",
         destination: initial.destination ?? "",
@@ -105,15 +108,7 @@ export function HotelForm({
     const list = Array.from(files);
     if (list.length === 0) return;
 
-    const remainingSlots = 10 - values.images.length;
-    if (remainingSlots <= 0) {
-      toast.error("You can upload up to 10 images.");
-      return;
-    }
-    const accepted = list.slice(0, remainingSlots);
-    if (list.length > accepted.length) {
-      toast.message(`Only added ${accepted.length} image(s). Limit is 10.`);
-    }
+    const accepted = list;
 
     const readers: Promise<{ src: string; file: File } | null>[] = accepted.map((file) => {
       return new Promise((resolve) => {
@@ -350,7 +345,6 @@ export function HotelForm({
                   </div>
                 ))}
 
-                {values.images.length < 10 && (
                   <button
                     type="button"
                     onClick={() => fileRef.current?.click()}
@@ -359,10 +353,9 @@ export function HotelForm({
                     <ImagePlus className="h-5 w-5" />
                     <span className="text-xs font-semibold">Add more</span>
                   </button>
-                )}
               </div>
               <p className="text-xs text-muted-foreground">
-                {values.images.length} of 10 images · click a thumbnail's "Set cover" to change
+                {values.images.length} image(s) · minimum 3 required · click a thumbnail's "Set cover" to change
                 the main photo.
               </p>
               {errors.images && (
@@ -398,7 +391,7 @@ export function HotelForm({
                 Drop images or click to upload
               </p>
               <p className="text-xs text-muted-foreground">
-                PNG, JPG up to 5MB each · add up to 10 images
+                PNG, JPG up to 5MB each · minimum 3 images required
               </p>
               {errors.images && (
                 <p className="mt-1 text-xs font-medium text-destructive">{errors.images}</p>

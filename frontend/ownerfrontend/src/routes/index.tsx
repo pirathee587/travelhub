@@ -279,7 +279,8 @@ function WelcomePage() {
 function HotelCard({ hotel, onDelete }: { hotel: Hotel; onDelete: () => void }) {
   const isPending = hotel.applicationStatus === "Pending";
   const isRejected = hotel.applicationStatus === "Rejected";
-  const isLocked = isPending || isRejected;
+  const isSuspended = hotel.applicationStatus === "Approved" && hotel.isActive === false;
+  const isLocked = isPending || isRejected || isSuspended;
 
   return (
     <motion.div
@@ -292,7 +293,7 @@ function HotelCard({ hotel, onDelete }: { hotel: Hotel; onDelete: () => void }) 
       <Link to="/dashboard/$hotelId" params={{ hotelId: String(hotel.id) }} className="block">
         <div className="relative aspect-[16/10] overflow-hidden bg-muted">
           <img
-            src={hotel.imageUrl}
+            src={hotel.images && hotel.images.length > 0 ? hotel.images[0] : "https://images.unsplash.com/photo-1566073771259-6a8506099945?q=80&w=2070&auto=format&fit=crop"}
             alt={hotel.hotelName}
             className="h-full w-full object-cover transition-transform duration-500 ease-[cubic-bezier(0.2,0.8,0.2,1)] group-hover:scale-[1.04]"
           />
@@ -300,13 +301,20 @@ function HotelCard({ hotel, onDelete }: { hotel: Hotel; onDelete: () => void }) 
           
           {/* Status Badge */}
           <div className={`absolute left-3 top-3 inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-semibold shadow-sm backdrop-blur ${
-            isPending 
-              ? "bg-amber-50/90 text-amber-700" 
-              : isRejected 
-                ? "bg-red-50/90 text-red-700" 
-                : "bg-emerald-50/90 text-emerald-700"
+            isSuspended
+              ? "bg-slate-950/90 text-slate-100"
+              : isPending
+                ? "bg-amber-50/90 text-amber-700"
+                : isRejected
+                  ? "bg-red-50/90 text-red-700"
+                  : "bg-emerald-50/90 text-emerald-700"
           }`}>
-            {isPending ? (
+            {isSuspended ? (
+              <>
+                <Lock className="h-3 w-3" />
+                Suspended
+              </>
+            ) : isPending ? (
               <>
                 <Clock className="h-3 w-3" />
                 Pending Approval
@@ -328,8 +336,16 @@ function HotelCard({ hotel, onDelete }: { hotel: Hotel; onDelete: () => void }) 
             {hotel.district}
           </div>
 
+          {isSuspended && (
+            <div className="absolute inset-0 flex items-center justify-center bg-black/30 text-center p-4">
+              <div className="rounded-full border border-white/20 bg-slate-950/80 px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-white shadow-lg">
+                Suspended
+              </div>
+            </div>
+          )}
+
           {/* Overlay for Locked (Pending/Rejected) */}
-          {isLocked && (
+          {isLocked && !isSuspended && (
             <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/20 text-center p-4 backdrop-blur-[1px] transition-opacity group-hover:opacity-0">
                <div className="rounded-full bg-white/40 p-2">
                 <Lock className="h-5 w-5 text-white" />
@@ -360,7 +376,7 @@ function HotelCard({ hotel, onDelete }: { hotel: Hotel; onDelete: () => void }) 
               : "bg-primary text-primary-foreground hover:bg-primary/90"
           }`}
         >
-          {isLocked ? "View Locked Dashboard" : "Manage Dashboard"}
+          {isSuspended ? "View Suspended Dashboard" : isLocked ? "View Locked Dashboard" : "Manage Dashboard"}
         </Link>
         
         {!isLocked && (
