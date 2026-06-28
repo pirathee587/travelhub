@@ -24,3 +24,7 @@ dist-ssr
 *.sln
 *.sw?
 chatbot-service/.env
+
+# Hotel owner frontend lives in its own branch (hotelownerfrontend)
+# It is checked out locally for development but not committed to this branch
+frontend/ownerfrontend/
