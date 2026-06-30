@@ -34,6 +34,12 @@ public interface BookingRepository
     @Query("SELECT b FROM Booking b JOIN b.vehicle v WHERE v.agent.id = :agentId AND b.status = :status")
     List<Booking> findByVehicleAgentIdAndStatus(@Param("agentId") Long agentId, @Param("status") String status);
 
+    @Query("SELECT b.driver.id FROM Booking b WHERE b.pkg.agent.id = :agentId AND b.status IN ('confirmed', 'in_progress') AND b.driver IS NOT NULL AND b.startDate <= :endDate AND b.endDate >= :startDate")
+    List<Long> findBookedDriverIds(@Param("agentId") Long agentId, @Param("startDate") LocalDate startDate, @Param("endDate") LocalDate endDate);
+
+    @Query("SELECT b.vehicle.id FROM Booking b WHERE b.pkg.agent.id = :agentId AND b.status IN ('confirmed', 'in_progress') AND b.vehicle IS NOT NULL AND b.startDate <= :endDate AND b.endDate >= :startDate")
+    List<Long> findBookedVehicleIds(@Param("agentId") Long agentId, @Param("startDate") LocalDate startDate, @Param("endDate") LocalDate endDate);
+
     // ── Scheduler queries ──────────────────────────────
     // Finds "confirmed" bookings whose startDate is today or earlier
     // Used to notify agent: "Trip [X] is scheduled to start today — please confirm"

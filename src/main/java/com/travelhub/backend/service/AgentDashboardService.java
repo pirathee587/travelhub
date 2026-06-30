@@ -40,7 +40,7 @@ public class AgentDashboardService {
                 .findByAgentId(agentId).size();
         long totalDrivers = driverRepository
                 .findByAgentId(agentId).size();
-        long totalPackages = packageRepository.countByAgentId(agentId);
+        long totalPackages = packageRepository.countByAgentIdAndDeletedAtIsNull(agentId);
 
         Double totalRevenue = bookingRepository
                 .findByAgentIdAndStatus(agentId, "completed")
