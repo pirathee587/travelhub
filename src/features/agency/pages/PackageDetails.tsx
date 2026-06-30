@@ -165,6 +165,7 @@ const PackageDetails = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(true);
   const [blobToFileMap, setBlobToFileMap] = useState({});
+  const [selectedImage, setSelectedImage] = useState(null);
   const fileInputRef = useRef(null);
 
   const fetchPackage = async () => {
@@ -951,8 +952,11 @@ const PackageDetails = () => {
                                 <div className="flex-1 space-y-2">
                                   <p className="text-sm text-foreground">{act.description}</p>
                                   {act.imageUrl && (
-                                    <div className="rounded-lg overflow-hidden h-32 w-48 border">
-                                      <img src={act.imageUrl} alt={`Activity ${actIdx + 1}`} className="w-full h-full object-cover" />
+                                    <div 
+                                      className="rounded-lg overflow-hidden h-32 w-48 border cursor-pointer group/actimg"
+                                      onClick={() => setSelectedImage(act.imageUrl)}
+                                    >
+                                      <img src={act.imageUrl} alt={`Activity ${actIdx + 1}`} className="w-full h-full object-cover group-hover/actimg:scale-105 transition-transform duration-300" />
                                     </div>
                                   )}
                                 </div>
@@ -975,7 +979,8 @@ const PackageDetails = () => {
                   {pkg.images.map((img, i) => (
                     <div
                       key={i}
-                      className="aspect-video rounded-lg overflow-hidden border bg-muted"
+                      className="aspect-video rounded-lg overflow-hidden border bg-muted cursor-pointer"
+                      onClick={() => setSelectedImage(img)}
                     >
                       <img
                         src={img}
@@ -1026,6 +1031,29 @@ const PackageDetails = () => {
           </div>
         </div>
       </div>
+
+      {/* Image Lightbox Modal */}
+      {selectedImage && (
+        <div 
+          className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4"
+          onClick={() => setSelectedImage(null)}
+        >
+          <div className="relative w-[65%] max-h-[90vh] bg-transparent flex items-center justify-center animate-in fade-in zoom-in-95 duration-200">
+            <button 
+              className="absolute -top-10 right-0 text-white hover:text-gray-300 bg-black/50 hover:bg-black/80 rounded-full p-2 transition-colors"
+              onClick={(e) => { e.stopPropagation(); setSelectedImage(null); }}
+            >
+              <X className="h-6 w-6" />
+            </button>
+            <img 
+              src={selectedImage} 
+              alt="Expanded view" 
+              className="max-w-full max-h-[85vh] object-contain rounded-lg shadow-2xl"
+              onClick={(e) => e.stopPropagation()}
+            />
+          </div>
+        </div>
+      )}
     </DashboardLayout>
   );
 };

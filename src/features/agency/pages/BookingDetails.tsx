@@ -125,16 +125,63 @@ const handleDownloadInvoice = (booking, formatPrice) => {
 };
 
 // ── Timeline ───────────────────────────────────────────────────
-const getTimelineSteps = (status) => {
+const getTimelineSteps = (booking) => {
+  if (!booking) return [];
+  const status = booking.status;
+  
+  // Calculate total days
+  let totalDays = 1;
+  if (booking.startDate && booking.endDate) {
+    const start = new Date(booking.startDate);
+    const end = new Date(booking.endDate);
+    const diffTime = Math.abs(end - start);
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    totalDays = diffDays > 0 ? diffDays : 1;
+  } else if (booking.duration) {
+    const num = parseInt(booking.duration, 10);
+    if (!isNaN(num)) totalDays = num;
+  }
+
+  // Calculate completed days based on today's date if in progress
+  let completedDays = 0;
+  if (status === 'completed') {
+    completedDays = totalDays;
+  } else if (status === 'in_progress' || status === 'In_progress' || status === 'active') {
+    if (booking.startDate) {
+      const today = new Date();
+      const start = new Date(booking.startDate);
+      // Strip times
+      today.setHours(0, 0, 0, 0);
+      start.setHours(0, 0, 0, 0);
+      
+      const diffTime = today - start;
+      const daysPassed = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+      if (daysPassed >= 0) {
+        completedDays = Math.min(daysPassed, totalDays);
+      }
+    }
+  }
+
   const steps = [
-    { label: 'Booking Requested' },
-    { label: 'Booking Accepted' },
-    { label: 'Trip Started' },
-    { label: 'Trip Completed' },
+    { label: 'Booking Requested', completed: true },
+    { label: 'Booking Accepted', completed: status !== 'pending' && status !== 'cancelled' },
+    { label: 'Trip Started', completed: status === 'in_progress' || status === 'In_progress' || status === 'active' || status === 'completed' },
   ];
-  const statusIndex = { pending: 0, confirmed: 1, in_progress: 2, completed: 3, cancelled: 0 };
-  const reached = statusIndex[status] ?? (isActive(status) ? 2 : 0);
-  return steps.map((step, i) => ({ ...step, completed: i <= reached }));
+
+  // Add dynamic day steps
+  for (let d = 1; d <= totalDays; d++) {
+    steps.push({
+      label: `Day ${d} Completed`,
+      completed: completedDays >= d
+    });
+  }
+
+  steps.push({
+    label: 'Trip Completed',
+    completed: status === 'completed'
+  });
+
+  return steps;
 };
 
 // ── Info field helper ──────────────────────────────────────────
@@ -157,8 +204,6 @@ const BookingDetails = () => {
   const [booking, setBooking] = useState(null);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
-  const [preferredHotels, setPreferredHotels] = useState([]);
-  const [preferredHotelsLoading, setPreferredHotelsLoading] = useState(false);
 
   // ── Shared resource lists ──────────────────────────────────────
   const [availableVehicles, setAvailableVehicles] = useState([]);
@@ -197,36 +242,15 @@ const BookingDetails = () => {
     fetchBooking();
   }, [id]);
 
-  useEffect(() => {
-    if (booking && booking.hotelIdsWithPreference) {
-      const fetchPreferredHotels = async () => {
-        setPreferredHotelsLoading(true);
-        try {
-          const parsed = JSON.parse(booking.hotelIdsWithPreference);
-          const ids = parsed.hotelIds || [];
-          const details = await Promise.all(
-            ids.map(id => fetch(`http://localhost:8082/api/hotels/${id}`).then(r => r.json()))
-          );
-          setPreferredHotels(details.filter(h => h && h.id));
-        } catch (err) {
-          console.error('Failed to load preferred hotels:', err);
-        } finally {
-          setPreferredHotelsLoading(false);
-        }
-      };
-      fetchPreferredHotels();
-    } else {
-      setPreferredHotels([]);
-    }
-  }, [booking]);
+
 
   // Load vehicles + drivers once (lazy, on first need)
   const loadResources = async () => {
     if (resourcesLoaded) return;
     try {
       const [vehicles, drivers] = await Promise.all([
-        api.getActiveVehicles(),
-        api.getDrivers(),
+        api.getActiveVehicles(booking?.startDate, booking?.endDate),
+        api.getDrivers(booking?.startDate, booking?.endDate),
       ]);
       setAvailableVehicles(Array.isArray(vehicles) ? vehicles : []);
       setAvailableDrivers(Array.isArray(drivers) ? drivers : []);
@@ -238,6 +262,22 @@ const BookingDetails = () => {
 
   // ── Simple Accept: just confirms the booking ───────────────────
   const handleAccept = async () => {
+    const hasVehicle = vehicleLabel || booking.vehicle?.type || booking.vehicleType;
+    const hasDriver = booking.driverName;
+
+    if (!hasVehicle && !hasDriver) {
+      toast.error('Please assign both a vehicle and a driver before accepting the booking.');
+      return;
+    }
+    if (!hasVehicle) {
+      toast.error('Please assign a vehicle before accepting the booking.');
+      return;
+    }
+    if (!hasDriver) {
+      toast.error('Please assign a driver before accepting the booking.');
+      return;
+    }
+
     try {
       const updated = await api.acceptBooking(booking.id);
       setBooking(updated);
@@ -319,8 +359,8 @@ const BookingDetails = () => {
   }
 
   // ── Derived values ─────────────────────────────────────────
-  const timeline = getTimelineSteps(booking.status);
-  const isPaid = booking.status === 'completed' || isActive(booking.status);
+  const timeline = getTimelineSteps(booking);
+  const isPaid = !!booking.isPaid;
 
   const duration = (() => {
     if (booking.duration) return `${booking.duration} days`;
@@ -502,7 +542,7 @@ const BookingDetails = () => {
                     The tourist has chosen to manage their own accommodation. No booking action is required from the agent.
                   </p>
                 </div>
-              ) : (booking.accommodationOption === 'AGENCY' || booking.hotelIdsWithPreference) ? (
+              ) : (booking.accommodationOption === 'AGENCY' || booking.hotelPreferences) ? (
                 <div className="space-y-4">
                   <div className="flex items-center justify-between">
                     <span className="inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-medium bg-sky-50 text-sky-700 border border-sky-200">
@@ -511,32 +551,51 @@ const BookingDetails = () => {
                     <span className="text-xs text-muted-foreground">Ranked by Priority</span>
                   </div>
 
-                  {preferredHotelsLoading ? (
-                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                      <div className="h-3 w-3 animate-spin rounded-full border border-primary border-t-transparent" />
-                      Loading preferred hotels...
-                    </div>
-                  ) : preferredHotels.length > 0 ? (
+                  {booking.hotelPreferences && booking.hotelPreferences.length > 0 ? (
                     <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                      {preferredHotels.map((hotel, index) => (
-                        <div key={hotel.id} className="relative border rounded-lg p-3 bg-muted/10 flex flex-col gap-2 hover:border-primary/30 transition-colors">
-                          <span className="absolute top-2 left-2 flex items-center justify-center h-5 w-5 rounded-full bg-primary text-primary-foreground text-[10px] font-bold shadow-sm">
-                            {index + 1}
+                      {booking.hotelPreferences.map((hotel) => (
+                        <div key={hotel.id || hotel.hotelId} className="relative border rounded-xl p-4 bg-muted/5 flex flex-col gap-3 hover:border-primary/40 transition-colors shadow-sm">
+                          <span className="absolute top-3 left-3 flex items-center justify-center h-6 w-6 rounded-full bg-primary text-primary-foreground text-xs font-bold shadow-md">
+                            {hotel.preferenceNumber}
                           </span>
                           {hotel.imageUrl ? (
-                            <img src={hotel.imageUrl} alt={hotel.hotelName} className="h-24 w-full object-cover rounded border" />
+                            <img src={hotel.imageUrl} alt={hotel.hotelName} className="h-32 w-full object-cover rounded-lg border" />
                           ) : (
-                            <div className="h-24 w-full bg-muted rounded border flex items-center justify-center text-xs">🏨</div>
+                            <div className="h-32 w-full bg-muted rounded-lg border flex items-center justify-center text-xl">🏨</div>
                           )}
-                          <div>
-                            <p className="font-semibold text-xs text-foreground truncate">{hotel.hotelName}</p>
-                            <p className="text-[10px] text-muted-foreground">{hotel.starRating}-Star · {hotel.district}</p>
+                          <div className="space-y-1.5 flex-1 flex flex-col justify-between">
+                            <div>
+                              <p className="font-bold text-sm text-foreground leading-tight truncate">{hotel.hotelName}</p>
+                              <p className="text-[11px] text-muted-foreground mt-0.5">{hotel.starRating || '4'}-Star · {hotel.district}</p>
+                            </div>
+                            
+                            {/* Room Choice */}
+                            <div className="bg-primary/5 border border-primary/10 rounded-md p-2 text-xs flex items-center gap-1.5 text-primary-dark">
+                              <Hotel className="h-3.5 w-3.5 shrink-0 text-primary" />
+                              <span className="truncate font-medium text-primary">Room: {hotel.roomName || 'Not Specified'}</span>
+                            </div>
+
+                            {/* Contact Details */}
+                            <div className="border-t border-border/60 pt-2 space-y-1 mt-1 text-[11px]">
+                              {hotel.contactNumber && (
+                                <div className="flex items-center gap-1.5 text-muted-foreground">
+                                  <Phone className="h-3.5 w-3.5 shrink-0 text-muted-foreground/60" />
+                                  <span className="truncate font-medium text-foreground">{hotel.contactNumber}</span>
+                                </div>
+                              )}
+                              {hotel.email && (
+                                <div className="flex items-center gap-1.5 text-muted-foreground">
+                                  <Mail className="h-3.5 w-3.5 shrink-0 text-muted-foreground/60" />
+                                  <a href={`mailto:${hotel.email}`} className="truncate font-medium text-foreground hover:underline">{hotel.email}</a>
+                                </div>
+                              )}
+                            </div>
                           </div>
                         </div>
                       ))}
                     </div>
                   ) : (
-                    <p className="text-xs text-muted-foreground italic">No hotel preferences fetched.</p>
+                    <p className="text-xs text-muted-foreground italic">No hotel preferences specified.</p>
                   )}
 
                   <p className="text-xs text-amber-600 bg-amber-50 border border-amber-200/50 p-2.5 rounded-lg">
@@ -564,100 +623,144 @@ const BookingDetails = () => {
               )}
             </div>
 
-            {/* Assigned Vehicle */}
+            {/* Assigned Vehicle and Driver (Trip Crew & Vehicle) */}
             <div className="rounded-xl border border-border bg-card p-6">
-              <h3 className="mb-4 flex items-center gap-2 text-lg font-semibold text-foreground">
-                <Car className="h-5 w-5 text-primary" />
-                Assigned Vehicle
+              <h3 className="mb-6 flex items-center gap-2 text-lg font-semibold text-foreground">
+                <Users className="h-5 w-5 text-primary" />
+                Trip Crew & Vehicle
               </h3>
-              {!vehicleLabel && !(booking.vehicle?.type || booking.vehicleType) ? (
-                booking.status !== 'cancelled' && booking.status !== 'completed' ? (
-                  <div className="space-y-3">
-                    <p className="text-sm text-muted-foreground italic">No vehicle assigned yet.</p>
-                    <div className="flex gap-2 items-center">
-                      <Select
-                        value={selectedVehicleId}
-                        onValueChange={setSelectedVehicleId}
-                        onOpenChange={(open) => { if (open) loadResources(); }}>
-                        <SelectTrigger className="flex-1">
-                          <SelectValue placeholder="Select a vehicle…" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {availableVehicles.map(v => (
-                            <SelectItem key={v.id} value={String(v.id)}>
-                              {v.brand} {v.model} · {v.registrationNumber}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <Button
-                        size="sm"
-                        onClick={handleAssignVehicle}
-                        disabled={!selectedVehicleId || assigningVehicle}>
-                        {assigningVehicle ? 'Assigning…' : 'Assign'}
-                      </Button>
-                    </div>
+              
+              <div className="grid gap-6 md:grid-cols-2">
+                {/* Vehicle Column */}
+                <div className="space-y-4 md:border-r md:border-border/50 md:pr-6">
+                  <div className="flex items-center justify-between">
+                    <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
+                      <Car className="h-4 w-4 text-muted-foreground" />
+                      Vehicle Allocation
+                    </h4>
+                    {(!vehicleLabel && !(booking.vehicle?.type || booking.vehicleType)) ? (
+                      <span className="inline-flex items-center gap-1 rounded bg-amber-50 px-2 py-0.5 text-[10px] font-semibold text-amber-700 border border-amber-200">
+                        ⚠️ Unassigned
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-1 rounded bg-success/10 px-2 py-0.5 text-[10px] font-semibold text-success border border-success/30">
+                        ✓ Assigned
+                      </span>
+                    )}
                   </div>
-                ) : (
-                  <p className="text-sm text-muted-foreground italic">No vehicle assigned.</p>
-                )
-              ) : (
-                <div className="grid gap-6 sm:grid-cols-2">
-                  {vehicleLabel && <Field label="Vehicle" value={vehicleLabel} icon={Car} />}
-                  {(booking.vehicle?.type || booking.vehicleType) && (
-                    <Field label="Type" value={booking.vehicle?.type || booking.vehicleType} icon={Hash} />
-                  )}
-                </div>
-              )}
-            </div>
 
-            {/* Assigned Driver */}
-            <div className="rounded-xl border border-border bg-card p-6">
-              <h3 className="mb-4 flex items-center gap-2 text-lg font-semibold text-foreground">
-                <User className="h-5 w-5 text-primary" />
-                Assigned Driver
-              </h3>
-              {!booking.driverName ? (
-                booking.status !== 'cancelled' && booking.status !== 'completed' ? (
-                  <div className="space-y-3">
-                    <p className="text-sm text-muted-foreground italic">No driver assigned yet.</p>
-                    <div className="flex gap-2 items-center">
-                      <Select
-                        value={selectedDriverId}
-                        onValueChange={setSelectedDriverId}
-                        onOpenChange={(open) => { if (open) loadResources(); }}>
-                        <SelectTrigger className="flex-1">
-                          <SelectValue placeholder="Select a driver…" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {availableDrivers.map(d => (
-                            <SelectItem key={d.id} value={String(d.id)}>
-                              {d.firstName} {d.lastName || ''}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <Button
-                        size="sm"
-                        onClick={handleAssignDriver}
-                        disabled={!selectedDriverId || assigningDriver}>
-                        {assigningDriver ? 'Assigning…' : 'Assign'}
-                      </Button>
+                  {!vehicleLabel && !(booking.vehicle?.type || booking.vehicleType) ? (
+                    booking.status !== 'cancelled' && booking.status !== 'completed' ? (
+                      <div className="space-y-2">
+                        <p className="text-xs text-muted-foreground">Select a vehicle from the active fleet for this trip's duration:</p>
+                        <div className="flex gap-2 items-center">
+                          <Select
+                            value={selectedVehicleId}
+                            onValueChange={setSelectedVehicleId}
+                            onOpenChange={(open) => { if (open) loadResources(); }}>
+                            <SelectTrigger className="flex-1">
+                              <SelectValue placeholder="Select a vehicle…" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {availableVehicles.map(v => (
+                                <SelectItem key={v.id} value={String(v.id)}>
+                                  {v.brand} {v.model} · {v.registrationNumber}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <Button
+                            size="sm"
+                            onClick={handleAssignVehicle}
+                            disabled={!selectedVehicleId || assigningVehicle}>
+                            {assigningVehicle ? 'Assigning…' : 'Assign'}
+                          </Button>
+                        </div>
+                      </div>
+                    ) : (
+                      <p className="text-sm text-muted-foreground italic">No vehicle assigned.</p>
+                    )
+                  ) : (
+                    <div className="rounded-lg bg-muted/30 p-4 border border-border/40">
+                      <div className="grid gap-4 sm:grid-cols-2">
+                        {vehicleLabel && <Field label="Vehicle" value={vehicleLabel} icon={Car} />}
+                        {(booking.vehicle?.type || booking.vehicleType) && (
+                          <Field label="Type" value={booking.vehicle?.type || booking.vehicleType} icon={Hash} />
+                        )}
+                      </div>
                     </div>
-                  </div>
-                ) : (
-                  <p className="text-sm text-muted-foreground italic">No driver assigned.</p>
-                )
-              ) : (
-                <div className="grid gap-6 sm:grid-cols-2">
-                  <Field label="Driver Name" value={booking.driverName} icon={User} />
-                  {booking.driverPhone && (
-                    <Field label="Phone" value={booking.driverPhone} icon={MessageSquare} />
-                  )}
-                  {booking.driverRating && (
-                    <Field label="Rating" value={`${booking.driverRating} ⭐`} icon={CheckCircle} />
                   )}
                 </div>
+
+                {/* Driver Column */}
+                <div className="space-y-4 md:pl-6">
+                  <div className="flex items-center justify-between">
+                    <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
+                      <User className="h-4 w-4 text-muted-foreground" />
+                      Driver Allocation
+                    </h4>
+                    {!booking.driverName ? (
+                      <span className="inline-flex items-center gap-1 rounded bg-amber-50 px-2 py-0.5 text-[10px] font-semibold text-amber-700 border border-amber-200">
+                        ⚠️ Unassigned
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-1 rounded bg-success/10 px-2 py-0.5 text-[10px] font-semibold text-success border border-success/30">
+                        ✓ Assigned
+                      </span>
+                    )}
+                  </div>
+
+                  {!booking.driverName ? (
+                    booking.status !== 'cancelled' && booking.status !== 'completed' ? (
+                      <div className="space-y-2">
+                        <p className="text-xs text-muted-foreground">Select an available driver for this trip's duration:</p>
+                        <div className="flex gap-2 items-center">
+                          <Select
+                            value={selectedDriverId}
+                            onValueChange={setSelectedDriverId}
+                            onOpenChange={(open) => { if (open) loadResources(); }}>
+                            <SelectTrigger className="flex-1">
+                              <SelectValue placeholder="Select a driver…" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {availableDrivers.map(d => (
+                                <SelectItem key={d.id} value={String(d.id)}>
+                                  {d.firstName} {d.lastName || ''}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <Button
+                            size="sm"
+                            onClick={handleAssignDriver}
+                            disabled={!selectedDriverId || assigningDriver}>
+                            {assigningDriver ? 'Assigning…' : 'Assign'}
+                          </Button>
+                        </div>
+                      </div>
+                    ) : (
+                      <p className="text-sm text-muted-foreground italic">No driver assigned.</p>
+                    )
+                  ) : (
+                    <div className="rounded-lg bg-muted/30 p-4 border border-border/40">
+                      <div className="grid gap-4 sm:grid-cols-2">
+                        <Field label="Driver Name" value={booking.driverName} icon={User} />
+                        {booking.driverPhone && (
+                          <Field label="Phone" value={booking.driverPhone} icon={MessageSquare} />
+                        )}
+                        {booking.driverRating && (
+                          <Field label="Rating" value={`${booking.driverRating} ⭐`} icon={CheckCircle} />
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {booking.status === 'pending' && (
+                <p className="text-[11px] text-muted-foreground mt-4 text-center border-t border-dashed pt-4">
+                  💡 Both a vehicle and a driver must be assigned before accepting this booking request.
+                </p>
               )}
             </div>
           </div>
@@ -672,15 +775,24 @@ const BookingDetails = () => {
                 {timeline.map((step, i) => (
                   <div key={step.label} className="relative flex gap-4 pb-8 last:pb-0">
                     {i < timeline.length - 1 && (
-                      <div className={cn(
-                        'absolute left-[11px] top-6 h-full w-0.5',
-                        step.completed && timeline[i + 1]?.completed ? 'bg-primary' : 'bg-border'
-                      )} />
+                      <svg className="absolute left-0 top-3 h-full w-[60px] pointer-events-none" style={{ overflow: 'visible' }}>
+                        <line
+                          x1={step.label.startsWith('Day ') ? 44 : 12}
+                          y1={0}
+                          x2={timeline[i + 1]?.label.startsWith('Day ') ? 44 : 12}
+                          y2="100%"
+                          stroke={step.completed && timeline[i + 1]?.completed ? '#0d9488' : '#cbd5e1'}
+                          strokeWidth={2}
+                        />
+                      </svg>
                     )}
-                    <div className="relative z-10 flex-shrink-0">
+                    <div className={cn(
+                      "relative z-10 flex-shrink-0 transition-all duration-300",
+                      step.label.startsWith('Day ') ? "ml-8" : "ml-0"
+                    )}>
                       {step.completed
-                        ? <CheckCircle className="h-6 w-6 text-primary" />
-                        : <Circle className="h-6 w-6 text-muted-foreground/40" />}
+                        ? <CheckCircle className="h-6 w-6 text-primary bg-card rounded-full" />
+                        : <Circle className="h-6 w-6 text-muted-foreground/40 bg-card rounded-full" />}
                     </div>
                     <div className="pt-0.5">
                       <p className={cn('text-sm font-medium', step.completed ? 'text-foreground' : 'text-muted-foreground')}>

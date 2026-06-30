@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import {
   Mail, Phone, MapPin, Star, CheckCircle, Calendar,
-  Edit, Camera, Globe, MessageCircle,
+  Edit, Camera, Globe, MessageCircle, X, Map,
 } from 'lucide-react';
 import { DashboardLayout } from '@/features/agency/components/dashboard/DashboardLayout';
 import { Button } from '@/components/common/ui/button';
@@ -38,6 +38,7 @@ const Profile = () => {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [selectedImage, setSelectedImage] = useState(null);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const fileInputRef = useRef(null);
 
@@ -243,18 +244,6 @@ const Profile = () => {
                   <span className="text-foreground truncate">{profile.email}</span>
                 </div>
               )}
-              {profile?.phone && (
-                <div className="flex items-center gap-3 text-sm">
-                  <Phone className="h-4 w-4 text-muted-foreground shrink-0" />
-                  <span className="text-foreground">{profile.phone}</span>
-                </div>
-              )}
-              {profile?.secondaryPhone && (
-                <div className="flex items-center gap-3 text-sm">
-                  <Phone className="h-4 w-4 text-muted-foreground shrink-0" />
-                  <span className="text-foreground">{profile.secondaryPhone}</span>
-                </div>
-              )}
               {profile?.whatsappNumber && (
                 <div className="flex items-center gap-3 text-sm">
                   <MessageCircle className="h-4 w-4 text-success shrink-0" />
@@ -265,6 +254,12 @@ const Profile = () => {
                 <div className="flex items-center gap-3 text-sm">
                   <MapPin className="h-4 w-4 text-muted-foreground shrink-0" />
                   <span className="text-foreground">{profile.location}</span>
+                </div>
+              )}
+              {profile?.operatingDistricts && (
+                <div className="flex items-center gap-3 text-sm">
+                  <Map className="h-4 w-4 text-muted-foreground shrink-0" />
+                  <span className="text-foreground">{profile.operatingDistricts}</span>
                 </div>
               )}
               {profile?.websiteUrl && (
@@ -461,7 +456,7 @@ const Profile = () => {
                             src={url}
                             alt={`Attachment ${idx + 1}`}
                             className="h-16 w-16 object-cover rounded-lg border border-border cursor-pointer transition-all hover:scale-105"
-                            onClick={() => window.open(url, '_blank')}
+                            onClick={() => setSelectedImage(url)}
                           />
                         ))}
                       </div>
@@ -508,6 +503,28 @@ const Profile = () => {
           </div>
         </div>
       </div>
+
+      {selectedImage && (
+        <div 
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 transition-all duration-300 backdrop-blur-sm"
+          onClick={() => setSelectedImage(null)}
+        >
+          <div className="relative w-[65vw] max-w-5xl">
+            <button 
+              className="absolute -top-12 right-0 text-white/80 hover:text-white transition-colors p-2"
+              onClick={() => setSelectedImage(null)}
+            >
+              <X className="h-8 w-8" />
+            </button>
+            <img 
+              src={selectedImage} 
+              alt="Enlarged view" 
+              className="w-full h-auto max-h-[85vh] object-contain rounded-xl shadow-2xl"
+              onClick={(e) => e.stopPropagation()}
+            />
+          </div>
+        </div>
+      )}
     </DashboardLayout>
   );
 };

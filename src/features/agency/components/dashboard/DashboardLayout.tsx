@@ -22,6 +22,9 @@ const typeConfig = {
 
 export function DashboardLayout({ children, title, subtitle, showSearch = true }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [collapsed, setCollapsed] = useState(() => {
+    return localStorage.getItem("agency-sidebar-collapsed") === "true";
+  });
   const [scrolled, setScrolled] = useState(false);
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -87,10 +90,8 @@ export function DashboardLayout({ children, title, subtitle, showSearch = true }
     try {
       // Optimistically remove from UI first
       setNotifications(prev => prev.filter(n => n.id !== id));
-      // Then delete from backend - using fetch directly since api.js doesn't have this
-      await fetch(`http://localhost:8082/api/v1/agent/1/notifications/${id}`, {
-        method: 'DELETE'
-      });
+      // Then delete from backend
+      await api.deleteNotification(id);
     } catch (error) {
       console.error('Failed to dismiss notification:', error);
     }
@@ -111,11 +112,21 @@ export function DashboardLayout({ children, title, subtitle, showSearch = true }
         'fixed inset-y-0 left-0 z-40 transform transition-transform duration-300 lg:translate-x-0',
         sidebarOpen ? 'translate-x-0' : '-translate-x-full'
       )}>
-        <Sidebar />
+        <Sidebar 
+          collapsed={collapsed} 
+          onToggleCollapse={() => {
+            const newValue = !collapsed;
+            setCollapsed(newValue);
+            localStorage.setItem("agency-sidebar-collapsed", String(newValue));
+          }} 
+        />
       </div>
 
       {/* Main content */}
-      <div className="lg:pl-64 transition-all duration-300">
+      <div className={cn(
+        "transition-all duration-300",
+        collapsed ? "lg:pl-20" : "lg:pl-64"
+      )}>
         {/* Header */}
         <header className={cn(
           'sticky top-0 z-20 flex h-16 items-center justify-between gap-4 border-b border-border px-4 transition-all duration-200 md:px-6',
@@ -248,17 +259,17 @@ export function DashboardLayout({ children, title, subtitle, showSearch = true }
             >
               <div className="h-9 w-9 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center text-sm font-semibold text-primary-foreground shrink-0 transition-shadow group-hover:ring-2 group-hover:ring-primary/30 overflow-hidden">
                 {profile?.profileImage ? (
-                  <img src={profile.profileImage} alt={profile.agentName} className="h-full w-full object-cover" />
+                  <img src={profile.profileImage} alt={profile.agencyName || 'Agency'} className="h-full w-full object-cover" />
                 ) : (
-                  <span>{profile?.agentName ? profile.agentName.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() : 'HK'}</span>
+                  <span>{(profile?.agencyName || 'Agency').split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()}</span>
                 )}
               </div>
               <div className="hidden md:block text-right">
                 <p className="text-sm font-medium text-foreground leading-tight group-hover:text-primary transition-colors">
-                  {profile?.agentName || 'Harith Keshan'}
+                  {profile?.agencyName || 'Agency'}
                 </p>
                 <p className="text-xs text-muted-foreground leading-tight">
-                  {profile?.companyName || 'Sri Lanka Travel Experts'}
+                  {profile?.agentName || 'Harith Keshan'}
                 </p>
               </div>
             </div>

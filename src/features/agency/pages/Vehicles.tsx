@@ -73,6 +73,7 @@ const defaultNewDriver = {
 };
 
 const defaultNewVehicle = {
+  ownerId: '',
   ownerFirstName: '', ownerLastName: '', nicNumber: '', nicFrontImage: null, nicRearImage: null,
   addressLine1: '', addressLine2: '', mobileNumber: '', secondaryMobileNumber: '', ownerEmail: '',
   vehicleType: '', brand: '', model: '', capacity: '', yearOfManufacture: '', color: '',
@@ -156,6 +157,8 @@ const LockedField = ({ label, value, isImage }) => (
 const Vehicles = () => {
   const [vehicles, setVehicles] = useState([]);
   const [drivers, setDrivers] = useState([]);
+  const [owners, setOwners] = useState([]);
+  const [isNewOwner, setIsNewOwner] = useState(true);
   const [loading, setLoading] = useState(true);
   const [searchVehicle, setSearchVehicle] = useState('');
   const [searchDriver, setSearchDriver] = useState('');
@@ -179,7 +182,17 @@ const Vehicles = () => {
   useEffect(() => {
     fetchVehicles();
     fetchDrivers();
+    fetchOwners();
   }, []);
+
+  const fetchOwners = async () => {
+    try {
+      const data = await api.getOwners();
+      setOwners(Array.isArray(data) ? data : []);
+    } catch (error) {
+      toast.error('Failed to load owners');
+    }
+  };
 
   const fetchVehicles = async () => {
     try {
@@ -205,19 +218,56 @@ const Vehicles = () => {
   const handleCreateVehicle = () => {
     setNewVehicle(defaultNewVehicle);
     setEditingVehicle(null);
+    setIsNewOwner(true);
     setIsAddVehicleOpen(true);
   };
 
   const handleEditVehicle = (vehicle) => {
-    setNewVehicle({ ...defaultNewVehicle, ...vehicle });
+    setNewVehicle({
+      ...defaultNewVehicle,
+      ...vehicle,
+      ownerId: vehicle.owner ? vehicle.owner.id : '',
+      ownerFirstName: vehicle.owner ? vehicle.owner.firstName : (vehicle.ownerFirstName || ''),
+      ownerLastName: vehicle.owner ? vehicle.owner.lastName : (vehicle.ownerLastName || ''),
+      nicNumber: vehicle.owner ? vehicle.owner.nicNumber : (vehicle.nicNumber || ''),
+      nicFrontImage: vehicle.owner ? vehicle.owner.nicFrontImage : (vehicle.nicFrontImage || null),
+      nicRearImage: vehicle.owner ? vehicle.owner.nicRearImage : (vehicle.nicRearImage || null),
+      addressLine1: vehicle.owner ? vehicle.owner.addressLine1 : (vehicle.addressLine1 || ''),
+      addressLine2: vehicle.owner ? vehicle.owner.addressLine2 : (vehicle.addressLine2 || ''),
+      mobileNumber: vehicle.owner ? vehicle.owner.mobileNumber : (vehicle.mobileNumber || ''),
+      secondaryMobileNumber: vehicle.owner ? vehicle.owner.secondaryMobileNumber : (vehicle.secondaryMobileNumber || ''),
+      ownerEmail: vehicle.owner ? vehicle.owner.email : (vehicle.ownerEmail || ''),
+    });
     setEditingVehicle(vehicle);
+    setIsNewOwner(false);
     setIsAddVehicleOpen(true);
+  };
+
+  const handleOwnerSelect = (ownerIdStr) => {
+    const selected = owners.find(o => String(o.id) === ownerIdStr);
+    if (selected) {
+      setNewVehicle(prev => ({
+        ...prev,
+        ownerId: selected.id,
+        ownerFirstName: selected.firstName,
+        ownerLastName: selected.lastName,
+        nicNumber: selected.nicNumber,
+        nicFrontImage: selected.nicFrontImage,
+        nicRearImage: selected.nicRearImage,
+        addressLine1: selected.addressLine1,
+        addressLine2: selected.addressLine2,
+        mobileNumber: selected.mobileNumber,
+        secondaryMobileNumber: selected.secondaryMobileNumber,
+        ownerEmail: selected.email,
+      }));
+    }
   };
 
   const handleSaveVehicle = async () => {
     if (!newVehicle.registration) { toast.error('Registration number is required'); return; }
     try {
       const payload = {
+        ownerId: isNewOwner ? null : (parseInt(newVehicle.ownerId) || null),
         ownerFirstName: newVehicle.ownerFirstName,
         ownerLastName: newVehicle.ownerLastName,
         nicNumber: newVehicle.nicNumber,
@@ -254,6 +304,7 @@ const Vehicles = () => {
         setVehicles(prev => [...prev, created]);
         toast.success('Vehicle registered successfully');
       }
+      fetchOwners(); // Refresh inline owner listing options
       setIsAddVehicleOpen(false);
       setNewVehicle(defaultNewVehicle);
       setEditingVehicle(null);
@@ -527,28 +578,87 @@ const Vehicles = () => {
                     {/* Section 1: Owner Information */}
                     <div className="space-y-4">
                       <h3 className="text-lg font-bold border-b pb-2">1. Owner Information</h3>
-                      <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-2"><Label>First Name</Label><Input value={newVehicle.ownerFirstName} onChange={(e) => setNewVehicle({ ...newVehicle, ownerFirstName: e.target.value })} /></div>
-                        <div className="space-y-2"><Label>Last Name</Label><Input value={newVehicle.ownerLastName} onChange={(e) => setNewVehicle({ ...newVehicle, ownerLastName: e.target.value })} /></div>
-                      </div>
-                      {editingVehicle
-                        ? <LockedField label="NIC Number" value={newVehicle.nicNumber} />
-                        : <div className="space-y-2"><Label>NIC Number</Label><Input value={newVehicle.nicNumber} onChange={(e) => setNewVehicle({ ...newVehicle, nicNumber: e.target.value })} /></div>}
-                      <div className="grid grid-cols-2 gap-4">
-                        {editingVehicle
-                          ? <LockedField label="NIC Front Image" value={newVehicle.nicFrontImage} isImage />
-                          : <ImageUploadField label="NIC Front Image" folder="vehicles/documents" value={newVehicle.nicFrontImage} onChange={(val) => setNewVehicle({ ...newVehicle, nicFrontImage: val })} onRemove={() => setNewVehicle({ ...newVehicle, nicFrontImage: null })} />}
-                        {editingVehicle
-                          ? <LockedField label="NIC Rear Image" value={newVehicle.nicRearImage} isImage />
-                          : <ImageUploadField label="NIC Rear Image" folder="vehicles/documents" value={newVehicle.nicRearImage} onChange={(val) => setNewVehicle({ ...newVehicle, nicRearImage: val })} onRemove={() => setNewVehicle({ ...newVehicle, nicRearImage: null })} />}
-                      </div>
-                      <div className="space-y-2"><Label>Address Line 1</Label><Input value={newVehicle.addressLine1} onChange={(e) => setNewVehicle({ ...newVehicle, addressLine1: e.target.value })} /></div>
-                      <div className="space-y-2"><Label>Address Line 2</Label><Input value={newVehicle.addressLine2} onChange={(e) => setNewVehicle({ ...newVehicle, addressLine2: e.target.value })} /></div>
-                      <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-2"><Label>Mobile Number</Label><Input value={newVehicle.mobileNumber} onChange={(e) => setNewVehicle({ ...newVehicle, mobileNumber: e.target.value })} /></div>
-                        <div className="space-y-2"><Label>Secondary Mobile</Label><Input value={newVehicle.secondaryMobileNumber} onChange={(e) => setNewVehicle({ ...newVehicle, secondaryMobileNumber: e.target.value })} /></div>
-                      </div>
-                      <div className="space-y-2"><Label>Email (Optional)</Label><Input type="email" value={newVehicle.ownerEmail} onChange={(e) => setNewVehicle({ ...newVehicle, ownerEmail: e.target.value })} /></div>
+                      
+                      {!editingVehicle && (
+                        <div className="flex bg-muted p-1 rounded-lg w-full max-w-sm mb-4">
+                          <Button 
+                            type="button" 
+                            variant={isNewOwner ? 'secondary' : 'ghost'} 
+                            className="flex-1 text-xs" 
+                            onClick={() => {
+                              setIsNewOwner(true);
+                              setNewVehicle(prev => ({
+                                ...prev,
+                                ownerId: '',
+                                ownerFirstName: '', ownerLastName: '', nicNumber: '', nicFrontImage: null, nicRearImage: null,
+                                addressLine1: '', addressLine2: '', mobileNumber: '', secondaryMobileNumber: '', ownerEmail: '',
+                              }));
+                            }}
+                          >
+                            Register New Owner
+                          </Button>
+                          <Button 
+                            type="button" 
+                            variant={!isNewOwner ? 'secondary' : 'ghost'} 
+                            className="flex-1 text-xs" 
+                            onClick={() => setIsNewOwner(false)}
+                            disabled={owners.length === 0}
+                          >
+                            Select Existing Owner ({owners.length})
+                          </Button>
+                        </div>
+                      )}
+
+                      {!editingVehicle && !isNewOwner ? (
+                        <div className="space-y-2">
+                          <Label>Select Owner</Label>
+                          <Select value={String(newVehicle.ownerId || '')} onValueChange={handleOwnerSelect}>
+                            <SelectTrigger><SelectValue placeholder="Choose an owner..." /></SelectTrigger>
+                            <SelectContent>
+                              {owners.map(o => (
+                                <SelectItem key={o.id} value={String(o.id)}>
+                                  {o.firstName} {o.lastName} ({o.nicNumber})
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          
+                          {/* Visual summary of selected owner */}
+                          {newVehicle.ownerId && (
+                            <div className="mt-4 p-4 rounded-lg bg-muted/40 border text-sm space-y-2">
+                              <div><strong>Name:</strong> {newVehicle.ownerFirstName} {newVehicle.ownerLastName}</div>
+                              <div><strong>NIC Number:</strong> {newVehicle.nicNumber}</div>
+                              <div><strong>Mobile:</strong> {newVehicle.mobileNumber}</div>
+                              <div><strong>Email:</strong> {newVehicle.ownerEmail || 'N/A'}</div>
+                            </div>
+                          )}
+                        </div>
+                      ) : (
+                        <>
+                          <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-2"><Label>First Name</Label><Input value={newVehicle.ownerFirstName} onChange={(e) => setNewVehicle({ ...newVehicle, ownerFirstName: e.target.value })} /></div>
+                            <div className="space-y-2"><Label>Last Name</Label><Input value={newVehicle.ownerLastName} onChange={(e) => setNewVehicle({ ...newVehicle, ownerLastName: e.target.value })} /></div>
+                          </div>
+                          {editingVehicle
+                            ? <LockedField label="NIC Number" value={newVehicle.nicNumber} />
+                            : <div className="space-y-2"><Label>NIC Number</Label><Input value={newVehicle.nicNumber} onChange={(e) => setNewVehicle({ ...newVehicle, nicNumber: e.target.value })} /></div>}
+                          <div className="grid grid-cols-2 gap-4">
+                            {editingVehicle
+                              ? <LockedField label="NIC Front Image" value={newVehicle.nicFrontImage} isImage />
+                              : <ImageUploadField label="NIC Front Image" folder="vehicles/documents" value={newVehicle.nicFrontImage} onChange={(val) => setNewVehicle({ ...newVehicle, nicFrontImage: val })} onRemove={() => setNewVehicle({ ...newVehicle, nicFrontImage: null })} />}
+                            {editingVehicle
+                              ? <LockedField label="NIC Rear Image" value={newVehicle.nicRearImage} isImage />
+                              : <ImageUploadField label="NIC Rear Image" folder="vehicles/documents" value={newVehicle.nicRearImage} onChange={(val) => setNewVehicle({ ...newVehicle, nicRearImage: val })} onRemove={() => setNewVehicle({ ...newVehicle, nicRearImage: null })} />}
+                          </div>
+                          <div className="space-y-2"><Label>Address Line 1</Label><Input value={newVehicle.addressLine1} onChange={(e) => setNewVehicle({ ...newVehicle, addressLine1: e.target.value })} /></div>
+                          <div className="space-y-2"><Label>Address Line 2</Label><Input value={newVehicle.addressLine2} onChange={(e) => setNewVehicle({ ...newVehicle, addressLine2: e.target.value })} /></div>
+                          <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-2"><Label>Mobile Number</Label><Input value={newVehicle.mobileNumber} onChange={(e) => setNewVehicle({ ...newVehicle, mobileNumber: e.target.value })} /></div>
+                            <div className="space-y-2"><Label>Secondary Mobile</Label><Input value={newVehicle.secondaryMobileNumber} onChange={(e) => setNewVehicle({ ...newVehicle, secondaryMobileNumber: e.target.value })} /></div>
+                          </div>
+                          <div className="space-y-2"><Label>Email (Optional)</Label><Input type="email" value={newVehicle.ownerEmail} onChange={(e) => setNewVehicle({ ...newVehicle, ownerEmail: e.target.value })} /></div>
+                        </>
+                      )}
                     </div>
 
                     {/* Section 2: Vehicle Details */}

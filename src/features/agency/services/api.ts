@@ -46,12 +46,32 @@ export const api = {
         fetch(`${BASE_URL}/agent/${AGENT_ID}/packages/${packageId}`, {
             method: 'DELETE',
         }),
+    uploadPackageImage: (imageFile) => {
+        const form = new FormData();
+        form.append('image', imageFile);
+        return fetch(`${BASE_URL}/agent/${AGENT_ID}/packages/upload-image`, {
+            method: 'POST',
+            body: form,
+        }).then(r => r.json());
+    },
+    searchHotels: (query, district) => {
+        const params = new URLSearchParams();
+        if (query) params.append('query', query);
+        if (district) params.append('district', district);
+        const qString = params.toString() ? `?${params.toString()}` : '';
+        // Note: Hotel search is at /api/hotels/search, not /api/v1/hotels/search
+        return fetch(`http://localhost:8082/api/hotels/search${qString}`).then(r => r.json());
+    },
 
     // Vehicles
     getVehicles: () =>
         fetch(`${BASE_URL}/agent/${AGENT_ID}/vehicles`).then(r => r.json()),
-    getActiveVehicles: () =>
-        fetch(`${BASE_URL}/agent/${AGENT_ID}/vehicles?lifecycleStatus=active`).then(r => r.json()),
+    getActiveVehicles: (startDate?: string, endDate?: string) => {
+        const params = new URLSearchParams({ lifecycleStatus: 'active' });
+        if (startDate) params.append('startDate', startDate);
+        if (endDate) params.append('endDate', endDate);
+        return fetch(`${BASE_URL}/agent/${AGENT_ID}/vehicles?${params.toString()}`).then(r => r.json());
+    },
     createVehicle: (data) =>
         fetch(`${BASE_URL}/agent/${AGENT_ID}/vehicles`, {
             method: "POST",
@@ -81,9 +101,24 @@ export const api = {
             method: "DELETE"
         }),
 
+    // Owners
+    getOwners: () =>
+        fetch(`${BASE_URL}/agent/${AGENT_ID}/owners`).then(r => r.json()),
+    createOwner: (data) =>
+        fetch(`${BASE_URL}/agent/${AGENT_ID}/owners`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(data)
+        }).then(r => r.json()),
+
     // Drivers
-    getDrivers: () =>
-        fetch(`${BASE_URL}/agent/${AGENT_ID}/drivers`).then(r => r.json()),
+    getDrivers: (startDate?: string, endDate?: string) => {
+        const params = new URLSearchParams();
+        if (startDate) params.append('startDate', startDate);
+        if (endDate) params.append('endDate', endDate);
+        const query = params.toString() ? `?${params.toString()}` : '';
+        return fetch(`${BASE_URL}/agent/${AGENT_ID}/drivers${query}`).then(r => r.json());
+    },
     createDriver: (data) =>
         fetch(`${BASE_URL}/agent/${AGENT_ID}/drivers`, {
             method: "POST",
@@ -125,6 +160,20 @@ export const api = {
             method: "PATCH",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ vehicleId })
+        }).then(r => r.json()),
+
+    assignVehicle: (bookingId, vehicleId) =>
+        fetch(`${BASE_URL}/agent/${AGENT_ID}/bookings/${bookingId}/assign-vehicle`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ vehicleId })
+        }).then(r => r.json()),
+
+    assignDriver: (bookingId, driverId) =>
+        fetch(`${BASE_URL}/agent/${AGENT_ID}/bookings/${bookingId}/assign-driver`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ driverId })
         }).then(r => r.json()),
 
     // pending → cancelled (agent declines with reason)
@@ -175,13 +224,13 @@ export const api = {
 
     // Notifications
     getNotifications: () =>
-        fetch(`${BASE_URL}/agent/${AGENT_ID}/notifications`).then(r => r.json()),
+        fetch(`${BASE_URL}/agent/notifications`).then(r => r.json()),
     markNotificationRead: (notificationId) =>
-        fetch(`${BASE_URL}/agent/${AGENT_ID}/notifications/${notificationId}/read`, {
+        fetch(`${BASE_URL}/agent/notifications/${notificationId}/read`, {
             method: "PATCH"
         }).then(r => r.json()),
     markAllNotificationsRead: () =>
-        fetch(`${BASE_URL}/agent/${AGENT_ID}/notifications/read-all`, {
+        fetch(`${BASE_URL}/agent/notifications/read-all`, {
             method: "PATCH"
         }),
 
@@ -203,7 +252,7 @@ export const api = {
 
     // Notifications
     deleteNotification: (notificationId) =>
-        fetch(`${BASE_URL}/agent/${AGENT_ID}/notifications/${notificationId}`, {
+        fetch(`${BASE_URL}/agent/notifications/${notificationId}`, {
             method: 'DELETE'
         }),
 };

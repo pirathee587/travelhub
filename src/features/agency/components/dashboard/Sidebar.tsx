@@ -36,8 +36,7 @@ const navItems = [
   { icon: Settings, label: 'Settings', path: '/agency/settings' },
 ];
 
-export function Sidebar() {
-  const [collapsed, setCollapsed] = useState(false);
+export function Sidebar({ collapsed, onToggleCollapse }) {
   const location = useLocation();
 
   return (
@@ -114,7 +113,7 @@ export function Sidebar() {
 
       {/* Collapse Button */}
       <button
-        onClick={() => setCollapsed(!collapsed)}
+        onClick={onToggleCollapse}
         className="absolute -right-3 top-20 flex h-6 w-6 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg transition-transform hover:scale-110"
       >
         {collapsed ? (
