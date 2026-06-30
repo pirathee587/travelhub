@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback, useEffect } from 'react';
+import React, { useState, useRef, useCallback, useEffect } from 'react';
 import {
   X, Plus, Trash2, Upload, ImageIcon,
   Calendar, MapPin, DollarSign, Tag,
@@ -52,42 +52,42 @@ const DEFAULT_BASIC = {
   isActive: true,
 };
 
-const pkgToFormState = (pkg) => ({
-  packageName:    pkg.name        ?? '',
-  category:       pkg.category    ?? '',
-  packageType:    pkg.packageType ?? 'SINGLE_DISTRICT',
-  district:       pkg.district    ?? '',
-  startPlace:     pkg.startPlace  ?? '',
-  endPlace:       pkg.endPlace    ?? '',
-  duration:       pkg.duration    ?? '',
-  priceFrom:      pkg.priceFrom   ?? '',
-  priceTo:        pkg.priceTo     ?? '',
+const pkgToFormState = (pkg: any) => ({
+  packageName: pkg.name ?? '',
+  category: pkg.category ?? '',
+  packageType: pkg.packageType ?? 'SINGLE_DISTRICT',
+  district: pkg.district ?? '',
+  startPlace: pkg.startPlace ?? '',
+  endPlace: pkg.endPlace ?? '',
+  duration: pkg.duration ?? '',
+  priceFrom: pkg.priceFrom ?? '',
+  priceTo: pkg.priceTo ?? '',
   basePriceAdult: pkg.basePriceAdult ?? '',
   basePriceChild: pkg.basePriceChild ?? '',
-  description:    pkg.description ?? '',
-  isActive:       pkg.isActive !== false,
+  description: pkg.description ?? '',
+  isActive: pkg.isActive !== false,
 });
 
-const pkgToDays = (itineraryDays = []) =>
-  itineraryDays.map((d) => ({
-    id:          d.dayId ?? Date.now() + Math.random(),
-    title:       d.title       ?? '',
+const pkgToDays = (itineraryDays: any[] = []) =>
+  itineraryDays.map((d: any) => ({
+    id: d.dayId ?? Date.now() + Math.random(),
+    title: d.title ?? '',
     description: d.description ?? '',
-    district:    d.district    ?? '',
-    hotelId:     d.hotelId     ?? null,
+    district: d.district ?? '',
+    hotelId: d.hotelId ?? null,
     hotelNameCustom: d.hotelName ?? '',
-    activities:  (d.activities?.length ? d.activities : [{ description: '', imageUrl: null }]).map(act => ({
+    activities: (d.activities?.length ? d.activities : [{ description: '', imageUrl: null }]).map((act: any) => ({
       description: act.description ?? act, // handle both old string format and new object format
       imageUrl: act.imageUrl ?? null,
       isUploading: false
     })),
   }));
 
-const pkgToImages = (imgs = [], coverUrl = null) => {
+const pkgToImages = (imgs: any[] = [], coverUrl: string | null = null) => {
   if (imgs && imgs.length > 0) {
-    return imgs.map((img, i) => ({
-      id:   i + 1,
-      url:  img.imageUrl,
+    return imgs.map((img: any, i: number) => ({
+      id: i + 1,
+      url: img.imageUrl,
       name: img.originalFileName || `Image ${i + 1}`,
       isExisting: true
     }));
@@ -100,7 +100,7 @@ const pkgToImages = (imgs = [], coverUrl = null) => {
 
 // ─── Sub-components ──────────────────────────────────────────────────────────
 
-const SectionHeader = ({ icon: Icon, title, subtitle }) => (
+const SectionHeader = ({ icon: Icon, title, subtitle }: { icon: any; title: string; subtitle?: string }) => (
   <div className="flex items-center gap-3 mb-6">
     <div className="flex items-center justify-center w-9 h-9 rounded-lg bg-primary/15">
       <Icon className="h-4 w-4 text-primary" />
@@ -112,7 +112,7 @@ const SectionHeader = ({ icon: Icon, title, subtitle }) => (
   </div>
 );
 
-const FormField = ({ label, required, children, className }) => (
+const FormField = ({ label, required, children, className }: { label: string; required?: boolean; children: React.ReactNode; className?: string }) => (
   <div className={cn('flex flex-col gap-1.5', className)}>
     <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
       {label}{required && <span className="text-destructive ml-1">*</span>}
@@ -121,20 +121,28 @@ const FormField = ({ label, required, children, className }) => (
   </div>
 );
 
-const styledInput    = 'h-10 bg-muted/40 border-border/60 focus:border-primary/50 focus:bg-background transition-colors text-sm';
+const styledInput = 'h-10 bg-muted/40 border-border/60 focus:border-primary/50 focus:bg-background transition-colors text-sm';
 const styledTextarea = 'bg-muted/40 border-border/60 focus:border-primary/50 focus:bg-background transition-colors text-sm min-h-[90px]';
 
-export function CreatePackageModal({ open, onClose, editData = null, onSave, onCreate }) {
+interface CreatePackageModalProps {
+  open: boolean;
+  onClose: () => void;
+  editData?: any;
+  onSave?: (data: any) => void;
+  onCreate?: (data: any) => void;
+}
+
+export function CreatePackageModal({ open, onClose, editData = null, onSave, onCreate }: CreatePackageModalProps) {
   const isEdit = !!editData;
 
-  const [basicInfo, setBasicInfo] = useState(DEFAULT_BASIC);
-  const [inclusions, setInclusions] = useState([]);
-  const [images,    setImages]    = useState([]);
-  const [days,      setDays]      = useState([]);
+  const [basicInfo, setBasicInfo] = useState<any>(DEFAULT_BASIC);
+  const [inclusions, setInclusions] = useState<string[]>([]);
+  const [images, setImages] = useState<any[]>([]);
+  const [days, setDays] = useState<any[]>([]);
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
-  const fileInputRef = useRef(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (open && editData) {
@@ -150,16 +158,16 @@ export function CreatePackageModal({ open, onClose, editData = null, onSave, onC
     }
   }, [open, editData]);
 
-  const updateBasic = (key, val) => setBasicInfo(prev => ({ ...prev, [key]: val }));
+  const updateBasic = (key: string, val: any) => setBasicInfo((prev: any) => ({ ...prev, [key]: val }));
 
-  const toggleInclusion = (inc) => {
+  const toggleInclusion = (inc: string) => {
     setInclusions(prev => prev.includes(inc) ? prev.filter(i => i !== inc) : [...prev, inc]);
   };
 
   // ── Package Images Upload (Queued for Submit) ────────────────────────────
-  const handleFileChange = (e) => { 
+  const handleFileChange = (e: any) => {
     if (e.target.files?.length) {
-      const newImages = Array.from(e.target.files).map(f => ({
+      const newImages = Array.from(e.target.files).map((f: any) => ({
         id: Date.now() + Math.random(),
         file: f,
         url: URL.createObjectURL(f),
@@ -169,29 +177,29 @@ export function CreatePackageModal({ open, onClose, editData = null, onSave, onC
       setImages(prev => [...prev, ...newImages]);
     }
   };
-  
-  const handleDrop = (e) => {
+
+  const handleDrop = (e: any) => {
     e.preventDefault(); setIsDragging(false);
     if (e.dataTransfer.files?.length) handleFileChange({ target: { files: e.dataTransfer.files } });
   };
-  const removeImage = (id) => setImages(prev => prev.filter(img => img.id !== id));
+  const removeImage = (id: any) => setImages(prev => prev.filter(img => img.id !== id));
 
   // ── Days & Activities ────────────────────────────────────────────────────
-  const addDay       = () => setDays(prev => [...prev, { id: Date.now(), title: '', description: '', district: '', hotelId: null, hotelNameCustom: '', activities: [{ description: '', imageUrl: null, isUploading: false }] }]);
-  const removeDay    = (id) => setDays(prev => prev.filter(d => d.id !== id));
-  const updateDay    = (id, key, val) => setDays(prev => prev.map(d => d.id === id ? { ...d, [key]: val } : d));
-  
-  const addActivity  = (dayId) => setDays(prev => prev.map(d => d.id === dayId ? { ...d, activities: [...d.activities, { description: '', imageUrl: null, isUploading: false }] } : d));
-  const updateActivity = (dayId, idx, key, val) => setDays(prev => prev.map(d => d.id === dayId ? { ...d, activities: d.activities.map((a, i) => i === idx ? { ...a, [key]: val } : a) } : d));
-  const removeActivity = (dayId, idx) => setDays(prev => prev.map(d => d.id === dayId ? { ...d, activities: d.activities.filter((_, i) => i !== idx) } : d));
+  const addDay = () => setDays(prev => [...prev, { id: Date.now(), title: '', description: '', district: '', hotelId: null, hotelNameCustom: '', activities: [{ description: '', imageUrl: null, isUploading: false }] }]);
+  const removeDay = (id: any) => setDays(prev => prev.filter(d => d.id !== id));
+  const updateDay = (id: any, key: string, val: any) => setDays((prev: any[]) => prev.map(d => d.id === id ? { ...d, [key]: val } : d));
 
-  const handleActivityImageUpload = async (dayId, actIdx, file) => {
+  const addActivity = (dayId: any) => setDays(prev => prev.map(d => d.id === dayId ? { ...d, activities: [...d.activities, { description: '', imageUrl: null, isUploading: false }] } : d));
+  const updateActivity = (dayId: any, idx: number, key: string, val: any) => setDays((prev: any[]) => prev.map(d => d.id === dayId ? { ...d, activities: d.activities.map((a: any, i: number) => i === idx ? { ...a, [key]: val } : a) } : d));
+  const removeActivity = (dayId: any, idx: number) => setDays((prev: any[]) => prev.map(d => d.id === dayId ? { ...d, activities: d.activities.filter((_: any, i: number) => i !== idx) } : d));
+
+  const handleActivityImageUpload = async (dayId: any, actIdx: number, file: any) => {
     if (!file) return;
     try {
       updateActivity(dayId, actIdx, 'isUploading', true);
       const res = await api.uploadPackageImage(file);
       updateActivity(dayId, actIdx, 'imageUrl', res.imageUrl);
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
       toast.error('Failed to upload activity image');
     } finally {
@@ -200,35 +208,35 @@ export function CreatePackageModal({ open, onClose, editData = null, onSave, onC
   };
 
   // ── Hotel Searching ──────────────────────────────────────────────────────
-  const [hotelSearchQuery, setHotelSearchQuery] = useState({});
-  const [hotelSearchResults, setHotelSearchResults] = useState({});
-  
-  const handleHotelSearch = async (dayId, district, query) => {
-    setHotelSearchQuery(prev => ({ ...prev, [dayId]: query }));
+  const [hotelSearchQuery, setHotelSearchQuery] = useState<any>({});
+  const [hotelSearchResults, setHotelSearchResults] = useState<any>({});
+
+  const handleHotelSearch = async (dayId: any, district: string, query: string) => {
+    setHotelSearchQuery((prev: any) => ({ ...prev, [dayId]: query }));
     if (!query || query.length < 2) {
-      setHotelSearchResults(prev => ({ ...prev, [dayId]: [] }));
+      setHotelSearchResults((prev: any) => ({ ...prev, [dayId]: [] }));
       return;
     }
     try {
       const results = await api.searchHotels(query, district);
-      setHotelSearchResults(prev => ({ ...prev, [dayId]: results }));
+      setHotelSearchResults((prev: any) => ({ ...prev, [dayId]: results }));
     } catch (err) {
       console.error('Hotel search failed', err);
     }
   };
 
-  const selectHotel = (dayId, hotel) => {
+  const selectHotel = (dayId: any, hotel: any) => {
     updateDay(dayId, 'hotelId', hotel.id);
     updateDay(dayId, 'hotelNameCustom', hotel.hotelName);
-    setHotelSearchQuery(prev => ({ ...prev, [dayId]: '' }));
-    setHotelSearchResults(prev => ({ ...prev, [dayId]: [] }));
+    setHotelSearchQuery((prev: any) => ({ ...prev, [dayId]: '' }));
+    setHotelSearchResults((prev: any) => ({ ...prev, [dayId]: [] }));
   };
 
-  const setCustomHotel = (dayId) => {
+  const setCustomHotel = (dayId: any) => {
     updateDay(dayId, 'hotelId', null);
     updateDay(dayId, 'hotelNameCustom', hotelSearchQuery[dayId]);
-    setHotelSearchQuery(prev => ({ ...prev, [dayId]: '' }));
-    setHotelSearchResults(prev => ({ ...prev, [dayId]: [] }));
+    setHotelSearchQuery((prev: any) => ({ ...prev, [dayId]: '' }));
+    setHotelSearchResults((prev: any) => ({ ...prev, [dayId]: [] }));
   };
 
   // ── Submit ────────────────────────────────────────────────────────────────
@@ -261,7 +269,7 @@ export function CreatePackageModal({ open, onClose, editData = null, onSave, onC
           district: d.district,
           hotelId: d.hotelId,
           hotelNameCustom: d.hotelNameCustom,
-          activities: d.activities.map(a => ({
+          activities: d.activities.map((a: any) => ({
             description: a.description,
             imageUrl: a.imageUrl
           }))
@@ -269,7 +277,7 @@ export function CreatePackageModal({ open, onClose, editData = null, onSave, onC
         existingImageUrls: images.filter(img => img.isExisting).map(img => img.url)
       };
 
-      const newFiles = images.filter(img => !img.isExisting).map(img => img.file);
+      const newFiles = images.filter((img: any) => !img.isExisting).map((img: any) => img.file) as File[];
 
       // 2. Submit
       let result;
@@ -283,7 +291,7 @@ export function CreatePackageModal({ open, onClose, editData = null, onSave, onC
         if (onCreate) onCreate(result);
       }
       onClose();
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
       toast.error(err.message || "Failed to save package");
     } finally {
@@ -327,11 +335,11 @@ export function CreatePackageModal({ open, onClose, editData = null, onSave, onC
             <SectionHeader icon={Tag} title="Basic Information" subtitle="Core details about the package" />
             <div className="grid grid-cols-2 gap-4">
               <FormField label="Package Name" required className="col-span-2">
-                <Input placeholder="e.g. Cultural Triangle Explorer" className={styledInput} value={basicInfo.packageName} onChange={e => updateBasic('packageName', e.target.value)} />
+                <Input placeholder="e.g. Cultural Triangle Explorer" className={styledInput} value={basicInfo.packageName} onChange={(e: any) => updateBasic('packageName', e.target.value)} />
               </FormField>
 
               <FormField label="Package Type" required>
-                <Select modal={false} value={basicInfo.packageType} onValueChange={val => updateBasic('packageType', val)}>
+                <Select modal={false} value={basicInfo.packageType} onValueChange={(val: any) => updateBasic('packageType', val)}>
                   <SelectTrigger><SelectValue placeholder="Select type" /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="SINGLE_DISTRICT">Single District</SelectItem>
@@ -341,7 +349,7 @@ export function CreatePackageModal({ open, onClose, editData = null, onSave, onC
               </FormField>
 
               <FormField label="Category" required>
-                <Select modal={false} value={basicInfo.category} onValueChange={val => updateBasic('category', val)}>
+                <Select modal={false} value={basicInfo.category} onValueChange={(val: any) => updateBasic('category', val)}>
                   <SelectTrigger><SelectValue placeholder="Select category" /></SelectTrigger>
                   <SelectContent>
                     {CATEGORIES.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
@@ -350,7 +358,7 @@ export function CreatePackageModal({ open, onClose, editData = null, onSave, onC
               </FormField>
 
               <FormField label="District" required className="col-span-2">
-                <Select modal={false} value={basicInfo.district} onValueChange={val => updateBasic('district', val)}>
+                <Select modal={false} value={basicInfo.district} onValueChange={(val: any) => updateBasic('district', val)}>
                   <SelectTrigger><SelectValue placeholder="Select primary district" /></SelectTrigger>
                   <SelectContent>
                     {SRI_LANKA_DISTRICTS.map(d => <SelectItem key={d} value={d}>{d}</SelectItem>)}
@@ -364,43 +372,43 @@ export function CreatePackageModal({ open, onClose, editData = null, onSave, onC
               </FormField>
 
               <FormField label="Start Place" required>
-                <Input placeholder="e.g. Colombo Airport" className={styledInput} value={basicInfo.startPlace} onChange={e => updateBasic('startPlace', e.target.value)} />
+                <Input placeholder="e.g. Colombo Airport" className={styledInput} value={basicInfo.startPlace} onChange={(e: any) => updateBasic('startPlace', e.target.value)} />
               </FormField>
 
               <FormField label="End Place" required>
-                <Input placeholder="e.g. Galle Fort" className={styledInput} value={basicInfo.endPlace} onChange={e => updateBasic('endPlace', e.target.value)} />
+                <Input placeholder="e.g. Galle Fort" className={styledInput} value={basicInfo.endPlace} onChange={(e: any) => updateBasic('endPlace', e.target.value)} />
               </FormField>
 
               <FormField label="Duration" required className="col-span-2">
-                <Input placeholder="e.g. 3 Days / 2 Nights" className={styledInput} value={basicInfo.duration} onChange={e => updateBasic('duration', e.target.value)} />
+                <Input placeholder="e.g. 3 Days / 2 Nights" className={styledInput} value={basicInfo.duration} onChange={(e: any) => updateBasic('duration', e.target.value)} />
               </FormField>
 
               <FormField label="Base Price (Adult) USD" required>
                 <div className="relative">
                   <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input type="number" placeholder="120" className={cn(styledInput, 'pl-9')} value={basicInfo.basePriceAdult} onChange={e => updateBasic('basePriceAdult', e.target.value)} />
+                  <Input type="number" placeholder="120" className={cn(styledInput, 'pl-9')} value={basicInfo.basePriceAdult} onChange={(e: any) => updateBasic('basePriceAdult', e.target.value)} />
                 </div>
               </FormField>
-              
+
               <FormField label="Base Price (Child) USD" required>
                 <div className="relative">
                   <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input type="number" placeholder="70" className={cn(styledInput, 'pl-9')} value={basicInfo.basePriceChild} onChange={e => updateBasic('basePriceChild', e.target.value)} />
+                  <Input type="number" placeholder="70" className={cn(styledInput, 'pl-9')} value={basicInfo.basePriceChild} onChange={(e: any) => updateBasic('basePriceChild', e.target.value)} />
                 </div>
               </FormField>
 
               <FormField label="Description" className="col-span-2">
-                <Textarea placeholder="Describe the package..." className={styledTextarea} value={basicInfo.description} onChange={e => updateBasic('description', e.target.value)} />
+                <Textarea placeholder="Describe the package..." className={styledTextarea} value={basicInfo.description} onChange={(e: any) => updateBasic('description', e.target.value)} />
               </FormField>
 
               <FormField label="Inclusions" className="col-span-2">
                 <div className="grid grid-cols-2 gap-3 mt-2">
                   {INCLUSIONS_LIST.filter(inc => inc.id !== 'accommodation' || basicInfo.packageType === 'MULTI_DISTRICT').map(inc => (
                     <div key={inc.id} className="flex flex-row items-start space-x-3 space-y-0 p-3 rounded-md border border-border/40">
-                      <Checkbox 
-                        id={inc.id} 
-                        checked={inclusions.includes(inc.label)} 
-                        onCheckedChange={() => toggleInclusion(inc.label)} 
+                      <Checkbox
+                        id={inc.id}
+                        checked={inclusions.includes(inc.label)}
+                        onCheckedChange={() => toggleInclusion(inc.label)}
                       />
                       <div className="space-y-1 leading-none">
                         <Label htmlFor={inc.id} className="text-sm cursor-pointer">{inc.label}</Label>
@@ -419,7 +427,7 @@ export function CreatePackageModal({ open, onClose, editData = null, onSave, onC
                   <span className="text-sm font-medium text-foreground">Is Active</span>
                   <span className="text-xs text-muted-foreground">Visible to customers</span>
                 </div>
-                <Switch checked={basicInfo.isActive} onCheckedChange={val => updateBasic('isActive', val)} />
+                <Switch checked={basicInfo.isActive} onCheckedChange={(val: any) => updateBasic('isActive', val)} />
               </div>
             </div>
           </section>
@@ -484,22 +492,22 @@ export function CreatePackageModal({ open, onClose, editData = null, onSave, onC
                     {basicInfo.packageType === 'MULTI_DISTRICT' && (
                       <div className="grid grid-cols-2 gap-4 bg-background/50 p-3 rounded-lg border border-border/50">
                         <FormField label="Day District" required>
-                          <Select modal={false} value={day.district} onValueChange={val => updateDay(day.id, 'district', val)}>
+                          <Select modal={false} value={day.district} onValueChange={(val: any) => updateDay(day.id, 'district', val)}>
                             <SelectTrigger><SelectValue placeholder="Select district" /></SelectTrigger>
                             <SelectContent>
                               {SRI_LANKA_DISTRICTS.map(d => <SelectItem key={d} value={d}>{d}</SelectItem>)}
                             </SelectContent>
                           </Select>
                         </FormField>
-                        
+
                         <FormField label="Hotel Assignment" required>
                           <div className="relative">
                             <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                            <Input 
-                              placeholder="Search or type custom hotel..." 
+                            <Input
+                              placeholder="Search or type custom hotel..."
                               className={cn(styledInput, 'pl-9')}
                               value={day.hotelNameCustom || hotelSearchQuery[day.id] || ''}
-                              onChange={(e) => {
+                              onChange={(e: any) => {
                                 updateDay(day.id, 'hotelNameCustom', '');
                                 updateDay(day.id, 'hotelId', null);
                                 handleHotelSearch(day.id, day.district, e.target.value);
@@ -507,7 +515,7 @@ export function CreatePackageModal({ open, onClose, editData = null, onSave, onC
                             />
                             {hotelSearchQuery[day.id] && hotelSearchQuery[day.id].length >= 2 && !day.hotelNameCustom && (
                               <div className="absolute z-20 w-full mt-1 bg-card border border-border rounded-md shadow-lg max-h-40 overflow-y-auto">
-                                {hotelSearchResults[day.id] && hotelSearchResults[day.id].map(h => (
+                                {hotelSearchResults[day.id] && hotelSearchResults[day.id].map((h: any) => (
                                   <div key={h.id} className="p-2 text-sm hover:bg-muted cursor-pointer flex items-center gap-2" onClick={() => selectHotel(day.id, h)}>
                                     <Building2 className="h-4 w-4 text-primary" />
                                     {h.hotelName} <span className="text-xs text-muted-foreground">({h.city})</span>
@@ -524,11 +532,11 @@ export function CreatePackageModal({ open, onClose, editData = null, onSave, onC
                     )}
 
                     <FormField label="Day Title" required>
-                      <Input placeholder="e.g. Arrival & Orientation" className={styledInput} value={day.title} onChange={e => updateDay(day.id, 'title', e.target.value)} />
+                      <Input placeholder="e.g. Arrival & Orientation" className={styledInput} value={day.title} onChange={(e: any) => updateDay(day.id, 'title', e.target.value)} />
                     </FormField>
 
                     <FormField label="Description">
-                      <Textarea placeholder="Describe what happens this day..." className={styledTextarea} value={day.description} onChange={e => updateDay(day.id, 'description', e.target.value)} />
+                      <Textarea placeholder="Describe what happens this day..." className={styledTextarea} value={day.description} onChange={(e: any) => updateDay(day.id, 'description', e.target.value)} />
                     </FormField>
 
                     <div>
@@ -539,11 +547,11 @@ export function CreatePackageModal({ open, onClose, editData = null, onSave, onC
                         </button>
                       </div>
                       <div className="space-y-3">
-                        {day.activities.map((act, actIdx) => (
+                        {day.activities.map((act: any, actIdx: number) => (
                           <div key={actIdx} className="flex gap-2 items-start bg-background p-2 rounded-md border border-border/40">
                             <div className="flex-1 space-y-2">
-                              <Input placeholder="Activity description..." className={styledInput} value={act.description} onChange={e => updateActivity(day.id, actIdx, 'description', e.target.value)} />
-                              
+                              <Input placeholder="Activity description..." className={styledInput} value={act.description} onChange={(e: any) => updateActivity(day.id, actIdx, 'description', e.target.value)} />
+
                               <div className="flex items-center gap-2">
                                 {act.imageUrl ? (
                                   <div className="relative w-16 h-12 rounded overflow-hidden border">
@@ -554,9 +562,9 @@ export function CreatePackageModal({ open, onClose, editData = null, onSave, onC
                                   </div>
                                 ) : (
                                   <div className="relative">
-                                    <input 
+                                    <input
                                       type="file" accept="image/*" className="hidden" id={`img-${day.id}-${actIdx}`}
-                                      onChange={(e) => handleActivityImageUpload(day.id, actIdx, e.target.files[0])}
+                                      onChange={(e: any) => handleActivityImageUpload(day.id, actIdx, e.target.files?.[0])}
                                     />
                                     <Button type="button" variant="outline" size="sm" className="h-8 text-xs gap-1" disabled={act.isUploading} onClick={() => document.getElementById(`img-${day.id}-${actIdx}`)?.click()}>
                                       {act.isUploading ? <Loader2 className="h-3 w-3 animate-spin" /> : <ImageIcon className="h-3 w-3" />}

@@ -20,15 +20,22 @@ const typeConfig = {
   default: { icon: CheckCheck, color: 'text-primary', bg: 'bg-primary/10' },
 };
 
-export function DashboardLayout({ children, title, subtitle, showSearch = true }) {
+export interface DashboardLayoutProps {
+  children: React.ReactNode;
+  title: string;
+  subtitle?: string;
+  showSearch?: boolean;
+}
+
+export function DashboardLayout({ children, title, subtitle, showSearch = true }: DashboardLayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(() => {
     return localStorage.getItem("agency-sidebar-collapsed") === "true";
   });
   const [scrolled, setScrolled] = useState(false);
-  const [notifications, setNotifications] = useState([]);
+  const [notifications, setNotifications] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [profile, setProfile] = useState(null);
+  const [profile, setProfile] = useState<any>(null);
   const navigate = useNavigate();
 
   const unreadCount = notifications.filter(n => !n.read).length;
@@ -76,7 +83,7 @@ export function DashboardLayout({ children, title, subtitle, showSearch = true }
   };
 
   // ── Mark one as read ───────────────────────────────────────
-  const markAsRead = async (id) => {
+  const markAsRead = async (id: string | number) => {
     try {
       await api.markNotificationRead(id);
       setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: true } : n));
@@ -86,7 +93,7 @@ export function DashboardLayout({ children, title, subtitle, showSearch = true }
   };
 
   // ── Dismiss notification ───────────────────────────────────
-  const dismissNotification = async (id) => {
+  const dismissNotification = async (id: string | number) => {
     try {
       // Optimistically remove from UI first
       setNotifications(prev => prev.filter(n => n.id !== id));
@@ -198,7 +205,7 @@ export function DashboardLayout({ children, title, subtitle, showSearch = true }
                     </div>
                   ) : (
                     notifications.map((notification) => {
-                      const config = typeConfig[notification.type] || typeConfig.default;
+                      const config = typeConfig[notification.type as keyof typeof typeConfig] || typeConfig.default;
                       const IconComponent = config.icon;
                       return (
                         <div
@@ -261,7 +268,7 @@ export function DashboardLayout({ children, title, subtitle, showSearch = true }
                 {profile?.profileImage ? (
                   <img src={profile.profileImage} alt={profile.agencyName || 'Agency'} className="h-full w-full object-cover" />
                 ) : (
-                  <span>{(profile?.agencyName || 'Agency').split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()}</span>
+                  <span>{(profile?.agencyName || 'Agency').split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase()}</span>
                 )}
               </div>
               <div className="hidden md:block text-right">

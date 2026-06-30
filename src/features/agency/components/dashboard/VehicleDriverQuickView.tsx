@@ -11,7 +11,7 @@ const statusConfig = {
 };
 
 export function VehicleDriverQuickView() {
-  const [vehicles, setVehicles] = useState([]);
+  const [vehicles, setVehicles] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -40,7 +40,7 @@ export function VehicleDriverQuickView() {
   return (
     <div className="space-y-3">
       {vehicles.map((vehicle) => {
-        const status = statusConfig[vehicle.status] || statusConfig['available'];
+        const status = statusConfig[vehicle.status as keyof typeof statusConfig] || statusConfig['available'];
         const StatusIcon = status.icon;
         const vehicleName = vehicle.brand && vehicle.model
           ? `${vehicle.brand} ${vehicle.model}`

@@ -218,6 +218,12 @@ const BookingDetails = () => {
   const [selectedDriverId, setSelectedDriverId] = useState('');
   const [assigningDriver, setAssigningDriver] = useState(false);
 
+  // ── Temp Vehicle & Driver selection (pending bookings only) ─────
+  const [tempVehicle, setTempVehicle] = useState(null);
+  const [tempDriver, setTempDriver] = useState(null);
+  const [isEditingVehicle, setIsEditingVehicle] = useState(false);
+  const [isEditingDriver, setIsEditingDriver] = useState(false);
+
   // ── Decline state ──────────────────────────────────────────────
   const [declineDialogOpen, setDeclineDialogOpen] = useState(false);
   const [declineReason, setDeclineReason] = useState('');
@@ -262,8 +268,8 @@ const BookingDetails = () => {
 
   // ── Simple Accept: just confirms the booking ───────────────────
   const handleAccept = async () => {
-    const hasVehicle = vehicleLabel || booking.vehicle?.type || booking.vehicleType;
-    const hasDriver = booking.driverName;
+    const hasVehicle = tempVehicle || vehicleLabel || booking.vehicle?.type || booking.vehicleType;
+    const hasDriver = tempDriver || booking.driverName;
 
     if (!hasVehicle && !hasDriver) {
       toast.error('Please assign both a vehicle and a driver before accepting the booking.');
@@ -279,43 +285,75 @@ const BookingDetails = () => {
     }
 
     try {
+      if (tempVehicle) {
+        await api.assignVehicle(booking.id, tempVehicle.id);
+      }
+      if (tempDriver) {
+        await api.assignDriver(booking.id, tempDriver.id);
+      }
       const updated = await api.acceptBooking(booking.id);
       setBooking(updated);
+      setTempVehicle(null);
+      setTempDriver(null);
+      setIsEditingVehicle(false);
+      setIsEditingDriver(false);
       toast.success('Booking accepted! Status is now Confirmed.');
     } catch {
-      toast.error('Failed to accept booking');
+      toast.error('Failed to accept booking or assign resources');
     }
   };
 
   // ── Assign Vehicle ─────────────────────────────────────────────
   const handleAssignVehicle = async () => {
     if (!selectedVehicleId) return;
-    setAssigningVehicle(true);
-    try {
-      const updated = await api.assignVehicle(booking.id, Number(selectedVehicleId));
-      setBooking(updated);
+    const vehicleObj = availableVehicles.find(v => String(v.id) === selectedVehicleId);
+    if (!vehicleObj) return;
+
+    if (booking.status === 'pending') {
+      setTempVehicle(vehicleObj);
+      setIsEditingVehicle(false);
       setSelectedVehicleId('');
-      toast.success('Vehicle assigned successfully!');
-    } catch {
-      toast.error('Failed to assign vehicle');
-    } finally {
-      setAssigningVehicle(false);
+      toast.success('Vehicle selected (will be assigned when booking is accepted)');
+    } else {
+      setAssigningVehicle(true);
+      try {
+        const updated = await api.assignVehicle(booking.id, Number(selectedVehicleId));
+        setBooking(updated);
+        setSelectedVehicleId('');
+        setIsEditingVehicle(false);
+        toast.success('Vehicle assigned successfully!');
+      } catch {
+        toast.error('Failed to assign vehicle');
+      } finally {
+        setAssigningVehicle(false);
+      }
     }
   };
 
   // ── Assign Driver ──────────────────────────────────────────────
   const handleAssignDriver = async () => {
     if (!selectedDriverId) return;
-    setAssigningDriver(true);
-    try {
-      const updated = await api.assignDriver(booking.id, Number(selectedDriverId));
-      setBooking(updated);
+    const driverObj = availableDrivers.find(d => String(d.id) === selectedDriverId);
+    if (!driverObj) return;
+
+    if (booking.status === 'pending') {
+      setTempDriver(driverObj);
+      setIsEditingDriver(false);
       setSelectedDriverId('');
-      toast.success('Driver assigned successfully!');
-    } catch {
-      toast.error('Failed to assign driver');
-    } finally {
-      setAssigningDriver(false);
+      toast.success('Driver selected (will be assigned when booking is accepted)');
+    } else {
+      setAssigningDriver(true);
+      try {
+        const updated = await api.assignDriver(booking.id, Number(selectedDriverId));
+        setBooking(updated);
+        setSelectedDriverId('');
+        setIsEditingDriver(false);
+        toast.success('Driver assigned successfully!');
+      } catch {
+        toast.error('Failed to assign driver');
+      } finally {
+        setAssigningDriver(false);
+      }
     }
   };
 
@@ -383,6 +421,34 @@ const BookingDetails = () => {
     const reg = v.registrationNumber || booking.vehicleRegistration;
     return parts.length ? `${parts.join(' ')}${reg ? ` · ${reg}` : ''}` : reg || null;
   })();
+
+  const hasVehicleAssigned = booking.status === 'pending'
+    ? (tempVehicle !== null || !!vehicleLabel || !!booking.vehicle?.type || !!booking.vehicleType)
+    : (!!vehicleLabel || !!booking.vehicle?.type || !!booking.vehicleType);
+
+  const hasDriverAssigned = booking.status === 'pending'
+    ? (tempDriver !== null || !!booking.driverName)
+    : (!!booking.driverName);
+
+  const displayedVehicleLabel = booking.status === 'pending' && tempVehicle
+    ? `${tempVehicle.brand || ''} ${tempVehicle.model || ''} · ${tempVehicle.registrationNumber || tempVehicle.registration || ''}`
+    : vehicleLabel;
+
+  const displayedVehicleType = booking.status === 'pending' && tempVehicle
+    ? tempVehicle.vehicleType
+    : (booking.vehicle?.type || booking.vehicleType);
+
+  const displayedDriverName = booking.status === 'pending' && tempDriver
+    ? `${tempDriver.firstName} ${tempDriver.lastName || ''}`
+    : booking.driverName;
+
+  const displayedDriverPhone = booking.status === 'pending' && tempDriver
+    ? tempDriver.mobileNumber
+    : booking.driverPhone;
+
+  const displayedDriverRating = booking.status === 'pending' && tempDriver
+    ? tempDriver.rating
+    : booking.driverRating;
 
   return (
     <DashboardLayout
@@ -638,18 +704,32 @@ const BookingDetails = () => {
                       <Car className="h-4 w-4 text-muted-foreground" />
                       Vehicle Allocation
                     </h4>
-                    {(!vehicleLabel && !(booking.vehicle?.type || booking.vehicleType)) ? (
+                    {hasVehicleAssigned ? (
+                      <div className="flex items-center gap-2">
+                        <span className="inline-flex items-center gap-1 rounded bg-success/10 px-2 py-0.5 text-[10px] font-semibold text-success border border-success/30">
+                          ✓ Assigned
+                        </span>
+                        {booking.status !== 'cancelled' && booking.status !== 'completed' && !isEditingVehicle && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-6 px-2 text-[10px] font-semibold text-primary hover:text-primary-dark"
+                            onClick={() => {
+                              setIsEditingVehicle(true);
+                              loadResources();
+                            }}>
+                            Change
+                          </Button>
+                        )}
+                      </div>
+                    ) : (
                       <span className="inline-flex items-center gap-1 rounded bg-amber-50 px-2 py-0.5 text-[10px] font-semibold text-amber-700 border border-amber-200">
                         ⚠️ Unassigned
-                      </span>
-                    ) : (
-                      <span className="inline-flex items-center gap-1 rounded bg-success/10 px-2 py-0.5 text-[10px] font-semibold text-success border border-success/30">
-                        ✓ Assigned
                       </span>
                     )}
                   </div>
 
-                  {!vehicleLabel && !(booking.vehicle?.type || booking.vehicleType) ? (
+                  {(!hasVehicleAssigned || isEditingVehicle) ? (
                     booking.status !== 'cancelled' && booking.status !== 'completed' ? (
                       <div className="space-y-2">
                         <p className="text-xs text-muted-foreground">Select a vehicle from the active fleet for this trip's duration:</p>
@@ -675,6 +755,17 @@ const BookingDetails = () => {
                             disabled={!selectedVehicleId || assigningVehicle}>
                             {assigningVehicle ? 'Assigning…' : 'Assign'}
                           </Button>
+                          {hasVehicleAssigned && (
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => {
+                                setIsEditingVehicle(false);
+                                setSelectedVehicleId('');
+                              }}>
+                              Cancel
+                            </Button>
+                          )}
                         </div>
                       </div>
                     ) : (
@@ -683,9 +774,9 @@ const BookingDetails = () => {
                   ) : (
                     <div className="rounded-lg bg-muted/30 p-4 border border-border/40">
                       <div className="grid gap-4 sm:grid-cols-2">
-                        {vehicleLabel && <Field label="Vehicle" value={vehicleLabel} icon={Car} />}
-                        {(booking.vehicle?.type || booking.vehicleType) && (
-                          <Field label="Type" value={booking.vehicle?.type || booking.vehicleType} icon={Hash} />
+                        {displayedVehicleLabel && <Field label="Vehicle" value={displayedVehicleLabel} icon={Car} />}
+                        {displayedVehicleType && (
+                          <Field label="Type" value={displayedVehicleType} icon={Hash} />
                         )}
                       </div>
                     </div>
@@ -699,18 +790,32 @@ const BookingDetails = () => {
                       <User className="h-4 w-4 text-muted-foreground" />
                       Driver Allocation
                     </h4>
-                    {!booking.driverName ? (
+                    {hasDriverAssigned ? (
+                      <div className="flex items-center gap-2">
+                        <span className="inline-flex items-center gap-1 rounded bg-success/10 px-2 py-0.5 text-[10px] font-semibold text-success border border-success/30">
+                          ✓ Assigned
+                        </span>
+                        {booking.status !== 'cancelled' && booking.status !== 'completed' && !isEditingDriver && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-6 px-2 text-[10px] font-semibold text-primary hover:text-primary-dark"
+                            onClick={() => {
+                              setIsEditingDriver(true);
+                              loadResources();
+                            }}>
+                            Change
+                          </Button>
+                        )}
+                      </div>
+                    ) : (
                       <span className="inline-flex items-center gap-1 rounded bg-amber-50 px-2 py-0.5 text-[10px] font-semibold text-amber-700 border border-amber-200">
                         ⚠️ Unassigned
-                      </span>
-                    ) : (
-                      <span className="inline-flex items-center gap-1 rounded bg-success/10 px-2 py-0.5 text-[10px] font-semibold text-success border border-success/30">
-                        ✓ Assigned
                       </span>
                     )}
                   </div>
 
-                  {!booking.driverName ? (
+                  {(!hasDriverAssigned || isEditingDriver) ? (
                     booking.status !== 'cancelled' && booking.status !== 'completed' ? (
                       <div className="space-y-2">
                         <p className="text-xs text-muted-foreground">Select an available driver for this trip's duration:</p>
@@ -736,6 +841,17 @@ const BookingDetails = () => {
                             disabled={!selectedDriverId || assigningDriver}>
                             {assigningDriver ? 'Assigning…' : 'Assign'}
                           </Button>
+                          {hasDriverAssigned && (
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => {
+                                setIsEditingDriver(false);
+                                setSelectedDriverId('');
+                              }}>
+                              Cancel
+                            </Button>
+                          )}
                         </div>
                       </div>
                     ) : (
@@ -744,12 +860,12 @@ const BookingDetails = () => {
                   ) : (
                     <div className="rounded-lg bg-muted/30 p-4 border border-border/40">
                       <div className="grid gap-4 sm:grid-cols-2">
-                        <Field label="Driver Name" value={booking.driverName} icon={User} />
-                        {booking.driverPhone && (
-                          <Field label="Phone" value={booking.driverPhone} icon={MessageSquare} />
+                        <Field label="Driver Name" value={displayedDriverName} icon={User} />
+                        {displayedDriverPhone && (
+                          <Field label="Phone" value={displayedDriverPhone} icon={MessageSquare} />
                         )}
-                        {booking.driverRating && (
-                          <Field label="Rating" value={`${booking.driverRating} ⭐`} icon={CheckCircle} />
+                        {displayedDriverRating && (
+                          <Field label="Rating" value={`${displayedDriverRating} ⭐`} icon={CheckCircle} />
                         )}
                       </div>
                     </div>

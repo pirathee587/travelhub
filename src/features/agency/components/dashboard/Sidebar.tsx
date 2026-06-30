@@ -1,4 +1,4 @@
-import { useState } from 'react';
+// removed unused useState
 import { Link, useLocation } from 'react-router-dom';
 import {
   LayoutDashboard,
@@ -36,7 +36,7 @@ const navItems = [
   { icon: Settings, label: 'Settings', path: '/agency/settings' },
 ];
 
-export function Sidebar({ collapsed, onToggleCollapse }) {
+export function Sidebar({ collapsed, onToggleCollapse }: { collapsed: boolean; onToggleCollapse: () => void }) {
   const location = useLocation();
 
   return (

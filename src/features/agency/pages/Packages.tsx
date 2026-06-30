@@ -28,10 +28,10 @@ const Packages = () => {
   const { formatPrice } = useCurrency();
   /* Package State Management */
   const [search, setSearch] = useState('');
-  const [packagesList, setPackagesList] = useState([]);
+  const [packagesList, setPackagesList] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
-  const [editingPkg, setEditingPkg] = useState(null);
+  const [editingPkg, setEditingPkg] = useState<any>(null);
 
   /* DATA FETCHING: Load agent packages from the server */
   useEffect(() => {
@@ -55,7 +55,7 @@ const Packages = () => {
     (pkg.district || '').toLowerCase().includes(search.toLowerCase())
   );
 
-  const handleEdit = async (pkg) => {
+  const handleEdit = async (pkg: any) => {
     try {
       const result = await api.getAgentPackage(pkg.packageId);
       setEditingPkg(result);
@@ -66,14 +66,14 @@ const Packages = () => {
     }
   };
 
-  const handleSave = (updated) => {
+  const handleSave = (updated: any) => {
     setPackagesList(prev =>
       prev.map(pkg => pkg.packageId === updated.packageId ? { ...pkg, ...updated } : pkg)
     );
     setEditingPkg(null);
   };
 
-  const handleCreate = (newPkg) => {
+  const handleCreate = (newPkg: any) => {
     setPackagesList(prev => [newPkg, ...prev]);
   };
 

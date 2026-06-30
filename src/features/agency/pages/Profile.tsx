@@ -19,7 +19,7 @@ import { api } from '@/features/agency/services/api';
 import { Skeleton } from '@/components/common/ui/skeleton';
 
 // ── Upload helper ──────────────────────────────────────────────
-const uploadImage = async (file) => {
+const uploadImage = async (file: File) => {
   const formData = new FormData();
   formData.append('file', file);
   const response = await fetch('http://localhost:8082/api/upload/image', {
@@ -33,22 +33,22 @@ const uploadImage = async (file) => {
 
 const Profile = () => {
   /* Agent Profile State */
-  const [profile, setProfile] = useState(null);
-  const [editForm, setEditForm] = useState({});
+  const [profile, setProfile] = useState<any>(null);
+  const [editForm, setEditForm] = useState<any>({});
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [selectedImage, setSelectedImage] = useState(null);
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
-  const fileInputRef = useRef(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   /* Customer Reviews State */
-  const [reviews, setReviews] = useState([]);
+  const [reviews, setReviews] = useState<any[]>([]);
   const [reviewsLoading, setReviewsLoading] = useState(true);
   const [ratingFilter, setRatingFilter] = useState('all');
   const [sortOrder, setSortOrder] = useState('newest');
-  const [activeReplyId, setActiveReplyId] = useState(null);
-  const [replyInputs, setReplyInputs] = useState({});
+  const [activeReplyId, setActiveReplyId] = useState<string | number | null>(null);
+  const [replyInputs, setReplyInputs] = useState<Record<string, string>>({});
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -94,7 +94,7 @@ const Profile = () => {
   };
 
   // ── Profile photo upload → agents/profile folder ───────────
-  const handleProfileImageChange = async (e) => {
+  const handleProfileImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
     setUploadingPhoto(true);
@@ -140,7 +140,7 @@ const Profile = () => {
     }
   };
 
-  const handleSendReply = async (reviewId) => {
+  const handleSendReply = async (reviewId: string | number) => {
     const replyText = replyInputs[reviewId]?.trim();
     if (!replyText) return;
     try {

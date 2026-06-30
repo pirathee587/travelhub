@@ -41,9 +41,9 @@ const SRI_LANKA_DISTRICTS = [
 
 const styledInput = 'h-10 bg-muted/40 border-border/60 focus:border-primary/50 focus:bg-background transition-colors text-sm w-full';
 
-function HotelSearchInput({ district, hotelId, hotelNameCustom, onChange }) {
+function HotelSearchInput({ district, hotelId, hotelNameCustom, onChange }: { district: string; hotelId: any; hotelNameCustom: string; onChange: (id: any, name: string) => void }) {
   const [query, setQuery] = useState(hotelNameCustom || '');
-  const [results, setResults] = useState([]);
+  const [results, setResults] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
   const containerRef = useRef(null);
@@ -86,13 +86,13 @@ function HotelSearchInput({ district, hotelId, hotelNameCustom, onChange }) {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const handleSelect = (hotel) => {
+  const handleSelect = (hotel: any) => {
     onChange(hotel.id, hotel.hotelName);
     setQuery(hotel.hotelName);
     setIsOpen(false);
   };
 
-  const handleTextChange = (val) => {
+  const handleTextChange = (val: string) => {
     setQuery(val);
     onChange(null, val);
     setIsOpen(true);
@@ -161,12 +161,12 @@ function HotelSearchInput({ district, hotelId, hotelNameCustom, onChange }) {
 const PackageDetails = () => {
   const { id } = useParams();
   const { formatPrice } = useCurrency();
-  const [pkg, setPkg] = useState(undefined);
+  const [pkg, setPkg] = useState<any>(undefined);
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [blobToFileMap, setBlobToFileMap] = useState({});
-  const [selectedImage, setSelectedImage] = useState(null);
-  const fileInputRef = useRef(null);
+  const [blobToFileMap, setBlobToFileMap] = useState<Record<string, File>>({});
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const fetchPackage = async () => {
     try {
@@ -294,7 +294,7 @@ const PackageDetails = () => {
     setIsEditing(false);
   };
 
-  const handleToggleActive = async (checked) => {
+  const handleToggleActive = async (checked: boolean) => {
     if (!pkg) return;
     const isDbPackage = typeof pkg.id === 'number' || !pkg.id.toString().startsWith('PKG');
     const updatedPkg = { ...pkg, available: checked };
@@ -349,13 +349,13 @@ const PackageDetails = () => {
 
 
   // Field Updaters
-  const updateField = (field, value) => {
+  const updateField = (field: string, value: any) => {
     if (pkg) {
       setPkg({ ...pkg, [field]: value });
     }
   };
 
-  const updateArrayField = (field, index, value) => {
+  const updateArrayField = (field: string, index: number, value: any) => {
     if (pkg && pkg[field]) {
       const newArray = [...pkg[field]];
       newArray[index] = value; // Direct update if editable, but we might just replace whole array for includes
@@ -363,7 +363,7 @@ const PackageDetails = () => {
     }
   };
 
-  const handleIncludesChange = (text) => {
+  const handleIncludesChange = (text: string) => {
     if (pkg) {
       setPkg({ ...pkg, includes: text.split(',').map((i) => i.trim()) });
     }
@@ -383,7 +383,7 @@ const PackageDetails = () => {
     }
   };
 
-  const removeDay = (index) => {
+  const removeDay = (index: number) => {
     if (pkg && pkg.days) {
       const newDays = pkg.days.filter((_, i) => i !== index);
       // Re-index days
@@ -394,7 +394,7 @@ const PackageDetails = () => {
     }
   };
 
-  const updateDay = (index, field, value) => {
+  const updateDay = (index: number, field: string, value: any) => {
     if (pkg && pkg.days) {
       const newDays = [...pkg.days];
       newDays[index][field] = value;
@@ -402,7 +402,7 @@ const PackageDetails = () => {
     }
   };
 
-  const addActivity = (dayIndex) => {
+  const addActivity = (dayIndex: number) => {
     if (pkg && pkg.days) {
       const newDays = [...pkg.days];
       newDays[dayIndex].activities.push({ description: '', imageUrl: '' });
@@ -410,7 +410,7 @@ const PackageDetails = () => {
     }
   };
 
-  const removeActivity = (dayIndex, actIndex) => {
+  const removeActivity = (dayIndex: number, actIndex: number) => {
     if (pkg && pkg.days) {
       const newDays = [...pkg.days];
       newDays[dayIndex].activities = newDays[dayIndex].activities.filter((_, i) => i !== actIndex);
@@ -418,7 +418,7 @@ const PackageDetails = () => {
     }
   };
 
-  const updateActivity = (dayIndex, actIndex, field, value) => {
+  const updateActivity = (dayIndex: number, actIndex: number, field: string, value: any) => {
     if (pkg && pkg.days) {
       const newDays = [...pkg.days];
       newDays[dayIndex].activities[actIndex][field] = value;
@@ -427,7 +427,7 @@ const PackageDetails = () => {
   };
 
   // Image Management
-  const handleImageUpload = (e) => {
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (files && pkg) {
       const filesArray = Array.from(files);
@@ -442,13 +442,13 @@ const PackageDetails = () => {
     }
   };
 
-  const removeImage = (index) => {
+  const removeImage = (index: number) => {
     if (pkg && pkg.images) {
       setPkg({ ...pkg, images: pkg.images.filter((_, i) => i !== index) });
     }
   };
 
-  const handleActivityImageUpload = async (dayIndex, actIndex, file) => {
+  const handleActivityImageUpload = async (dayIndex: number, actIndex: number, file: File) => {
     if (!file || !pkg || !pkg.days) return;
     try {
       updateActivity(dayIndex, actIndex, 'isUploading', true);
@@ -465,7 +465,7 @@ const PackageDetails = () => {
     }
   };
 
-  const removeActivityImage = (dayIndex, actIndex) => {
+  const removeActivityImage = (dayIndex: number, actIndex: number) => {
     if (pkg && pkg.days) {
       updateActivity(dayIndex, actIndex, 'imageUrl', '');
     }
