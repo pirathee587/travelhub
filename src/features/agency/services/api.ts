@@ -155,11 +155,11 @@ export const api = {
         fetch(`${BASE_URL}/agent/${AGENT_ID}/bookings/${bookingId}`).then(r => r.json()),
 
     // pending → confirmed (agent accepts, assigns vehicle)
-    acceptBooking: (bookingId, vehicleId) =>
+    acceptBooking: (bookingId, vehicleId, hotelId) =>
         fetch(`${BASE_URL}/agent/${AGENT_ID}/bookings/${bookingId}/accept`, {
             method: "PATCH",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ vehicleId })
+            body: JSON.stringify({ vehicleId, hotelId })
         }).then(r => r.json()),
 
     assignVehicle: (bookingId, vehicleId) =>
@@ -224,13 +224,13 @@ export const api = {
 
     // Notifications
     getNotifications: () =>
-        fetch(`${BASE_URL}/agent/notifications`).then(r => r.json()),
+        fetch(`${BASE_URL}/agent/${AGENT_ID}/notifications`).then(r => r.json()),
     markNotificationRead: (notificationId) =>
-        fetch(`${BASE_URL}/agent/notifications/${notificationId}/read`, {
+        fetch(`${BASE_URL}/agent/${AGENT_ID}/notifications/${notificationId}/read`, {
             method: "PATCH"
         }).then(r => r.json()),
     markAllNotificationsRead: () =>
-        fetch(`${BASE_URL}/agent/notifications/read-all`, {
+        fetch(`${BASE_URL}/agent/${AGENT_ID}/notifications/read-all`, {
             method: "PATCH"
         }),
 
@@ -252,7 +252,7 @@ export const api = {
 
     // Notifications
     deleteNotification: (notificationId) =>
-        fetch(`${BASE_URL}/agent/notifications/${notificationId}`, {
+        fetch(`${BASE_URL}/agent/${AGENT_ID}/notifications/${notificationId}`, {
             method: 'DELETE'
         }),
 };
