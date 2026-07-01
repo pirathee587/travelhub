@@ -10,6 +10,12 @@ import com.travelhub.backend.entity.Vehicle;
 import com.travelhub.backend.repository.BookingRepository;
 import com.travelhub.backend.repository.DriverRepository;
 import com.travelhub.backend.repository.VehicleRepository;
+import com.travelhub.backend.repository.PaymentRepository;
+import com.travelhub.backend.entity.Payment;
+import com.travelhub.backend.entity.BookingHotelPreference;
+import com.travelhub.backend.entity.Hotel;
+import com.travelhub.backend.dto.response.BookingHotelPreferenceResponse;
+import java.util.ArrayList;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
@@ -28,6 +34,7 @@ public class AgentBookingService {
     private final BookingRepository bookingRepository;
     private final VehicleRepository vehicleRepository;
     private final DriverRepository driverRepository;
+    private final PaymentRepository paymentRepository;
     private final ApplicationEventPublisher eventPublisher;
     private final UserNotificationService userNotificationService;
 
@@ -186,6 +193,16 @@ public class AgentBookingService {
 
         booking.setStatus("in_progress");
         booking.setProgress(60);
+
+        // Automate status update
+        if (booking.getDriver() != null) {
+            booking.getDriver().setStatus("on-trip");
+        }
+        if (booking.getVehicle() != null) {
+            booking.getVehicle().setStatus("booked");
+            booking.getVehicle().setIsAvailable(false);
+        }
+
         return toResponse(bookingRepository.save(booking));
     }
 
@@ -200,6 +217,16 @@ public class AgentBookingService {
 
         booking.setStatus("completed");
         booking.setProgress(100);
+
+        // Automate status update (only revert if not overridden by maintenance/off-duty)
+        if (booking.getDriver() != null && "on-trip".equals(booking.getDriver().getStatus())) {
+            booking.getDriver().setStatus("available");
+        }
+        if (booking.getVehicle() != null && "booked".equals(booking.getVehicle().getStatus())) {
+            booking.getVehicle().setStatus("available");
+            booking.getVehicle().setIsAvailable(true);
+        }
+
         return toResponse(bookingRepository.save(booking));
     }
 
@@ -216,6 +243,16 @@ public class AgentBookingService {
 
         booking.setStatus("cancelled");
         booking.setProgress(0);
+
+        // Automate status update (only revert if not overridden by maintenance/off-duty)
+        if (booking.getDriver() != null && "on-trip".equals(booking.getDriver().getStatus())) {
+            booking.getDriver().setStatus("available");
+        }
+        if (booking.getVehicle() != null && "booked".equals(booking.getVehicle().getStatus())) {
+            booking.getVehicle().setStatus("available");
+            booking.getVehicle().setIsAvailable(true);
+        }
+
         Booking saved = bookingRepository.save(booking);
 
         // Force load lazy-loaded proxies before publishing event to async listener
@@ -259,6 +296,42 @@ public class AgentBookingService {
         com.travelhub.backend.entity.User tourist = booking.getUser();
         com.travelhub.backend.entity.Package pkg = booking.getPkg();
 
+        List<Payment> payments = paymentRepository.findByBookingId(booking.getId());
+        boolean isPaid = payments.stream()
+                .anyMatch(p -> "Completed".equalsIgnoreCase(p.getStatus()) && "Payment".equalsIgnoreCase(p.getType()));
+
+        List<BookingHotelPreferenceResponse> prefResponses = new ArrayList<>();
+        if (booking.getHotelPreferences() != null) {
+            for (BookingHotelPreference pref : booking.getHotelPreferences()) {
+                Hotel h = pref.getHotel();
+                if (h != null) {
+                    String contact = h.getHotelContactNumber();
+                    if (contact == null || contact.trim().isEmpty()) {
+                        contact = h.getPhoneNumber();
+                    }
+                    if (contact == null || contact.trim().isEmpty()) {
+                        contact = h.getHotlineNumber();
+                    }
+
+                    prefResponses.add(BookingHotelPreferenceResponse.builder()
+                            .id(pref.getId())
+                            .hotelId(h.getId())
+                            .hotelName(h.getHotelName())
+                            .starRating("")
+                            .district(h.getDistrict())
+                            .imageUrl((h.getHotelImages() != null && !h.getHotelImages().isEmpty())
+                                    ? h.getHotelImages().get(0).getImageUrl()
+                                    : h.getImageUrl())
+                            .contactNumber(contact)
+                            .email(h.getHotelEmail())
+                            .roomName(pref.getRoomName())
+                            .preferenceNumber(pref.getPreferenceNumber())
+                            .isSelected(pref.getIsSelected())
+                            .build());
+                }
+            }
+        }
+
         return BookingResponse.builder()
                 .id(booking.getId())
                 .bookingId(String.format("BK%05d", booking.getId()))
@@ -288,6 +361,8 @@ public class AgentBookingService {
                 .driverPhone(d != null ? d.getMobileNumber() : null)
                 .driverRating(d != null ? d.getRating() : null)
                 .bookedOn(booking.getCreatedAt())
+                .isPaid(isPaid)
+                .hotelPreferences(prefResponses)
                 .build();
     }
 }

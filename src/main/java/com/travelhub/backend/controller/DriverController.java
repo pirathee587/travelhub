@@ -19,8 +19,10 @@ public class DriverController {
     @GetMapping("/{agentId}/drivers")
     public ResponseEntity<List<DriverResponse>> getAllDrivers(
             @PathVariable Long agentId,
-            @RequestParam(required = false) String lifecycleStatus) {
-        return ResponseEntity.ok(driverService.getAllDrivers(agentId, lifecycleStatus));
+            @RequestParam(required = false) String lifecycleStatus,
+            @RequestParam(required = false) String startDate,
+            @RequestParam(required = false) String endDate) {
+        return ResponseEntity.ok(driverService.getAllDrivers(agentId, lifecycleStatus, startDate, endDate));
     }
 
     @GetMapping("/{agentId}/drivers/{driverId}")

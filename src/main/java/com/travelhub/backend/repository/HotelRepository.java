@@ -37,7 +37,7 @@ public interface HotelRepository
     @org.springframework.data.jpa.repository.Query(
         "SELECT h FROM Hotel h WHERE h.applicationStatus = 'Approved' " +
         "AND LOWER(h.hotelName) LIKE LOWER(CONCAT('%', :query, '%')) " +
-        "AND (:district IS NULL OR LOWER(h.district) = LOWER(:district))")
+        "AND (:district IS NULL OR LOWER(h.district) = LOWER(cast(:district as string)))")
     List<Hotel> searchByNameAndDistrict(
         @org.springframework.data.repository.query.Param("query") String query,
         @org.springframework.data.repository.query.Param("district") String district);
