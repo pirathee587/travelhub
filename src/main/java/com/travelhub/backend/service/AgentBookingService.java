@@ -11,6 +11,7 @@ import com.travelhub.backend.repository.BookingRepository;
 import com.travelhub.backend.repository.DriverRepository;
 import com.travelhub.backend.repository.VehicleRepository;
 import com.travelhub.backend.repository.PaymentRepository;
+import com.travelhub.backend.repository.HotelRepository;
 import com.travelhub.backend.entity.Payment;
 import com.travelhub.backend.entity.BookingHotelPreference;
 import com.travelhub.backend.entity.Hotel;
@@ -35,6 +36,7 @@ public class AgentBookingService {
     private final VehicleRepository vehicleRepository;
     private final DriverRepository driverRepository;
     private final PaymentRepository paymentRepository;
+    private final HotelRepository hotelRepository;
     private final ApplicationEventPublisher eventPublisher;
     private final UserNotificationService userNotificationService;
 
@@ -58,7 +60,7 @@ public class AgentBookingService {
     // ── ACCEPT: pending → confirmed ───────────────────────────────────────────
     // Agent accepts a booking. Vehicle/driver can be assigned before or after.
 
-    public BookingResponse acceptBooking(Long agentId, Long bookingId, Long vehicleId) {
+    public BookingResponse acceptBooking(Long agentId, Long bookingId, Long vehicleId, Long hotelId) {
         Booking booking = findAndValidate(agentId, bookingId);
 
         if (!booking.getStatus().equals("pending") && !booking.getStatus().equals("confirmed")) {
@@ -69,6 +71,14 @@ public class AgentBookingService {
             Vehicle vehicle = vehicleRepository.findById(vehicleId)
                     .orElseThrow(() -> new ResourceNotFoundException("Vehicle", "id", vehicleId));
             booking.setVehicle(vehicle);
+        }
+
+        if (hotelId != null) {
+            Hotel hotel = hotelRepository.findById(hotelId)
+                    .orElseThrow(() -> new ResourceNotFoundException("Hotel", "id", hotelId));
+            booking.setHotel(hotel);
+        } else {
+            booking.setHotel(null);
         }
 
         booking.setStatus("confirmed");
@@ -336,6 +346,7 @@ public class AgentBookingService {
                 .id(booking.getId())
                 .bookingId(String.format("BK%05d", booking.getId()))
                 .packageName(pkg != null ? pkg.getPackageName() : null)
+                .packageId(pkg != null ? pkg.getPackageId() : null)
                 .touristName(tourist != null ? tourist.getName() : null)
                 .touristEmail(tourist != null ? tourist.getEmail() : null)
                 .touristPhone(tourist != null ? tourist.getTelephone() : null)
@@ -353,6 +364,9 @@ public class AgentBookingService {
                 .imageUrl(pkg != null ? (pkg.getImageUrl() != null ? pkg.getImageUrl() : (pkg.getImages() != null && !pkg.getImages().isEmpty() ? pkg.getImages().get(0).getImageUrl() : null)) : null)
                 .accommodationOption(booking.getAccommodationOption())
                 .packageType(booking.getPkg() != null ? booking.getPkg().getPackageType() : null)
+                .hotelId(booking.getHotel() != null ? booking.getHotel().getId() : null)
+                .hotelName(booking.getHotel() != null ? booking.getHotel().getHotelName() : null)
+                .hotelLocation(booking.getHotel() != null ? booking.getHotel().getLocation() : null)
                 .hotelIdsWithPreference(booking.getHotelIdsWithPreference())
                 .vehicleType(booking.getVehicle() != null ? booking.getVehicle().getVehicleType() : null)
                 .vehicleModel(booking.getVehicle() != null ? booking.getVehicle().getModel() : null)

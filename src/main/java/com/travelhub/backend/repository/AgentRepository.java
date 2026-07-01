@@ -67,4 +67,7 @@ public interface AgentRepository extends JpaRepository<Agent, Long> {
     );
 
     List<Agent> findTop5ByOrderBySubmittedDateDesc();
+
+    @Query("SELECT a FROM Agent a WHERE a.owner.id = :userId")
+    java.util.Optional<Agent> findByOwnerId(@Param("userId") Long userId);
 }

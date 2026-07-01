@@ -94,6 +94,7 @@ public class BookingService {
                 .id(booking.getId())
                 .bookingId(String.format("BK%05d", booking.getId()))
                 .packageName(booking.getPkg() != null ? booking.getPkg().getPackageName() : null)
+                .packageId(booking.getPkg() != null ? booking.getPkg().getPackageId() : null)
 
                 .startDate(booking.getStartDate())
                 .endDate(booking.getEndDate())
@@ -105,6 +106,7 @@ public class BookingService {
                 .startPlace(booking.getPkg() != null ? booking.getPkg().getStartPlace() : null)
                 .endPlace(booking.getPkg() != null ? booking.getPkg().getEndPlace() : null)
                 .bookedOn(booking.getCreatedAt())
+                .hotelId(booking.getHotel() != null ? booking.getHotel().getId() : null)
                 .hotelName(booking.getHotel() != null ? booking.getHotel().getHotelName() : null)
                 .hotelLocation(booking.getHotel() != null ? booking.getHotel().getLocation() : null)
                 .driverName(booking.getVehicle() != null ? booking.getVehicle().getDriverName() : null)

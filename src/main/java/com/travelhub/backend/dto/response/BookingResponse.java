@@ -17,6 +17,7 @@ public class BookingResponse {
     private Long id;
     private String bookingId;
     private String packageName;
+    private String packageId;
 
     private LocalDate startDate;
     private LocalDate endDate;
@@ -44,6 +45,7 @@ public class BookingResponse {
     private String duration;
 
     // Hotel info
+    private Long hotelId;
     private String hotelName;
     private String hotelLocation;
 
