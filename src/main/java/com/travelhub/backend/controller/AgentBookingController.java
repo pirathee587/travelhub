@@ -38,7 +38,8 @@ public class AgentBookingController {
             @PathVariable Long bookingId,
             @RequestBody(required = false) BookingActionRequest request) {
         Long vehicleId = (request != null) ? request.getVehicleId() : null;
-        return ResponseEntity.ok(agentBookingService.acceptBooking(agentId, bookingId, vehicleId));
+        Long hotelId = (request != null) ? request.getHotelId() : null;
+        return ResponseEntity.ok(agentBookingService.acceptBooking(agentId, bookingId, vehicleId, hotelId));
     }
 
     // PATCH: assign vehicle to a booking

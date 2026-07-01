@@ -8,4 +8,5 @@ public class BookingActionRequest {
     private String cancelReason;  // used when agent cancels a confirmed/in-progress booking
     private Long vehicleId;       // used when agent accepts a booking and assigns a vehicle
     private Long driverId;        // used when agent assigns a driver to a booking
+    private Long hotelId;         // used when agent accepts a booking and assigns a hotel (single district agency preferences)
 }
