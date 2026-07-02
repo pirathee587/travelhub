@@ -433,8 +433,12 @@ const Profile = () => {
                   <div key={review.id} className="rounded-xl border border-border bg-background p-5 transition-all hover:border-primary/20">
                     <div className="flex items-start justify-between">
                       <div className="flex items-center gap-3">
-                        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-primary to-accent text-sm font-semibold text-primary-foreground">
-                          {(review.customerName || 'A').split(' ').map(n => n[0]).join('').slice(0, 2)}
+                        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-primary to-accent text-sm font-semibold text-primary-foreground overflow-hidden">
+                          {review.customerProfileImage ? (
+                            <img src={review.customerProfileImage} alt={review.customerName || 'Customer'} className="h-full w-full object-cover" />
+                          ) : (
+                            (review.customerName || 'A').split(' ').map(n => n[0]).join('').slice(0, 2)
+                          )}
                         </div>
                         <div>
                           <p className="font-medium text-foreground">{review.customerName || 'Anonymous'}</p>

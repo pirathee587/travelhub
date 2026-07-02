@@ -639,16 +639,10 @@ const Vehicles = () => {
                             <div className="space-y-2"><Label>First Name</Label><Input value={newVehicle.ownerFirstName} onChange={(e) => setNewVehicle({ ...newVehicle, ownerFirstName: e.target.value })} /></div>
                             <div className="space-y-2"><Label>Last Name</Label><Input value={newVehicle.ownerLastName} onChange={(e) => setNewVehicle({ ...newVehicle, ownerLastName: e.target.value })} /></div>
                           </div>
-                          {editingVehicle
-                            ? <LockedField label="NIC Number" value={newVehicle.nicNumber} />
-                            : <div className="space-y-2"><Label>NIC Number</Label><Input value={newVehicle.nicNumber} onChange={(e) => setNewVehicle({ ...newVehicle, nicNumber: e.target.value })} /></div>}
+                          <div className="space-y-2"><Label>NIC Number</Label><Input value={newVehicle.nicNumber} onChange={(e) => setNewVehicle({ ...newVehicle, nicNumber: e.target.value })} /></div>
                           <div className="grid grid-cols-2 gap-4">
-                            {editingVehicle
-                              ? <LockedField label="NIC Front Image" value={newVehicle.nicFrontImage} isImage />
-                              : <ImageUploadField label="NIC Front Image" folder="vehicles/documents" value={newVehicle.nicFrontImage} onChange={(val) => setNewVehicle({ ...newVehicle, nicFrontImage: val })} onRemove={() => setNewVehicle({ ...newVehicle, nicFrontImage: null })} />}
-                            {editingVehicle
-                              ? <LockedField label="NIC Rear Image" value={newVehicle.nicRearImage} isImage />
-                              : <ImageUploadField label="NIC Rear Image" folder="vehicles/documents" value={newVehicle.nicRearImage} onChange={(val) => setNewVehicle({ ...newVehicle, nicRearImage: val })} onRemove={() => setNewVehicle({ ...newVehicle, nicRearImage: null })} />}
+                            <ImageUploadField label="NIC Front Image" folder="vehicles/documents" value={newVehicle.nicFrontImage} onChange={(val) => setNewVehicle({ ...newVehicle, nicFrontImage: val })} onRemove={() => setNewVehicle({ ...newVehicle, nicFrontImage: null })} />
+                            <ImageUploadField label="NIC Rear Image" folder="vehicles/documents" value={newVehicle.nicRearImage} onChange={(val) => setNewVehicle({ ...newVehicle, nicRearImage: val })} onRemove={() => setNewVehicle({ ...newVehicle, nicRearImage: null })} />
                           </div>
                           <div className="space-y-2"><Label>Address Line 1</Label><Input value={newVehicle.addressLine1} onChange={(e) => setNewVehicle({ ...newVehicle, addressLine1: e.target.value })} /></div>
                           <div className="space-y-2"><Label>Address Line 2</Label><Input value={newVehicle.addressLine2} onChange={(e) => setNewVehicle({ ...newVehicle, addressLine2: e.target.value })} /></div>
@@ -690,13 +684,9 @@ const Vehicles = () => {
                           </Select>
                         </div>
                         <div className="space-y-2"><Label>Passenger Capacity</Label><Input type="number" value={newVehicle.capacity} onChange={(e) => setNewVehicle({ ...newVehicle, capacity: parseInt(e.target.value) || 0 })} /></div>
-                        {editingVehicle
-                          ? <LockedField label="Year of Manufacture" value={newVehicle.yearOfManufacture} />
-                          : <div className="space-y-2"><Label>Year of Manufacture</Label><Input type="number" value={newVehicle.yearOfManufacture} onChange={(e) => setNewVehicle({ ...newVehicle, yearOfManufacture: e.target.value })} /></div>}
+                        <div className="space-y-2"><Label>Year of Manufacture</Label><Input type="number" value={newVehicle.yearOfManufacture} onChange={(e) => setNewVehicle({ ...newVehicle, yearOfManufacture: e.target.value })} /></div>
                       </div>
-                      {editingVehicle
-                        ? <LockedField label="Registration Number" value={newVehicle.registration} />
-                        : <div className="space-y-2"><Label>License Plate Number</Label><Input placeholder="e.g., KA-01-AB-1234" value={newVehicle.registration} onChange={(e) => setNewVehicle({ ...newVehicle, registration: e.target.value })} /></div>}
+                      <div className="space-y-2"><Label>License Plate Number</Label><Input placeholder="e.g., KA-01-AB-1234" value={newVehicle.registration} onChange={(e) => setNewVehicle({ ...newVehicle, registration: e.target.value })} /></div>
                     </div>
 
                     {/* Section 3: Documents and Photos */}
@@ -887,9 +877,7 @@ const Vehicles = () => {
                         <div className="space-y-2"><Label>Last Name</Label><Input placeholder="e.g., Smith" value={newDriver.lastName} onChange={(e) => setNewDriver({ ...newDriver, lastName: e.target.value })} /></div>
                       </div>
                       <div className="grid grid-cols-2 gap-4">
-                        {editingDriver
-                          ? <LockedField label="NIC Number" value={newDriver.nic} />
-                          : <div className="space-y-2"><Label>NIC Number <span className="text-destructive">*</span></Label><Input value={newDriver.nic} onChange={(e) => setNewDriver({ ...newDriver, nic: e.target.value })} /></div>}
+                        <div className="space-y-2"><Label>NIC Number <span className="text-destructive">*</span></Label><Input value={newDriver.nic} onChange={(e) => setNewDriver({ ...newDriver, nic: e.target.value })} /></div>
                         <div className="space-y-2"><Label>Blood Group</Label>
                           <Select value={newDriver.bloodGroup} onValueChange={(val) => setNewDriver({ ...newDriver, bloodGroup: val })}>
                             <SelectTrigger><SelectValue placeholder="Select Blood Group" /></SelectTrigger>
@@ -898,12 +886,8 @@ const Vehicles = () => {
                         </div>
                       </div>
                       <div className="grid grid-cols-2 gap-4">
-                        {editingDriver
-                          ? <LockedField label="NIC Front Image" value={newDriver.nicFront} isImage />
-                          : <ImageUploadField label="NIC Front Image" folder="drivers/nic" value={newDriver.nicFront} onChange={(v) => setNewDriver({ ...newDriver, nicFront: v })} onRemove={() => setNewDriver({ ...newDriver, nicFront: null })} />}
-                        {editingDriver
-                          ? <LockedField label="NIC Rear Image" value={newDriver.nicRear} isImage />
-                          : <ImageUploadField label="NIC Rear Image" folder="drivers/nic" value={newDriver.nicRear} onChange={(v) => setNewDriver({ ...newDriver, nicRear: v })} onRemove={() => setNewDriver({ ...newDriver, nicRear: null })} />}
+                        <ImageUploadField label="NIC Front Image" folder="drivers/nic" value={newDriver.nicFront} onChange={(v) => setNewDriver({ ...newDriver, nicFront: v })} onRemove={() => setNewDriver({ ...newDriver, nicFront: null })} />
+                        <ImageUploadField label="NIC Rear Image" folder="drivers/nic" value={newDriver.nicRear} onChange={(v) => setNewDriver({ ...newDriver, nicRear: v })} onRemove={() => setNewDriver({ ...newDriver, nicRear: null })} />
                       </div>
                     </div>
 
@@ -934,18 +918,12 @@ const Vehicles = () => {
                         </div>
                       </div>
                       <div className="grid grid-cols-2 gap-4">
-                        {editingDriver
-                          ? <LockedField label="License Number" value={newDriver.license} />
-                          : <div className="space-y-2"><Label>License Number <span className="text-destructive">*</span></Label><Input value={newDriver.license} onChange={(e) => setNewDriver({ ...newDriver, license: e.target.value })} /></div>}
+                        <div className="space-y-2"><Label>License Number <span className="text-destructive">*</span></Label><Input value={newDriver.license} onChange={(e) => setNewDriver({ ...newDriver, license: e.target.value })} /></div>
                         <div className="space-y-2"><Label>License Expiry Date</Label><Input type="date" value={newDriver.licenseExpiryDate} onChange={(e) => setNewDriver({ ...newDriver, licenseExpiryDate: e.target.value })} /></div>
                       </div>
                       <div className="grid grid-cols-2 gap-4">
-                        {editingDriver
-                          ? <LockedField label="License Front Image" value={newDriver.licenseFront} isImage />
-                          : <ImageUploadField label="License Front Image" folder="drivers/license" value={newDriver.licenseFront} onChange={(v) => setNewDriver({ ...newDriver, licenseFront: v })} onRemove={() => setNewDriver({ ...newDriver, licenseFront: null })} />}
-                        {editingDriver
-                          ? <LockedField label="License Rear Image" value={newDriver.licenseRear} isImage />
-                          : <ImageUploadField label="License Rear Image" folder="drivers/license" value={newDriver.licenseRear} onChange={(v) => setNewDriver({ ...newDriver, licenseRear: v })} onRemove={() => setNewDriver({ ...newDriver, licenseRear: null })} />}
+                        <ImageUploadField label="License Front Image" folder="drivers/license" value={newDriver.licenseFront} onChange={(v) => setNewDriver({ ...newDriver, licenseFront: v })} onRemove={() => setNewDriver({ ...newDriver, licenseFront: null })} />
+                        <ImageUploadField label="License Rear Image" folder="drivers/license" value={newDriver.licenseRear} onChange={(v) => setNewDriver({ ...newDriver, licenseRear: v })} onRemove={() => setNewDriver({ ...newDriver, licenseRear: null })} />
                       </div>
                     </div>
 
