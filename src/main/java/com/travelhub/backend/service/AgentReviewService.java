@@ -65,6 +65,7 @@ public class AgentReviewService {
         return ReviewResponse.builder()
                 .id(r.getId())
                 .customerName(displayName)
+                .customerProfileImage(r.getUser() != null ? r.getUser().getProfileImage() : null)
                 .userName(displayName)
                 .rating(r.getRating())
                 .comment(r.getComment())
