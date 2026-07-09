@@ -6,6 +6,8 @@ public record AdminPackageResponse(
         String  destination,
         Double  priceFrom,
         Double  priceTo,
+        Double  basePriceAdult,
+        Double  basePriceChild,
         String  duration,
         String  category,
         Double  rating,

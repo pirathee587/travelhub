@@ -13,6 +13,7 @@ public record AdminHotelDetailResponse(
         // ── Location Details ───────────────────────────
         String  district,
         String  location,
+        Integer numberOfRooms,
 
         // Room Types list
         List<RoomTypeResponse> roomTypes,

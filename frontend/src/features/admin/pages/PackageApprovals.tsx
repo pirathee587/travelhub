@@ -34,7 +34,7 @@ const Skeleton = () => (
 // ── Package Detail View ────────────────────────────────────────────────────────
 const PackageDetailView = ({ pkg, onBack, onApprove, onReject, onToggle, onDelete, loading }) => {
   if (!pkg) return null
-  const { id, packageName, destination, district, priceFrom, priceTo, duration,
+  const { id, packageName, destination, district, priceFrom, priceTo, basePriceAdult, basePriceChild, duration,
     category, rating, trending, isActive, applicationStatus,
     providerName, description, inclusions, itinerary, imageUrl, images } = pkg
 
@@ -79,7 +79,16 @@ const PackageDetailView = ({ pkg, onBack, onApprove, onReject, onToggle, onDelet
               <div className="grid grid-cols-2 md:grid-cols-3 gap-y-6 gap-x-4 mb-8">
                 <div>
                   <div className="text-xs text-gray-500 font-medium mb-1">Price</div>
-                  <div className="text-lg font-bold text-teal-700">{fmtPrice(priceFrom)}{priceTo ? ` - ${fmtPrice(priceTo)}` : ''}</div>
+                  <div className="text-lg font-bold text-teal-700">
+                    {basePriceAdult != null ? (
+                      <>
+                        {fmtPrice(basePriceAdult)} <span className="text-sm font-medium text-gray-500">/ adult</span>
+                        {basePriceChild != null && <div className="text-sm text-gray-500">{fmtPrice(basePriceChild)} <span className="text-xs">/ child</span></div>}
+                      </>
+                    ) : (
+                      <>{fmtPrice(priceFrom)}{priceTo ? ` - ${fmtPrice(priceTo)}` : ''}</>
+                    )}
+                  </div>
                 </div>
                 <div>
                   <div className="text-xs text-gray-500 font-medium mb-1">Duration</div>
@@ -193,7 +202,7 @@ const PackageDetailView = ({ pkg, onBack, onApprove, onReject, onToggle, onDelet
 
 // ── Package Card ──────────────────────────────────────────────────────────────
 const PackageCard = ({ pkg, onView, onApprove, onReject, onToggle, onDelete, actionLoading }) => {
-  const { packageName, destination, priceFrom, priceTo, duration, category,
+  const { packageName, destination, priceFrom, priceTo, basePriceAdult, duration, category,
     rating, agentName, isActive, applicationStatus, imageUrl } = pkg
 
   return (
@@ -211,8 +220,11 @@ const PackageCard = ({ pkg, onView, onApprove, onReject, onToggle, onDelete, act
       {/* Info */}
       <div className="p-5 flex-1 flex flex-col">
         <h3 className="font-bold text-gray-900 text-lg mb-1">{packageName}</h3>
-        <p className="text-gray-500 text-sm mb-3">
+        <p className="text-gray-500 text-sm mb-2">
           {[destination, duration].filter(Boolean).join(' • ') || '—'}
+        </p>
+        <p className="text-teal-600 font-semibold text-sm mb-3">
+          {basePriceAdult != null ? `${fmtPrice(basePriceAdult)} / adult` : (priceFrom != null ? fmtPrice(priceFrom) : '—')}
         </p>
 
         {String(applicationStatus).trim().toLowerCase() === 'approved' && (

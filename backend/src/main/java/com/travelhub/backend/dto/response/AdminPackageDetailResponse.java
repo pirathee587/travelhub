@@ -14,6 +14,8 @@ public record AdminPackageDetailResponse(
         // Frontend-ல் $450 per person
         Double priceFrom,
         Double priceTo,
+        Double basePriceAdult,
+        Double basePriceChild,
 
         // ── Gallery ────────────────────────────────────
         // Multiple images — 1/3, 2/3, 3/3
