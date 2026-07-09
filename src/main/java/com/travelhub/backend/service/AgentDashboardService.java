@@ -31,9 +31,12 @@ public class AgentDashboardService {
      */
     @Transactional
     public AgentDashboardStatsResponse getStats(Long agentId) {
+        com.travelhub.backend.entity.Agent agent = agentRepository.findByOwnerId(agentId)
+                .orElseThrow(() -> new com.travelhub.backend.common.ResourceNotFoundException("Agent", "userId", agentId));
+        Long realAgentId = agent.getId();
 
         // Count trips that are currently ongoing/active for this agent.
-        long activeTrips = bookingRepository.findByAgentId(agentId)
+        long activeTrips = bookingRepository.findByAgentId(realAgentId)
                 .stream()
                 .filter(b -> b.getStatus().equals("active") ||
                         b.getStatus().equals("confirmed") ||
@@ -43,27 +46,27 @@ public class AgentDashboardService {
 
         // Completed/pending counts are pulled via status-specific repository methods.
         long completedTrips = bookingRepository
-                .findByAgentIdAndStatus(agentId, "completed").size();
+                .findByAgentIdAndStatus(realAgentId, "completed").size();
         long pendingRequests = bookingRepository
-                .findByAgentIdAndStatus(agentId, "pending").size();
+                .findByAgentIdAndStatus(realAgentId, "pending").size();
 
         // Inventory counts for the agent.
         long totalVehicles = vehicleRepository
-                .findByAgentId(agentId).size();
+                .findByAgentId(realAgentId).size();
         long totalDrivers = driverRepository
-                .findByAgentId(agentId).size();
+                .findByAgentId(realAgentId).size();
 
         // Total packages created/owned by this agent.
-        long totalPackages = packageRepository.countByAgentId(agentId);
+        long totalPackages = packageRepository.countByAgentId(realAgentId);
 
         // Revenue = sum of totalPrice across completed bookings (treat null as 0).
         Double totalRevenue = bookingRepository
-                .findByAgentIdAndStatus(agentId, "completed")
+                .findByAgentIdAndStatus(realAgentId, "completed")
                 .stream()
                 .mapToDouble(b -> b.getTotalPrice() != null ? b.getTotalPrice() : 0)
                 .sum();
 
-        Double averageRating = agentRatingCalculator.getAgentRating(agentId);
+        Double averageRating = agentRatingCalculator.getAgentRating(realAgentId);
 
         // Assemble the DTO response for the dashboard.
         return AgentDashboardStatsResponse.builder()

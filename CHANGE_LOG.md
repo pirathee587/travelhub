@@ -14,6 +14,11 @@ This file tracks all modifications made to teammate-owned code or shared configu
 | 2026-06-25 | `AuthService.java` | Updated registration defaults, populated hotel owner details, and added `resendVerificationEmail`. | Antigravity | Resolves Hotel Owner auto-approval issue, sets up relationships correctly, and adds email resend feature. |
 | 2026-06-25 | `AuthController.java` | Exposed `/resend-verification` GET endpoint. | Antigravity | Allows requesting new verification email when SMTP/network fails during signup. |
 | 2026-06-25 | `AdminHotelService.java` | Injected `UserRepository`, annotated `approveHotel` with `@Transactional`, and auto-activated owner accounts on hotel approval. | Antigravity | Ensures Hotel Owners are activated only when their hotel is approved. |
+| 2026-07-01 | `mock-auth.ts` | Disabled `MOCK_MODE` (set to `false`) for hotel-owner features. | Antigravity | Integrates real JWT login auth for hotel owners instead of using dev ID 40 bypass. |
+| 2026-07-01 | `AppRoutes.tsx` | Removed `/dev` developer role-selector bypass landing page. | Antigravity | Completes deprecation of the temporary mock login selector page. |
+| 2026-07-01 | `AgentRepository.java` & `HotelRepository.java` | Declared `findByOwnerId` finder methods. | Antigravity | Allows looking up Agent and Hotel profiles by their linked User ID. |
+| 2026-07-01 | `AuthService.java` | Enforced strict profile checks on login for both Agent and Hotel Owner, returning resolved IDs. | Antigravity | Fails login if the user has no matching Agent or Hotel record in the DB. |
+| 2026-07-01 | `Agent*Service.java` & `DriverService.java` | Refactored backend service methods to resolve the Agent row using the User ID. | Antigravity | Keys the Travel Agent dashboard strictly on the User ID, matching frontend credentials. |
 
 ---
 
@@ -50,4 +55,27 @@ This file tracks all modifications made to teammate-owned code or shared configu
 ### [2026-06-25] Hotel Owner Activation (AdminHotelService.java)
 - **Change**: Injected `UserRepository`, annotated `approveHotel` with `@Transactional` (and imported it), and added code to update the associated hotel owner's status to `"ACTIVE"` and `isActive = true`.
 - **Rationale**: Ensures Hotel Owners are kept pending until their hotel is approved, and automatically activates their user accounts when the hotel is approved by the admin.
+
+### [2026-07-01] Deactivate Hotel Owner Mock Bypass (mock-auth.ts)
+- **Change**: Set `MOCK_MODE` to `false` in `mock-auth.ts`.
+- **Rationale**: Fully integrates the hotel owner dashboard with the real JWT-based authentication system rather than bypassing it via a static ID 40 session.
+
+### [2026-07-01] Decommission Developer Role Selector Bypass (AppRoutes.tsx)
+- **Change**: Removed the `/dev` developer role-selector route mapping.
+- **Rationale**: Cleanly deprecates the temporary landing page so all login attempts must go through the standard production auth flow.
+
+### [2026-07-01] Strict Profile Resolving & Fallback Removal (Agent and Hotel portals)
+- **Change**:
+  * Added `findByOwnerId` query methods to `AgentRepository.java` and `HotelRepository.java`.
+  * Updated `AuthService.java` to search the `agents` and `hotels` tables dynamically using the logged-in User ID. If no matching profile is found, it throws an `UnauthorizedException`.
+  * Refactored all backend services (`AgentProfileService.java`, `AgentPackageService.java`, `AgentVehicleService.java`, `AgentBookingService.java`, `AgentSettingsService.java`, `AgentAnalyticsService.java`, `DriverService.java`, and `AgentDashboardService.java`) to lookup profiles using the User ID (`findByOwnerId`) rather than custom auto-increment keys.
+  * Cleaned up the frontend `api.ts` `AGENT_ID` dynamic property to use `user.id` directly and removed the hardcoded `|| 5` fallback.
+- **Rationale**: Ensures that a user's ID is the unique, primary identifier throughout all API transactions, completely deprecating fallback/mock states and rendering a clear error if the user's database records are incomplete.
+
+### [2026-07-01] Integrated Full Signup Fields & Form Validations (AuthPage.tsx)
+- **Change**:
+  * Added all missing signup fields (Telephone, Preferred Language, Nationality, Agency Name, Hotel Name, Business Registration ID, Business Address, District, and NIC Number) to `AuthPage.tsx`.
+  * Integrated Sri Lankan NIC validation formats using `@/utils/nicValidation` helper.
+  * Mapped all form fields to the backend register request body.
+- **Rationale**: Matches backend validation requirements and restores the required layout fields for all user roles during registration.
 

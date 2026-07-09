@@ -27,14 +27,17 @@ public class DriverService {
      * If lifecycleStatus is provided, results are filtered (e.g. "active", "inactive").
      */
     public List<DriverResponse> getAllDrivers(Long agentId, String lifecycleStatus) {
+        Agent agent = getAgentOrThrow(agentId);
+        Long realAgentId = agent.getId();
         List<Driver> drivers;
         if (lifecycleStatus != null) {
-            // Apply lifecycle filter when requested by the UI.
-            drivers = driverRepository.findByAgentIdAndLifecycleStatus(agentId, lifecycleStatus);
+            // Filter by lifecycle status when requested by the UI (e.g. active/inactive).
+            drivers = driverRepository.findByAgentIdAndLifecycleStatus(realAgentId, lifecycleStatus);
         } else {
             // Otherwise return all drivers for the agent.
-            drivers = driverRepository.findByAgentId(agentId);
+            drivers = driverRepository.findByAgentId(realAgentId);
         }
+
         // Convert entities to response DTOs.
         return drivers.stream().map(this::toResponse).collect(Collectors.toList());
     }
@@ -44,11 +47,12 @@ public class DriverService {
      * Throws ResourceNotFoundException if not found or not owned by the agent.
      */
     public DriverResponse getDriverById(Long agentId, Long driverId) {
-        // Find driver by id.
+        // Lookup and enforce ownership.
         Driver driver = driverRepository.findById(driverId)
                 .orElseThrow(() -> new ResourceNotFoundException("Driver", "id", driverId));
-        // Ownership check.
-        if (!driver.getAgent().getId().equals(agentId)) {
+
+        Agent agent = getAgentOrThrow(agentId);
+        if (!driver.getAgent().getId().equals(agent.getId())) {
             throw new ResourceNotFoundException("Driver", "agentId", agentId);
         }
         return toResponse(driver);
@@ -60,8 +64,7 @@ public class DriverService {
      */
     public DriverResponse createDriver(Long agentId, DriverRequest request) {
         // Ensure agent exists before creating a driver under it.
-        Agent agent = agentRepository.findById(agentId)
-                .orElseThrow(() -> new ResourceNotFoundException("Agent", "id", agentId));
+        Agent agent = getAgentOrThrow(agentId);
 
         // Uniqueness checks for primary identity fields.
         if (driverRepository.existsByNic(request.getNic())) {
@@ -107,7 +110,8 @@ public class DriverService {
         // Lookup and enforce ownership.
         Driver driver = driverRepository.findById(driverId)
                 .orElseThrow(() -> new ResourceNotFoundException("Driver", "id", driverId));
-        if (!driver.getAgent().getId().equals(agentId)) {
+        Agent agent = getAgentOrThrow(agentId);
+        if (!driver.getAgent().getId().equals(agent.getId())) {
             throw new ResourceNotFoundException("Driver", "id", driverId);
         }
 
@@ -139,7 +143,8 @@ public class DriverService {
         // Lookup and enforce ownership.
         Driver driver = driverRepository.findById(driverId)
                 .orElseThrow(() -> new ResourceNotFoundException("Driver", "id", driverId));
-        if (!driver.getAgent().getId().equals(agentId)) {
+        Agent agent = getAgentOrThrow(agentId);
+        if (!driver.getAgent().getId().equals(agent.getId())) {
             throw new ResourceNotFoundException("Driver", "agentId", agentId);
         }
         // Persist updated status.
@@ -154,7 +159,8 @@ public class DriverService {
         // Lookup and enforce ownership.
         Driver driver = driverRepository.findById(driverId)
                 .orElseThrow(() -> new ResourceNotFoundException("Driver", "id", driverId));
-        if (!driver.getAgent().getId().equals(agentId)) {
+        Agent agent = getAgentOrThrow(agentId);
+        if (!driver.getAgent().getId().equals(agent.getId())) {
             throw new ResourceNotFoundException("Driver", "agentId", agentId);
         }
         // Persist lifecycle status change.
@@ -171,7 +177,8 @@ public class DriverService {
         // Lookup and enforce ownership.
         Driver driver = driverRepository.findById(driverId)
                 .orElseThrow(() -> new ResourceNotFoundException("Driver", "id", driverId));
-        if (!driver.getAgent().getId().equals(agentId)) {
+        Agent agent = getAgentOrThrow(agentId);
+        if (!driver.getAgent().getId().equals(agent.getId())) {
             throw new ResourceNotFoundException("Driver", "agentId", agentId);
         }
         // Business rule: cannot delete a driver currently assigned to a trip.
@@ -180,6 +187,11 @@ public class DriverService {
         }
         // Delete the record.
         driverRepository.delete(driver);
+    }
+
+    private Agent getAgentOrThrow(Long agentId) {
+        return agentRepository.findByOwnerId(agentId)
+                .orElseThrow(() -> new ResourceNotFoundException("Agent", "userId", agentId));
     }
 
     /**

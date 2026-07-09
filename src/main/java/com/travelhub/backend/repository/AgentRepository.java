@@ -12,6 +12,8 @@ import java.util.List;
 public interface AgentRepository extends JpaRepository<Agent, Long> {
 
     // ── Basic Checks ──────────────────────────────────
+    java.util.Optional<Agent> findByOwnerId(Long ownerId);
+
     // ── Agent Filters ─────────────────────────────────
     List<Agent> findByIsActiveTrue();
 

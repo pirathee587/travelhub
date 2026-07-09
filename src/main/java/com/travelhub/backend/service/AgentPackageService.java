@@ -10,6 +10,7 @@ import com.travelhub.backend.entity.*;
 import com.travelhub.backend.entity.Package;
 import com.travelhub.backend.repository.PackageItineraryRepository;
 import com.travelhub.backend.repository.PackageRepository;
+import com.travelhub.backend.repository.AgentRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -31,6 +32,7 @@ public class AgentPackageService {
     private final PackageItineraryRepository itineraryRepository;
     private final ImageUploadService imageUploadService;
     private final ObjectMapper objectMapper;
+    private final AgentRepository agentRepository;
 
     private static final Set<String> VALID_DISTRICTS = Set.of(
             "Ampara", "Anuradhapura", "Badulla", "Batticaloa", "Colombo",
@@ -47,19 +49,23 @@ public class AgentPackageService {
     public List<PackageSummaryResponse> listPackages(Long agentId,
                                                      String search,
                                                      Boolean isActive) {
+        Agent agent = agentRepository.findByOwnerId(agentId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
+                        "Agent profile not found for user ID: " + agentId));
+        Long realAgentId = agent.getId();
         List<Package> packages;
 
         if (search != null && !search.isBlank()) {
             // Prioritize text search when provided.
-            packages = packageRepository.searchByAgentId(agentId, search);
+            packages = packageRepository.searchByAgentId(realAgentId, search);
         } else if (isActive != null) {
             // Filter by active state when explicitly requested.
             packages = packageRepository
-                    .findByAgentIdAndIsActiveAndDeletedAtIsNullOrderByCreatedAtDesc(agentId, isActive);
+                    .findByAgentIdAndIsActiveAndDeletedAtIsNullOrderByCreatedAtDesc(realAgentId, isActive);
         } else {
             // Default: all non-deleted packages for the agent.
             packages = packageRepository
-                    .findByAgentIdAndDeletedAtIsNullOrderByCreatedAtDesc(agentId);
+                    .findByAgentIdAndDeletedAtIsNullOrderByCreatedAtDesc(realAgentId);
         }
 
         return packages.stream().map(this::toSummary).collect(Collectors.toList());
@@ -244,7 +250,10 @@ public class AgentPackageService {
         Package pkg = packageRepository.findByPackageIdAndDeletedAtIsNull(packageId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
                         "Package not found: " + packageId));
-        if (!pkg.getAgent().getId().equals(agentId)) {
+        Agent agent = agentRepository.findByOwnerId(agentId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
+                        "Agent profile not found for user ID: " + agentId));
+        if (!pkg.getAgent().getId().equals(agent.getId())) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN,
                     "You do not own this package");
         }
@@ -291,9 +300,9 @@ public class AgentPackageService {
      * Creates a lightweight agent reference for package assignment.
      */
     private Agent agentRef(Long agentId) {
-        Agent agent = new Agent();
-        agent.setId(agentId);
-        return agent;
+        return agentRepository.findByOwnerId(agentId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
+                        "Agent profile not found for user ID: " + agentId));
     }
 
     /**

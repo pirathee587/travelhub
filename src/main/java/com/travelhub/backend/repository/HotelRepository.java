@@ -23,6 +23,8 @@ public interface HotelRepository
             String applicationStatus, String district);
 
     // ── Owner Specific ────────────────────────────────
+    List<Hotel> findByOwnerId(Long ownerId);
+
     List<Hotel> findByOwnerIdAndApplicationStatus(
             Long ownerId, String status);
 

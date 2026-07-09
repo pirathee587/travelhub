@@ -5,6 +5,8 @@ import java.util.List;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -61,6 +63,22 @@ public class GlobalExceptionHandler {
         return ResponseEntity
                 .status(HttpStatus.BAD_REQUEST)
                 .body(new ApiResponse(false, "Validation failed: " + errors));
+    }
+
+    // ── BadCredentialsException (wrong password / email) ──────
+    @ExceptionHandler(BadCredentialsException.class)
+    public ResponseEntity<ApiResponse> handleBadCredentials(BadCredentialsException ex) {
+        return ResponseEntity
+                .status(HttpStatus.UNAUTHORIZED)
+                .body(new ApiResponse(false, "Invalid email or password. Please check your credentials and try again."));
+    }
+
+    // ── AuthenticationException (generic Spring Security) ─────
+    @ExceptionHandler(AuthenticationException.class)
+    public ResponseEntity<ApiResponse> handleAuthentication(AuthenticationException ex) {
+        return ResponseEntity
+                .status(HttpStatus.UNAUTHORIZED)
+                .body(new ApiResponse(false, "Authentication failed. Please check your credentials."));
     }
 
     // ── General Exception ─────────────────────────────────────

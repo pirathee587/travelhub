@@ -131,6 +131,24 @@ public class AuthService {
             throw new UnauthorizedException("Your agent account is pending approval. Please wait for admin to approve.");
         }
 
+        Long agentId = null;
+        if (user.getRole() == Role.AGENT) {
+            Agent agent = agentRepository.findByOwnerId(user.getId()).orElse(null);
+            if (agent == null) {
+                throw new UnauthorizedException("No Travel Agency profile associated with this account. Please register.");
+            }
+            agentId = agent.getId();
+        }
+
+        Long hotelId = null;
+        if (user.getRole() == Role.HOTEL_OWNER) {
+            Hotel hotel = hotelRepository.findByOwnerId(user.getId()).stream().findFirst().orElse(null);
+            if (hotel == null) {
+                throw new UnauthorizedException("No Hotel profile associated with this account. Please register.");
+            }
+            hotelId = hotel.getId();
+        }
+
         String jwt = tokenProvider.generateToken(authentication, user);
 
         return LoginResponse.builder()
@@ -139,8 +157,8 @@ public class AuthService {
                 .email(user.getEmail())
                 .role(user.getRole())
                 .profileImage(user.getProfileImage())
-                .agentId(user.getAgentId())
-                .hotelId(user.getHotelId())
+                .agentId(agentId)
+                .hotelId(hotelId)
                 .id(user.getId())
                 .build();
     }

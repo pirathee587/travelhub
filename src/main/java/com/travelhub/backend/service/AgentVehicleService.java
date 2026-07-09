@@ -25,13 +25,15 @@ public class AgentVehicleService {
      * If lifecycleStatus is provided, results are filtered (e.g. "active", "inactive").
      */
     public List<VehicleResponse> getAllVehicles(Long agentId, String lifecycleStatus) {
+        Agent agent = getAgentOrThrow(agentId);
+        Long realAgentId = agent.getId();
         List<Vehicle> vehicles;
         if (lifecycleStatus != null) {
             // Filter by lifecycle status when requested by the UI (e.g. active/inactive).
-            vehicles = vehicleRepository.findByAgentIdAndLifecycleStatus(agentId, lifecycleStatus);
+            vehicles = vehicleRepository.findByAgentIdAndLifecycleStatus(realAgentId, lifecycleStatus);
         } else {
             // Otherwise return all vehicles for the agent.
-            vehicles = vehicleRepository.findByAgentId(agentId);
+            vehicles = vehicleRepository.findByAgentId(realAgentId);
         }
 
         // Convert entities to response DTOs.
@@ -47,8 +49,9 @@ public class AgentVehicleService {
         Vehicle vehicle = vehicleRepository.findById(vehicleId)
                 .orElseThrow(() -> new ResourceNotFoundException("Vehicle", "id", vehicleId));
 
+        Agent agent = getAgentOrThrow(agentId);
         // Enforce ownership: agent can only access their own vehicles.
-        if (!vehicle.getAgent().getId().equals(agentId)) {
+        if (!vehicle.getAgent().getId().equals(agent.getId())) {
             throw new ResourceNotFoundException("Vehicle", "agentId", agentId);
         }
         return toResponse(vehicle);
@@ -63,8 +66,7 @@ public class AgentVehicleService {
      */
     public VehicleResponse createVehicle(Long agentId, VehicleRequest request) {
         // Ensure agent exists (prevents orphan vehicle records).
-        Agent agent = agentRepository.findById(agentId)
-                .orElseThrow(() -> new ResourceNotFoundException("Agent", "id", agentId));
+        Agent agent = getAgentOrThrow(agentId);
 
         // Build the Vehicle entity from the request (includes identity fields and images).
         Vehicle vehicle = Vehicle.builder()
@@ -110,7 +112,8 @@ public class AgentVehicleService {
         // Lookup and enforce ownership.
         Vehicle vehicle = vehicleRepository.findById(vehicleId)
                 .orElseThrow(() -> new ResourceNotFoundException("Vehicle", "id", vehicleId));
-        if (!vehicle.getAgent().getId().equals(agentId)) {
+        Agent agent = getAgentOrThrow(agentId);
+        if (!vehicle.getAgent().getId().equals(agent.getId())) {
             throw new ResourceNotFoundException("Vehicle", "id", vehicleId);
         }
 
@@ -146,7 +149,8 @@ public class AgentVehicleService {
         // Lookup and enforce ownership.
         Vehicle vehicle = vehicleRepository.findById(vehicleId)
                 .orElseThrow(() -> new ResourceNotFoundException("Vehicle", "id", vehicleId));
-        if (!vehicle.getAgent().getId().equals(agentId)) {
+        Agent agent = getAgentOrThrow(agentId);
+        if (!vehicle.getAgent().getId().equals(agent.getId())) {
             throw new ResourceNotFoundException("Vehicle", "agentId", agentId);
         }
 
@@ -163,7 +167,8 @@ public class AgentVehicleService {
         // Lookup and enforce ownership.
         Vehicle vehicle = vehicleRepository.findById(vehicleId)
                 .orElseThrow(() -> new ResourceNotFoundException("Vehicle", "id", vehicleId));
-        if (!vehicle.getAgent().getId().equals(agentId)) {
+        Agent agent = getAgentOrThrow(agentId);
+        if (!vehicle.getAgent().getId().equals(agent.getId())) {
             throw new ResourceNotFoundException("Vehicle", "agentId", agentId);
         }
 
@@ -180,7 +185,8 @@ public class AgentVehicleService {
         // Lookup and enforce ownership.
         Vehicle vehicle = vehicleRepository.findById(vehicleId)
                 .orElseThrow(() -> new ResourceNotFoundException("Vehicle", "id", vehicleId));
-        if (!vehicle.getAgent().getId().equals(agentId)) {
+        Agent agent = getAgentOrThrow(agentId);
+        if (!vehicle.getAgent().getId().equals(agent.getId())) {
             throw new ResourceNotFoundException("Vehicle", "agentId", agentId);
         }
 
@@ -189,8 +195,13 @@ public class AgentVehicleService {
             throw new BadRequestException("Cannot delete a vehicle that is currently booked");
         }
 
-        // Delete the record.
+        // Perform vehicle deletion.
         vehicleRepository.delete(vehicle);
+    }
+
+    private Agent getAgentOrThrow(Long agentId) {
+        return agentRepository.findByOwnerId(agentId)
+                .orElseThrow(() -> new ResourceNotFoundException("Agent", "userId", agentId));
     }
 
     /**

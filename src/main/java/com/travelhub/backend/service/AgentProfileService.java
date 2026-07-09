@@ -24,8 +24,8 @@ public class AgentProfileService {
     @Transactional
     public AgentProfileResponse getProfile(Long agentId) {
         // Load agent or fail if id is invalid.
-        Agent agent = agentRepository.findById(agentId)
-                .orElseThrow(() -> new ResourceNotFoundException("Agent", "id", agentId));
+        Agent agent = agentRepository.findByOwnerId(agentId)
+                .orElseThrow(() -> new ResourceNotFoundException("Agent", "userId", agentId));
         return toResponse(agent);
     }
 
@@ -34,8 +34,8 @@ public class AgentProfileService {
      */
     @Transactional
     public AgentProfileResponse updateProfile(Long agentId, AgentProfileRequest request) {
-        Agent agent = agentRepository.findById(agentId)
-                .orElseThrow(() -> new ResourceNotFoundException("Agent", "id", agentId));
+        Agent agent = agentRepository.findByOwnerId(agentId)
+                .orElseThrow(() -> new ResourceNotFoundException("Agent", "userId", agentId));
 
         User user = agent.getOwner();
 

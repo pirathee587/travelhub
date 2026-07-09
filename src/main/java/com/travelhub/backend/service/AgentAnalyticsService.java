@@ -36,8 +36,11 @@ public class AgentAnalyticsService {
      */
     @Transactional
     public AnalyticsResponse getAnalytics(Long agentId, String period) {
+        com.travelhub.backend.entity.Agent agent = agentRepository.findByOwnerId(agentId)
+                .orElseThrow(() -> new com.travelhub.backend.common.ResourceNotFoundException("Agent", "userId", agentId));
+        Long realAgentId = agent.getId();
         // Load all bookings for the agent, then apply the time-window filter.
-        List<Booking> allBookings = bookingRepository.findByAgentId(agentId);
+        List<Booking> allBookings = bookingRepository.findByAgentId(realAgentId);
         List<Booking> filtered = filterByPeriod(allBookings, period);
 
         // Stat cards: total revenue from completed trips (null-safe totalPrice).
@@ -60,9 +63,7 @@ public class AgentAnalyticsService {
                 Math.round(((double) cancelled / filtered.size()) * 100.0) / 1.0;
 
         // Stat cards: agent rating (default 0.0 if missing/null).
-        Double averageRating = agentRepository.findById(agentId)
-                .map(a -> a.getRating() != null ? a.getRating() : 0.0)
-                .orElse(0.0);
+        double averageRating = agent.getRating() != null ? agent.getRating() : 0.0;
 
         // Revenue chart data (label/value pairs; labels depend on the selected period).
         List<Map<String, Object>> revenueData = buildRevenueData(filtered, period);
@@ -94,7 +95,7 @@ public class AgentAnalyticsService {
 
         // Driver performance: take up to 5 drivers for this agent (basic summary fields).
         List<Map<String, Object>> driverPerformance = driverRepository
-                .findByAgentId(agentId).stream()
+                .findByAgentId(realAgentId).stream()
                 .limit(5)
                 .map(d -> {
                     Map<String, Object> m = new LinkedHashMap<>();
@@ -107,7 +108,7 @@ public class AgentAnalyticsService {
 
         // Vehicle utilization: for each of up to 5 vehicles, count how many filtered bookings used it.
         List<Map<String, Object>> vehicleUtilization = vehicleRepository
-                .findByAgentId(agentId).stream()
+                .findByAgentId(realAgentId).stream()
                 .limit(5)
                 .map(v -> {
                     long trips = filtered.stream()

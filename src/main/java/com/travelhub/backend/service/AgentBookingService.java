@@ -8,6 +8,7 @@ import com.travelhub.backend.dto.response.BookingResponse;
 import com.travelhub.backend.entity.Booking;
 import com.travelhub.backend.repository.BookingRepository;
 import com.travelhub.backend.repository.VehicleRepository;
+import com.travelhub.backend.repository.AgentRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -25,6 +26,7 @@ public class AgentBookingService {
     private final BookingRepository bookingRepository;
     private final VehicleRepository vehicleRepository;
     private final ApplicationEventPublisher eventPublisher;
+    private final AgentRepository agentRepository;
 
     /**
      * Returns all bookings visible to the agent.
@@ -32,13 +34,16 @@ public class AgentBookingService {
      */
     @Transactional
     public List<BookingResponse> getAllBookings(Long agentId, String status) {
+        com.travelhub.backend.entity.Agent agent = agentRepository.findByOwnerId(agentId)
+                .orElseThrow(() -> new ResourceNotFoundException("Agent", "userId", agentId));
+        Long realAgentId = agent.getId();
         List<Booking> bookings;
         if (status != null && !status.equals("all")) {
             // Filter by requested booking status.
-            bookings = bookingRepository.findByAgentIdAndStatus(agentId, status);
+            bookings = bookingRepository.findByAgentIdAndStatus(realAgentId, status);
         } else {
             // Return all bookings for the agent.
-            bookings = bookingRepository.findByAgentId(agentId);
+            bookings = bookingRepository.findByAgentId(realAgentId);
         }
         // Convert entities to response DTOs.
         return bookings.stream().map(this::toResponse).collect(Collectors.toList());
@@ -193,9 +198,11 @@ public class AgentBookingService {
      */
     private boolean isOwnedByAgent(Booking booking, Long agentId) {
         try {
+            com.travelhub.backend.entity.Agent agent = agentRepository.findByOwnerId(agentId).orElse(null);
+            if (agent == null) return false;
             return booking.getPkg() != null
                     && booking.getPkg().getAgent() != null
-                    && booking.getPkg().getAgent().getId().equals(agentId);
+                    && booking.getPkg().getAgent().getId().equals(agent.getId());
         } catch (Exception e) {
             return false;
         }
