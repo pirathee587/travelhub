@@ -17,7 +17,7 @@ export const useAdminNotifications = () => {
             setLoading(true);
             const res = await adminNotificationApi
                     .getAllNotifications();
-            setNotifications(res.data || []);
+            setNotifications(res || []);
         } catch (err) {
             setError(
                 err.response?.data?.message
@@ -33,8 +33,8 @@ export const useAdminNotifications = () => {
         try {
             const res = await adminNotificationApi
                     .getUnreadCount();
-            // API returns ApiResponse { data: { count: N } }
-            setUnreadCount(res.data?.count ?? 0);
+            // API returns { count: N } directly
+            setUnreadCount(res?.count ?? 0);
         } catch (err) {
             console.error('Count failed:', err);
         }

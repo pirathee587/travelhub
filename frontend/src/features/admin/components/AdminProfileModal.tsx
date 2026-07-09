@@ -63,9 +63,11 @@ export default function AdminProfileModal({ open, onClose }) {
   }, []);
 
   function handleLogout() {
-    localStorage.removeItem("token");
-    localStorage.removeItem("user");
-    window.location.href = "/";
+    localStorage.removeItem('travelhub_user');
+    localStorage.removeItem('travelhub_token');
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    window.location.href = '/';
   }
 
   async function handlePhotoUpload(e) {

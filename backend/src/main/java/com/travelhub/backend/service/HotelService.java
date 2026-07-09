@@ -115,13 +115,29 @@ public class HotelService {
                 .priceTo(priceRange != null ? priceRange.priceTo() : null)
                 .rating(Math.round(rating * 10.0) / 10.0)
                 .reviewCount(reviewCount)
-                .imageUrl(hotel.getImageUrl())
+                .imageUrl(getEffectiveImageUrl(hotel))
                 .amenities(amenityList)
                 .rooms(roomResponses)
                 .district(hotel.getDistrict())
                 .applicationStatus(hotel.getApplicationStatus())
                 .build();
     }
+
+    private String getEffectiveImageUrl(Hotel h) {
+        String img = h.getImageUrl();
+        if (img != null && !img.trim().isEmpty()) {
+            return img;
+        }
+        if (h.getRooms() != null) {
+            for (com.travelhub.backend.entity.Room r : h.getRooms()) {
+                if (r.getImageUrl() != null && !r.getImageUrl().trim().isEmpty()) {
+                    return r.getImageUrl();
+                }
+            }
+        }
+        return null;
+    }
+
     // ── Chatbot data method ────────────────────────────────────────────────
     // Added for AI chatbot feature — returns all hotels as simple maps
     // so the Python RAG service can load them into ChromaDB

@@ -26,6 +26,7 @@ import lombok.RequiredArgsConstructor;
 
 @Service
 @RequiredArgsConstructor
+@Transactional(readOnly = true)
 public class AdminHotelService {
 
     private final HotelRepository            hotelRepository;
@@ -109,13 +110,13 @@ public class AdminHotelService {
                 hotel.getId(),
                 hotel.getHotelName(),
                 avgRating != null ? Math.round(avgRating * 10.0) / 10.0 : 0.0,
-                hotel.getImageUrl(),
+                getEffectiveImageUrl(hotel),
                 hotel.getDistrict(),
                 hotel.getLocation(),
                 roomTypes,
                 hotel.getOwnerName(),
                 hotel.getOwnerEmail(),
-                hotel.getOwnerNic(),
+                (hotel.getOwnerNic() != null && !hotel.getOwnerNic().isEmpty()) ? hotel.getOwnerNic() : (hotel.getOwner() != null ? hotel.getOwner().getNicNumber() : null),
                 hotel.getNicImageUrl(),
                 hotel.getOwnerId(),
                 hotel.getPhoneNumber(),
@@ -151,6 +152,7 @@ public class AdminHotelService {
     }
 
     // ── Reject Hotel ──────────────────────────────────
+    @Transactional
     public AdminHotelDetailResponse rejectHotel(
             Long id, String reason) {
         Hotel hotel = hotelRepository.findById(id)
@@ -169,6 +171,7 @@ public class AdminHotelService {
     }
 
     // ── Delete Hotel ──────────────────────────────────
+    @Transactional
     public void deleteHotel(Long id) {
         Hotel hotel = hotelRepository.findById(id)
                 .orElseThrow(() ->
@@ -185,20 +188,35 @@ public class AdminHotelService {
     }
 
     // ── Map Entity → Response ─────────────────────────
-        private AdminHotelResponse mapToResponse(Hotel h, double rating, int reviewCount, PriceRange priceRange) {
+    private AdminHotelResponse mapToResponse(Hotel h, double rating, int reviewCount, PriceRange priceRange) {
         return new AdminHotelResponse(
                 h.getId(),
                 h.getHotelName(),
                 h.getDestination(),
                 h.getLocation(),
                 h.getDescription(),
-                                priceRange != null ? priceRange.priceFrom() : null,
-                                priceRange != null ? priceRange.priceTo() : null,
+                priceRange != null ? priceRange.priceFrom() : null,
+                priceRange != null ? priceRange.priceTo() : null,
                 Math.round(rating * 10.0) / 10.0,
                 reviewCount,
-                h.getImageUrl(),
+                getEffectiveImageUrl(h),
                 h.getDistrict(),
                 h.getApplicationStatus()
         );
+    }
+
+    private String getEffectiveImageUrl(Hotel h) {
+        String img = h.getImageUrl();
+        if (img != null && !img.trim().isEmpty()) {
+            return img;
+        }
+        if (h.getRooms() != null) {
+            for (Room r : h.getRooms()) {
+                if (r.getImageUrl() != null && !r.getImageUrl().trim().isEmpty()) {
+                    return r.getImageUrl();
+                }
+            }
+        }
+        return null;
     }
 }

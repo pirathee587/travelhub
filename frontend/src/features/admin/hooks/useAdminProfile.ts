@@ -48,7 +48,7 @@ export const useAdminProfile = () => {
             setProfile(res);
 
             // Update localStorage user info
-            const stored = localStorage.getItem('user');
+            const stored = localStorage.getItem('travelhub_user');
             if (stored) {
                 const user = JSON.parse(stored);
                 user.name  = name;
@@ -58,7 +58,7 @@ export const useAdminProfile = () => {
                 if (profileImage || res.profileImage) {
                     user.profileImage = profileImage || res.profileImage;
                 }
-                localStorage.setItem('user', JSON.stringify(user));
+                localStorage.setItem('travelhub_user', JSON.stringify(user));
             }
 
             setSaveSuccess('Profile updated successfully!');
@@ -110,11 +110,11 @@ export const useAdminProfile = () => {
                 setProfile(updatedUser);
 
                 // Update localStorage
-                const stored = localStorage.getItem('user');
+                const stored = localStorage.getItem('travelhub_user');
                 if (stored) {
                     const user = JSON.parse(stored);
                     user.profileImage = imageUrl;
-                    localStorage.setItem('user', JSON.stringify(user));
+                    localStorage.setItem('travelhub_user', JSON.stringify(user));
                 }
                 setSaveSuccess('Photo uploaded successfully!');
                 window.dispatchEvent(new Event('user-profile-updated'));
