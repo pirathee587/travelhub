@@ -2,11 +2,13 @@ import React, { useState, useEffect } from 'react'
 import { useModal } from './ModalContext'
 import { Settings, LogOut, Bell, Check, CheckCheck } from 'lucide-react'
 import { useAdminNotifications } from '../hooks/useAdminNotifications'
+import { useAuth } from '@/context/AuthContext'
 
 export default function Header() {
   const [showNotifications, setShowNotifications] = useState(false)
   const [showUserMenu, setShowUserMenu]           = useState(false)
   const { showAdminProfile, showConfirm } = useModal()
+  const { logout } = useAuth()
 
   // ── Real notification data from backend ─────────────
   const {
@@ -50,8 +52,7 @@ export default function Header() {
       message: 'Are you sure you want to log out?'
     })
     if (ok) {
-      localStorage.removeItem('token')
-      localStorage.removeItem('user')
+      logout()
       window.location.href = '/'
     }
   }

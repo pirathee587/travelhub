@@ -1,6 +1,6 @@
 //Only on MyTrip page and OverView page 
 
-import { Calendar, ChevronRight, Star } from "lucide-react";
+import { Calendar, ChevronRight, Star, CreditCard } from "lucide-react";
 import placeholderImg from "@/assets/images/placeholder.jpg";
 import { cn } from "@/features/tourist/services/utils";
 import { Progress } from "@/components/common/ui/progress";
@@ -32,11 +32,12 @@ const statusConfig = {                                    // Status Badge Color 
 
 };
 
-export function TripCard({ trip, onClick, onReview, onHotelReview }) {
+export function TripCard({ trip, onClick, onReview, onHotelReview }: { trip: any, onClick?: any, onReview?: any, onHotelReview?: any }) {
     const status = statusConfig[trip.status] || statusConfig.pending; // Status Badge Logic
     const navigate = useNavigate();
     const averageRating = Number(trip.rating ?? 0).toFixed(1);
     const hasHotelReview = trip.hotelId != null || Boolean(trip.hotelName);
+    const paymentId = trip.bookingId || trip.id;
 
     return (
         <div
@@ -93,9 +94,22 @@ export function TripCard({ trip, onClick, onReview, onHotelReview }) {
                     </div>
                 )}
 
-                <div className="flex items-center justify-between pt-2 border-t border-border">
-                    <span className="text-lg font-semibold">${(trip.totalPrice || trip.price || 0).toLocaleString()}</span>     {/*Price of the trip*/}
+                <div className="flex items-center justify-between pt-2 border-t border-border mt-3">
+                    <span className="text-lg font-semibold text-primary">${(trip.totalPrice || trip.price || 0).toLocaleString()}</span>     {/*Price of the trip*/}
                     <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+                        {trip.status === "pending" && paymentId && (
+                            <Button
+                                size="sm"
+                                className="h-8 text-xs font-bold gap-1 shadow-sm"
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    navigate(`/tourist/payment/${paymentId}`);
+                                }}
+                            >
+                                <CreditCard className="h-3 w-3" />
+                                Pay Now
+                            </Button>
+                        )}
                         {trip.status === "completed" && (
                             <>
                                 <Button

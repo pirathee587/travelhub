@@ -6,7 +6,7 @@
 // Change MOCK_USER_ID to test a different owner (e.g. 42)
 export const MOCK_USER_ID = 40;
 
-const MOCK_MODE = true;
+const MOCK_MODE = false;
 
 export function isUsingMockAuth(): boolean {
   return MOCK_MODE;

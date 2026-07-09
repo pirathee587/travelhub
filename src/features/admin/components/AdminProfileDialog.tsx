@@ -2,6 +2,8 @@ import React, { useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { Camera, Trash2, LogOut, Settings, X, Eye, EyeOff } from "lucide-react";
 import { useModal } from "./ModalContext";
+import { toast } from "sonner";
+import { useAuth } from "@/context/AuthContext";
 
 // ─── Helper ─────────────────────────────────────────────
 function getInitials(name: string) {
@@ -17,10 +19,7 @@ function getInitials(name: string) {
 export default function AdminProfileDialog({ isSidebar }: { isSidebar?: boolean }) {
   const navigate = useNavigate();
   const modalContext = useModal();
-  const toast = {
-    success: (msg: string) => modalContext ? modalContext.addToast(`✅ ${msg}`) : alert(msg),
-    error: (msg: string) => modalContext ? modalContext.addToast(`❌ ${msg}`) : alert(msg)
-  };
+  const { logout } = useAuth();
 
   const [open, setOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("profile");
@@ -51,9 +50,7 @@ export default function AdminProfileDialog({ isSidebar }: { isSidebar?: boolean 
 
   // ─── Logout ───────────────────────────────────────────
   function handleLogout() {
-    localStorage.removeItem("token");
-    localStorage.removeItem("refreshToken");
-    sessionStorage.clear();
+    logout();
     toast.success("Logged out successfully.");
     navigate("/");
   }

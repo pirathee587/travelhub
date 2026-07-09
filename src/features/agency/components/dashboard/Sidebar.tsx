@@ -1,5 +1,6 @@
 // removed unused useState
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { useAuth } from '@/context/AuthContext';
 import {
   LayoutDashboard,
   Car,
@@ -38,6 +39,13 @@ const navItems = [
 
 export function Sidebar({ collapsed, onToggleCollapse }: { collapsed: boolean; onToggleCollapse: () => void }) {
   const location = useLocation();
+  const navigate = useNavigate();
+  const { logout } = useAuth();
+
+  const handleLogout = () => {
+    logout();
+    navigate('/');
+  };
 
   return (
     <aside
@@ -103,7 +111,10 @@ export function Sidebar({ collapsed, onToggleCollapse }: { collapsed: boolean; o
             </AlertDialogHeader>
             <AlertDialogFooter>
               <AlertDialogCancel>Cancel</AlertDialogCancel>
-              <AlertDialogAction className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              <AlertDialogAction
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                onClick={handleLogout}
+              >
                 Sign Out
               </AlertDialogAction>
             </AlertDialogFooter>

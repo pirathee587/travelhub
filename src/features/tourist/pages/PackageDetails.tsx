@@ -30,6 +30,7 @@ import { DeleteConfirmDialog } from "@/features/tourist/components/dashboard/Del
 import { useToast } from "@/hooks/use-toast";
 import { api } from "@/features/tourist/services/api";
 import { defaultUserId } from "@/features/tourist/services/userHelpers";
+import { useAuth } from "@/context/AuthContext";
 
 const getInclusionIcon = (inclusion) => {
     const lower = inclusion.toLowerCase();
@@ -77,6 +78,7 @@ const PackageDetails = () => {
     const { id } = useParams();
     const navigate = useNavigate();
     const { toast } = useToast();
+    const { user } = useAuth();
     const [activeImage, setActiveImage] = useState(0);
     const [reviewFilter, setReviewFilter] = useState("all");
     const [selectedImage, setSelectedImage] = useState(null);
@@ -265,7 +267,13 @@ const PackageDetails = () => {
                         <Button
                             size="lg"
                             className="w-full gradient-ocean text-white shadow-lg hover:shadow-xl transition-all"
-                            onClick={() => navigate(`/explore/package/${pkg.id}/reserve`)}
+                            onClick={() => {
+                                if (!user) {
+                                    navigate("/login");
+                                } else {
+                                    navigate(`/tourist/explore/package/${pkg.id}/reserve`);
+                                }
+                            }}
                         >
                             Reserve Now
                         </Button>
