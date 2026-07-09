@@ -100,6 +100,15 @@ public class PackageService {
     }
 
     private PackageResponse toPackageResponse(Package pkg, double rating, int reviewCount) {
+        String imgUrl = pkg.getImageUrl();
+        if ((imgUrl == null || imgUrl.isEmpty()) && pkg.getImages() != null && !pkg.getImages().isEmpty()) {
+            imgUrl = pkg.getImages().stream()
+                    .sorted((a, b) -> (a.getDisplayOrder() != null ? a.getDisplayOrder() : 0) - (b.getDisplayOrder() != null ? b.getDisplayOrder() : 0))
+                    .findFirst()
+                    .map(img -> img.getImageUrl())
+                    .orElse(null);
+        }
+
         return PackageResponse.builder()
                 .id(pkg.getId())
                 .packageName(pkg.getPackageName())
@@ -110,7 +119,7 @@ public class PackageService {
                 .priceTo(pkg.getPriceTo())
                 .duration(pkg.getDuration())
                 .category(pkg.getCategory())
-                .imageUrl(pkg.getImageUrl())
+                .imageUrl(imgUrl)
                 .rating(Math.round(rating * 10.0) / 10.0)
                 .reviewCount(reviewCount)
                 .festivalDetails(pkg.getFestivalDetails())

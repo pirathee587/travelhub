@@ -13,6 +13,7 @@ public record AdminAgentDetailResponse(
         String  memberSince,
         String  applicationStatus,
         String  submittedDate,
+        String  ownerNic,
         String  nicImageUrl,
         Double  rating,
         Integer totalTrips,

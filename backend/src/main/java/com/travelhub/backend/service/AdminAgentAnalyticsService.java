@@ -7,12 +7,14 @@ import com.travelhub.backend.repository.AgentRepository;
 import com.travelhub.backend.repository.BookingRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
 @Service
 @RequiredArgsConstructor
+@Transactional(readOnly = true)
 public class AdminAgentAnalyticsService {
 
     private final AgentRepository   agentRepository;

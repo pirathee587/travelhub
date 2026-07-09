@@ -11,12 +11,14 @@ import com.travelhub.backend.repository.AgentRepository;
 import com.travelhub.backend.repository.PackageRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Locale;
 
 @Service
 @RequiredArgsConstructor
+@Transactional(readOnly = true)
 public class AdminAgentService {
 
     private final AgentRepository   agentRepository;
@@ -88,6 +90,7 @@ public class AdminAgentService {
                         ? "Approved"
                         : "Pending",
                 submittedDate,
+                agent.getOwner() != null ? agent.getOwner().getNicNumber() : null,
                 agent.getOwner() != null ? agent.getOwner().getNicImage() : null,
                 agentRatingCalculator.getAgentRating(id),
                 agent.getTotalTrips(),
@@ -114,6 +117,7 @@ public class AdminAgentService {
     }
 
     // ── Toggle Active ─────────────────────────────────
+    @Transactional
     public AdminAgentDetailResponse toggleActive(
             Long id) {
         Agent agent = agentRepository.findById(id)
@@ -126,6 +130,7 @@ public class AdminAgentService {
     }
 
     // ── Delete Agent ──────────────────────────────────
+    @Transactional
     public void deleteAgent(Long id) {
         agentRepository.findById(id)
                 .orElseThrow(() ->
@@ -184,6 +189,19 @@ public class AdminAgentService {
     // ── Map Package → Response ────────────────────────
     private AdminAgentPackageResponse mapToPackageResponse(
             Package p) {
+        // Resolve cover image: use imageUrl first, then fall back to first PackageImage
+        String imgUrl = p.getImageUrl();
+        if ((imgUrl == null || imgUrl.isEmpty())
+                && p.getImages() != null
+                && !p.getImages().isEmpty()) {
+            imgUrl = p.getImages().stream()
+                    .sorted((a, b) ->
+                            (a.getDisplayOrder() != null ? a.getDisplayOrder() : 0)
+                          - (b.getDisplayOrder() != null ? b.getDisplayOrder() : 0))
+                    .findFirst()
+                    .map(img -> img.getImageUrl())
+                    .orElse(null);
+        }
         return new AdminAgentPackageResponse(
                 p.getId(),
                 p.getPackageName(),
@@ -197,7 +215,8 @@ public class AdminAgentService {
                 p.getIsActive(),
                 p.getApplicationStatus() != null
                         ? p.getApplicationStatus()
-                        : "Pending"
+                        : "Pending",
+                imgUrl
         );
     }
 }

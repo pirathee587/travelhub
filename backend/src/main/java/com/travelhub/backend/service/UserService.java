@@ -20,7 +20,15 @@ public class UserService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User", "id", userId));
 
-        if (request.getName() != null) user.setName(request.getName());
+        if (request.getName() != null && !request.getName().trim().isEmpty()) {
+            user.setName(request.getName());
+        }
+        if (request.getEmail() != null && !request.getEmail().trim().isEmpty()) {
+            if (!request.getEmail().equals(user.getEmail()) && userRepository.existsByEmail(request.getEmail())) {
+                throw new BadRequestException("Email is already in use");
+            }
+            user.setEmail(request.getEmail());
+        }
         if (request.getTelephone() != null) user.setTelephone(request.getTelephone());
         if (request.getProfileImage() != null) user.setProfileImage(request.getProfileImage());
         if (request.getPreferredLanguage() != null) user.setPreferredLanguage(request.getPreferredLanguage());

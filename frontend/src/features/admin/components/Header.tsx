@@ -22,7 +22,7 @@ export default function Header() {
   // Read real user info from localStorage (set on login)
   const [storedUser, setStoredUser] = useState(() => {
     try {
-      return JSON.parse(localStorage.getItem('user') || '{}')
+      return JSON.parse(localStorage.getItem('travelhub_user') || '{}')
     } catch {
       return {}
     }
@@ -31,7 +31,7 @@ export default function Header() {
   useEffect(() => {
     const handleUpdate = () => {
       try {
-        setStoredUser(JSON.parse(localStorage.getItem('user') || '{}'))
+        setStoredUser(JSON.parse(localStorage.getItem('travelhub_user') || '{}'))
       } catch (e) {
         console.error('Error updating header user state:', e)
       }

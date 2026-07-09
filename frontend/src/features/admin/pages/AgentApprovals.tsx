@@ -240,12 +240,14 @@ const AgentDetailView = ({agent, stats, packages, revenue, onBack, onApprove, on
               </button>
             )}
             
-            <button
-              onClick={() => onPackagesClick(agent)}
-              className="w-full py-3 bg-[#d97706] hover:bg-orange-600 text-white font-semibold rounded-lg shadow-sm transition text-sm"
-            >
-              Packages
-            </button>
+            {applicationStatus === 'Approved' && (
+              <button
+                onClick={() => onPackagesClick(agent)}
+                className="w-full py-3 bg-[#d97706] hover:bg-orange-600 text-white font-semibold rounded-lg shadow-sm transition text-sm"
+              >
+                View Packages
+              </button>
+            )}
 
             {applicationStatus === 'Approved' && (
               isActive === false ? (
@@ -528,7 +530,7 @@ export default function AgentApprovals() {
                           )}
                         </td>
                         <td className="py-4 px-4">
-                          <div className="flex gap-2">
+                          <div className="flex gap-2 flex-wrap">
                             <button onClick={(e)=>{e.stopPropagation(); openDrawer(agent)}} className="px-4 py-1.5 bg-[#3b82f6] hover:bg-blue-600 text-white rounded text-sm font-medium transition">View</button>
                             {agent.applicationStatus === 'Pending' && (
                               <>
