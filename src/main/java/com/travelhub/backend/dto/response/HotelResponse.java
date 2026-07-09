@@ -21,9 +21,11 @@ public class HotelResponse {
     private Double rating;
     private Integer reviewCount;
     private String imageUrl;
+    private List<String> images;
     private List<String> amenities;
     private String district;
     private String applicationStatus;
+    private Boolean isActive;
     private String hotelEmail;
     private String hotelContactNumber;
     private List<RoomResponse> rooms;

@@ -28,6 +28,7 @@ public class ReviewResponse {
 
     // kept for agent dashboard / other consumers
     private String customerName;
+    private String customerProfileImage; // o. NEW: For displaying tourist's image
     private String date;
     private String trip;
     private String packageName;

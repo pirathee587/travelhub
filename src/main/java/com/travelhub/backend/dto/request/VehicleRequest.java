@@ -4,6 +4,7 @@ import lombok.Data;
 
 @Data
 public class VehicleRequest {
+    private Long ownerId;
     private String ownerFirstName;
     private String ownerLastName;
     private String nicNumber;

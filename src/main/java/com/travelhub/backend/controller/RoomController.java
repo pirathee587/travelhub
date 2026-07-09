@@ -22,7 +22,8 @@ import com.travelhub.backend.entity.Room;
 import com.travelhub.backend.service.RoomService;
 
 @RestController
-@RequestMapping("/api/rooms")
+@RequestMapping("/api/v1/rooms")
+@RequiredArgsConstructor
 public class RoomController {
 
     @Autowired
@@ -40,7 +41,7 @@ public class RoomController {
                                         @RequestParam(required = false) String description,
                                         @RequestParam(required = false) MultipartFile image,
                                         @RequestParam(defaultValue = "true") boolean availability,
-                                        @RequestParam Long hotelId) {
+                                        @RequestParam(required = false) Long hotelId) {
         Room room = roomService.addRoom(name, type, price, description, image, availability, hotelId);
         return ResponseEntity.ok(room);
     }

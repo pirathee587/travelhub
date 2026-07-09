@@ -19,6 +19,7 @@ import com.travelhub.backend.repository.PackageRepository;
 import com.travelhub.backend.repository.ReviewImageRepository;
 import com.travelhub.backend.repository.ReviewRepository;
 import com.travelhub.backend.repository.UserRepository;
+import com.travelhub.backend.service.UserNotificationService;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -34,6 +35,7 @@ public class ReviewService {
     private final HotelRepository hotelRepository;
     private final ReviewImageRepository reviewImageRepository;
     private final ImageUploadService imageUploadService;  // ✅ NEW: Injected for backend orchestration
+    private final UserNotificationService userNotificationService;
 
     // ─────────────────────────────────────────────────────────────────────────
     // GET reviews
@@ -88,6 +90,7 @@ public class ReviewService {
         Review review = Review.builder()
                 .user(user)
                 .pkg(pkg)
+                .agent(pkg.getAgent())
                 .comment(request.getComment())
                 .rating(request.getRating())
                 .title(request.getTitle())
@@ -117,6 +120,15 @@ public class ReviewService {
             }
         } else {
             log.info("[DEBUG] No images provided for package review {}", saved.getId());
+        }
+
+        if (saved.getAgent() != null) {
+            userNotificationService.notifyAgent(
+                saved.getAgent(),
+                "review",
+                "New Package Review",
+                "A tourist left a review on package: " + pkg.getPackageName()
+            );
         }
         
         return toReviewResponse(saved);
@@ -242,7 +254,7 @@ public class ReviewService {
                 // For backward-compat with agent dashboard & package reviews
                 .customerName(displayName)
                 .date(dateStr)
-                .trip(review.getPkg() != null ? review.getPkg().getDestination() : null)
+                .trip(review.getPkg() != null ? review.getPkg().getDistrict() : null)
                 .packageName(review.getPkg() != null ? review.getPkg().getPackageName() : null)
                 .packageId(review.getPkg() != null ? review.getPkg().getId() : null)
                 // ✅ NEW: Include hotel details for hotel reviews

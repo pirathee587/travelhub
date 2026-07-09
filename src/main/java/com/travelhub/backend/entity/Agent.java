@@ -8,7 +8,6 @@ import java.time.LocalDateTime;
 @Entity
 @Table(name = "agents")
 @Data
-@Getter
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
@@ -24,33 +23,30 @@ public class Agent {
 
     // ── Company / Agent Info ───────────────────────────
     @Column(name = "agency_name", nullable = false)
-    private String agencyName;
+    private String agencyName;             // Brand/Business name of agency
 
     // ── Contact Information ──────────────────────────────
+    // --- Contact Details ---
     private String agencyNumber;
     private String secondaryNumber;
     private String whatsappNumber;
 
     private String location;
-
-    // ── Additional Info ────────────────────────────────
+    
     @Column(columnDefinition = "TEXT")
     private String bio;
-
+    
     private String languages;
-
-    // Example: "Colombo,Galle,Kandy"
     private String operatingDistricts;
-
     private String websiteUrl;
-
+    
     private LocalDate memberSince;
 
     // ── Submitted Date ─────────────────────────────────
     @Column(name = "submitted_date", updatable = false)
     private LocalDateTime submittedDate;
 
-    // ── Stats ──────────────────────────────────────────
+    // --- Performance Metrics ---
     private Double rating;
     private Integer totalTrips;
     private Integer totalRevenue;

@@ -37,6 +37,10 @@ public class Booking {
     @JoinColumn(name = "vehicle_id")
     private Vehicle vehicle;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "driver_id")
+    private Driver driver;
+
     @Column(nullable = false)
     private String status;
 
@@ -54,6 +58,10 @@ public class Booking {
 
     @Column(columnDefinition = "TEXT")
     private String specialRequests;
+
+    // SELF_ARRANGE, AGENCY, or NULL (for multi-district)
+    @Column(name = "accommodation_option")
+    private String accommodationOption;
 
     private String duration;
 

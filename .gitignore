@@ -39,3 +39,7 @@ node_modules/
 target/
 *.log
 .DS_Store
+
+### Configuration Files ###
+application.properties
+pom.xml

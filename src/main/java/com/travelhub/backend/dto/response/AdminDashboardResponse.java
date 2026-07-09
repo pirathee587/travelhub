@@ -10,5 +10,15 @@ public record AdminDashboardResponse(
         Long   totalBookings,
         Long   totalReviews,
         Long   pendingAgents,
-        Long   pendingBookings
+        Long   pendingBookings,
+        Long   pendingHotels,
+        Long   pendingPackages,
+        Double totalRevenue,
+        
+        // New fields for charts and dashboard details
+        java.util.List<String> months,
+        java.util.List<Long> monthlyBookings,
+        java.util.List<Double> monthlyRevenues,
+        java.util.List<RecentActivityResponse> recentActivities,
+        java.util.Map<String, Long> packageDistribution
 ) {}

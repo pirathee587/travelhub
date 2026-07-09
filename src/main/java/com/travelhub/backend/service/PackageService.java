@@ -8,15 +8,14 @@ import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.travelhub.backend.common.ResourceNotFoundException;
 import com.travelhub.backend.dto.response.PackageDetailResponse;
 import com.travelhub.backend.dto.response.PackageResponse;
 import com.travelhub.backend.entity.Package;
 import com.travelhub.backend.entity.PackageItinerary;
 import com.travelhub.backend.repository.PackageRepository;
 import com.travelhub.backend.repository.ReviewRepository;
-import java.util.Map;
-import org.springframework.transaction.annotation.Transactional;
-
+import com.travelhub.backend.repository.HotelRepository;
 import lombok.RequiredArgsConstructor;
 
 @Service
@@ -26,12 +25,13 @@ public class PackageService {
 
     private final PackageRepository packageRepository;
     private final ReviewRepository reviewRepository;
+    private final HotelRepository hotelRepository;
     private final AgentRatingCalculator agentRatingCalculator;
 
     public List<PackageResponse> getAllPackages() {
         List<Package> packages = packageRepository.findByIsActiveTrue()
                 .stream()
-                .filter(p -> "Approved".equalsIgnoreCase(p.getApplicationStatus())) //Approved package
+                .filter(p -> p.getApplicationStatus() != null && "Approved".equalsIgnoreCase(p.getApplicationStatus().trim())) //Approved package
                 .collect(Collectors.toList());
         return toPackageResponses(packages);
     }
@@ -39,7 +39,7 @@ public class PackageService {
     public List<PackageResponse> getPackagesByCategory(String category) {
         List<Package> packages = packageRepository.findByCategory(category)
                 .stream()
-                .filter(p -> "Approved".equalsIgnoreCase(p.getApplicationStatus()) && Boolean.TRUE.equals(p.getIsActive()))
+                .filter(p -> p.getApplicationStatus() != null && "Approved".equalsIgnoreCase(p.getApplicationStatus().trim()) && Boolean.TRUE.equals(p.getIsActive()))
                 .collect(Collectors.toList());
         return toPackageResponses(packages);
     }
@@ -47,7 +47,7 @@ public class PackageService {
     public List<PackageResponse> getTrendingPackages() {
         List<Package> packages = packageRepository.findByTrendingTrue()
                 .stream()
-                .filter(p -> "Approved".equalsIgnoreCase(p.getApplicationStatus()) && Boolean.TRUE.equals(p.getIsActive()))
+                .filter(p -> p.getApplicationStatus() != null && "Approved".equalsIgnoreCase(p.getApplicationStatus().trim()) && Boolean.TRUE.equals(p.getIsActive()))
                 .collect(Collectors.toList());
         return toPackageResponses(packages);
     }
@@ -59,7 +59,7 @@ public class PackageService {
     public List<PackageResponse> getPackagesByAgentId(Long agentId) {
         List<Package> packages = packageRepository.findByAgentId(agentId)
                 .stream()
-                .filter(p -> "Approved".equalsIgnoreCase(p.getApplicationStatus()) && Boolean.TRUE.equals(p.getIsActive()))
+                .filter(p -> p.getApplicationStatus() != null && "Approved".equalsIgnoreCase(p.getApplicationStatus().trim()) && Boolean.TRUE.equals(p.getIsActive()))
                 .collect(Collectors.toList());
         return toPackageResponses(packages);
     }
@@ -103,137 +103,205 @@ public class PackageService {
         return PackageResponse.builder()
                 .id(pkg.getId())
                 .packageName(pkg.getPackageName())
-                .destination(pkg.getDestination())
                 .startPlace(pkg.getStartPlace())
                 .endPlace(pkg.getEndPlace())
                 .priceFrom(pkg.getPriceFrom())
                 .priceTo(pkg.getPriceTo())
+                .basePriceAdult(pkg.getBasePriceAdult())
+                .basePriceChild(pkg.getBasePriceChild())
                 .duration(pkg.getDuration())
                 .category(pkg.getCategory())
                 .imageUrl(pkg.getImageUrl())
                 .rating(Math.round(rating * 10.0) / 10.0)
                 .reviewCount(reviewCount)
-                .festivalDetails(pkg.getFestivalDetails())
-                .trending(pkg.getTrending())
                 .agentName(getSafeAgentName(pkg.getAgent()))
                 .district(pkg.getDistrict())
+                .packageType(pkg.getPackageType())
                 .build();
     }
 
     private PackageDetailResponse toPackageDetailResponse(Package pkg) {
-        List<PackageDetailResponse.ItineraryDayResponse> itineraryDays = null;
-        if (pkg.getItinerary() != null) {
-            itineraryDays = pkg.getItinerary()
-                    .stream()
-                    .map(this::toItineraryDayResponse)
-                    .collect(Collectors.toList());
-        }
-
-        List<String> imageUrls = null;
-        if (pkg.getImages() != null) {
-            imageUrls = pkg.getImages()
-                    .stream()
-                    .map(img -> img.getImageUrl())
-                    .collect(Collectors.toList());
-        }
-
-        // Single detail page — 2 individual queries is fine here
         Double avgRating = reviewRepository.getAverageRatingByPackageId(pkg.getId());
         Long count = reviewRepository.getReviewCountByPackageId(pkg.getId());
 
         Long aId = null;
         String aName = null;
         String aPhone = null;
-        Double aRating = null;
-        try {
-            if (pkg.getAgent() != null) {
+        Double aRating = 0.0;
+
+        if (pkg.getAgent() != null) {
+            try {
                 aId = pkg.getAgent().getId();
                 aName = pkg.getAgent().getAgencyName();
-                aPhone = pkg.getAgent().getOwner() != null
-                        ? pkg.getAgent().getOwner().getTelephone()
-                        : null;
-                aRating = agentRatingCalculator.getAgentRating(aId);
+                aPhone = pkg.getAgent().getAgencyNumber();
+                aRating = pkg.getAgent().getRating() != null ? pkg.getAgent().getRating() : 0.0;
+            } catch (jakarta.persistence.EntityNotFoundException | org.hibernate.ObjectNotFoundException e) {
+                aName = "Unknown Agent";
             }
-        } catch (jakarta.persistence.EntityNotFoundException | org.hibernate.ObjectNotFoundException e) {
-            aName = "Unknown Agent";
         }
+
+        List<PackageDetailResponse.ItineraryDayResponse> itineraryDays = pkg.getItinerary().stream()
+                .sorted((a, b) -> (a.getDayNumber() != null ? a.getDayNumber() : 0) - (b.getDayNumber() != null ? b.getDayNumber() : 0))
+                .map(this::toItineraryDayResponse)
+                .collect(Collectors.toList());
+
+        List<String> imageUrls = pkg.getImages().stream()
+                .sorted((a, b) -> (a.getDisplayOrder() != null ? a.getDisplayOrder() : 0) - (b.getDisplayOrder() != null ? b.getDisplayOrder() : 0))
+                .map(img -> img.getImageUrl())
+                .collect(Collectors.toList());
+
+        List<String> inclusionsList = pkg.getInclusions() != null && !pkg.getInclusions().isEmpty()
+                ? Arrays.stream(pkg.getInclusions().split(",")).map(String::trim).collect(Collectors.toList())
+                : new java.util.ArrayList<>();
 
         return PackageDetailResponse.builder()
                 .id(pkg.getId())
                 .packageName(pkg.getPackageName())
-                .destination(pkg.getDestination())
                 .startPlace(pkg.getStartPlace())
                 .endPlace(pkg.getEndPlace())
                 .priceFrom(pkg.getPriceFrom())
                 .priceTo(pkg.getPriceTo())
+                .basePriceAdult(pkg.getBasePriceAdult())
+                .basePriceChild(pkg.getBasePriceChild())
                 .duration(pkg.getDuration())
                 .category(pkg.getCategory())
                 .imageUrl(pkg.getImageUrl())
                 .rating(avgRating != null ? Math.round(avgRating * 10.0) / 10.0 : 0.0)
                 .reviewCount(count != null ? count.intValue() : 0)
-                .festivalDetails(pkg.getFestivalDetails())
-                .trending(pkg.getTrending())
                 .agentId(aId)
                 .agentName(aName)
                 .agentPhone(aPhone)
                 .agentRating(aRating)
                 .itinerary(itineraryDays)
                 .images(imageUrls)
+                .inclusions(inclusionsList)
                 .district(pkg.getDistrict())
+                .packageType(pkg.getPackageType())
                 .build();
     }
 
     private PackageDetailResponse.ItineraryDayResponse toItineraryDayResponse(PackageItinerary day) {
-        List<String> activities = null;
+        List<PackageDetailResponse.PackageActivityResponse> activities = null;
         if (day.getActivities() != null) {
             String raw = day.getActivities().trim();
-            // ✅ FIXED: DB stores JSON array ["activity1","activity2"]
-            // Remove [ ] brackets, split by comma, clean quotes and whitespace
-            if (raw.startsWith("[")) {
-                raw = raw.substring(1, raw.length() - 1);
+            if (!raw.isEmpty()) {
+                activities = new java.util.ArrayList<>();
+                if (raw.startsWith("[") || raw.startsWith("{")) {
+                    try {
+                        com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
+                        com.fasterxml.jackson.databind.JsonNode node = mapper.readTree(raw);
+                        if (node.isArray()) {
+                            for (com.fasterxml.jackson.databind.JsonNode item : node) {
+                                if (item.isObject()) {
+                                    String desc = null;
+                                    String imgUrl = null;
+                                    if (item.has("description")) {
+                                        desc = item.get("description").asText();
+                                    } else if (item.has("text")) {
+                                        desc = item.get("text").asText();
+                                    } else if (item.has("name")) {
+                                        desc = item.get("name").asText();
+                                    } else {
+                                        desc = item.toString();
+                                    }
+                                    if (item.has("imageUrl")) {
+                                        imgUrl = item.get("imageUrl").asText();
+                                        if ("null".equalsIgnoreCase(imgUrl) || imgUrl.trim().isEmpty()) {
+                                            imgUrl = null;
+                                        }
+                                    }
+                                    activities.add(new PackageDetailResponse.PackageActivityResponse(desc, imgUrl));
+                                } else if (item.isValueNode()) {
+                                    activities.add(new PackageDetailResponse.PackageActivityResponse(item.asText(), null));
+                                }
+                            }
+                        } else if (node.isObject()) {
+                            String desc = null;
+                            String imgUrl = null;
+                            if (node.has("description")) {
+                                desc = node.get("description").asText();
+                            } else {
+                                desc = node.toString();
+                            }
+                            if (node.has("imageUrl")) {
+                                imgUrl = node.get("imageUrl").asText();
+                                if ("null".equalsIgnoreCase(imgUrl) || imgUrl.trim().isEmpty()) {
+                                    imgUrl = null;
+                                }
+                            }
+                            activities.add(new PackageDetailResponse.PackageActivityResponse(desc, imgUrl));
+                        } else {
+                            activities.add(new PackageDetailResponse.PackageActivityResponse(node.asText(), null));
+                        }
+                    } catch (Exception e) {
+                        // Fallback on JSON parse error
+                        if (raw.startsWith("[")) {
+                            raw = raw.substring(1, raw.length() - 1);
+                        }
+                        List<String> list = Arrays.stream(raw.split(",(?=(?:[^\"]*\"[^\"]*\")*[^\"]*$)"))
+                                .map(s -> s.trim().replaceAll("^\"|\"$", "").trim())
+                                .filter(s -> !s.isEmpty())
+                                .collect(Collectors.toList());
+                        for (String str : list) {
+                            activities.add(new PackageDetailResponse.PackageActivityResponse(str, null));
+                        }
+                    }
+                } else {
+                    List<String> list = Arrays.stream(raw.split(",(?=(?:[^\"]*\"[^\"]*\")*[^\"]*$)"))
+                            .map(s -> s.trim().replaceAll("^\"|\"$", "").trim())
+                            .filter(s -> !s.isEmpty())
+                            .collect(Collectors.toList());
+                    for (String str : list) {
+                        activities.add(new PackageDetailResponse.PackageActivityResponse(str, null));
+                    }
+                }
             }
-            activities = Arrays.stream(raw.split(",(?=(?:[^\"]*\"[^\"]*\")*[^\"]*$)"))
-                    .map(s -> s.trim().replaceAll("^\"|\"$", "").trim())
-                    .filter(s -> !s.isEmpty())
-                    .collect(Collectors.toList());
         }
+
+        String hotelName = null;
+        if (day.getHotel() != null) {
+            hotelName = day.getHotel().getHotelName();
+        } else if (day.getHotelNameCustom() != null && !day.getHotelNameCustom().trim().isEmpty()) {
+            hotelName = day.getHotelNameCustom().trim();
+        }
+
+        Long hotelId = day.getHotel() != null ? day.getHotel().getId() : null;
+
         return PackageDetailResponse.ItineraryDayResponse.builder()
                 .dayNumber(day.getDayNumber())
                 .title(day.getTitle())
                 .description(day.getDescription())
                 .activities(activities)
+                .hotelName(hotelName)
+                .hotelId(hotelId)
                 .build();
     }
+
     // ── Chatbot data method ────────────────────────────────────────────────
-    // Added for AI chatbot feature — returns all active packages as simple maps
-    // so the Python RAG service can load them into ChromaDB
     @Transactional(readOnly = true)
     public List<Map<String, Object>> getAllPackagesForChatbot() {
-    // Use a fresh query to avoid lazy loading issues with Agent relationship
-    return packageRepository.findByIsActiveTrue()
-            .stream()
-            .map(pkg -> {
-                Map<String, Object> map = new java.util.HashMap<>();
-                map.put("id",              pkg.getId());
-                map.put("packageName",     pkg.getPackageName());
-                map.put("destination",     pkg.getDestination());
-                map.put("district",        pkg.getDistrict());
-                map.put("category",        pkg.getCategory());
-                map.put("priceFrom",       pkg.getPriceFrom());
-                map.put("priceTo",         pkg.getPriceTo());
-                map.put("duration",        pkg.getDuration());
-                map.put("rating",          pkg.getRating());
-                map.put("festivalDetails", pkg.getFestivalDetails());
-                map.put("startPlace",      pkg.getStartPlace());
-                map.put("endPlace",        pkg.getEndPlace());
-                // Safely get agent name — avoid null pointer if agent is null
-                try {
-                    map.put("agentName", pkg.getAgent() != null ? pkg.getAgent().getAgencyName() : "");
-                } catch (Exception e) {
-                    map.put("agentName", "");
-                }
-                return map;
-            })
-            .collect(Collectors.toList());
-}
+        return packageRepository.findByIsActiveTrue()
+                .stream()
+                .map(pkg -> {
+                    Map<String, Object> map = new java.util.HashMap<>();
+                    map.put("id",              pkg.getId());
+                    map.put("packageName",     pkg.getPackageName());
+                    map.put("district",        pkg.getDistrict());
+                    map.put("category",        pkg.getCategory());
+                    map.put("duration",        pkg.getDuration());
+                    map.put("rating",          pkg.getRating());
+                    map.put("startPlace",      pkg.getStartPlace());
+                    map.put("endPlace",        pkg.getEndPlace());
+                    map.put("priceFrom",       pkg.getPriceFrom());
+                    map.put("priceTo",         pkg.getPriceTo());
+                    map.put("destination",     pkg.getDestination());
+                    try {
+                        map.put("agentName", pkg.getAgent() != null ? pkg.getAgent().getAgencyName() : "");
+                    } catch (Exception e) {
+                        map.put("agentName", "");
+                    }
+                    return map;
+                })
+                .collect(Collectors.toList());
+    }
 }

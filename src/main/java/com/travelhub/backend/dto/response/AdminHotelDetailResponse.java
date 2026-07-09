@@ -13,6 +13,7 @@ public record AdminHotelDetailResponse(
         // ── Location Details ───────────────────────────
         String  district,
         String  location,
+        Integer numberOfRooms,
 
         // Room Types list
         List<RoomTypeResponse> roomTypes,
@@ -36,7 +37,10 @@ public record AdminHotelDetailResponse(
 
         // ── Application Status ─────────────────────────
         // Pending, Approved, Rejected
-        String applicationStatus
+        String  applicationStatus,
+
+        // ── Suspended state ────────────────────────────
+        Boolean isActive
 
 ) {
     // Room type inner record

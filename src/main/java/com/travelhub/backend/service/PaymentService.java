@@ -159,6 +159,21 @@ public class PaymentService {
             booking.setStatus("Paid");
             bookingRepository.save(booking);
             paymentRepository.save(payment);
+
+            // Force load lazy-loaded proxies before publishing event to async listener
+            if (payment.getUser() != null) {
+                payment.getUser().getEmail();
+            }
+            if (payment.getBooking() != null) {
+                Booking b = payment.getBooking();
+                if (b.getPkg() != null) {
+                    b.getPkg().getPackageName();
+                    if (b.getPkg().getAgent() != null) {
+                        b.getPkg().getAgent().getAgencyName();
+                    }
+                }
+            }
+
             eventPublisher.publishEvent(new PaymentEvent(this, payment, "COMPLETED"));
         } else if (statusCode == 0) {
             payment.setStatus("Pending");
@@ -166,6 +181,21 @@ public class PaymentService {
         } else {
             payment.setStatus("Failed");
             paymentRepository.save(payment);
+
+            // Force load lazy-loaded proxies before publishing event to async listener
+            if (payment.getUser() != null) {
+                payment.getUser().getEmail();
+            }
+            if (payment.getBooking() != null) {
+                Booking b = payment.getBooking();
+                if (b.getPkg() != null) {
+                    b.getPkg().getPackageName();
+                    if (b.getPkg().getAgent() != null) {
+                        b.getPkg().getAgent().getAgencyName();
+                    }
+                }
+            }
+
             eventPublisher.publishEvent(new PaymentEvent(this, payment, "FAILED"));
         }
 

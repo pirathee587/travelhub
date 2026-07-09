@@ -11,11 +11,13 @@ import com.travelhub.backend.repository.PackageRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import java.util.Arrays;
 import java.util.List;
 
 @Service
 @RequiredArgsConstructor
+@Transactional(readOnly = true)
 public class AdminPackageService {
 
     private final PackageRepository          packageRepository;
@@ -83,15 +85,15 @@ public class AdminPackageService {
         String providerName = "";
         if (pkg.getAgent() != null) {
             providerName = pkg.getAgent().getAgencyName();
+
         }
 
         return new AdminPackageDetailResponse(
                 pkg.getId(),
                 pkg.getPackageName(),
-                pkg.getDestination(),
+
                 pkg.getDistrict(),
-                pkg.getPriceFrom(),
-                pkg.getPriceTo(),
+
                 imageUrls,
                 pkg.getImageUrl(),
                 pkg.getDuration(),
@@ -99,18 +101,19 @@ public class AdminPackageService {
                 pkg.getApplicationStatus() != null
                         ? pkg.getApplicationStatus()
                         : "Pending",
-                pkg.getFestivalDetails(),
+                pkg.getDescription(),
                 inclusions,
                 itinerary,
                 pkg.getRating(),
                 pkg.getReviewCount(),
                 pkg.getCategory(),
-                pkg.getTrending(),
+
                 pkg.getIsActive()
         );
     }
 
     // ── Approve Package ───────────────────────────────
+    @Transactional
     public AdminPackageDetailResponse approvePackage(
             Long id) {
         Package pkg = packageRepository.findById(id)
@@ -120,6 +123,13 @@ public class AdminPackageService {
         pkg.setApplicationStatus("Approved");
         packageRepository.save(pkg);
 
+        // Force load lazy-loaded proxies before publishing event to async listener
+        if (pkg.getAgent() != null) {
+            pkg.getAgent().getAgencyName();
+            if (pkg.getAgent().getOwner() != null) {
+                pkg.getAgent().getOwner().getEmail();
+            }
+        }
 
         eventPublisher.publishEvent(
                 new PackageEvent(this, pkg, "APPROVED"));
@@ -128,6 +138,7 @@ public class AdminPackageService {
     }
 
     // ── Reject Package ────────────────────────────────
+    @Transactional
     public AdminPackageDetailResponse rejectPackage(
             Long id, String reason) {
         Package pkg = packageRepository.findById(id)
@@ -137,6 +148,13 @@ public class AdminPackageService {
         pkg.setApplicationStatus("Rejected");
         packageRepository.save(pkg);
 
+        // Force load lazy-loaded proxies before publishing event to async listener
+        if (pkg.getAgent() != null) {
+            pkg.getAgent().getAgencyName();
+            if (pkg.getAgent().getOwner() != null) {
+                pkg.getAgent().getOwner().getEmail();
+            }
+        }
 
         eventPublisher.publishEvent(
                 new PackageEvent(
@@ -146,6 +164,7 @@ public class AdminPackageService {
     }
 
     // ── Toggle Active ─────────────────────────────────
+    @Transactional
     public AdminPackageDetailResponse toggleActive(
             Long id) {
         Package pkg = packageRepository.findById(id)
@@ -153,17 +172,31 @@ public class AdminPackageService {
                         new ResourceNotFoundException(
                                 "Package", "id", id));
         pkg.setIsActive(!pkg.getIsActive());
+        if (Boolean.TRUE.equals(pkg.getIsActive())) {
+            pkg.setApplicationStatus("Approved");
+        } else {
+            pkg.setApplicationStatus("Suspended");
+        }
         packageRepository.save(pkg);
         return getPackageDetail(id);
     }
 
     // ── Delete Package ────────────────────────────────
+    @Transactional
     public void deletePackage(Long id) {
         Package pkg = packageRepository.findById(id)
                 .orElseThrow(() ->
                         new ResourceNotFoundException(
                                 "Package", "id", id));
 
+
+        // Force load lazy-loaded proxies before publishing event to async listener
+        if (pkg.getAgent() != null) {
+            pkg.getAgent().getAgencyName();
+            if (pkg.getAgent().getOwner() != null) {
+                pkg.getAgent().getOwner().getEmail();
+            }
+        }
 
         eventPublisher.publishEvent(
                 new PackageEvent(this, pkg, "DELETED"));
@@ -194,21 +227,21 @@ public class AdminPackageService {
         return new AdminPackageResponse(
                 p.getId(),
                 p.getPackageName(),
-                p.getDestination(),
-                p.getPriceFrom(),
-                p.getPriceTo(),
+
+
                 p.getDuration(),
                 p.getCategory(),
                 p.getRating(),
                 p.getReviewCount(),
-                p.getTrending(),
+
                 p.getIsActive(),
                 p.getAgent() != null
                         ? p.getAgent().getAgencyName()
                         : "",
                 p.getApplicationStatus() != null
                         ? p.getApplicationStatus()
-                        : "Pending"
+                        : "Pending",
+                p.getImageUrl()
         );
     }
 }

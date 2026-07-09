@@ -13,16 +13,26 @@ import java.util.Optional;
 public interface PackageRepository extends JpaRepository<Package, Long> {
 
     // ── Existing methods (kept as-is) ─────────────────────────────────────
+    @Query("SELECT p FROM Package p WHERE p.isActive = true AND p.applicationStatus = 'Approved' AND p.deletedAt IS NULL")
     List<Package> findByIsActiveTrue();
-    List<Package> findByCategory(String category);
+    @Query("SELECT p FROM Package p WHERE p.category = :category AND p.isActive = true AND p.applicationStatus = 'Approved' AND p.deletedAt IS NULL")
+    List<Package> findByCategory(@Param("category") String category);
+
+    @Query("SELECT p FROM Package p WHERE p.trending = true AND p.isActive = true AND p.applicationStatus = 'Approved' AND p.deletedAt IS NULL")
     List<Package> findByTrendingTrue();
 
     /** Finds packages by the agent's surrogate PK (agents.id). */
     List<Package> findByAgentId(Long agentId);
     List<Package> findByApplicationStatus(String applicationStatus);
 
+    @Query("SELECT COUNT(p) FROM Package p WHERE p.applicationStatus = :status AND p.deletedAt IS NULL")
+    long countByApplicationStatusAndDeletedAtIsNull(@Param("status") String status);
+
+    @Query("SELECT COUNT(p) FROM Package p WHERE LOWER(p.applicationStatus) = LOWER(:status) AND p.deletedAt IS NULL")
+    long countByApplicationStatus(@Param("status") String status);
+
     // ── New methods (added for agent package management) ──────────────────
-    Long countByAgentId(Long agentId);
+    Long countByAgentIdAndDeletedAtIsNull(Long agentId);
 
     // Find agent's packages excluding soft-deleted
     List<Package> findByAgentIdAndDeletedAtIsNullOrderByCreatedAtDesc(Long agentId);
@@ -34,11 +44,11 @@ public interface PackageRepository extends JpaRepository<Package, Long> {
     // Find by human-readable packageId (e.g. PKG001)
     Optional<Package> findByPackageIdAndDeletedAtIsNull(String packageId);
 
-    // Search by name or destination
+    // Search by name or district
     @Query("SELECT p FROM Package p WHERE p.agent.id = :agentId " +
             "AND p.deletedAt IS NULL " +
             "AND (LOWER(p.packageName) LIKE LOWER(CONCAT('%', :search, '%')) " +
-            "OR LOWER(p.destination) LIKE LOWER(CONCAT('%', :search, '%')))")
+            "OR LOWER(p.district) LIKE LOWER(CONCAT('%', :search, '%')))")
     List<Package> searchByAgentId(@Param("agentId") Long agentId,
                                   @Param("search") String search);
 
@@ -49,4 +59,13 @@ public interface PackageRepository extends JpaRepository<Package, Long> {
      */
     @Query(value = "SELECT * FROM packages WHERE agent_id = :agentUserId", nativeQuery = true)
     List<Package> findByAgentUserId(@Param("agentUserId") Long agentUserId);
+
+    // For generating PKG001, PKG002 etc.
+    @Query("SELECT COUNT(p) FROM Package p")
+    Long countAll();
+
+    List<Package> findTop5ByOrderByCreatedAtDesc();
+
+    @Query("SELECT p.category, COUNT(p) FROM Package p WHERE p.deletedAt IS NULL GROUP BY p.category")
+    List<Object[]> countPackagesByCategory();
 }

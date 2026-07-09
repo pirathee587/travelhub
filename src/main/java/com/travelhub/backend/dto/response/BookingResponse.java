@@ -2,6 +2,7 @@ package com.travelhub.backend.dto.response;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.List;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -16,12 +17,23 @@ public class BookingResponse {
     private Long id;
     private String bookingId;
     private String packageName;
-    private String destination;
+    private String packageId;
+
     private LocalDate startDate;
     private LocalDate endDate;
     private String status;
     private Double totalPrice;
     private Integer progress;
+    
+    // Tourist Info
+    private String touristName;
+    private String touristEmail;
+    private String touristPhone;
+
+    // Pricing
+    private Double basePriceAdult;
+    private Double basePriceChild;
+
     private String imageUrl;
     private String category;
     private String startPlace;
@@ -33,6 +45,7 @@ public class BookingResponse {
     private String duration;
 
     // Hotel info
+    private Long hotelId;
     private String hotelName;
     private String hotelLocation;
 
@@ -48,4 +61,8 @@ public class BookingResponse {
 
     // Booking details
     private String hotelIdsWithPreference;
+    private String accommodationOption;   // SELF_ARRANGE, AGENCY, or null
+    private String packageType;           // SINGLE_DISTRICT or MULTI_DISTRICT
+    private Boolean isPaid;
+    private List<BookingHotelPreferenceResponse> hotelPreferences;
 }

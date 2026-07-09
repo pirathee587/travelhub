@@ -1,12 +1,12 @@
 package com.travelhub.backend.service;
 
-import com.travelhub.backend.common.ApiResponse;
-import com.travelhub.backend.common.BadRequestException;
-import com.travelhub.backend.common.ResourceNotFoundException;
-import com.travelhub.backend.common.UnauthorizedException;
 import com.travelhub.backend.dto.request.LoginRequest;
 import com.travelhub.backend.dto.request.RegisterRequest;
 import com.travelhub.backend.dto.response.LoginResponse;
+import com.travelhub.backend.common.ApiResponse;
+import com.travelhub.backend.common.BadRequestException;
+import com.travelhub.backend.common.UnauthorizedException;
+import com.travelhub.backend.common.ResourceNotFoundException;
 import com.travelhub.backend.entity.Agent;
 import com.travelhub.backend.entity.Hotel;
 import com.travelhub.backend.entity.User;
@@ -29,19 +29,24 @@ import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
+@Transactional
 public class AuthService {
 
     private final UserRepository userRepository;
+    private final AgentRepository agentRepository;
+    private final HotelRepository hotelRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtTokenProvider tokenProvider;
     private final AuthenticationManager authenticationManager;
     private final EmailService emailService;
-    private final AgentRepository agentRepository;
-    private final HotelRepository hotelRepository;
 
     public ApiResponse register(RegisterRequest request) {
+        if (request.getRole() == Role.ADMIN) {
+            throw new BadRequestException("Public registration for ADMIN role is not allowed.");
+        }
+
         if (userRepository.existsByEmail(request.getEmail())) {
-            throw new BadRequestException("Email already in use");
+            throw new IllegalArgumentException("Email is already registered!");
         }
 
         String verificationToken = UUID.randomUUID().toString();
@@ -54,6 +59,7 @@ public class AuthService {
                 .role(request.getRole())
                 .preferredLanguage(request.getPreferredLanguage())
                 .nationality(request.getNationality())
+                .agencyName(request.getAgencyName())
                 .nicNumber(request.getNicNumber())
                 .hotelName(request.getHotelName())
                 .businessRegistrationId(request.getBusinessRegistrationId())
@@ -76,8 +82,11 @@ public class AuthService {
                     .agencyName(request.getAgencyName())
                     .isActive(true)
                     .build();
-            agentRepository.save(agent);
+            
+            agent = agentRepository.save(agent);
+            user.setAgencies(java.util.List.of(agent));
         } else if (user.getRole() == Role.HOTEL_OWNER) {
+            String defaultImage = "https://images.unsplash.com/photo-1566073771259-6a8506099945?q=80&w=2070&auto=format&fit=crop";
             Hotel hotel = Hotel.builder()
                     .hotelName(user.getHotelName() != null ? user.getHotelName() : user.getName() + "'s Hotel")
                     .district(user.getDistrict())
@@ -90,6 +99,7 @@ public class AuthService {
                     .build();
             hotel = hotelRepository.save(hotel);
             user.setHotelId(hotel.getId());
+            userRepository.save(user);
         }
 
         // Save User again to cascade the linked profile relationships
@@ -99,17 +109,19 @@ public class AuthService {
         try {
             emailService.sendVerificationEmail(user.getEmail(), verificationToken);
         } catch (Exception e) {
-            System.err.println("Failed to send verification email: " + e.getMessage());
-            return new ApiResponse(true, "User registered successfully, but verification email could not be sent. Please contact support.");
+            // Log warning but don't fail registration
         }
 
-        return new ApiResponse(true, "User registered successfully. " + (request.getRole() == Role.TOURIST ? "You can now make bookings!" : "Please check your email for verification."));
+        return new ApiResponse(true, "Registration successful! Please check your email for verification.");
     }
 
     @Transactional
     public LoginResponse login(LoginRequest request) {
         Authentication authentication = authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword())
+                new UsernamePasswordAuthenticationToken(
+                        request.getEmail(),
+                        request.getPassword()
+                )
         );
 
         SecurityContextHolder.getContext().setAuthentication(authentication);
@@ -117,8 +129,9 @@ public class AuthService {
         User user = userRepository.findByEmail(request.getEmail())
                 .orElseThrow(() -> new ResourceNotFoundException("User", "email", request.getEmail()));
 
+        // Email verification check from develop
         if (!user.isEmailVerified()) {
-            throw new UnauthorizedException("Please verify your email first");
+            throw new UnauthorizedException("Please verify your email before logging in.");
         }
 
         // Account active check from develop
@@ -151,6 +164,11 @@ public class AuthService {
 
         String jwt = tokenProvider.generateToken(authentication, user);
 
+        Long firstAgentId = null;
+        if (user.getRole() == Role.AGENT && user.getAgencies() != null && !user.getAgencies().isEmpty()) {
+            firstAgentId = user.getAgencies().get(0).getId();
+        }
+
         return LoginResponse.builder()
                 .token(jwt)
                 .name(user.getName())
@@ -175,9 +193,9 @@ public class AuthService {
             user.setStatus("ACTIVE");
             user.setIsActive(true);
         }
-
+        
         userRepository.save(user);
-        return new ApiResponse(true, "Email verified successfully. You can now login.");
+        return new ApiResponse(true, "Email verified successfully!");
     }
 
     public ApiResponse requestPasswordReset(String email) {

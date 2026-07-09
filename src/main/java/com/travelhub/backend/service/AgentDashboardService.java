@@ -21,22 +21,13 @@ public class AgentDashboardService {
     private final AgentRepository agentRepository;
     private final AgentRatingCalculator agentRatingCalculator;
 
-    /**
-     * Builds the Agent Dashboard "stats" snapshot for a single agent.
-     * <p>
-     * Notes:
-     * - Most metrics are simple counts from repositories.
-     * - Revenue is computed as the sum of totalPrice for completed bookings (null-safe).
-     * - Rating is read from the Agent entity (defaults to 0.0 if not present).
-     */
     @Transactional
     public AgentDashboardStatsResponse getStats(Long agentId) {
         com.travelhub.backend.entity.Agent agent = agentRepository.findByOwnerId(agentId)
                 .orElseThrow(() -> new com.travelhub.backend.common.ResourceNotFoundException("Agent", "userId", agentId));
         Long realAgentId = agent.getId();
 
-        // Count trips that are currently ongoing/active for this agent.
-        long activeTrips = bookingRepository.findByAgentId(realAgentId)
+        long activeTrips = bookingRepository.findByAgentId(agentId)
                 .stream()
                 .filter(b -> b.getStatus().equals("active") ||
                         b.getStatus().equals("confirmed") ||
@@ -44,22 +35,16 @@ public class AgentDashboardService {
                         b.getStatus().equals("In_progress"))
                 .count();
 
-        // Completed/pending counts are pulled via status-specific repository methods.
         long completedTrips = bookingRepository
                 .findByAgentIdAndStatus(realAgentId, "completed").size();
         long pendingRequests = bookingRepository
-                .findByAgentIdAndStatus(realAgentId, "pending").size();
-
-        // Inventory counts for the agent.
+                .findByAgentIdAndStatus(agentId, "pending").size();
         long totalVehicles = vehicleRepository
                 .findByAgentId(realAgentId).size();
         long totalDrivers = driverRepository
-                .findByAgentId(realAgentId).size();
+                .findByAgentId(agentId).size();
+        long totalPackages = packageRepository.countByAgentIdAndDeletedAtIsNull(agentId);
 
-        // Total packages created/owned by this agent.
-        long totalPackages = packageRepository.countByAgentId(realAgentId);
-
-        // Revenue = sum of totalPrice across completed bookings (treat null as 0).
         Double totalRevenue = bookingRepository
                 .findByAgentIdAndStatus(realAgentId, "completed")
                 .stream()
@@ -68,7 +53,6 @@ public class AgentDashboardService {
 
         Double averageRating = agentRatingCalculator.getAgentRating(realAgentId);
 
-        // Assemble the DTO response for the dashboard.
         return AgentDashboardStatsResponse.builder()
                 .totalPackages(totalPackages)
                 .activeTrips(activeTrips)

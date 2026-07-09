@@ -9,6 +9,7 @@ import com.travelhub.backend.repository.AgentRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import com.travelhub.backend.repository.BookingRepository;
+import com.travelhub.backend.repository.UserRepository;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
@@ -17,9 +18,12 @@ public class AgentProfileService {
 
     private final AgentRepository agentRepository;
     private final AgentRatingCalculator agentRatingCalculator;
+    private final BookingRepository bookingRepository;
+    private final UserRepository userRepository;
 
     /**
      * Returns the profile details for the given agent id.
+     * NOTE: agentId now equals the linked User's id (1:1 schema).
      */
     @Transactional
     public AgentProfileResponse getProfile(Long agentId) {
@@ -31,6 +35,7 @@ public class AgentProfileService {
 
     /**
      * Updates editable profile fields for the given agent.
+     * Name/email/phone/profileImage now live on the User entity.
      */
     @Transactional
     public AgentProfileResponse updateProfile(Long agentId, AgentProfileRequest request) {
@@ -56,6 +61,7 @@ public class AgentProfileService {
         if (request.getPhone() != null) {
             user.setTelephone(request.getPhone());
         }
+        // Profile image now lives on User.
         if (request.getProfileImage() != null) {
             user.setProfileImage(request.getProfileImage());
         }

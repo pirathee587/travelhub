@@ -22,6 +22,7 @@ public class AgentAnalyticsService {
     private final DriverRepository driverRepository;
     private final VehicleRepository vehicleRepository;
     private final AgentRepository agentRepository;
+    private final AgentRatingCalculator agentRatingCalculator;
 
     /**
      * Builds the analytics payload for an agent for a given period.
@@ -62,8 +63,8 @@ public class AgentAnalyticsService {
         double cancellationRate = filtered.isEmpty() ? 0 :
                 Math.round(((double) cancelled / filtered.size()) * 100.0) / 1.0;
 
-        // Stat cards: agent rating (default 0.0 if missing/null).
-        double averageRating = agent.getRating() != null ? agent.getRating() : 0.0;
+        // Stat cards: agent rating
+        Double averageRating = agentRatingCalculator.getAgentRating(agentId);
 
         // Revenue chart data (label/value pairs; labels depend on the selected period).
         List<Map<String, Object>> revenueData = buildRevenueData(filtered, period);
@@ -75,19 +76,19 @@ public class AgentAnalyticsService {
         tripStatusData.put("pending", filtered.stream().filter(b -> b.getStatus().equals("pending")).count());
         tripStatusData.put("cancelled", cancelled);
 
-        // Top destinations: group bookings by package destination and take the top 5 by count.
+        // Top districts: group bookings by package district and take the top 5 by count.
         List<Map<String, Object>> topDestinations = filtered.stream()
                 .filter(b -> {
-                    try { return b.getPkg() != null && b.getPkg().getDestination() != null; }
+                    try { return b.getPkg() != null && b.getPkg().getDistrict() != null; }
                     catch (Exception e) { return false; }
                 })
-                .collect(Collectors.groupingBy(b -> b.getPkg().getDestination(), Collectors.counting()))
+                .collect(Collectors.groupingBy(b -> b.getPkg().getDistrict(), Collectors.counting()))
                 .entrySet().stream()
                 .sorted(Map.Entry.<String, Long>comparingByValue().reversed())
                 .limit(5)
                 .map(e -> {
                     Map<String, Object> m = new LinkedHashMap<>();
-                    m.put("destination", e.getKey());
+                    m.put("district", e.getKey());
                     m.put("count", e.getValue());
                     return m;
                 })

@@ -41,6 +41,6 @@ public class PackageController {
     // Called by Python AI service on startup and every 30 min to sync ChromaDB
     @GetMapping("/chatbot-data")
     public ResponseEntity<List<Map<String, Object>>> getPackagesForChatbot() {
-    return ResponseEntity.ok(packageService.getAllPackagesForChatbot());
+        return ResponseEntity.ok(packageService.getAllPackagesForChatbot());
     }
 }

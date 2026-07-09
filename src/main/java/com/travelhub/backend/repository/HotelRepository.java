@@ -18,6 +18,8 @@ public interface HotelRepository
     // Pending, Approved, Rejected Hotel
     List<Hotel> findByApplicationStatus(String applicationStatus);
 
+    long countByApplicationStatus(String applicationStatus);
+
     // Approved hotels filtered by district
     List<Hotel> findByApplicationStatusAndDistrictIgnoreCase(
             String applicationStatus, String district);
@@ -33,4 +35,14 @@ public interface HotelRepository
             String ownerEmail, String status);
 
     long countByOwnerIdAndApplicationStatus(Long ownerId, String applicationStatus);
+    // ── Hotel search for package creation (autocomplete) ─────
+    @org.springframework.data.jpa.repository.Query(
+        "SELECT h FROM Hotel h WHERE h.applicationStatus = 'Approved' " +
+        "AND LOWER(h.hotelName) LIKE LOWER(CONCAT('%', :query, '%')) " +
+        "AND (:district IS NULL OR LOWER(h.district) = LOWER(cast(:district as string)))")
+    List<Hotel> searchByNameAndDistrict(
+        @org.springframework.data.repository.query.Param("query") String query,
+        @org.springframework.data.repository.query.Param("district") String district);
+
+    List<Hotel> findTop5ByOrderByIdDesc();
 }

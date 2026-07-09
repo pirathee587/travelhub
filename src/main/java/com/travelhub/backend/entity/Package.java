@@ -27,20 +27,29 @@ public class Package {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "agent_id", nullable = false)
+    @org.hibernate.annotations.NotFound(action = org.hibernate.annotations.NotFoundAction.IGNORE)
     private Agent agent;
 
     // ── Core fields ───────────────────────────────────────────
     @Column(nullable = false)
     private String packageName;
 
-    @Column(nullable = false)
-    private String destination;
+
 
     private String startPlace;
     private String endPlace;
     private String duration;
     private String category;
     private String district;
+
+    public String getDestination() {
+        return this.endPlace;
+    }
+
+    // ── Package Type ──────────────────────────────────────────
+    @Column(name = "package_type")
+    @Builder.Default
+    private String packageType = "SINGLE_DISTRICT"; // SINGLE_DISTRICT or MULTI_DISTRICT
 
     // ── Price ─────────────────────────────────────────────────
     @Column(name = "price_from")
@@ -49,12 +58,15 @@ public class Package {
     @Column(name = "price_to")
     private Double priceTo;
 
+    // ── Per-person pricing ────────────────────────────────────
+    @Column(name = "base_price_adult")
+    private Double basePriceAdult;
+
+    @Column(name = "base_price_child")
+    private Double basePriceChild;
     // ── Content fields ─────────────────────────────────────────
     @Column(length = 2000)
     private String description;
-
-    @Column(columnDefinition = "TEXT")
-    private String festivalDetails;
 
     @Column(columnDefinition = "TEXT")
     private String inclusions;
@@ -63,12 +75,12 @@ public class Package {
     @Builder.Default
     private Boolean isActive = true;
 
-    @Builder.Default
-    private Boolean trending = false;
-
     @Column(name = "application_status")
     @Builder.Default
     private String applicationStatus = "Pending";
+
+    @Builder.Default
+    private Boolean trending = false;
 
     // ── Stats (set by review system) ───────────────────────────
     private Double rating;

@@ -27,20 +27,20 @@ public interface PaymentRepository
             String type, String status);
 
     // Total Revenue — Completed Payments மட்டும்
-    @Query("SELECT COALESCE(SUM(p.amount), 0) " +
+    @Query("SELECT COALESCE(SUM(p.amount), 0.0) " +
             "FROM Payment p " +
             "WHERE p.type = 'Payment' " +
             "AND p.status = 'Completed'")
     Double getTotalRevenue();
 
     // Pending amount
-    @Query("SELECT COALESCE(SUM(p.amount), 0) " +
+    @Query("SELECT COALESCE(SUM(p.amount), 0.0) " +
             "FROM Payment p " +
             "WHERE p.status = 'Pending'")
     Double getPendingAmount();
 
     // Total Refunds
-    @Query("SELECT COALESCE(SUM(p.amount), 0) " +
+    @Query("SELECT COALESCE(SUM(p.amount), 0.0) " +
             "FROM Payment p " +
             "WHERE p.type = 'Refund' " +
             "AND p.status = 'Completed'")
@@ -54,4 +54,6 @@ public interface PaymentRepository
 
     // User-ஆல் தேடு
     List<Payment> findByUserId(Long userId);
+
+    List<Payment> findByCreatedAtAfter(java.time.LocalDateTime startDate);
 }

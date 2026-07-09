@@ -28,6 +28,8 @@ public class HotelController {
         return ResponseEntity.ok(hotelService.getAllHotels());
     }
 
+
+
     @GetMapping("/{id}")
     public ResponseEntity<HotelResponse> getHotelById(@PathVariable Long id) {
         return ResponseEntity.ok(hotelService.getHotelById(id));
@@ -39,6 +41,14 @@ public class HotelController {
     @GetMapping("/chatbot-data")
     public ResponseEntity<List<Map<String, Object>>> getHotelsForChatbot() {
     return ResponseEntity.ok(hotelService.getAllHotelsForChatbot());
+    }
+
+    // ── Hotel search for package creation (autocomplete) ──────────────────
+    @GetMapping("/search")
+    public ResponseEntity<List<HotelResponse>> searchHotels(
+            @RequestParam String query,
+            @RequestParam(required = false) String district) {
+        return ResponseEntity.ok(hotelService.searchHotels(query, district));
     }
 }
  
