@@ -12,8 +12,13 @@ const AuthContext = createContext<AuthContextType | null>(null);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState(() => {
-    const stored = localStorage.getItem('travelhub_user');
-    return stored ? JSON.parse(stored) : null;
+    try {
+      const stored = localStorage.getItem('travelhub_user');
+      return stored ? JSON.parse(stored) : null;
+    } catch (e) {
+      console.error('Failed to parse travelhub_user from localStorage', e);
+      return null;
+    }
   });
 
   const [token, setToken] = useState(() => localStorage.getItem('travelhub_token'));

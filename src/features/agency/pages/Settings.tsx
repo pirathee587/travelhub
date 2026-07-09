@@ -18,10 +18,11 @@ import { Skeleton } from '@/components/common/ui/skeleton';
 import { useCurrency } from '@/features/agency/hooks/CurrencyContext';
 
 // ── Upload helper ──────────────────────────────────────────────
-const uploadImage = async (file) => {
+const uploadImage = async (file: File) => {
   const formData = new FormData();
   formData.append('file', file);
-  const response = await fetch('http://localhost:8082/api/upload/image', {
+  const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:8080';
+  const response = await fetch(`${apiBase}/api/upload/image`, {
     method: 'POST',
     body: formData,
   });

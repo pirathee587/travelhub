@@ -1,4 +1,5 @@
 import { useState, useMemo, useCallback, memo, useEffect } from "react";
+import { useAuth } from "@/context/AuthContext";
 import beachResort from "@/assets/images/beach-resort.jpeg";
 import { DashboardLayout } from "@/features/tourist/components/dashboard/DashboardLayout";
 import { TravelCard } from "@/features/tourist/components/dashboard/TravelCard";
@@ -42,6 +43,7 @@ const categories = [
 const MemoizedTravelCard = memo(TravelCard);
 
 const Explore = () => {
+    const { isAuthenticated } = useAuth();
     const [searchQuery, setSearchQuery] = useState("");
     const [searchSuggestions, setSearchSuggestions] = useState([]);
     const [showSuggestions, setShowSuggestions] = useState(false);
@@ -216,8 +218,8 @@ const Explore = () => {
                 </div>
             </section>
 
-            {/* Trending Section - Hidden when searching */}
-            {!searchQuery && (
+            {/* Trending Section - Hidden when searching or for guests */}
+            {isAuthenticated && !searchQuery && (
                 <section className="animate-slide-up" style={{ animationDelay: "0.1s" }}>
                     <div className="flex items-center justify-between mb-6">
                         <div className="flex items-center gap-3">

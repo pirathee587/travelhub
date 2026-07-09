@@ -1,6 +1,7 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { ChevronDown, LayoutDashboard, LogOut, Plane, Settings as SettingsIcon } from "lucide-react";
+import { useAuth } from "@/context/AuthContext";
 import { type ReactNode } from "react";
 import { toast } from "sonner";
 import {
@@ -141,11 +142,13 @@ export function OwnerSessionChip() {
 function ProfileMenu({ compact = false }: { compact?: boolean }) {
   const profile = useProfile();
   const navigate = useNavigate();
+  const { logout } = useAuth();
   const initials = getInitials(profile.name);
 
   const handleLogout = () => {
+    logout();
     toast.success("You have been signed out.");
-    navigate("/hotelowner");
+    navigate("/");
   };
 
   return (

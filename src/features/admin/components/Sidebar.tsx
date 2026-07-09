@@ -1,5 +1,6 @@
 import React from 'react'
 import { Link, useLocation } from 'react-router-dom'
+import { useAuth } from '@/context/AuthContext'
 import {
   Plane,
   LayoutDashboard,
@@ -57,6 +58,7 @@ const MenuItem = ({ icon, label, to, onClick }) => {
 
 export default function Sidebar() {
   const { showAdminProfile, showConfirm } = useModal()
+  const { logout } = useAuth()
 
   const handleLogout = async () => {
     const ok = await showConfirm({
@@ -65,8 +67,7 @@ export default function Sidebar() {
     })
     
     if (ok) {
-      localStorage.removeItem('token')
-      localStorage.removeItem('user')
+      logout()
       window.location.href = '/'
     }
   }

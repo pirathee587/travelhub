@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/features/tourist/services/utils";
 import { useHotelById } from "@/features/tourist/hooks/useApi";
+import { useNavigate } from "react-router-dom";
 
 const statusConfig = {
     pending: {
@@ -48,7 +49,8 @@ const statusConfig = {
     },
 };
 
-export function TripDetailsSheet({ trip, open, onOpenChange }) {
+export function TripDetailsSheet({ trip, open, onOpenChange }: { trip: any, open: boolean, onOpenChange: (open: boolean) => void }) {
+    const navigate = useNavigate();
     if (!trip) return null;
 
     const status = statusConfig[trip.status] || statusConfig.pending;
@@ -272,8 +274,22 @@ export function TripDetailsSheet({ trip, open, onOpenChange }) {
                             <Separator className="my-2" />
                             <div className="flex items-center justify-between font-semibold text-lg">
                                 <span>Total</span>
-                                <span className="text-primary">${trip.totalPrice}</span>
+                                <span className="text-primary">${trip.totalPrice?.toLocaleString()}</span>
                             </div>
+                            {trip.status === "pending" && (
+                                <div className="mt-4">
+                                    <Button
+                                        className="w-full"
+                                        onClick={() => {
+                                            const paymentId = trip.bookingId || trip.id;
+                                            navigate(`/tourist/payment/${paymentId}`);
+                                            onOpenChange(false);
+                                        }}
+                                    >
+                                        Pay Now
+                                    </Button>
+                                </div>
+                            )}
                         </div>
                     </div>
 
@@ -307,11 +323,11 @@ function InfoItem({ label, value }) {
     );
 }
 
-function PriceRow({ label, value }) {
+function PriceRow({ label, value }: { label: string, value: any }) {
     return (
         <div className="flex items-center justify-between text-sm">
             <span className="text-muted-foreground">{label}</span>
-            <span>${value}</span>
+            <span>${value?.toLocaleString()}</span>
         </div>
     );
 }

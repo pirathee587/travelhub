@@ -2,6 +2,7 @@ import { Route } from 'react-router-dom';
 import { lazy } from 'react';
 import AdminLayout       from '@/features/admin/components/Layout';
 import AdminModalProvider from '@/features/admin/components/ModalContext';
+import ProtectedRoute from '@/auth/components/ProtectedRoute';
 
 // ── Lazy-loaded Admin Pages ───────────────────────────────────────────────
 const Dashboard        = lazy(() => import('@/features/admin/pages/Dashboard'));
@@ -24,7 +25,7 @@ const Users            = lazy(() => import('@/features/admin/pages/Users'));
  */
 export default function AdminRoutes() {
   return (
-    <>
+    <Route element={<ProtectedRoute allowedRoles={["ADMIN"]} />}>
       {/* ── Sidebar + Header layout wraps all main admin pages ── */}
       <Route
         path="/admin"
@@ -47,6 +48,6 @@ export default function AdminRoutes() {
       <Route path="/admin/agents/:id"   element={<AgentDetails />} />
       <Route path="/admin/hotels/:id"   element={<HotelDetails />} />
       <Route path="/admin/packages/:id" element={<PackageDetails />} />
-    </>
+    </Route>
   );
 }

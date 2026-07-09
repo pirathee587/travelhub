@@ -7,38 +7,44 @@ import {
     FileText,
     Compass,
     Settings,
-    Bell,
     LogOut,
     Plane,
     Menu,
     X,
     Building2,
     Users,
+    CreditCard,
 } from "lucide-react";
 import { cn } from "@/features/tourist/services/utils";
-import { Badge } from "@/components/common/ui/badge";
 
-const navItems = [                                                              //Side Bar Content
+const navItems = [
     { icon: Compass, label: "Explore", path: "/tourist" },
     { icon: LayoutDashboard, label: "Overview", path: "/tourist/overview" },
     { icon: Map, label: "My Trips", path: "/tourist/trips" },
     { icon: FileText, label: "Documents", path: "/tourist/documents" },
     { icon: Building2, label: "Hotels", path: "/tourist/hotels" },
     { icon: Users, label: "Agents", path: "/tourist/agents" },
+    { icon: CreditCard, label: "Billing", path: "/tourist/billing" },
 ];
 
 const bottomNavItems = [
     { icon: Settings, label: "Settings", path: "/tourist/settings" },
 ];
 
-export function DashboardSidebar({ collapsed, setCollapsed }) {
+interface DashboardSidebarProps {
+    collapsed: boolean;
+    setCollapsed: (collapsed: boolean) => void;
+}
+
+export function DashboardSidebar({ collapsed, setCollapsed }: DashboardSidebarProps) {
     const [mobileOpen, setMobileOpen] = useState(false);
     const location = useLocation();
     const navigate = useNavigate();
+    const { user, logout } = useAuth();
 
-    const isActive = (path) => {
+    const isActive = (path: string) => {
         if (path === "/tourist") {
-            return location.pathname === "/tourist" || location.pathname === "/tourist/" || location.pathname.startsWith("/tourist/explore");
+            return location.pathname === "/" || location.pathname === "/tourist" || location.pathname === "/tourist/" || location.pathname.startsWith("/tourist/explore");
         }
         if (path === "/") {
             return location.pathname === "/" || location.pathname.startsWith("/explore");
@@ -46,27 +52,31 @@ export function DashboardSidebar({ collapsed, setCollapsed }) {
         return location.pathname === path || location.pathname.startsWith(`${path}/`);
     };
 
-    /**
-     * Logout handler.
-     * Clears the cached user name and redirects to the Explore page.
-     *
-     * TODO: When JWT auth is implemented, also clear the token here:
-     *   localStorage.removeItem("authToken");
-     *   // or call an /api/auth/logout endpoint if using server-side sessions.
-     */
-    const { logout } = useAuth();
     const handleLogout = () => {
         logout();
         navigate("/");
         setMobileOpen(false);
     };
 
+    const visibleNavItems = navItems.filter(item => {
+        if (!user) {
+            // Guest can only see Explore
+            return item.path === "/tourist";
+        }
+        return true;
+    });
+
+    const visibleBottomNavItems = bottomNavItems.filter(item => {
+        if (!user) return false;
+        return true;
+    });
+
     const SidebarContent = () => (
         <>
             {/* Logo */} 
             <div className={cn("p-4 flex items-center gap-3 transition-all duration-300", collapsed && "justify-center px-2 py-4")}>
                 <div className={cn("rounded-xl bg-primary flex items-center justify-center shadow-glow transition-all duration-300", collapsed ? "h-10 w-10" : "h-12 w-12")}>
-                    <Plane className={cn("text-white transition-all duration-300", collapsed ? "h-5 w-5" : "h-7 w-7")} />                                                     {/* Airplane Icon */}
+                    <Plane className={cn("text-white transition-all duration-300", collapsed ? "h-5 w-5" : "h-7 w-7")} />
                 </div>
                 {!collapsed && (
                     <div className="animate-fade-in">
@@ -78,10 +88,10 @@ export function DashboardSidebar({ collapsed, setCollapsed }) {
 
             {/* Main Navigation */}
             <nav className={cn("flex-1 px-3 py-4 space-y-1 transition-all duration-300", collapsed && "px-1")}>
-                {navItems.map((item) => (
+                {visibleNavItems.map((item) => (
                     <NavLink
                         key={item.path}
-                        to={item.path}
+                        to={item.path === "/tourist" ? "/" : item.path}
                         onClick={() => setMobileOpen(false)}
                         className={cn(
                             "flex items-center rounded-xl transition-all duration-300",
@@ -99,7 +109,7 @@ export function DashboardSidebar({ collapsed, setCollapsed }) {
 
             {/* Bottom Navigation */}
             <nav className={cn("px-3 py-4 border-t border-sidebar-border space-y-1 transition-all duration-300", collapsed && "px-1")}>
-                {bottomNavItems.map((item) => (
+                {visibleBottomNavItems.map((item) => (
                     <NavLink
                         key={item.path}
                         to={item.path}
@@ -112,21 +122,23 @@ export function DashboardSidebar({ collapsed, setCollapsed }) {
                         )}
                     >
                         <item.icon className="h-5 w-5 flex-shrink-0" />
-                        {!collapsed && <span className="font-medium">{item.label}</span>}                   {/*Settings Button*/}
+                        {!collapsed && <span className="font-medium">{item.label}</span>}
                     </NavLink>
                 ))}
-                <button
-                    onClick={handleLogout}
-                    className={cn(
-                        "w-full flex items-center rounded-xl transition-all duration-300",
-                        collapsed ? "justify-center px-0 py-3" : "px-4 py-3 gap-3",
-                        "text-sidebar-foreground/70 hover:text-destructive hover:bg-destructive/10",
-                        !collapsed && "hover:translate-x-1"
-                    )}
-                >
-                    <LogOut className="h-5 w-5 flex-shrink-0" />
-                    {!collapsed && <span className="font-semibold">Log Out</span>}                                       {/* Logout Button */}
-                </button>
+                {user && (
+                    <button
+                        onClick={handleLogout}
+                        className={cn(
+                            "w-full flex items-center rounded-xl transition-all duration-300",
+                            collapsed ? "justify-center px-0 py-3" : "px-4 py-3 gap-3",
+                            "text-sidebar-foreground/70 hover:text-destructive hover:bg-destructive/10",
+                            !collapsed && "hover:translate-x-1"
+                        )}
+                    >
+                        <LogOut className="h-5 w-5 flex-shrink-0" />
+                        {!collapsed && <span className="font-semibold">Log Out</span>}
+                    </button>
+                )}
             </nav>
 
             {/* Collapse Button - Desktop only */}

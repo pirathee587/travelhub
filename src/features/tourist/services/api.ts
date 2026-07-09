@@ -9,19 +9,40 @@ const handleResponse = async (res: Response) => {
     return data;
 };
 
+const mapPackagePrices = (pkg: any) => {
+    if (pkg && typeof pkg === 'object') {
+        if (pkg.priceFrom !== undefined && pkg.priceFrom !== null) {
+            pkg.basePriceAdult = pkg.priceFrom;
+        }
+        if (pkg.priceTo !== undefined && pkg.priceTo !== null) {
+            pkg.basePriceChild = pkg.priceTo;
+        } else {
+            pkg.basePriceChild = pkg.priceFrom ? Math.round(pkg.priceFrom * 0.7) : 0;
+        }
+    }
+    return pkg;
+};
+
+const mapPackagesPrices = (data: any) => {
+    if (Array.isArray(data)) {
+        return data.map(mapPackagePrices);
+    }
+    return mapPackagePrices(data);
+};
+
 export const api = {
     // Packages
     getAllPackages: () =>
-        fetch(`${BASE_URL}/packages`).then(handleResponse).catch(() => []),
+        fetch(`${BASE_URL}/packages`).then(handleResponse).then(mapPackagesPrices).catch(() => []),
 
     getPackagesByCategory: (category: string) =>
-        fetch(`${BASE_URL}/packages?category=${category}`).then(handleResponse).catch(() => []),
+        fetch(`${BASE_URL}/packages?category=${category}`).then(handleResponse).then(mapPackagesPrices).catch(() => []),
 
     getTrendingPackages: () =>
-        fetch(`${BASE_URL}/packages/trending`).then(handleResponse).catch(() => []),
+        fetch(`${BASE_URL}/packages/trending`).then(handleResponse).then(mapPackagesPrices).catch(() => []),
 
     getPackageById: (id: string | number) =>
-        fetch(`${BASE_URL}/packages/${id}`).then(handleResponse).catch(() => null),
+        fetch(`${BASE_URL}/packages/${id}`).then(handleResponse).then(mapPackagePrices).catch(() => null),
 
     // Hotels
     getAllHotels: (district: string | null = null) => {

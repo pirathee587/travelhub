@@ -35,6 +35,7 @@ import { api } from "@/features/tourist/services/api";
 import { useAllHotels, useHotelRooms } from "@/features/tourist/hooks/useApi";
 import { defaultUserId } from "@/features/tourist/services/userHelpers";
 import { Alert, AlertDescription } from "@/components/common/ui/alert";
+import { toast } from "sonner";
 
 const HotelPreferenceCard = ({ selection, index, onRemove, onUpdate, allHotels }) => {
     const { data: rooms } = useHotelRooms(selection.hotelId);
@@ -154,7 +155,7 @@ const PackageReservation = () => {
 
     const handleConfirmReservation = async () => {
         if (!startDate) {
-            alert("Please select a start date");
+            toast.error("Please select a start date");
             return;
         }
 
@@ -179,13 +180,13 @@ const PackageReservation = () => {
             const booking = await api.createBooking(bookingData);
             if (booking && booking.id) {
                 sessionStorage.removeItem(`reservation_state_${id}`);
-                alert(`Booking confirmed! Booking ID: BK${String(booking.id).padStart(5, "0")}`);
+                toast.success(`Booking confirmed! Booking ID: BK${String(booking.id).padStart(5, "0")}`);
                 navigate("/tourist/trips");
             }
         } catch (error) {
             const errorMsg = error.message || "Booking failed. Please try again.";
             console.error("[Booking] Error:", errorMsg);
-            alert(errorMsg);
+            toast.error(errorMsg);
         } finally {
             setSubmitting(false);
         }
