@@ -45,13 +45,27 @@ public class AdminHotelService {
         List<Long> hotelIds = hotels.stream().map(Hotel::getId).toList();
         Map<Long, Double> avgRatings = reviewRepository.getAverageRatingsByHotelIds(hotelIds);
         Map<Long, Long> reviewCounts = reviewRepository.getReviewCountsByHotelIds(hotelIds);
-                Map<Long, PriceRange> priceRanges = hotelPricingService.getPriceRangesByHotelIds(hotelIds);
+        Map<Long, PriceRange> priceRanges = hotelPricingService.getPriceRangesByHotelIds(hotelIds);
+
+        // Build room counts and room image fallbacks from explicitly fetched rooms
+        Map<Long, Integer> roomCounts = new java.util.HashMap<>();
+        Map<Long, String>  roomImages = new java.util.HashMap<>();
+        for (Long hid : hotelIds) {
+            List<Room> rooms = roomRepository.findByHotelId(hid);
+            roomCounts.put(hid, rooms.size());
+            rooms.stream()
+                 .filter(r -> r.getImageUrl() != null && !r.getImageUrl().trim().isEmpty())
+                 .findFirst()
+                 .ifPresent(r -> roomImages.put(hid, r.getImageUrl()));
+        }
 
         return hotels.stream()
                 .map(h -> mapToResponse(h, 
                     avgRatings.getOrDefault(h.getId(), 0.0), 
                                         reviewCounts.getOrDefault(h.getId(), 0L).intValue(),
-                                        priceRanges.get(h.getId())))
+                                        priceRanges.get(h.getId()),
+                                        roomCounts.getOrDefault(h.getId(), 0),
+                                        roomImages.get(h.getId())))
                 .toList();
     }
 
@@ -65,11 +79,25 @@ public class AdminHotelService {
         Map<Long, Long> reviewCounts = reviewRepository.getReviewCountsByHotelIds(hotelIds);
         Map<Long, PriceRange> priceRanges = hotelPricingService.getPriceRangesByHotelIds(hotelIds);
 
+        // Build room counts and room image fallbacks
+        Map<Long, Integer> roomCounts = new java.util.HashMap<>();
+        Map<Long, String>  roomImages = new java.util.HashMap<>();
+        for (Long hid : hotelIds) {
+            List<Room> rooms = roomRepository.findByHotelId(hid);
+            roomCounts.put(hid, rooms.size());
+            rooms.stream()
+                 .filter(r -> r.getImageUrl() != null && !r.getImageUrl().trim().isEmpty())
+                 .findFirst()
+                 .ifPresent(r -> roomImages.put(hid, r.getImageUrl()));
+        }
+
         return hotels.stream()
                 .map(h -> mapToResponse(h,
                         avgRatings.getOrDefault(h.getId(), 0.0),
                         reviewCounts.getOrDefault(h.getId(), 0L).intValue(),
-                        priceRanges.get(h.getId())))
+                        priceRanges.get(h.getId()),
+                        roomCounts.getOrDefault(h.getId(), 0),
+                        roomImages.get(h.getId())))
                 .toList();
     }
 
@@ -110,9 +138,10 @@ public class AdminHotelService {
                 hotel.getId(),
                 hotel.getHotelName(),
                 avgRating != null ? Math.round(avgRating * 10.0) / 10.0 : 0.0,
-                getEffectiveImageUrl(hotel),
+                getEffectiveImageUrl(hotel, rooms),
                 hotel.getDistrict(),
                 hotel.getLocation(),
+                rooms.size(),
                 roomTypes,
                 hotel.getOwnerName(),
                 hotel.getOwnerEmail(),
@@ -188,7 +217,11 @@ public class AdminHotelService {
     }
 
     // ── Map Entity → Response ─────────────────────────
-    private AdminHotelResponse mapToResponse(Hotel h, double rating, int reviewCount, PriceRange priceRange) {
+    private AdminHotelResponse mapToResponse(Hotel h, double rating, int reviewCount, PriceRange priceRange, int numberOfRooms, String fallbackImageUrl) {
+        // Use hotel-level imageUrl first; fall back to first room image
+        String img = (h.getImageUrl() != null && !h.getImageUrl().trim().isEmpty())
+                ? h.getImageUrl()
+                : fallbackImageUrl;
         return new AdminHotelResponse(
                 h.getId(),
                 h.getHotelName(),
@@ -199,19 +232,21 @@ public class AdminHotelService {
                 priceRange != null ? priceRange.priceTo() : null,
                 Math.round(rating * 10.0) / 10.0,
                 reviewCount,
-                getEffectiveImageUrl(h),
+                img,
                 h.getDistrict(),
-                h.getApplicationStatus()
+                h.getApplicationStatus(),
+                numberOfRooms
         );
     }
 
-    private String getEffectiveImageUrl(Hotel h) {
+    // Used only for detail view — rooms list is explicitly fetched, no lazy issue
+    private String getEffectiveImageUrl(Hotel h, List<Room> fetchedRooms) {
         String img = h.getImageUrl();
         if (img != null && !img.trim().isEmpty()) {
             return img;
         }
-        if (h.getRooms() != null) {
-            for (Room r : h.getRooms()) {
+        if (fetchedRooms != null) {
+            for (Room r : fetchedRooms) {
                 if (r.getImageUrl() != null && !r.getImageUrl().trim().isEmpty()) {
                     return r.getImageUrl();
                 }

@@ -35,8 +35,20 @@ export default function PackageDetailsView({ pkg, onClose, showClose = true }) {
               <p className="text-gray-600 text-lg mt-2">📍 {pkg.dest}</p>
             </div>
             <div className="text-right">
-              <div className="text-4xl font-bold text-teal-600">${pkg.price}</div>
-              <p className="text-gray-600 text-sm mt-1">per person</p>
+              {pkg.basePriceAdult != null ? (
+                <>
+                  <div className="text-4xl font-bold text-teal-600">${pkg.basePriceAdult}</div>
+                  <p className="text-gray-600 text-sm mt-1">per adult</p>
+                  {pkg.basePriceChild != null && (
+                    <p className="text-gray-500 text-sm mt-1">${pkg.basePriceChild} per child</p>
+                  )}
+                </>
+              ) : (
+                <>
+                  <div className="text-4xl font-bold text-teal-600">${pkg.priceFrom || pkg.price || '—'}</div>
+                  <p className="text-gray-600 text-sm mt-1">per person</p>
+                </>
+              )}
             </div>
           </div>
         </div>
