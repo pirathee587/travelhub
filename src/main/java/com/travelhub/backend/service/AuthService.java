@@ -67,7 +67,7 @@ public class AuthService {
                 .district(request.getDistrict())
                 .verificationToken(verificationToken)
                 .isEmailVerified(request.getRole() == Role.TOURIST) // Auto-verify tourists
-                .status("ACTIVE") // Set to ACTIVE for tourists
+                .status(request.getRole() == Role.TOURIST ? "ACTIVE" : "PENDING") // Set to ACTIVE for tourists
                 .isActive(true)
                 .agentApproved(request.getRole() != Role.AGENT)
                 .build();
@@ -78,9 +78,8 @@ public class AuthService {
         // Handle Role-specific profile creation
         if (user.getRole() == Role.AGENT) {
             Agent agent = Agent.builder()
-                    .owner(user)
-                    .agencyName(request.getAgencyName() != null ? request.getAgencyName() : user.getName() + "'s Agency")
-                    .agencyNumber(user.getTelephone())
+                    .owner(user)      // link agent to user via owner entity
+                    .agencyName(request.getAgencyName())
                     .isActive(true)
                     .build();
             
@@ -91,13 +90,12 @@ public class AuthService {
             Hotel hotel = Hotel.builder()
                     .hotelName(user.getHotelName() != null ? user.getHotelName() : user.getName() + "'s Hotel")
                     .district(user.getDistrict())
+                    .destination(user.getDistrict() != null ? user.getDistrict() : "Unknown")
                     .owner(user)
+                    .ownerId(user.getId())
                     .ownerName(user.getName())
                     .ownerEmail(user.getEmail())
                     .ownerNic(user.getNicNumber())
-                    .phoneNumber(user.getTelephone())
-                    .hotelEmail(user.getEmail())
-                    .imageUrl(defaultImage)
                     .build();
             hotel = hotelRepository.save(hotel);
             user.setHotelId(hotel.getId());
@@ -117,6 +115,7 @@ public class AuthService {
         return new ApiResponse(true, "Registration successful! Please check your email for verification.");
     }
 
+    @Transactional
     public LoginResponse login(LoginRequest request) {
         Authentication authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(
@@ -145,6 +144,24 @@ public class AuthService {
             throw new UnauthorizedException("Your agent account is pending approval. Please wait for admin to approve.");
         }
 
+        Long agentId = null;
+        if (user.getRole() == Role.AGENT) {
+            Agent agent = agentRepository.findByOwnerId(user.getId()).orElse(null);
+            if (agent == null) {
+                throw new UnauthorizedException("No Travel Agency profile associated with this account. Please register.");
+            }
+            agentId = agent.getId();
+        }
+
+        Long hotelId = null;
+        if (user.getRole() == Role.HOTEL_OWNER) {
+            Hotel hotel = hotelRepository.findByOwnerId(user.getId()).stream().findFirst().orElse(null);
+            if (hotel == null) {
+                throw new UnauthorizedException("No Hotel profile associated with this account. Please register.");
+            }
+            hotelId = hotel.getId();
+        }
+
         String jwt = tokenProvider.generateToken(authentication, user);
 
         Long firstAgentId = null;
@@ -158,8 +175,8 @@ public class AuthService {
                 .email(user.getEmail())
                 .role(user.getRole())
                 .profileImage(user.getProfileImage())
-                .agentId(firstAgentId)
-                .hotelId(user.getHotelId())
+                .agentId(agentId)
+                .hotelId(hotelId)
                 .id(user.getId())
                 .build();
     }
@@ -209,5 +226,24 @@ public class AuthService {
         userRepository.save(user);
 
         return new ApiResponse(true, "Password reset successfully. You can now login with your new password.");
+    }
+
+    public ApiResponse resendVerificationEmail(String email) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new ResourceNotFoundException("User", "email", email));
+
+        if (user.isEmailVerified()) {
+            throw new BadRequestException("Email is already verified");
+        }
+
+        String verificationToken = user.getVerificationToken();
+        if (verificationToken == null) {
+            verificationToken = UUID.randomUUID().toString();
+            user.setVerificationToken(verificationToken);
+            userRepository.save(user);
+        }
+
+        emailService.sendVerificationEmail(user.getEmail(), verificationToken);
+        return new ApiResponse(true, "Verification email resent successfully.");
     }
 }

@@ -45,6 +45,8 @@ public class SecurityUtils {
                     .parseSignedClaims(token)
                     .getPayload();
         } catch (Exception e) {
+            System.err.println("[SecurityUtils] Error parsing user claims: " + e.getMessage());
+            e.printStackTrace();
             return null;
         }
     }

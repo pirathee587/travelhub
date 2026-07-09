@@ -60,11 +60,13 @@ public class PaymentService {
             throw new UnauthorizedException("You are not allowed to pay for this booking");
         }
 
-        if (!"active".equalsIgnoreCase(booking.getStatus())) {
-            if ("Paid".equalsIgnoreCase(booking.getStatus())) {
-                throw new BadRequestException("This booking has already been paid");
-            }
-            throw new BadRequestException("Payment is only available after the agent approves your booking");
+        // Allow payment for both PENDING and ACTIVE bookings
+        String status = booking.getStatus() == null ? "" : booking.getStatus().toLowerCase();
+        if ("paid".equals(status)) {
+            throw new BadRequestException("This booking has already been paid");
+        }
+        if (!"active".equals(status) && !"pending".equals(status)) {
+            throw new BadRequestException("Payment is not available for this booking (status: " + booking.getStatus() + ")");
         }
 
         boolean alreadyPaid = paymentRepository.findByBookingId(bookingId).stream()
@@ -105,8 +107,8 @@ public class PaymentService {
         data.put("city", "");
         data.put("country", "Sri Lanka");
         data.put("checkout_url", checkoutUrl);
-        data.put("return_url", frontendBaseUrl + "/payment-success?bookingId=" + bookingId);
-        data.put("cancel_url", frontendBaseUrl + "/payment-cancel?bookingId=" + bookingId);
+        data.put("return_url", frontendBaseUrl + "/tourist/payment/success?bookingId=" + bookingId);
+        data.put("cancel_url", frontendBaseUrl + "/tourist/payment/cancel?bookingId=" + bookingId);
         data.put("notify_url", backendBaseUrl + "/api/payments/notify");
         return data;
     }

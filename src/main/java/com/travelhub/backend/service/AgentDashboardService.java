@@ -23,6 +23,9 @@ public class AgentDashboardService {
 
     @Transactional
     public AgentDashboardStatsResponse getStats(Long agentId) {
+        com.travelhub.backend.entity.Agent agent = agentRepository.findByOwnerId(agentId)
+                .orElseThrow(() -> new com.travelhub.backend.common.ResourceNotFoundException("Agent", "userId", agentId));
+        Long realAgentId = agent.getId();
 
         long activeTrips = bookingRepository.findByAgentId(agentId)
                 .stream()
@@ -33,22 +36,22 @@ public class AgentDashboardService {
                 .count();
 
         long completedTrips = bookingRepository
-                .findByAgentIdAndStatus(agentId, "completed").size();
+                .findByAgentIdAndStatus(realAgentId, "completed").size();
         long pendingRequests = bookingRepository
                 .findByAgentIdAndStatus(agentId, "pending").size();
         long totalVehicles = vehicleRepository
-                .findByAgentId(agentId).size();
+                .findByAgentId(realAgentId).size();
         long totalDrivers = driverRepository
                 .findByAgentId(agentId).size();
         long totalPackages = packageRepository.countByAgentIdAndDeletedAtIsNull(agentId);
 
         Double totalRevenue = bookingRepository
-                .findByAgentIdAndStatus(agentId, "completed")
+                .findByAgentIdAndStatus(realAgentId, "completed")
                 .stream()
                 .mapToDouble(b -> b.getTotalPrice() != null ? b.getTotalPrice() : 0)
                 .sum();
 
-        Double averageRating = agentRatingCalculator.getAgentRating(agentId);
+        Double averageRating = agentRatingCalculator.getAgentRating(realAgentId);
 
         return AgentDashboardStatsResponse.builder()
                 .totalPackages(totalPackages)

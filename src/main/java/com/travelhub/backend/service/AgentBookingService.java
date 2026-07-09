@@ -43,6 +43,9 @@ public class AgentBookingService {
     // ── GET ALL / GET BY ID ───────────────────────────────────────────────────
 
     public List<BookingResponse> getAllBookings(Long agentId, String status) {
+        com.travelhub.backend.entity.Agent agent = agentRepository.findByOwnerId(agentId)
+                .orElseThrow(() -> new ResourceNotFoundException("Agent", "userId", agentId));
+        Long realAgentId = agent.getId();
         List<Booking> bookings;
         if (status != null && !status.equals("all")) {
             bookings = bookingRepository.findByAgentIdAndStatus(agentId, status);
@@ -293,9 +296,11 @@ public class AgentBookingService {
 
     private boolean isOwnedByAgent(Booking booking, Long agentId) {
         try {
+            com.travelhub.backend.entity.Agent agent = agentRepository.findByOwnerId(agentId).orElse(null);
+            if (agent == null) return false;
             return booking.getPkg() != null
                     && booking.getPkg().getAgent() != null
-                    && booking.getPkg().getAgent().getId().equals(agentId);
+                    && booking.getPkg().getAgent().getId().equals(agent.getId());
         } catch (Exception e) {
             return false;
         }

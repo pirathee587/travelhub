@@ -5,6 +5,7 @@ import java.util.Map;
 
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.travelhub.backend.common.ResourceNotFoundException;
 import com.travelhub.backend.dto.response.AdminHotelDetailResponse;
@@ -12,6 +13,7 @@ import com.travelhub.backend.dto.response.AdminHotelResponse;
 import com.travelhub.backend.entity.Amenity;
 import com.travelhub.backend.entity.Hotel;
 import com.travelhub.backend.entity.Room;
+import com.travelhub.backend.entity.User;
 import com.travelhub.backend.event.HotelEvent;
 import com.travelhub.backend.entity.User;
 import com.travelhub.backend.repository.AmenityRepository;
@@ -196,6 +198,12 @@ public class AdminHotelService {
         hotel.setApplicationStatus("Approved");
         hotelRepository.save(hotel);
 
+        User owner = hotel.getOwner();
+        if (owner != null) {
+            owner.setStatus("ACTIVE");
+            owner.setIsActive(true);
+            userRepository.save(owner);
+        }
 
         eventPublisher.publishEvent(
                 new HotelEvent(this, hotel, "APPROVED"));

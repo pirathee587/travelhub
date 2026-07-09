@@ -8,15 +8,17 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
-import org.springframework.stereotype.Service;
 import com.travelhub.backend.entity.Booking;
 import com.travelhub.backend.entity.User;
+import com.travelhub.backend.repository.UserRepository;
 
 @Service
 @RequiredArgsConstructor
 public class EmailService {
 
     private final JavaMailSender mailSender;
+    private final EmailLogService emailLogService;
+    private final UserRepository userRepository;
 
     @Value("${app.base-url:http://localhost:5173}")
     private String baseUrl;
@@ -27,14 +29,17 @@ public class EmailService {
                 + "<p>Please click the link below to verify your email address:</p>"
                 + "<a href=\"" + verificationUrl + "\">Verify Email</a>";
 
-        sendEmail(email, "Verify your email - TravelHub", message);
+        User user = userRepository.findByEmail(email).orElse(null);
+        Long userId = user != null ? user.getId() : null;
+        sendEmail(email, "Verify your email - TravelHub", message, "USER", userId);
     }
+
     public void sendBookingConfirmation(Booking booking) {
         String message = "<h3>Booking Confirmation</h3>"
                 + "<p>Dear Customer, your booking for <b>" + booking.getPkg().getPackageName() + "</b> has been received.</p>"
                 + "<p>Status: <b>PENDING</b></p>"
                 + "<p>We will notify you once the agent approves it.</p>";
-        sendEmail(booking.getUser().getEmail(), "Booking Received - TravelHub", message);
+        sendEmail(booking.getUser().getEmail(), "Booking Received - TravelHub", message, "BOOKING", booking.getId());
     }
 
     public void sendBookingApprovalNotification(Booking booking) {
@@ -42,7 +47,7 @@ public class EmailService {
                 + "<p>Your booking for <b>" + booking.getPkg().getPackageName() + "</b> has been approved.</p>"
                 + "<p>Start Date: " + booking.getStartDate() + "</p>"
                 + "<p>You can now view the details in your dashboard.</p>";
-        sendEmail(booking.getUser().getEmail(), "Booking Approved - TravelHub", message);
+        sendEmail(booking.getUser().getEmail(), "Booking Approved - TravelHub", message, "BOOKING", booking.getId());
     }
 
     public void sendBookingDeclineNotification(Booking booking, String reason) {
@@ -50,7 +55,7 @@ public class EmailService {
                 + "<p>Unfortunately, your booking for <b>" + booking.getPkg().getPackageName() + "</b> was declined.</p>"
                 + (reason != null ? "<p>Reason: " + reason + "</p>" : "")
                 + "<p>Please contact the agent or try another package.</p>";
-        sendEmail(booking.getUser().getEmail(), "Booking Declined - TravelHub", message);
+        sendEmail(booking.getUser().getEmail(), "Booking Declined - TravelHub", message, "BOOKING", booking.getId());
     }
 
     public void sendAccountApprovalNotification(User user) {
@@ -58,7 +63,7 @@ public class EmailService {
                 + "<p>Dear " + user.getName() + ",</p>"
                 + "<p>Congratulations! Your account as a <b>" + user.getRole() + "</b> has been approved by our administrators.</p>"
                 + "<p>You can now log in and start using TravelHub.</p>";
-        sendEmail(user.getEmail(), "Account Approved - TravelHub", message);
+        sendEmail(user.getEmail(), "Account Approved - TravelHub", message, "USER", user.getId());
     }
 
     public void sendAccountRejectionNotification(User user, String reason) {
@@ -67,7 +72,7 @@ public class EmailService {
                 + "<p>We regret to inform you that your account application as an <b>" + user.getRole() + "</b> has been rejected.</p>"
                 + (reason != null ? "<p>Reason: " + reason + "</p>" : "")
                 + "<p>If you have any questions, please contact our support team.</p>";
-        sendEmail(user.getEmail(), "Account Application Update - TravelHub", message);
+        sendEmail(user.getEmail(), "Account Application Update - TravelHub", message, "USER", user.getId());
     }
 
     public void sendHotelStatusNotification(String recipientEmail, String hotelName, String status, String reason) {
@@ -76,7 +81,10 @@ public class EmailService {
                 + "<p>Your hotel <b>" + hotelName + "</b> has been " + status.toLowerCase() + ".</p>"
                 + (reason != null ? "<p>Reason: " + reason + "</p>" : "")
                 + (status.equals("APPROVED") ? "<p>It is now live on our platform.</p>" : "");
-        sendEmail(recipientEmail, subject, message);
+        
+        User user = userRepository.findByEmail(recipientEmail).orElse(null);
+        Long userId = user != null ? user.getId() : null;
+        sendEmail(recipientEmail, subject, message, "USER", userId);
     }
 
     public void sendPackageStatusNotification(String recipientEmail, String packageName, String status, String reason) {
@@ -85,7 +93,10 @@ public class EmailService {
                 + "<p>Your package <b>" + packageName + "</b> has been " + status.toLowerCase() + ".</p>"
                 + (reason != null ? "<p>Reason: " + reason + "</p>" : "")
                 + (status.equals("APPROVED") ? "<p>It is now available for tourists to book.</p>" : "");
-        sendEmail(recipientEmail, subject, message);
+
+        User user = userRepository.findByEmail(recipientEmail).orElse(null);
+        Long userId = user != null ? user.getId() : null;
+        sendEmail(recipientEmail, subject, message, "USER", userId);
     }
 
     public void sendPasswordResetEmail(String email, String token) {
@@ -94,10 +105,12 @@ public class EmailService {
                 + "<p>Click the link below to reset your password:</p>"
                 + "<a href=\"" + resetUrl + "\">Reset Password</a>";
 
-        sendEmail(email, "Reset your password - TravelHub", message);
+        User user = userRepository.findByEmail(email).orElse(null);
+        Long userId = user != null ? user.getId() : null;
+        sendEmail(email, "Reset your password - TravelHub", message, "USER", userId);
     }
 
-    private void sendEmail(String to, String subject, String content) {
+    private void sendEmail(String to, String subject, String content, String relatedType, Long relatedId) {
         try {
             MimeMessage mimeMessage = mailSender.createMimeMessage();
             MimeMessageHelper helper = new MimeMessageHelper(mimeMessage, "utf-8");
@@ -106,7 +119,9 @@ public class EmailService {
             helper.setSubject(subject);
             helper.setFrom("no-reply@travelhub.com");
             mailSender.send(mimeMessage);
-        } catch (MessagingException e) {
+            emailLogService.logSent(to, subject, content, relatedType, relatedId);
+        } catch (Exception e) {
+            emailLogService.logFailed(to, subject, content, relatedType, relatedId, e.getMessage());
             throw new RuntimeException("Failed to send email", e);
         }
     }

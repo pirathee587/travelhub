@@ -52,10 +52,10 @@ public class AgentSettingsService {
 
     // Creates default settings if agent has none yet
     private AgentSettings getOrCreateSettings(Long agentId) {
-        return agentSettingsRepository.findByAgentId(agentId)
+        Agent agent = agentRepository.findByOwnerId(agentId)
+                .orElseThrow(() -> new ResourceNotFoundException("Agent", "userId", agentId));
+        return agentSettingsRepository.findByAgentId(agent.getId())
                 .orElseGet(() -> {
-                    Agent agent = agentRepository.findById(agentId)
-                            .orElseThrow(() -> new ResourceNotFoundException("Agent", "id", agentId));
                     AgentSettings newSettings = AgentSettings.builder()
                             .agent(agent)
                             .notifyNewBooking(true)

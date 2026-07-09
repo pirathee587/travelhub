@@ -37,8 +37,11 @@ public class AgentAnalyticsService {
      */
     @Transactional
     public AnalyticsResponse getAnalytics(Long agentId, String period) {
+        com.travelhub.backend.entity.Agent agent = agentRepository.findByOwnerId(agentId)
+                .orElseThrow(() -> new com.travelhub.backend.common.ResourceNotFoundException("Agent", "userId", agentId));
+        Long realAgentId = agent.getId();
         // Load all bookings for the agent, then apply the time-window filter.
-        List<Booking> allBookings = bookingRepository.findByAgentId(agentId);
+        List<Booking> allBookings = bookingRepository.findByAgentId(realAgentId);
         List<Booking> filtered = filterByPeriod(allBookings, period);
 
         // Stat cards: total revenue from completed trips (null-safe totalPrice).
@@ -93,7 +96,7 @@ public class AgentAnalyticsService {
 
         // Driver performance: take up to 5 drivers for this agent (basic summary fields).
         List<Map<String, Object>> driverPerformance = driverRepository
-                .findByAgentId(agentId).stream()
+                .findByAgentId(realAgentId).stream()
                 .limit(5)
                 .map(d -> {
                     Map<String, Object> m = new LinkedHashMap<>();
@@ -106,7 +109,7 @@ public class AgentAnalyticsService {
 
         // Vehicle utilization: for each of up to 5 vehicles, count how many filtered bookings used it.
         List<Map<String, Object>> vehicleUtilization = vehicleRepository
-                .findByAgentId(agentId).stream()
+                .findByAgentId(realAgentId).stream()
                 .limit(5)
                 .map(v -> {
                     long trips = filtered.stream()

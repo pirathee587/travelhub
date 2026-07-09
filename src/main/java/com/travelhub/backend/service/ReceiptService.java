@@ -133,7 +133,7 @@ public class ReceiptService {
         addSummaryRow(summaryTable, "End Date: " + booking.getEndDate().toString(), normalFont);
 
         // Grand Total Calculation & Formatting
-        PdfPCell totalLabel = new PdfPCell(new Phrase("TOTAL PAID (LKR)", boldFont));
+        PdfPCell totalLabel = new PdfPCell(new Phrase("TOTAL PAID (USD)", boldFont));
         totalLabel.setPadding(10f);
         totalLabel.setHorizontalAlignment(Element.ALIGN_RIGHT);
         summaryTable.addCell(totalLabel);
