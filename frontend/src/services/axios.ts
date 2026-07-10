@@ -35,8 +35,9 @@ api.interceptors.response.use(
             localStorage.removeItem('token');
             localStorage.removeItem('user');
             // Only redirect if not already on login page
-            if (!window.location.pathname.includes('/auth')) {
-                window.location.href = '/';
+            const currentPath = window.location.pathname;
+            if (!currentPath.includes('/auth')) {
+                window.location.href = '/login';
             }
         }
         return Promise.reject(error);
