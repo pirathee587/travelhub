@@ -276,7 +276,7 @@ export function TripDetailsSheet({ trip, open, onOpenChange }: { trip: any, open
                                 <span>Total</span>
                                 <span className="text-primary">${trip.totalPrice?.toLocaleString()}</span>
                             </div>
-                            {trip.status === "pending" && (
+                            {trip.status === "confirmed" && (
                                 <div className="mt-4">
                                     <Button
                                         className="w-full"

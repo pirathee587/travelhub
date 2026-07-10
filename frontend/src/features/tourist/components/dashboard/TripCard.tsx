@@ -97,7 +97,7 @@ export function TripCard({ trip, onClick, onReview, onHotelReview }: { trip: any
                 <div className="flex items-center justify-between pt-2 border-t border-border mt-3">
                     <span className="text-lg font-semibold text-primary">${(trip.totalPrice || trip.price || 0).toLocaleString()}</span>     {/*Price of the trip*/}
                     <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
-                        {trip.status === "pending" && paymentId && (
+                        {trip.status === "confirmed" && paymentId && (
                             <Button
                                 size="sm"
                                 className="h-8 text-xs font-bold gap-1 shadow-sm"

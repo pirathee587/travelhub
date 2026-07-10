@@ -28,6 +28,7 @@ public class NotificationListener {
         switch (event.getType()) {
             case "CREATED":
                 emailService.sendBookingConfirmation(event.getBooking());
+                emailService.sendAgentBookingNotification(event.getBooking());
                 break;
             case "APPROVED":
                 emailService.sendBookingApprovalNotification(event.getBooking());

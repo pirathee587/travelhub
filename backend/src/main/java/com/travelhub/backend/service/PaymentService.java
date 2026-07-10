@@ -60,13 +60,13 @@ public class PaymentService {
             throw new UnauthorizedException("You are not allowed to pay for this booking");
         }
 
-        // Allow payment for both PENDING and ACTIVE bookings
+        // Allow payment for both CONFIRMED and ACTIVE bookings
         String status = booking.getStatus() == null ? "" : booking.getStatus().toLowerCase();
         if ("paid".equals(status)) {
             throw new BadRequestException("This booking has already been paid");
         }
-        if (!"active".equals(status) && !"pending".equals(status)) {
-            throw new BadRequestException("Payment is not available for this booking (status: " + booking.getStatus() + ")");
+        if (!"active".equals(status) && !"confirmed".equals(status)) {
+            throw new BadRequestException("Payment is only available after agent approval (status: " + booking.getStatus() + ")");
         }
 
         boolean alreadyPaid = paymentRepository.findByBookingId(bookingId).stream()
@@ -75,20 +75,32 @@ public class PaymentService {
             throw new BadRequestException("This booking has already been paid");
         }
 
-        String orderId = "ORDER-" + booking.getId() + "-" + System.currentTimeMillis();
+        // Check if there is already an active pending transaction for this booking
+        Optional<Payment> existingPendingPayment = paymentRepository.findByBookingId(bookingId).stream()
+                .filter(p -> "Pending".equalsIgnoreCase(p.getStatus()))
+                .findFirst();
+
+        Payment payment;
+        String orderId;
         double amount = booking.getTotalPrice();
 
-        Payment payment = new Payment();
-        payment.setTransactionId(orderId);
-        payment.setBooking(booking);
-        payment.setUser(booking.getUser());
-        if (booking.getVehicle() != null && booking.getVehicle().getAgent() != null) {
-            payment.setAgent(booking.getVehicle().getAgent());
+        if (existingPendingPayment.isPresent()) {
+            payment = existingPendingPayment.get();
+            orderId = payment.getTransactionId();
+        } else {
+            orderId = "ORDER-" + booking.getId() + "-" + System.currentTimeMillis();
+            payment = new Payment();
+            payment.setTransactionId(orderId);
+            payment.setBooking(booking);
+            payment.setUser(booking.getUser());
+            if (booking.getVehicle() != null && booking.getVehicle().getAgent() != null) {
+                payment.setAgent(booking.getVehicle().getAgent());
+            }
+            payment.setType("Payment");
+            payment.setAmount(amount);
+            payment.setStatus("Pending");
+            paymentRepository.save(payment);
         }
-        payment.setType("Payment");
-        payment.setAmount(amount);
-        payment.setStatus("Pending");
-        paymentRepository.save(payment);
 
         String hash = generateHash(orderId, amount);
 

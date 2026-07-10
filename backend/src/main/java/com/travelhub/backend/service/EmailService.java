@@ -23,6 +23,9 @@ public class EmailService {
     @Value("${app.base-url:http://localhost:5173}")
     private String baseUrl;
 
+    @Value("${app.backend-url:http://localhost:8080}")
+    private String backendUrl;
+
     public void sendVerificationEmail(String email, String token) {
         String verificationUrl = "http://localhost:5173/verify?token=" + token;
         String message = "<h3>Welcome to TravelHub!</h3>"
@@ -40,6 +43,30 @@ public class EmailService {
                 + "<p>Status: <b>PENDING</b></p>"
                 + "<p>We will notify you once the agent approves it.</p>";
         sendEmail(booking.getUser().getEmail(), "Booking Received - TravelHub", message, "BOOKING", booking.getId());
+    }
+
+    public void sendAgentBookingNotification(Booking booking) {
+        if (booking.getPkg() == null || booking.getPkg().getAgent() == null || booking.getPkg().getAgent().getOwner() == null) {
+            return;
+        }
+        
+        String agentEmail = booking.getPkg().getAgent().getOwner().getEmail();
+        String approveUrl = backendUrl + "/api/v1/agent/bookings/" + booking.getId() + "/email-accept";
+        String declineUrl = backendUrl + "/api/v1/agent/bookings/" + booking.getId() + "/email-decline";
+        
+        String message = "<h3>New Booking Request</h3>"
+                + "<p>Dear Agent, you have received a new booking request for <b>" + booking.getPkg().getPackageName() + "</b>.</p>"
+                + "<p>Tourist: <b>" + booking.getUser().getName() + "</b></p>"
+                + "<p>Dates: <b>" + booking.getStartDate() + " to " + booking.getEndDate() + "</b></p>"
+                + "<p>Total Price: <b>$" + booking.getTotalPrice() + "</b></p>"
+                + "<p>Please click below to action this booking:</p>"
+                + "<p>"
+                + "<a href=\"" + approveUrl + "\" style=\"background-color:#10b981;color:white;padding:10px 15px;text-decoration:none;border-radius:5px;margin-right:10px;display:inline-block;\">Approve Booking</a>"
+                + "<a href=\"" + declineUrl + "\" style=\"background-color:#ef4444;color:white;padding:10px 15px;text-decoration:none;border-radius:5px;display:inline-block;\">Decline Booking</a>"
+                + "</p>"
+                + "<p>Or log into your dashboard to review details.</p>";
+                
+        sendEmail(agentEmail, "New Booking Request - TravelHub", message, "BOOKING", booking.getId());
     }
 
     public void sendBookingApprovalNotification(Booking booking) {
