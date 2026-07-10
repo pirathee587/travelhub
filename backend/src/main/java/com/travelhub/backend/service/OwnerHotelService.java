@@ -86,6 +86,7 @@ public class OwnerHotelService {
                 .ownerEmail(owner.getEmail())
                 .ownerNic(request.getOwnerNic())
                 .applicationStatus("Pending")
+                .isActive(true)
                 .owner(owner)
                 .build();
 
@@ -116,6 +117,7 @@ public class OwnerHotelService {
         hotel.setPriceTo(request.getPriceTo());
         hotel.setDistrict(request.getDistrict());
         hotel.setPhoneNumber(request.getPhoneNumber());
+        hotel.setHotelContactNumber(request.getPhoneNumber());
         hotel.setHotlineNumber(request.getHotlineNumber());
         hotel.setOwnerName(request.getOwnerName());
         hotel.setHotelEmail(request.getOwnerEmail());
@@ -129,6 +131,22 @@ public class OwnerHotelService {
     public void deleteHotel(Long id, Long ownerId) {
         Hotel hotel = getOwnedHotel(id, ownerId);
         hotelRepository.delete(hotel);
+    }
+
+    @Transactional
+    public HotelResponse suspendHotel(Long id, Long ownerId) {
+        Hotel hotel = getOwnedHotel(id, ownerId);
+        hotel.setIsActive(false);
+        hotel = hotelRepository.save(hotel);
+        return toHotelResponse(hotel);
+    }
+
+    @Transactional
+    public HotelResponse reactivateHotel(Long id, Long ownerId) {
+        Hotel hotel = getOwnedHotel(id, ownerId);
+        hotel.setIsActive(true);
+        hotel = hotelRepository.save(hotel);
+        return toHotelResponse(hotel);
     }
 
     private Hotel getOwnedHotel(Long id, Long ownerId) {
@@ -164,6 +182,14 @@ public class OwnerHotelService {
                     .collect(Collectors.toList())
                 : List.of();
 
+        // Fetch images from hotel_images table
+        List<String> imageList = hotelRepository.findImageUrlsByHotelId(hotel.getId());
+        // Fall back to the single imageUrl if no rows in hotel_images
+        if (imageList == null || imageList.isEmpty()) {
+            String fallback = hotel.getImageUrl();
+            imageList = (fallback != null && !fallback.isBlank()) ? List.of(fallback) : List.of();
+        }
+
         return HotelResponse.builder()
                 .id(hotel.getId())
                 .hotelName(hotel.getHotelName())
@@ -173,11 +199,13 @@ public class OwnerHotelService {
                 .priceFrom(hotel.getPriceFrom())
                 .priceTo(hotel.getPriceTo())
                 .imageUrl(hotel.getImageUrl())
+                .images(imageList)
                 .amenities(amenityList)
                 .district(hotel.getDistrict())
                 .applicationStatus(hotel.getApplicationStatus())
+                .isActive(hotel.getIsActive() != null ? hotel.getIsActive() : true)
                 .hotelEmail(hotel.getHotelEmail())
-                .hotelContactNumber(hotel.getHotelContactNumber())
+                .hotelContactNumber(hotel.getHotelContactNumber() != null ? hotel.getHotelContactNumber() : hotel.getPhoneNumber())
                 .build();
     }
 }

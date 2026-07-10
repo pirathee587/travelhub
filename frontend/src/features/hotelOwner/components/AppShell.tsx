@@ -15,6 +15,7 @@ import { getInitials, useProfile } from "@/features/hotelOwner/services/profile-
 import { useOwnerSession } from "@/features/hotelOwner/services/owner-session";
 import { isUsingMockAuth, MOCK_USER_ID } from "@/features/hotelOwner/services/mock-auth";
 import { NotificationBell } from "@/features/hotelOwner/components/NotificationBell";
+import "../styles.css";
 
 const nav = [
   { label: "Dashboard", to: "/hotelowner" as const, icon: LayoutDashboard, exact: true },
@@ -25,7 +26,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   const path = location.pathname;
 
   return (
-    <div className="min-h-screen w-full bg-background text-foreground antialiased">
+    <div className="hotel-owner-theme min-h-screen w-full bg-background text-foreground antialiased">
       {/* Sidebar */}
       <aside className="fixed inset-y-0 left-0 z-30 hidden w-[260px] flex-col bg-sidebar text-sidebar-foreground lg:flex">
         <div className="flex items-center gap-3 px-6 py-6">
@@ -148,8 +149,9 @@ function ProfileMenu({ compact = false }: { compact?: boolean }) {
   const handleLogout = () => {
     logout();
     toast.success("You have been signed out.");
-    navigate("/");
+    navigate("/hotelowner/login");
   };
+
 
   return (
     <DropdownMenu>

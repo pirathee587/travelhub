@@ -71,6 +71,22 @@ public class OwnerHotelController {
         return ResponseEntity.noContent().build();
     }
 
+    @PatchMapping("/{id}/suspend")
+    public ResponseEntity<HotelResponse> suspendHotel(
+            @PathVariable Long id,
+            @RequestHeader(value = "X-Owner-Id", required = false) Long devOwnerId) {
+        Long ownerId = requireOwnerId(devOwnerId);
+        return ResponseEntity.ok(ownerHotelService.suspendHotel(id, ownerId));
+    }
+
+    @PatchMapping("/{id}/reactivate")
+    public ResponseEntity<HotelResponse> reactivateHotel(
+            @PathVariable Long id,
+            @RequestHeader(value = "X-Owner-Id", required = false) Long devOwnerId) {
+        Long ownerId = requireOwnerId(devOwnerId);
+        return ResponseEntity.ok(ownerHotelService.reactivateHotel(id, ownerId));
+    }
+
     private Long requireOwnerId(Long devOwnerId) {
         Long ownerId = ownerContextResolver.resolveOwnerId(devOwnerId);
         if (ownerId == null) {
