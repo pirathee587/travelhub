@@ -115,7 +115,8 @@ public class AdminHotelService {
                 .map(r -> new AdminHotelDetailResponse
                         .RoomTypeResponse(
                         r.getName(),
-                        r.getDescription()))
+                        r.getDescription(),
+                        r.getImageUrl()))
                 .toList();
 
         List<Amenity> amenityEntities =

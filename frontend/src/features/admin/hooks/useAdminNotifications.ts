@@ -1,111 +1,116 @@
-import { useState, useEffect, useCallback }
-    from 'react';
-import adminNotificationApi
-    from '../services/adminNotificationApi';
+import { useState, useEffect, useCallback } from 'react';
+import adminNotificationApi from '../services/adminNotificationApi';
 
+const LS_KEY = 'admin_read_notification_ids';
+
+// ── localStorage helpers ──────────────────────────────────────────────────
+function getReadIds(): Set<number> {
+    try {
+        const raw = localStorage.getItem(LS_KEY);
+        if (!raw) return new Set();
+        return new Set(JSON.parse(raw) as number[]);
+    } catch {
+        return new Set();
+    }
+}
+
+function saveReadIds(ids: Set<number>): void {
+    try {
+        localStorage.setItem(LS_KEY, JSON.stringify([...ids]));
+    } catch {
+        // storage quota exceeded — silently ignore
+    }
+}
+
+// ── Hook ──────────────────────────────────────────────────────────────────
 export const useAdminNotifications = () => {
 
-    const [notifications, setNotifications] =
-            useState([]);
-    const [unreadCount, setUnreadCount] = useState(0);
-    const [loading, setLoading] = useState(true);
-    const [error, setError]     = useState(null);
+    const [notifications, setNotifications] = useState<any[]>([]);
+    const [loading, setLoading]             = useState(true);
+    const [error, setError]                 = useState<string | null>(null);
 
-    // ── Fetch All Notifications ────────────────────
+    // Computed from local state — NOT from the broken /count API
+    const unreadCount = notifications.filter(n => !n.read).length;
+
+    // ── Merge fetched notifications with persisted read state ──────────
+    const applyReadState = useCallback((raw: any[]): any[] => {
+        const readIds = getReadIds();
+        return raw.map(n => ({
+            ...n,
+            read: readIds.has(n.id) ? true : Boolean(n.read),
+        }));
+    }, []);
+
+    // ── Fetch all notifications ───────────────────────────────────────
     const fetchNotifications = useCallback(async () => {
         try {
             setLoading(true);
-            const res = await adminNotificationApi
-                    .getAllNotifications();
-            setNotifications(res || []);
-        } catch (err) {
-            setError(
-                err.response?.data?.message
-                || 'Failed to load notifications');
+            const res = await adminNotificationApi.getAllNotifications();
+            setNotifications(applyReadState(res || []));
+        } catch (err: any) {
+            setError(err?.response?.data?.message || 'Failed to load notifications');
         } finally {
             setLoading(false);
         }
-    }, []);
+    }, [applyReadState]);
 
-    // ── Fetch Unread Count ─────────────────────────
-    // Bell icon 🔔5 — every 30s auto refresh
-    const fetchUnreadCount = useCallback(async () => {
+    // ── Mark one as read ─────────────────────────────────────────────
+    const markAsRead = useCallback(async (id: number) => {
         try {
-            const res = await adminNotificationApi
-                    .getUnreadCount();
-            // API returns { count: N } directly
-            setUnreadCount(res?.count ?? 0);
-        } catch (err) {
-            console.error('Count failed:', err);
-        }
-    }, []);
-
-    // ── Mark One As Read ───────────────────────────
-    const markAsRead = async (id) => {
-        try {
+            // Fire-and-forget — backend is a no-op for admin notifs
             await adminNotificationApi.markAsRead(id);
-
-            // Local state update — no re-fetch needed
-            setNotifications(prev =>
-                prev.map(n =>
-                    n.id === id
-                        ? { ...n, read: true }
-                        : n));
-            setUnreadCount(prev =>
-                prev > 0 ? prev - 1 : 0);
-        } catch (err) {
-            console.error('Mark read failed:', err);
+        } catch {
+            // ignore backend error — we persist locally anyway
         }
-    };
 
-    // ── Mark All As Read ───────────────────────────
-    const markAllAsRead = async () => {
+        // Persist to localStorage
+        const ids = getReadIds();
+        ids.add(id);
+        saveReadIds(ids);
+
+        // Update local state immediately
+        setNotifications(prev =>
+            prev.map(n => n.id === id ? { ...n, read: true } : n)
+        );
+    }, []);
+
+    // ── Mark all as read ─────────────────────────────────────────────
+    const markAllAsRead = useCallback(async () => {
         try {
             await adminNotificationApi.markAllAsRead();
-
-            // Local state update
-            setNotifications(prev =>
-                prev.map(n => ({ ...n, read: true })));
-            setUnreadCount(0);
-        } catch (err) {
-            console.error('Mark all failed:', err);
+        } catch {
+            // ignore backend error
         }
-    };
 
-    // ── Delete Notification ────────────────────────
-    const deleteNotification = async (id) => {
+        // Persist every current notification ID
+        const ids = getReadIds();
+        setNotifications(prev => {
+            prev.forEach(n => ids.add(n.id));
+            saveReadIds(ids);
+            return prev.map(n => ({ ...n, read: true }));
+        });
+    }, []);
+
+    // ── Delete notification ──────────────────────────────────────────
+    const deleteNotification = useCallback(async (id: number) => {
         try {
-            await adminNotificationApi
-                    .deleteNotification(id);
-
-            // Remove from local state
-            const deleted = notifications
-                    .find(n => n.id === id);
-            setNotifications(prev =>
-                prev.filter(n => n.id !== id));
-
-            // Update count if unread
-            if (deleted && !deleted.read) {
-                setUnreadCount(prev =>
-                    prev > 0 ? prev - 1 : 0);
-            }
-        } catch (err) {
-            console.error('Delete failed:', err);
+            await adminNotificationApi.deleteNotification(id);
+        } catch {
+            // ignore
         }
-    };
+        setNotifications(prev => prev.filter(n => n.id !== id));
+    }, []);
 
-    // ── Auto fetch on mount ────────────────────────
-    // Poll count every 30 seconds
+    // ── Auto-fetch on mount + poll every 60s ─────────────────────────
     useEffect(() => {
         fetchNotifications();
-        fetchUnreadCount();
 
         const interval = setInterval(() => {
-            fetchUnreadCount();
-        }, 30000); // 30 seconds
+            fetchNotifications();
+        }, 60000);
 
         return () => clearInterval(interval);
-    }, [fetchNotifications, fetchUnreadCount]);
+    }, [fetchNotifications]);
 
     return {
         notifications,

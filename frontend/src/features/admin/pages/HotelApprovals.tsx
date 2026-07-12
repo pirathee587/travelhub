@@ -6,14 +6,14 @@ import { useModal } from '../components/ModalContext'
 const STATUSES = ['All', 'Pending', 'Approved', 'Rejected']
 
 const STATUS_STYLES = {
-  Pending:   'bg-orange-100 text-orange-700 border-orange-200',
-  Approved:  'bg-emerald-100 text-emerald-700 border-emerald-200',
-  Rejected:  'bg-red-100 text-red-700 border-red-200',
+  Pending: 'bg-orange-100 text-orange-700 border-orange-200',
+  Approved: 'bg-emerald-100 text-emerald-700 border-emerald-200',
+  Rejected: 'bg-red-100 text-red-700 border-red-200',
   Suspended: 'bg-gray-100 text-gray-600 border-gray-200',
 }
 
 const STATUS_DOT = {
-  Pending:  'bg-orange-500',
+  Pending: 'bg-orange-500',
   Approved: 'bg-emerald-500',
   Rejected: 'bg-red-500',
 }
@@ -54,7 +54,7 @@ const HotelDetailView = ({ hotel, onBack, onApprove, onReject, onToggle, onDelet
       </button>
 
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-8 space-y-8">
-        
+
         {/* Header Title & Rating */}
         <div>
           <h2 className="text-3xl font-bold text-gray-900">{hotelName}</h2>
@@ -76,7 +76,7 @@ const HotelDetailView = ({ hotel, onBack, onApprove, onReject, onToggle, onDelet
         {/* Location Details block */}
         <div className="bg-[#f0fdfa] rounded-xl p-6 border border-teal-50">
           <h3 className="text-lg font-bold text-gray-900 mb-6">Location Details</h3>
-          
+
           <div className="grid grid-cols-2 gap-6 mb-6">
             <div>
               <div className="text-xs text-gray-500 font-medium mb-1">Place / District</div>
@@ -93,9 +93,23 @@ const HotelDetailView = ({ hotel, onBack, onApprove, onReject, onToggle, onDelet
               <div className="text-xs text-gray-500 font-medium mb-3">Room Types</div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {roomTypes.map((rt, i) => (
-                  <div key={i} className="bg-white rounded-lg p-4 shadow-sm border border-teal-50">
-                    <div className="font-bold text-gray-900 text-sm mb-1">{rt.name}</div>
-                    <div className="text-xs text-gray-500">{rt.description}</div>
+                  <div key={i} className="bg-white rounded-lg overflow-hidden shadow-sm border border-teal-50">
+                    {rt.imageUrl ? (
+                      <img
+                        src={rt.imageUrl}
+                        alt={rt.name}
+                        className="w-full h-36 object-cover"
+                        onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
+                      />
+                    ) : (
+                      <div className="w-full h-36 bg-gradient-to-br from-teal-50 to-teal-100 flex items-center justify-center text-4xl">
+                        🛏️
+                      </div>
+                    )}
+                    <div className="p-4">
+                      <div className="font-bold text-gray-900 text-sm mb-1">{rt.name}</div>
+                      <div className="text-xs text-gray-500">{rt.description}</div>
+                    </div>
                   </div>
                 ))}
               </div>
@@ -104,7 +118,7 @@ const HotelDetailView = ({ hotel, onBack, onApprove, onReject, onToggle, onDelet
         </div>
 
         {/* Owner Information */}
-        
+
 
         {/* Contact Information */}
         <div className="bg-[#f0fdf4] rounded-xl p-6 border border-emerald-50">
@@ -145,16 +159,15 @@ const HotelDetailView = ({ hotel, onBack, onApprove, onReject, onToggle, onDelet
                   Suspended
                 </span>
               ) : (
-                <span className={`px-4 py-1.5 rounded-full text-xs font-bold ${
-                  String(applicationStatus).trim().toLowerCase() === 'approved' ? 'bg-[#e6f4ea] text-[#1e8e3e]' :
-                  String(applicationStatus).trim().toLowerCase() === 'pending' ? 'bg-[#ffedd5] text-[#ea580c]' :
-                  'bg-red-100 text-red-600'
-                }`}>
+                <span className={`px-4 py-1.5 rounded-full text-xs font-bold ${String(applicationStatus).trim().toLowerCase() === 'approved' ? 'bg-[#e6f4ea] text-[#1e8e3e]' :
+                    String(applicationStatus).trim().toLowerCase() === 'pending' ? 'bg-[#ffedd5] text-[#ea580c]' :
+                      'bg-red-100 text-red-600'
+                  }`}>
                   {String(applicationStatus || 'Pending').trim()}
                 </span>
               )}
             </div>
-            
+
             {/* Admin Actions */}
             <div className="flex gap-3">
               {String(applicationStatus).trim().toLowerCase() !== 'approved' && (
@@ -237,11 +250,10 @@ const HotelCard = ({ hotel, onView, onApprove, onReject, onToggle, onDelete, act
               Suspended
             </span>
           ) : (
-            <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-              String(applicationStatus).trim().toLowerCase() === 'approved' ? 'bg-[#e6f4ea] text-[#1e8e3e]' :
-              String(applicationStatus).trim().toLowerCase() === 'pending' ? 'bg-[#fef0db] text-[#e37400]' :
-              'bg-red-100 text-red-600'
-            }`}>
+            <span className={`px-3 py-1 rounded-full text-xs font-medium ${String(applicationStatus).trim().toLowerCase() === 'approved' ? 'bg-[#e6f4ea] text-[#1e8e3e]' :
+                String(applicationStatus).trim().toLowerCase() === 'pending' ? 'bg-[#fef0db] text-[#e37400]' :
+                  'bg-red-100 text-red-600'
+              }`}>
               {String(applicationStatus || 'Pending').trim()}
             </span>
           )}
@@ -298,7 +310,7 @@ const HotelCard = ({ hotel, onView, onApprove, onReject, onToggle, onDelete, act
               )}
             </>
           ) : (
-             <>
+            <>
               <button
                 onClick={(e) => { e.stopPropagation(); onView(hotel); }}
                 className="flex-1 py-2 text-sm font-medium border border-gray-200 rounded text-gray-700 hover:bg-gray-50 transition flex items-center justify-center gap-2"
@@ -312,7 +324,7 @@ const HotelCard = ({ hotel, onView, onApprove, onReject, onToggle, onDelete, act
               >
                 🗑 Delete
               </button>
-             </>
+            </>
           )}
         </div>
       </div>
@@ -324,12 +336,12 @@ const HotelCard = ({ hotel, onView, onApprove, onReject, onToggle, onDelete, act
 export default function HotelApprovals() {
   const modal = useModal()
 
-  const [hotels, setHotels]             = useState([])
-  const [loading, setLoading]           = useState(true)
+  const [hotels, setHotels] = useState([])
+  const [loading, setLoading] = useState(true)
   const [actionLoading, setActionLoading] = useState(false)
-  const [error, setError]               = useState(null)
+  const [error, setError] = useState(null)
   const [statusFilter, setStatusFilter] = useState('All')
-  const [search, setSearch]             = useState('')
+  const [search, setSearch] = useState('')
   const [selectedHotel, setSelectedHotel] = useState(null)
   const [drawerDetail, setDrawerDetail] = useState(null)
   const [detailLoading, setDetailLoading] = useState(false)
@@ -377,7 +389,7 @@ export default function HotelApprovals() {
   // ── Actions ──────────────────────────────────────────────────────────────
   const handleApprove = async (hotel) => {
     const ok = await modal.showConfirm({
-      title:   'Approve Hotel',
+      title: 'Approve Hotel',
       message: `Approve "${hotel.hotelName}" and notify the owner?`,
     })
     if (!ok) return
@@ -399,7 +411,7 @@ export default function HotelApprovals() {
 
   const handleReject = async (hotel) => {
     const ok = await modal.showConfirm({
-      title:   'Reject Hotel',
+      title: 'Reject Hotel',
       message: `Reject "${hotel.hotelName}"? The owner will be notified.`,
     })
     if (!ok) return
@@ -421,7 +433,7 @@ export default function HotelApprovals() {
 
   const handleDelete = async (hotel) => {
     const ok = await modal.showConfirm({
-      title:   'Delete Hotel',
+      title: 'Delete Hotel',
       message: `Permanently delete "${hotel.hotelName}"? This cannot be undone.`,
     })
     if (!ok) return
@@ -442,7 +454,7 @@ export default function HotelApprovals() {
     const isSuspending = hotel.isActive !== false
     const action = isSuspending ? 'Suspend' : 'Activate'
     const ok = await modal.showConfirm({
-      title:   `${action} Hotel`,
+      title: `${action} Hotel`,
       message: `${action} "${hotel.hotelName}"?`,
     })
     if (!ok) return
@@ -475,8 +487,8 @@ export default function HotelApprovals() {
 
   // ── Counts ───────────────────────────────────────────────────────────────
   const counts = {
-    total:    hotels.length,
-    pending:  hotels.filter(h => String(h.applicationStatus).trim().toLowerCase() === 'pending').length,
+    total: hotels.length,
+    pending: hotels.filter(h => String(h.applicationStatus).trim().toLowerCase() === 'pending').length,
     approved: hotels.filter(h => String(h.applicationStatus).trim().toLowerCase() === 'approved').length,
     rejected: hotels.filter(h => String(h.applicationStatus).trim().toLowerCase() === 'rejected').length,
   }

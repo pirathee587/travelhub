@@ -43,6 +43,7 @@ public record AdminHotelDetailResponse(
     // Room type inner record
     public record RoomTypeResponse(
             String name,
-            String description
+            String description,
+            String imageUrl
     ) {}
 }

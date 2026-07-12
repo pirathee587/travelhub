@@ -54,11 +54,10 @@ export function AppShell({ children }: { children: ReactNode }) {
                 <li key={item.label}>
                   <Link
                     to={item.to}
-                    className={`group relative flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors duration-200 ${
-                      isActive
+                    className={`group relative flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors duration-200 ${isActive
                         ? "bg-sidebar-active text-white"
                         : "text-white/60 hover:bg-sidebar-active/60 hover:text-white"
-                    }`}
+                      }`}
                   >
                     {isActive && (
                       <motion.span
@@ -156,26 +155,23 @@ function ProfileMenu({ compact = false }: { compact?: boolean }) {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger
-        className={`group inline-flex items-center gap-2.5 rounded-full outline-none transition focus-visible:ring-2 focus-visible:ring-primary/40 ${
-          compact
+        className={`group inline-flex items-center gap-2.5 rounded-full outline-none transition focus-visible:ring-2 focus-visible:ring-primary/40 ${compact
             ? ""
             : "rounded-full border border-border bg-card py-1 pl-1 pr-3 shadow-sm hover:shadow-md"
-        }`}
+          }`}
         aria-label="Open profile menu"
       >
         {profile.avatar ? (
           <img
             src={profile.avatar}
             alt={profile.name}
-            className={`rounded-full object-cover ring-1 ring-border ${
-              compact ? "h-8 w-8" : "h-9 w-9"
-            }`}
+            className={`rounded-full object-cover ring-1 ring-border ${compact ? "h-8 w-8" : "h-9 w-9"
+              }`}
           />
         ) : (
           <div
-            className={`flex items-center justify-center rounded-full bg-gradient-to-br from-primary to-primary/60 font-semibold text-white ${
-              compact ? "h-8 w-8 text-xs" : "h-9 w-9 text-sm"
-            }`}
+            className={`flex items-center justify-center rounded-full bg-gradient-to-br from-primary to-primary/60 font-semibold text-white ${compact ? "h-8 w-8 text-xs" : "h-9 w-9 text-sm"
+              }`}
           >
             {initials}
           </div>

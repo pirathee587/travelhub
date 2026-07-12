@@ -111,6 +111,9 @@ public class UserNotificationService {
             return "";
         }
         Duration duration = Duration.between(createdAt, LocalDateTime.now());
+        if (duration.toMinutes() < 1) {
+            return "Just now";
+        }
         if (duration.toMinutes() < 60) {
             return duration.toMinutes() + " min ago";
         }

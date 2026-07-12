@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import { useModal } from './ModalContext'
 import { Settings, LogOut, Bell, Check, CheckCheck } from 'lucide-react'
 import { useAdminNotifications } from '../hooks/useAdminNotifications'
@@ -7,6 +7,7 @@ import { useAuth } from '@/context/AuthContext'
 export default function Header() {
   const [showNotifications, setShowNotifications] = useState(false)
   const [showUserMenu, setShowUserMenu]           = useState(false)
+  const notificationRef = useRef<HTMLDivElement>(null)
   const { showAdminProfile, showConfirm } = useModal()
   const { logout } = useAuth()
 
@@ -41,6 +42,18 @@ export default function Header() {
       window.removeEventListener('user-profile-updated', handleUpdate)
     }
   }, [])
+
+  // ── Close notification dropdown on outside click ─────────────────
+  useEffect(() => {
+    if (!showNotifications) return
+    const handleOutsideClick = (e: MouseEvent) => {
+      if (notificationRef.current && !notificationRef.current.contains(e.target as Node)) {
+        setShowNotifications(false)
+      }
+    }
+    document.addEventListener('mousedown', handleOutsideClick)
+    return () => document.removeEventListener('mousedown', handleOutsideClick)
+  }, [showNotifications])
 
   const displayName = storedUser?.name || 'Admin User'
   const displayRole = storedUser?.role ? storedUser.role.replace('ROLE_', '') : 'Super Admin'
@@ -83,7 +96,7 @@ export default function Header() {
 
       <div className="flex items-center gap-5">
         {/* ── Notifications Bell ── */}
-        <div className="relative">
+        <div className="relative" ref={notificationRef}>
           <button
             className="text-gray-500 hover:text-gray-700 transition relative p-2 rounded-lg hover:bg-gray-100"
             onClick={() => { setShowNotifications(!showNotifications); setShowUserMenu(false) }}
