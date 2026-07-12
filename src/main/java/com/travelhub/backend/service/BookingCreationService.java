@@ -1,0 +1,249 @@
+package com.travelhub.backend.service;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.travelhub.backend.dto.request.BookingRequest;
+import com.travelhub.backend.dto.response.BookingResponse;
+import com.travelhub.backend.entity.Booking;
+import com.travelhub.backend.entity.BookingHotelPreference;
+import com.travelhub.backend.entity.Hotel;
+import com.travelhub.backend.entity.Package;
+import com.travelhub.backend.entity.User;
+import com.travelhub.backend.repository.BookingHotelPreferenceRepository;
+import com.travelhub.backend.repository.BookingRepository;
+import com.travelhub.backend.repository.HotelRepository;
+import com.travelhub.backend.repository.PackageRepository;
+import com.travelhub.backend.repository.UserRepository;
+import com.travelhub.backend.repository.VehicleRepository;
+import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import com.travelhub.backend.event.BookingEvent;
+
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+@Service
+@RequiredArgsConstructor
+@Transactional
+public class BookingCreationService {
+
+    private static final Logger logger = LoggerFactory.getLogger(BookingCreationService.class);
+
+    private final BookingRepository bookingRepository;
+    private final UserRepository userRepository;
+    private final PackageRepository packageRepository;
+    private final HotelRepository hotelRepository;
+    private final VehicleRepository vehicleRepository;
+    private final BookingService bookingService;
+    private final BookingHotelPreferenceRepository bookingHotelPreferenceRepository;
+    private final ApplicationEventPublisher eventPublisher;
+    private final UserNotificationService userNotificationService;
+
+    private final ObjectMapper objectMapper = new ObjectMapper();
+
+    public BookingResponse createBooking(BookingRequest request) {
+        logger.info("========== BOOKING CREATION START ==========");
+        logger.info("User ID: {}", request.getUserId());
+        logger.info("Package ID: {}", request.getPackageId());
+        logger.info("Hotels: {}", request.getHotelIds() != null ? request.getHotelIds().size() : "None");
+        logger.info("Start Date: {}", request.getStartDate());
+        logger.info("Guests: {} adults, {} children", request.getAdults(), request.getChildren());
+
+        logger.debug("Step 1: Validating user ID {}", request.getUserId());
+        User user = userRepository.findById(request.getUserId())
+                .orElseThrow(() -> {
+                    logger.error("User not found: {}", request.getUserId());
+                    return new RuntimeException(
+                            "User with ID " + request.getUserId() + " not found. Please ensure you are logged in.");
+                });
+        logger.info("✓ User validated: {}", user.getEmail());
+
+        logger.debug("Step 2: Validating package ID {}", request.getPackageId());
+        Package pkg = packageRepository.findById(request.getPackageId())
+                .orElseThrow(() -> {
+                    logger.error("Package not found: {}", request.getPackageId());
+                    return new RuntimeException("Package with ID " + request.getPackageId() + " not found");
+                });
+        logger.info("✓ Package validated: {}", pkg.getPackageName());
+
+        // Validate hotel preferences if hotelIds provided
+        if (request.getHotelIds() != null && !request.getHotelIds().isEmpty()) {
+            logger.debug("Step 3: Validating {} hotels", request.getHotelIds().size());
+            for (Long hotelId : request.getHotelIds()) {
+                Hotel h = hotelRepository.findById(hotelId)
+                        .orElseThrow(() -> {
+                            logger.error("Hotel not found: {}", hotelId);
+                            return new RuntimeException("Hotel not found: " + hotelId);
+                        });
+
+                // District Matching Validation
+                if (h.getDistrict() != null && pkg.getDistrict() != null) {
+                    String hDist = h.getDistrict().replaceAll("(?i)\\s*district$", "").trim();
+                    String pDist = pkg.getDistrict().replaceAll("(?i)\\s*district$", "").trim();
+                    if (!hDist.equalsIgnoreCase(pDist)) {
+                        logger.error("District mismatch: hotel={}, package={}", h.getDistrict(), pkg.getDistrict());
+                        throw new RuntimeException("Selected hotel's district does not match package's district");
+                    }
+                }
+                logger.debug("  ✓ Hotel validated: {} ({})", h.getHotelName(), h.getDistrict());
+            }
+            logger.info("✓ All hotels validated");
+        }
+
+        // Step 4: Calculate end date from start date + duration
+        logger.debug("Step 4: Calculating end date from {} + {}", request.getStartDate(), request.getDuration());
+        LocalDate endDate = calculateEndDate(request.getStartDate(),
+                request.getDuration() != null ? request.getDuration() : pkg.getDuration());
+        logger.info("✓ End date calculated: {}", endDate);
+
+        // Step 5: Convert hotelIds list with preference order to JSON string
+        String hotelIdsWithPreference = convertHotelIdsToJson(request.getHotelIds());
+        logger.debug("Step 5: Hotel IDs JSON: {}", hotelIdsWithPreference);
+
+        // Step 6: Calculate price server-side from per-person rates
+        Double calculatedPrice = request.getTotalPrice(); // fallback to client price
+        if (pkg.getBasePriceAdult() != null) {
+            int adults = request.getAdults() != null ? request.getAdults() : 1;
+            int children = request.getChildren() != null ? request.getChildren() : 0;
+            double childRate = pkg.getBasePriceChild() != null ? pkg.getBasePriceChild() : 0;
+            calculatedPrice = (pkg.getBasePriceAdult() * adults) + (childRate * children);
+        }
+
+        // Step 7: Create Booking
+        logger.debug("Step 7: Creating booking entity");
+        Booking booking = Booking.builder()
+                .user(user)
+                .pkg(pkg)
+                .hotel(null)
+                .vehicle(null)
+                .status("pending")
+                .startDate(request.getStartDate())
+                .endDate(endDate)
+                .totalPrice(calculatedPrice)
+                .progress(0)
+                .adults(request.getAdults() != null ? request.getAdults() : 0)
+                .children(request.getChildren() != null ? request.getChildren() : 0)
+                .specialRequests(request.getSpecialRequests())
+                .accommodationOption(request.getAccommodationOption())
+                .duration(pkg.getDuration())
+                .hotelIdsWithPreference(hotelIdsWithPreference)
+                .build();
+
+        Booking saved = bookingRepository.save(booking);
+        logger.info("✓ Booking saved: ID={}", saved.getId());
+
+        // Force load lazy-loaded proxies before publishing event to async listener
+        if (saved.getPkg() != null) {
+            saved.getPkg().getPackageName();
+            if (saved.getPkg().getAgent() != null) {
+                saved.getPkg().getAgent().getAgencyName();
+            }
+        }
+
+        eventPublisher.publishEvent(new BookingEvent(this, saved, "CREATED"));
+
+        // Step 8: Save hotel preferences to separate table
+        if (request.getBookingHotelPreferences() != null && !request.getBookingHotelPreferences().isEmpty()) {
+            logger.debug("Step 8: Saving {} hotel preferences with room names", request.getBookingHotelPreferences().size());
+            List<BookingHotelPreference> preferences = new ArrayList<>();
+            for (int i = 0; i < request.getBookingHotelPreferences().size(); i++) {
+                BookingRequest.HotelPreferenceDto prefDto = request.getBookingHotelPreferences().get(i);
+                Hotel hotel = hotelRepository.findById(prefDto.getHotelId()).get();
+
+                BookingHotelPreference pref = BookingHotelPreference.builder()
+                        .booking(saved)
+                        .hotel(hotel)
+                        .preferenceNumber(i)
+                        .roomName(prefDto.getRoomName())
+                        .isSelected(true)
+                        .build();
+                preferences.add(pref);
+            }
+            bookingHotelPreferenceRepository.saveAll(preferences);
+            logger.info("✓ Hotel preferences saved");
+        } else if (request.getHotelIds() != null && !request.getHotelIds().isEmpty()) {
+            logger.debug("Step 8: Saving {} hotel preferences (legacy)", request.getHotelIds().size());
+            List<BookingHotelPreference> preferences = new ArrayList<>();
+            for (int i = 0; i < request.getHotelIds().size(); i++) {
+                Long hotelId = request.getHotelIds().get(i);
+                Hotel hotel = hotelRepository.findById(hotelId).get();
+
+                BookingHotelPreference pref = BookingHotelPreference.builder()
+                        .booking(saved)
+                        .hotel(hotel)
+                        .preferenceNumber(i)
+                        .roomName("Standard Room") // Default fallback
+                        .isSelected(true)
+                        .build();
+                preferences.add(pref);
+            }
+            bookingHotelPreferenceRepository.saveAll(preferences);
+            logger.info("✓ Hotel preferences (legacy) saved");
+        }
+
+        logger.info("========== BOOKING CREATION END SUCCESS ==========");
+        return bookingService.getBookingById(saved.getId());
+    }
+
+    private LocalDate calculateEndDate(LocalDate startDate, String duration) {
+        int days = 1;
+
+        if (duration != null) {
+            String clean = duration.toLowerCase().replaceAll("[^0-9]", "");
+            if (!clean.isEmpty()) {
+                days = Integer.parseInt(clean);
+            }
+        }
+
+        return startDate.plusDays(days - 1);
+    }
+
+    private String convertHotelIdsToJson(List<Long> hotelIds) {
+        if (hotelIds == null || hotelIds.isEmpty()) {
+            return null;
+        }
+
+        try {
+            Map<String, Object> hotelData = new HashMap<>();
+            hotelData.put("hotelIds", hotelIds);
+            return objectMapper.writeValueAsString(hotelData);
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    public BookingResponse cancelBooking(Long bookingId) {
+        logger.info("========== BOOKING CANCELLATION START ==========");
+        logger.info("Booking ID: {}", bookingId);
+
+        Booking booking = bookingRepository.findById(bookingId)
+                .orElseThrow(() -> {
+                    logger.error("Booking not found: {}", bookingId);
+                    return new RuntimeException("Booking not found");
+                });
+
+        booking.setStatus("cancelled");
+        Booking saved = bookingRepository.save(booking);
+        logger.info("✓ Booking cancelled: {}", saved.getId());
+
+        // Force load lazy-loaded proxies before publishing event to async listener
+        if (saved.getPkg() != null) {
+            saved.getPkg().getPackageName();
+            if (saved.getPkg().getAgent() != null) {
+                saved.getPkg().getAgent().getAgencyName();
+            }
+        }
+
+        eventPublisher.publishEvent(new BookingEvent(this, saved, "CANCELLED"));
+
+        return bookingService.getBookingById(saved.getId());
+    }
+}

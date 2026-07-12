@@ -1,0 +1,90 @@
+package com.travelhub.backend.controller;
+
+import com.travelhub.backend.common.ApiResponse;
+import com.travelhub.backend.service.AdminUserService;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.*;
+import java.util.Map;
+
+@RestController
+@RequestMapping("/api/admin/users")
+@RequiredArgsConstructor
+@PreAuthorize("hasRole('ADMIN')")
+public class AdminUserController {
+
+    private final AdminUserService adminUserService;
+
+    @GetMapping
+    public ResponseEntity<?> getAllUsers() {
+        return ResponseEntity.ok(
+                new ApiResponse(true, "Users found", adminUserService.getAllUsers()));
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<?> getUserById(@PathVariable Long id) {
+        return ResponseEntity.ok(
+                new ApiResponse(true, "User found", adminUserService.getUserById(id)));
+    }
+
+    @GetMapping("/role")
+    public ResponseEntity<?> getUsersByRole(@RequestParam String role) {
+        return ResponseEntity.ok(
+                new ApiResponse(true, "Users found", adminUserService.getUsersByRole(role)));
+    }
+
+    @GetMapping("/search")
+    public ResponseEntity<?> searchUsers(@RequestParam String keyword) {
+        return ResponseEntity.ok(
+                new ApiResponse(true, "Search results", adminUserService.searchUsers(keyword)));
+    }
+
+    @GetMapping("/pending-agents")
+    public ResponseEntity<?> getPendingAgents() {
+        return ResponseEntity.ok(
+                new ApiResponse(true, "Pending agents", adminUserService.getPendingAgents()));
+    }
+
+    @PatchMapping("/{id}/toggle-active")
+    public ResponseEntity<?> toggleUserActive(@PathVariable Long id) {
+        return ResponseEntity.ok(
+                new ApiResponse(true, "User status updated", adminUserService.toggleUserActive(id)));
+    }
+
+    @PatchMapping("/agents/{id}/approve")
+    public ResponseEntity<?> approveAgent(@PathVariable Long id) {
+        return ResponseEntity.ok(
+                new ApiResponse(true, "Agent approved", adminUserService.approveAgent(id)));
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<?> deleteUser(@PathVariable Long id) {
+        adminUserService.deleteUser(id);
+        return ResponseEntity.ok(
+                new ApiResponse(true, "User deleted", null));
+    }
+    @PatchMapping("/agents/{id}/reject")
+    public ResponseEntity<?> rejectAgent(
+            @PathVariable Long id,
+            @RequestBody(required = false)
+            Map<String, String> body) {
+        String reason = body != null
+                ? body.getOrDefault("reason", null)
+                : null;
+        return ResponseEntity.ok(
+                new ApiResponse(true, "Agent rejected",
+                        adminUserService
+                                .rejectAgent(id, reason)));
+    }
+
+    // POST /api/admin/users/create-admin
+    // Only accessible by an existing Admin — creates another admin account instantly
+    @PostMapping("/create-admin")
+    public ResponseEntity<?> createAdmin(
+            @RequestBody Map<String, String> body) {
+        return ResponseEntity.ok(
+                new ApiResponse(true, "Admin account created",
+                        adminUserService.createAdmin(body)));
+    }
+}
