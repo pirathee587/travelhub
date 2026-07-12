@@ -1,0 +1,578 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TravelHub Admin Panel – Software Testing Report</title>
+  <style>
+    /* ─── General Reset ─── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: "Times New Roman", Times, serif;
+      font-size: 12pt;
+      color: #000;
+      background: #fff;
+      padding: 40px;
+      line-height: 1.5;
+    }
+
+    /* ─── Print ─── */
+    @media print {
+      body { padding: 0; }
+      .no-print { display: none !important; }
+      h1, h2, h3 { page-break-after: avoid; }
+      table { page-break-inside: auto; }
+      tr { page-break-inside: avoid; page-break-after: auto; }
+      section { page-break-inside: avoid; }
+    }
+
+    /* ─── Print Button ─── */
+    .no-print {
+      text-align: center;
+      margin-bottom: 30px;
+    }
+    .no-print button {
+      background: #1a3c6e;
+      color: #fff;
+      border: none;
+      padding: 12px 36px;
+      font-size: 14pt;
+      border-radius: 6px;
+      cursor: pointer;
+      font-family: Arial, sans-serif;
+    }
+    .no-print button:hover { background: #0f2a50; }
+
+    /* ─── Cover Page ─── */
+    .cover-page {
+      text-align: center;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      page-break-after: always;
+      border: 2px solid #1a3c6e;
+      padding: 60px 40px;
+    }
+    .cover-page .logo-text {
+      font-size: 36pt;
+      font-weight: bold;
+      color: #1a3c6e;
+      letter-spacing: 4px;
+      margin-bottom: 10px;
+    }
+    .cover-page .subtitle {
+      font-size: 14pt;
+      color: #444;
+      margin-bottom: 40px;
+    }
+    .cover-page h1 {
+      font-size: 24pt;
+      font-weight: bold;
+      text-decoration: underline;
+      margin-bottom: 20px;
+    }
+    .cover-page .report-sub {
+      font-size: 16pt;
+      margin-bottom: 50px;
+    }
+    .cover-page .meta {
+      font-size: 12pt;
+      line-height: 2;
+    }
+    .cover-page .meta strong { display: inline-block; width: 160px; text-align: right; margin-right: 10px; }
+
+    /* ─── Table of Contents ─── */
+    .toc-page {
+      page-break-after: always;
+      padding: 20px 0;
+    }
+    .toc-page h2 { font-size: 18pt; margin-bottom: 20px; border-bottom: 2px solid #1a3c6e; padding-bottom: 6px; }
+    .toc-page ol { list-style: none; padding-left: 0; }
+    .toc-page ol li { display: flex; justify-content: space-between; border-bottom: 1px dotted #999; padding: 6px 0; font-size: 12pt; }
+    .toc-page ol li span:first-child { font-weight: normal; }
+    .toc-page ol li span.pg { font-weight: bold; }
+
+    /* ─── Section Headings ─── */
+    h2.section-title {
+      font-size: 16pt;
+      font-weight: bold;
+      margin: 30px 0 10px;
+    }
+    h3.sub-title {
+      font-size: 13pt;
+      font-weight: bold;
+      margin: 20px 0 8px;
+    }
+
+    /* ─── Paragraph ─── */
+    p { margin-bottom: 10px; }
+
+    /* ─── Tables ─── */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 24px;
+      font-size: 11pt;
+    }
+    th, td {
+      border: 1px solid #000;
+      padding: 7px 10px;
+      vertical-align: top;
+    }
+    th {
+      background: #dce6f1;
+      text-align: center;
+      font-weight: bold;
+    }
+    td.test-name { font-weight: bold; }
+    td.pass { text-align: center; font-weight: bold; color: #1a6e1a; }
+    td.fail { text-align: center; font-weight: bold; color: #b00000; }
+
+    /* ─── Summary Table ─── */
+    .summary-table th { background: #1a3c6e; color: #fff; }
+    .summary-table td { text-align: center; }
+
+    /* ─── Section break ─── */
+    .section-break { page-break-before: always; }
+  </style>
+</head>
+<body>
+
+<!-- ─── PRINT BUTTON ─── -->
+<div class="no-print">
+  <button onclick="window.print()">🖨️ Save / Print as PDF</button>
+  <p style="font-family:Arial;font-size:10pt;color:#666;margin-top:8px;">
+    Use your browser's Print dialog → "Save as PDF" to export.
+  </p>
+</div>
+
+<!-- ─── COVER PAGE ─── -->
+<div class="cover-page">
+  <div class="logo-text">TravelHub</div>
+  <div class="subtitle">Travel &amp; Hospitality Management System</div>
+  <h1>Software Testing Report</h1>
+  <div class="report-sub">Admin Panel — Functional Testing</div>
+  <div class="meta">
+    <div><strong>Prepared by:</strong> QA Team</div>
+    <div><strong>Module:</strong> Admin Panel</div>
+    <div><strong>Version:</strong> 1.0.0</div>
+    <div><strong>Date:</strong> 12 July 2026</div>
+    <div><strong>Test Type:</strong> Black-Box Functional Testing</div>
+    <div><strong>Status:</strong> All Tests Passed ✔</div>
+  </div>
+</div>
+
+<!-- ─── TABLE OF CONTENTS ─── -->
+<div class="toc-page">
+  <h2>Table of Contents</h2>
+  <ol>
+    <li><span>7. Testing &amp; Evaluation</span><span class="pg">3</span></li>
+    <li><span>7.1 Testing Approach</span><span class="pg">3</span></li>
+    <li><span>7.2 Evaluating and Testing</span><span class="pg">3</span></li>
+    <li><span>&nbsp;&nbsp;&nbsp;7.2.1 Admin Dashboard</span><span class="pg">3</span></li>
+    <li><span>&nbsp;&nbsp;&nbsp;7.2.2 Hotel Approvals</span><span class="pg">4</span></li>
+    <li><span>&nbsp;&nbsp;&nbsp;7.2.3 Agent Approvals</span><span class="pg">5</span></li>
+    <li><span>&nbsp;&nbsp;&nbsp;7.2.4 Package Approvals</span><span class="pg">6</span></li>
+    <li><span>&nbsp;&nbsp;&nbsp;7.2.5 Payments Management</span><span class="pg">7</span></li>
+    <li><span>&nbsp;&nbsp;&nbsp;7.2.6 Analytics</span><span class="pg">8</span></li>
+    <li><span>&nbsp;&nbsp;&nbsp;7.2.7 Admin Profile Management</span><span class="pg">9</span></li>
+    <li><span>7.3 Summary of Test Results</span><span class="pg">10</span></li>
+  </ol>
+</div>
+
+<!-- ─── SECTION 7 ─── -->
+<div>
+  <h2 class="section-title">7. Testing &amp; Evaluation</h2>
+
+  <h3 class="sub-title">7.1 Testing Approach</h3>
+  <p>
+    This chapter presents the functional testing conducted on the TravelHub Admin Panel.
+    Black-box testing methodology was used throughout, focusing on the expected behaviour
+    of each module from an end-user perspective. Every identified test case was executed
+    against the live system and the actual results were compared with the expected results.
+    All tests listed in this document resulted in a <strong>Pass</strong>.
+  </p>
+  <p>
+    The following sections (7.2.1 – 7.2.7) cover: Admin Dashboard,
+    Hotel Approvals, Agent Approvals, Package Approvals,
+    Payments Management, Analytics, and Admin Profile Management.
+  </p>
+
+  <!-- 7.2.1 DASHBOARD -->
+  <h2 class="section-title">7.2 Evaluating and Testing</h2>
+  <h3 class="sub-title">7.2.1 Admin Dashboard</h3>
+  <table>
+    <thead>
+      <tr><th style="width:22%">Test</th><th style="width:35%">Test Cases</th><th style="width:33%">Expected Results</th><th style="width:10%">Actual Results</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td class="test-name" rowspan="3">Dashboard statistics display</td>
+        <td>Admin logs in and views the Dashboard page.</td>
+        <td>Statistics cards (Total Users, Hotels, Agents, Packages) are visible and populated with correct counts.</td>
+        <td class="pass">Passed</td>
+      </tr>
+      <tr>
+        <td>A new user registers on the platform.</td>
+        <td>The Total Users count on the Dashboard is updated accordingly.</td>
+        <td class="pass">Passed</td>
+      </tr>
+      <tr>
+        <td>A new hotel listing is submitted for approval.</td>
+        <td>The pending hotels count reflects the new submission.</td>
+        <td class="pass">Passed</td>
+      </tr>
+      <tr>
+        <td class="test-name" rowspan="2">Sidebar navigation</td>
+        <td>Admin clicks each menu item in the sidebar (Dashboard, Users, Hotels, Agents, Packages, Payments, Analytics).</td>
+        <td>The corresponding page is loaded without errors.</td>
+        <td class="pass">Passed</td>
+      </tr>
+      <tr>
+        <td>Admin resizes the browser window to a smaller viewport.</td>
+        <td>The sidebar collapses or becomes responsive without breaking the layout.</td>
+        <td class="pass">Passed</td>
+      </tr>
+      <tr>
+        <td class="test-name">Notifications bell</td>
+        <td>Admin clicks the notification bell in the header when new activity exists.</td>
+        <td>A notification dropdown appears listing recent activities (new bookings, approvals, etc.).</td>
+        <td class="pass">Passed</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- 7.2.2 HOTELS -->
+<div class="section-break">
+  <h3 class="sub-title">7.2.2 Hotel Approvals</h3>
+  <table>
+    <thead>
+      <tr><th style="width:22%">Test</th><th style="width:35%">Test Cases</th><th style="width:33%">Expected Results</th><th style="width:10%">Actual Results</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td class="test-name" rowspan="2">Viewing hotel submissions</td>
+        <td>Admin navigates to the Hotel Approvals page.</td>
+        <td>A list of all pending hotel submissions is displayed with hotel name, owner, location, and submission date.</td>
+        <td class="pass">Passed</td>
+      </tr>
+      <tr>
+        <td>Admin clicks on a hotel listing to view its details.</td>
+        <td>A detailed modal/view opens showing hotel images, description, amenities, and room types.</td>
+        <td class="pass">Passed</td>
+      </tr>
+      <tr>
+        <td class="test-name" rowspan="2">Approving a hotel</td>
+        <td>Admin clicks the "Approve" button on a pending hotel.</td>
+        <td>A confirmation prompt appears. Upon confirming, the hotel status changes to "Approved" and the hotel owner is notified.</td>
+        <td class="pass">Passed</td>
+      </tr>
+      <tr>
+        <td>Admin approves a hotel and checks the hotel listings page.</td>
+        <td>The approved hotel now appears in the public hotel listings.</td>
+        <td class="pass">Passed</td>
+      </tr>
+      <tr>
+        <td class="test-name" rowspan="2">Rejecting a hotel</td>
+        <td>Admin clicks the "Reject" button on a pending hotel.</td>
+        <td>A confirmation prompt appears. Upon confirming, the hotel status changes to "Rejected" and the owner is notified.</td>
+        <td class="pass">Passed</td>
+      </tr>
+      <tr>
+        <td>Admin rejects a hotel and checks the hotel listings page.</td>
+        <td>The rejected hotel does not appear in public listings.</td>
+        <td class="pass">Passed</td>
+      </tr>
+      <tr>
+        <td class="test-name">Filter by status</td>
+        <td>Admin filters the hotel list by "Approved", "Pending", or "Rejected" status.</td>
+        <td>Only hotels matching the selected status are displayed.</td>
+        <td class="pass">Passed</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- 7.2.3 AGENTS -->
+<div class="section-break">
+  <h3 class="sub-title">7.2.3 Agent Approvals</h3>
+  <table>
+    <thead>
+      <tr><th style="width:22%">Test</th><th style="width:35%">Test Cases</th><th style="width:33%">Expected Results</th><th style="width:10%">Actual Results</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td class="test-name" rowspan="2">Viewing agent applications</td>
+        <td>Admin navigates to the Agent Approvals page.</td>
+        <td>A list of all agent applications is displayed with applicant name, agency name, and submission date.</td>
+        <td class="pass">Passed</td>
+      </tr>
+      <tr>
+        <td>Admin clicks on an agent application to view full details.</td>
+        <td>A detail view opens showing the agent's personal information, agency documents, and contact details.</td>
+        <td class="pass">Passed</td>
+      </tr>
+      <tr>
+        <td class="test-name" rowspan="2">Approving an agent</td>
+        <td>Admin clicks "Approve" on a pending agent application.</td>
+        <td>The agent's status changes to "Approved"; the agent can now log in with agent-level privileges.</td>
+        <td class="pass">Passed</td>
+      </tr>
+      <tr>
+        <td>Admin approves an agent and checks the Users list.</td>
+        <td>The user's role is updated to "Agent" in the Users list.</td>
+        <td class="pass">Passed</td>
+      </tr>
+      <tr>
+        <td class="test-name" rowspan="2">Rejecting an agent</td>
+        <td>Admin clicks "Reject" on a pending agent application.</td>
+        <td>The application status changes to "Rejected"; the applicant is notified of the rejection.</td>
+        <td class="pass">Passed</td>
+      </tr>
+      <tr>
+        <td>Admin rejects an agent and checks the agent's portal access.</td>
+        <td>The rejected applicant cannot access the agent dashboard.</td>
+        <td class="pass">Passed</td>
+      </tr>
+      <tr>
+        <td class="test-name">Search agent</td>
+        <td>Admin searches for an agent application by name.</td>
+        <td>Matching agent applications are displayed in the list.</td>
+        <td class="pass">Passed</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <!-- 7.2.4 PACKAGES -->
+  <h3 class="sub-title">7.2.4 Package Approvals</h3>
+  <table>
+    <thead>
+      <tr><th style="width:22%">Test</th><th style="width:35%">Test Cases</th><th style="width:33%">Expected Results</th><th style="width:10%">Actual Results</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td class="test-name" rowspan="2">Viewing package submissions</td>
+        <td>Admin navigates to the Package Approvals page.</td>
+        <td>A list of all travel package submissions is displayed with package name, agent, price, and status.</td>
+        <td class="pass">Passed</td>
+      </tr>
+      <tr>
+        <td>Admin clicks on a package to view its details.</td>
+        <td>A detail modal opens showing the package itinerary, inclusions, pricing, and images.</td>
+        <td class="pass">Passed</td>
+      </tr>
+      <tr>
+        <td class="test-name" rowspan="2">Approving a package</td>
+        <td>Admin clicks "Approve" on a pending travel package.</td>
+        <td>The package status changes to "Approved" and becomes visible to customers in the packages listing.</td>
+        <td class="pass">Passed</td>
+      </tr>
+      <tr>
+        <td>Admin approves a package and verifies its public listing.</td>
+        <td>The package is listed publicly and can be booked by users.</td>
+        <td class="pass">Passed</td>
+      </tr>
+      <tr>
+        <td class="test-name" rowspan="2">Rejecting a package</td>
+        <td>Admin clicks "Reject" on a pending travel package.</td>
+        <td>The package status changes to "Rejected"; the submitting agent is notified.</td>
+        <td class="pass">Passed</td>
+      </tr>
+      <tr>
+        <td>Admin rejects a package and verifies its visibility.</td>
+        <td>The rejected package is not visible to customers.</td>
+        <td class="pass">Passed</td>
+      </tr>
+      <tr>
+        <td class="test-name">Filter packages</td>
+        <td>Admin filters packages by "Pending", "Approved", or "Rejected".</td>
+        <td>Only packages matching the selected status are shown.</td>
+        <td class="pass">Passed</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- 7.2.5 PAYMENTS -->
+<div class="section-break">
+  <h3 class="sub-title">7.2.5 Payments Management</h3>
+  <table>
+    <thead>
+      <tr><th style="width:22%">Test</th><th style="width:35%">Test Cases</th><th style="width:33%">Expected Results</th><th style="width:10%">Actual Results</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td class="test-name" rowspan="3">Viewing payment transactions</td>
+        <td>Admin navigates to the Payments page.</td>
+        <td>A list of all transactions is displayed with booking ID, user, amount, payment method, and status.</td>
+        <td class="pass">Passed</td>
+      </tr>
+      <tr>
+        <td>Admin searches for a transaction using the booking ID or user name.</td>
+        <td>Matching transactions are displayed in the results.</td>
+        <td class="pass">Passed</td>
+      </tr>
+      <tr>
+        <td>Admin filters payments by status (Completed, Pending, Refunded).</td>
+        <td>Only payments with the selected status are shown.</td>
+        <td class="pass">Passed</td>
+      </tr>
+      <tr>
+        <td class="test-name" rowspan="2">Payment details</td>
+        <td>Admin clicks on a payment record to view its full details.</td>
+        <td>A detail view shows the full transaction information including date, amount, payment gateway reference, and booking summary.</td>
+        <td class="pass">Passed</td>
+      </tr>
+      <tr>
+        <td>Admin views a refunded transaction.</td>
+        <td>The refund details including refund date and amount are correctly displayed.</td>
+        <td class="pass">Passed</td>
+      </tr>
+      <tr>
+        <td class="test-name">Revenue summary</td>
+        <td>Admin views the total revenue summary on the Payments page.</td>
+        <td>Total revenue, monthly earnings, and pending payouts are displayed with accurate figures.</td>
+        <td class="pass">Passed</td>
+      </tr>
+      <tr>
+        <td class="test-name">Date range filter</td>
+        <td>Admin applies a date range filter to view payments within a specific period.</td>
+        <td>Only payments within the selected date range are displayed.</td>
+        <td class="pass">Passed</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <!-- 7.2.6 ANALYTICS -->
+  <h3 class="sub-title">7.2.6 Analytics</h3>
+  <table>
+    <thead>
+      <tr><th style="width:22%">Test</th><th style="width:35%">Test Cases</th><th style="width:33%">Expected Results</th><th style="width:10%">Actual Results</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td class="test-name" rowspan="3">Charts and graphs</td>
+        <td>Admin navigates to the Analytics page.</td>
+        <td>Charts for User Growth, Revenue Trends, Booking Stats, and Top Destinations are rendered correctly.</td>
+        <td class="pass">Passed</td>
+      </tr>
+      <tr>
+        <td>Admin hovers over a data point on the revenue chart.</td>
+        <td>A tooltip displays the exact value for that data point.</td>
+        <td class="pass">Passed</td>
+      </tr>
+      <tr>
+        <td>Admin switches the time period filter (Weekly / Monthly / Yearly) on a chart.</td>
+        <td>The chart data updates to reflect the selected time period.</td>
+        <td class="pass">Passed</td>
+      </tr>
+      <tr>
+        <td class="test-name" rowspan="2">Key metrics</td>
+        <td>Admin views the top-performing hotels and packages on the Analytics page.</td>
+        <td>A ranked list of the most-booked hotels and packages is displayed.</td>
+        <td class="pass">Passed</td>
+      </tr>
+      <tr>
+        <td>Admin checks the user acquisition metric.</td>
+        <td>The number of new users for the selected period is accurately displayed.</td>
+        <td class="pass">Passed</td>
+      </tr>
+      <tr>
+        <td class="test-name">Export report</td>
+        <td>Admin clicks the "Export" button on the Analytics page.</td>
+        <td>An analytics report is downloaded in the selected format (CSV / PDF).</td>
+        <td class="pass">Passed</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- 7.2.7 PROFILE + SUMMARY -->
+<div class="section-break">
+  <h3 class="sub-title">7.2.7 Admin Profile Management</h3>
+  <table>
+    <thead>
+      <tr><th style="width:22%">Test</th><th style="width:35%">Test Cases</th><th style="width:33%">Expected Results</th><th style="width:10%">Actual Results</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td class="test-name" rowspan="3">Viewing and editing profile</td>
+        <td>Admin clicks on the profile avatar/icon in the header.</td>
+        <td>The Admin Profile modal/dialog opens showing current name, email, and profile picture.</td>
+        <td class="pass">Passed</td>
+      </tr>
+      <tr>
+        <td>Admin updates their display name and saves.</td>
+        <td>The new name is saved and reflected in the header and profile view immediately.</td>
+        <td class="pass">Passed</td>
+      </tr>
+      <tr>
+        <td>Admin uploads a new profile picture.</td>
+        <td>The new profile picture is uploaded, saved, and displayed throughout the panel.</td>
+        <td class="pass">Passed</td>
+      </tr>
+      <tr>
+        <td class="test-name" rowspan="3">Password change</td>
+        <td>Admin enters the correct current password and a new strong password, then saves.</td>
+        <td>The password is updated successfully; a success notification is shown.</td>
+        <td class="pass">Passed</td>
+      </tr>
+      <tr>
+        <td>Admin enters an incorrect current password.</td>
+        <td>An error message "Current password is incorrect" is displayed; the password is not changed.</td>
+        <td class="pass">Passed</td>
+      </tr>
+      <tr>
+        <td>Admin enters a new password that does not meet the strength requirements.</td>
+        <td>A validation error about password requirements is displayed.</td>
+        <td class="pass">Passed</td>
+      </tr>
+      <tr>
+        <td class="test-name">Profile form validation</td>
+        <td>Admin clears the name field and attempts to save.</td>
+        <td>A required-field validation error is displayed; the form is not submitted.</td>
+        <td class="pass">Passed</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <!-- 7.3 SUMMARY -->
+  <h2 class="section-title" style="margin-top:40px;">7.3 Summary of Test Results</h2>
+  <table class="summary-table">
+    <thead>
+      <tr>
+        <th style="width:5%">#</th>
+        <th style="width:35%">Module</th>
+        <th style="width:15%">Total Test Cases</th>
+        <th style="width:15%">Passed</th>
+        <th style="width:15%">Failed</th>
+        <th style="width:15%">Pass Rate</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr><td>1</td><td>Admin Dashboard</td><td>6</td><td>6</td><td>0</td><td>100%</td></tr>
+      <tr><td>2</td><td>Hotel Approvals</td><td>7</td><td>7</td><td>0</td><td>100%</td></tr>
+      <tr><td>3</td><td>Agent Approvals</td><td>7</td><td>7</td><td>0</td><td>100%</td></tr>
+      <tr><td>4</td><td>Package Approvals</td><td>7</td><td>7</td><td>0</td><td>100%</td></tr>
+      <tr><td>5</td><td>Payments Management</td><td>7</td><td>7</td><td>0</td><td>100%</td></tr>
+      <tr><td>6</td><td>Analytics</td><td>6</td><td>6</td><td>0</td><td>100%</td></tr>
+      <tr><td>7</td><td>Admin Profile Management</td><td>7</td><td>7</td><td>0</td><td>100%</td></tr>
+      <tr style="background:#dce6f1; font-weight:bold;">
+        <td colspan="2">TOTAL</td><td>47</td><td>47</td><td>0</td><td>100%</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <p style="margin-top:20px;">
+    All <strong>47 test cases</strong> across <strong>7 modules</strong> of the TravelHub Admin Panel
+    were executed and resulted in a <strong>Pass</strong>. No defects or failures were encountered
+    during this test cycle. The Admin Panel is deemed functionally stable and ready for deployment.
+  </p>
+</div>
+
+</body>
+</html>
