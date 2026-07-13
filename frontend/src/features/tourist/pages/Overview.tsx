@@ -37,11 +37,12 @@ const Overview = () => {
     const recentDocs = allDocs.slice(0, 4);
 
     // Trip -> Filter Trips by Status
-    const pendingTrips = trips.filter((t) => t.status === "pending"); {/* Pending Trips */ }
-    const confirmedTrips = trips.filter((t) => t.status === "confirmed"); {/* Confirmed Trips */ }
-    const inProgressTrips = trips.filter((t) => t.status === "in_progress"); {/* In Progress Trips */ }
-    const completedTrips = trips.filter((t) => t.status === "completed"); {/* Completed Trips */ }
-    const cancelledTrips = trips.filter((t) => t.status === "cancelled"); {/* Cancelled Trips */ }
+    const pendingTrips = trips.filter((t) => t.status?.toLowerCase() === "pending"); {/* Pending Trips */ }
+    const confirmedTrips = trips.filter((t) => ["confirmed", "active"].includes(t.status?.toLowerCase())); {/* Confirmed Trips */ }
+    const paidTrips = trips.filter((t) => t.status?.toLowerCase() === "paid"); {/* Paid Trips */ }
+    const inProgressTrips = trips.filter((t) => t.status?.toLowerCase() === "in_progress"); {/* In Progress Trips */ }
+    const completedTrips = trips.filter((t) => t.status?.toLowerCase() === "completed"); {/* Completed Trips */ }
+    const cancelledTrips = trips.filter((t) => t.status?.toLowerCase() === "cancelled"); {/* Cancelled Trips */ }
 
     const handleTripClick = useCallback(async (trip) => {
         const bookingDetail = await api.getBookingById(trip.id);
@@ -90,7 +91,7 @@ const Overview = () => {
                         </p>
                     </div>
                     <Link to="/tourist">
-                        <Button className="gradient-sunset shadow-card text-accent-foreground">
+                        <Button className="bg-gradient-to-r from-orange-400 to-orange-600 hover:from-orange-500 hover:to-orange-700 text-white shadow-md border-0">
                             <Plane className="h-4 w-4 mr-2" />
                             Book New Trip                                                       {/* Booking Button */}
                         </Button>
@@ -140,20 +141,23 @@ const Overview = () => {
             <section className="animate-slide-up py-8" style={{ animationDelay: "0.2s" }}>
                 <Tabs defaultValue="pending" className="space-y-4">             {/*Pending is default*/}
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                        <TabsList className="bg-secondary grid grid-cols-5 gap-1 w-full max-w-2xl">
-                            <TabsTrigger value="pending" className="data-[state=active]:bg-card data-[state=active]:shadow-soft">
+                        <TabsList className="bg-green-100 p-2 rounded-2xl border border-green-200 shadow-soft overflow-hidden inline-flex gap-2 overflow-x-auto scrollbar-hide h-auto justify-start max-w-full">
+                            <TabsTrigger value="pending" className="h-11 px-6 rounded-xl transition-all duration-300 flex-shrink-0 font-bold data-[state=active]:bg-primary data-[state=active]:text-white data-[state=active]:shadow-glow data-[state=active]:scale-105 text-green-800 hover:bg-green-200/50 hover:text-green-900">
                                 Pending ({pendingTrips.length})
                             </TabsTrigger>
-                            <TabsTrigger value="confirmed" className="data-[state=active]:bg-card data-[state=active]:shadow-soft">
+                            <TabsTrigger value="confirmed" className="h-11 px-6 rounded-xl transition-all duration-300 flex-shrink-0 font-bold data-[state=active]:bg-primary data-[state=active]:text-white data-[state=active]:shadow-glow data-[state=active]:scale-105 text-green-800 hover:bg-green-200/50 hover:text-green-900">
                                 Confirm ({confirmedTrips.length})
                             </TabsTrigger>
-                            <TabsTrigger value="in_progress" className="data-[state=active]:bg-card data-[state=active]:shadow-soft">
+                            <TabsTrigger value="paid" className="h-11 px-6 rounded-xl transition-all duration-300 flex-shrink-0 font-bold data-[state=active]:bg-emerald-500 data-[state=active]:text-white data-[state=active]:shadow-glow data-[state=active]:scale-105 text-emerald-800 hover:bg-emerald-200/50 hover:text-emerald-900">
+                                Paid ({paidTrips.length})
+                            </TabsTrigger>
+                            <TabsTrigger value="in_progress" className="h-11 px-6 rounded-xl transition-all duration-300 flex-shrink-0 font-bold data-[state=active]:bg-primary data-[state=active]:text-white data-[state=active]:shadow-glow data-[state=active]:scale-105 text-green-800 hover:bg-green-200/50 hover:text-green-900">
                                 In Progress ({inProgressTrips.length})
                             </TabsTrigger>
-                            <TabsTrigger value="completed" className="data-[state=active]:bg-card data-[state=active]:shadow-soft">
+                            <TabsTrigger value="completed" className="h-11 px-6 rounded-xl transition-all duration-300 flex-shrink-0 font-bold data-[state=active]:bg-primary data-[state=active]:text-white data-[state=active]:shadow-glow data-[state=active]:scale-105 text-green-800 hover:bg-green-200/50 hover:text-green-900">
                                 Completed ({completedTrips.length})
                             </TabsTrigger>
-                            <TabsTrigger value="cancelled" className="data-[state=active]:bg-card data-[state=active]:shadow-soft">
+                            <TabsTrigger value="cancelled" className="h-11 px-6 rounded-xl transition-all duration-300 flex-shrink-0 font-bold data-[state=active]:bg-primary data-[state=active]:text-white data-[state=active]:shadow-glow data-[state=active]:scale-105 text-green-800 hover:bg-green-200/50 hover:text-green-900">
                                 Cancelled ({cancelledTrips.length})
                             </TabsTrigger>
                         </TabsList>
@@ -202,6 +206,26 @@ const Overview = () => {
                             {confirmedTrips.length === 0 && (
                                 <div className="col-span-full text-center py-12 text-muted-foreground">
                                     No confirmed trips
+                                </div>
+                            )}
+                        </div>
+                    </TabsContent>
+
+                    {/* Paid Trips */}
+                    <TabsContent value="paid" className="mt-0">
+                        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                            {paidTrips.map((trip) => (
+                                <TripCard
+                                    key={trip.id}
+                                    trip={trip}
+                                    onClick={() => handleTripClick(trip)}
+                                    onReview={() => handleReviewClick(trip)}
+                                    onHotelReview={() => handleHotelReviewClick(trip)}
+                                />
+                            ))}
+                            {paidTrips.length === 0 && (
+                                <div className="col-span-full text-center py-12 text-muted-foreground">
+                                    No paid trips
                                 </div>
                             )}
                         </div>
@@ -294,8 +318,9 @@ const Overview = () => {
             </section>
 
             {/* Recommendations Section */}
-            <section className="animate-slide-up py-8" style={{ animationDelay: "0.4s" }}>
-                <div className="flex items-center justify-between mb-4">
+            {(recsLoading || recommendations.length > 0) && (
+                <section className="animate-slide-up py-8" style={{ animationDelay: "0.4s" }}>
+                    <div className="flex items-center justify-between mb-4">
                     <div className="flex items-center gap-2">
                         <Sparkles className="h-5 w-5 text-accent" />
                         <h2 className="text-xl font-semibold">Recommended for You</h2>
@@ -337,7 +362,8 @@ const Overview = () => {
                         ))}
                     </div>
                 )}
-            </section>
+                </section>
+            )}
 
             <TripDetailsSheet
                 trip={selectedTrip}

@@ -32,4 +32,10 @@ public class PackageItinerary {
 
     @Column(columnDefinition = "TEXT")
     private String activities;
+
+    @Column(name = "hotel_id")
+    private Long hotelId;
+
+    @Column(name = "hotel_name_custom")
+    private String hotelNameCustom;
 }

@@ -45,7 +45,7 @@ export function DashboardHeader({ userName: propUserName }: DashboardHeaderProps
     };
 
     const handleNotificationClick = () => {
-        navigate("/tourist/documents"); // Default documents or notification view if available
+        navigate("/tourist/notifications");
     };
 
     return (
@@ -128,7 +128,7 @@ export function DashboardHeader({ userName: propUserName }: DashboardHeaderProps
                                     <DropdownMenuLabel>My Account</DropdownMenuLabel>
                                     <DropdownMenuSeparator />
                                     <DropdownMenuItem onClick={() => navigate("/tourist/settings")}>Profile</DropdownMenuItem>
-                                    <DropdownMenuItem>Preferences</DropdownMenuItem>
+                                    <DropdownMenuItem onClick={() => navigate("/tourist/billing")}>Billing</DropdownMenuItem>
                                     <DropdownMenuItem onClick={() => navigate("/tourist/trips")}>My Trips</DropdownMenuItem>
                                     <DropdownMenuSeparator />
                                     <DropdownMenuItem

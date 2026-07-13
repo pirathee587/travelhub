@@ -23,7 +23,7 @@ const navItems = [
     { icon: Map, label: "My Trips", path: "/tourist/trips" },
     { icon: FileText, label: "Documents", path: "/tourist/documents" },
     { icon: Building2, label: "Hotels", path: "/tourist/hotels" },
-    { icon: Users, label: "Agents", path: "/tourist/agents" },
+    { icon: Users, label: "Agency", path: "/tourist/agents" },
     { icon: CreditCard, label: "Billing", path: "/tourist/billing" },
 ];
 

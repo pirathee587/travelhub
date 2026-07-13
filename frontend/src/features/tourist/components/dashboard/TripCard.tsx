@@ -17,6 +17,10 @@ const statusConfig = {                                    // Status Badge Color 
         label: "Confirmed",
         className: "bg-muted text-primary font-bold border-primary",
     },
+    paid: {
+        label: "Paid",
+        className: "bg-muted text-emerald-600 font-bold border-emerald-600",
+    },
     in_progress: {
         label: "In Progress",
         className: "bg-muted text-success font-bold border-success",
@@ -32,8 +36,9 @@ const statusConfig = {                                    // Status Badge Color 
 
 };
 
-export function TripCard({ trip, onClick, onReview, onHotelReview }: { trip: any, onClick?: any, onReview?: any, onHotelReview?: any }) {
-    const status = statusConfig[trip.status] || statusConfig.pending; // Status Badge Logic
+export function TripCard({ trip, onClick, onReview, onHotelReview, onCancel }: { trip: any, onClick?: any, onReview?: any, onHotelReview?: any, onCancel?: any }) {
+    const statusKey = trip.status ? trip.status.toLowerCase() : "pending";
+    const status = (statusConfig as any)[statusKey] || statusConfig.pending; // Status Badge Logic
     const navigate = useNavigate();
     const averageRating = Number(trip.rating ?? 0).toFixed(1);
     const hasHotelReview = trip.hotelId != null || Boolean(trip.hotelName);
@@ -97,7 +102,20 @@ export function TripCard({ trip, onClick, onReview, onHotelReview }: { trip: any
                 <div className="flex items-center justify-between pt-2 border-t border-border mt-3">
                     <span className="text-lg font-semibold text-primary">${(trip.totalPrice || trip.price || 0).toLocaleString()}</span>     {/*Price of the trip*/}
                     <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
-                        {trip.status === "pending" && paymentId && (
+                        {(statusKey === "pending" || statusKey === "confirmed") && (
+                            <Button
+                                size="sm"
+                                variant="outline"
+                                className="h-8 text-xs font-bold gap-1 shadow-sm text-destructive hover:bg-destructive hover:text-destructive-foreground border-destructive"
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    if (onCancel) onCancel();
+                                }}
+                            >
+                                Cancel
+                            </Button>
+                        )}
+                        {statusKey === "confirmed" && paymentId && (
                             <Button
                                 size="sm"
                                 className="h-8 text-xs font-bold gap-1 shadow-sm"
