@@ -57,7 +57,7 @@ public class AgentDashboardService {
                 .findByAgentId(realAgentId).size();
 
         // Total packages created/owned by this agent.
-        long totalPackages = packageRepository.countByAgentId(realAgentId);
+        long totalPackages = packageRepository.countByAgent_Id(realAgentId);
 
         // Revenue = sum of totalPrice across completed bookings (treat null as 0).
         Double totalRevenue = bookingRepository

@@ -19,8 +19,10 @@ public class AgentVehicleController {
     @GetMapping("/{agentId}/vehicles")
     public ResponseEntity<List<VehicleResponse>> getAllVehicles(
             @PathVariable Long agentId,
-            @RequestParam(required = false) String lifecycleStatus) {
-        return ResponseEntity.ok(agentVehicleService.getAllVehicles(agentId, lifecycleStatus));
+            @RequestParam(required = false) String lifecycleStatus,
+            @RequestParam(required = false) String startDate,
+            @RequestParam(required = false) String endDate) {
+        return ResponseEntity.ok(agentVehicleService.getAllVehicles(agentId, lifecycleStatus, startDate, endDate));
     }
 
     @GetMapping("/{agentId}/vehicles/{vehicleId}")

@@ -18,17 +18,17 @@ public interface PackageRepository extends JpaRepository<Package, Long> {
     List<Package> findByTrendingTrue();
 
     /** Finds packages by the agent's surrogate PK (agents.id). */
-    List<Package> findByAgentId(Long agentId);
+    List<Package> findByAgent_Id(Long agentId);
     List<Package> findByApplicationStatus(String applicationStatus);
 
     // ── New methods (added for agent package management) ──────────────────
-    Long countByAgentId(Long agentId);
+    Long countByAgent_Id(Long agentId);
 
     // Find agent's packages excluding soft-deleted
-    List<Package> findByAgentIdAndDeletedAtIsNullOrderByCreatedAtDesc(Long agentId);
+    List<Package> findByAgent_IdAndDeletedAtIsNullOrderByCreatedAtDesc(Long agentId);
 
     // Find with isActive filter
-    List<Package> findByAgentIdAndIsActiveAndDeletedAtIsNullOrderByCreatedAtDesc(
+    List<Package> findByAgent_IdAndIsActiveAndDeletedAtIsNullOrderByCreatedAtDesc(
             Long agentId, Boolean isActive);
 
     // Find by human-readable packageId (e.g. PKG001)
@@ -38,7 +38,7 @@ public interface PackageRepository extends JpaRepository<Package, Long> {
     @Query("SELECT p FROM Package p WHERE p.agent.id = :agentId " +
             "AND p.deletedAt IS NULL " +
             "AND (LOWER(p.packageName) LIKE LOWER(CONCAT('%', :search, '%')) " +
-            "OR LOWER(p.destination) LIKE LOWER(CONCAT('%', :search, '%')))")
+            "OR LOWER(p.district) LIKE LOWER(CONCAT('%', :search, '%')))")
     List<Package> searchByAgentId(@Param("agentId") Long agentId,
                                   @Param("search") String search);
 

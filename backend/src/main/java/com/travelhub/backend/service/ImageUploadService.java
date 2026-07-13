@@ -74,7 +74,7 @@ public class ImageUploadService {
     }
 
     public ImageUploadResponse uploadPackageImage(MultipartFile file) {
-        return uploadToBucket(file, "package-images");
+        return uploadToBucket(file, roomBucket);
     }
 
     private ImageUploadResponse uploadToBucket(MultipartFile file, String bucketName) {

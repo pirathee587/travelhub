@@ -1,0 +1,18 @@
+/* Hotel Owner Theme Overrides - Navy Blue Style */
+.hotel-owner-theme {
+  /* Brand Primary - Deep Navy Blue (#0F172A) */
+  --primary: 222 47% 11%; 
+  --primary-foreground: 0 0% 100%;
+  
+  /* Sidebar uses deep navy blue as well */
+  --sidebar-background: 222 47% 11%;
+  --sidebar-foreground: 214 25% 90%;
+  --sidebar-primary: 222 47% 25%;
+  --sidebar-primary-foreground: 0 0% 100%;
+  --sidebar-accent: 222 47% 15%;
+  --sidebar-accent-foreground: 0 0% 100%;
+  --sidebar-border: 222 47% 15%;
+  --sidebar-ring: 222 47% 25%;
+  
+  --ring: 222 47% 11%;
+}

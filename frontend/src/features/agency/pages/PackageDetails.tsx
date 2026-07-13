@@ -176,7 +176,7 @@ const PackageDetails = () => {
         const normalized = {
           ...data,
           id: data.packageId,
-
+          _isFromDb: true,
           description: data.description || '',
 
           images: (data.images || []).map(img => typeof img === 'string' ? img : img.imageUrl),
@@ -227,7 +227,7 @@ const PackageDetails = () => {
     if (!pkg) return;
     
     // Check if it's a database package (e.g. numeric ID, or not PKG-style ID string)
-    const isDbPackage = typeof pkg.id === 'number' || !pkg.id.toString().startsWith('PKG');
+    const isDbPackage = pkg._isFromDb || typeof pkg.id === 'number' || pkg.id.toString().startsWith('PKG');
     
     if (isDbPackage) {
       try {
@@ -296,7 +296,7 @@ const PackageDetails = () => {
 
   const handleToggleActive = async (checked: boolean) => {
     if (!pkg) return;
-    const isDbPackage = typeof pkg.id === 'number' || !pkg.id.toString().startsWith('PKG');
+    const isDbPackage = pkg._isFromDb || typeof pkg.id === 'number' || pkg.id.toString().startsWith('PKG');
     const updatedPkg = { ...pkg, available: checked };
     setPkg(updatedPkg);
     

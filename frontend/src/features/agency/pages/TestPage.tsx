@@ -6,7 +6,7 @@ import { Label } from '@/components/common/ui/label';
 import { toast } from 'sonner';
 import { CheckCircle2, XCircle, Loader2, Send, Database, UserPlus, Package } from 'lucide-react';
 
-const BASE_URL = 'http://localhost:8082/api/v1';
+const BASE_URL = 'http://localhost:8080/api/v1';
 
 // ── Utility: run a test step and return result ──────────────────────────────
 async function runTest(label, fn) {
@@ -59,7 +59,7 @@ const TestPage = () => {
 
     const tests = [
       runTest('Backend Health (GET /)', async () => {
-        const r = await fetch('http://localhost:8082/');
+        const r = await fetch('http://localhost:8080/');
         return `HTTP ${r.status}`;
       }),
 

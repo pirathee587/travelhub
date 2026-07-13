@@ -8,9 +8,10 @@ import com.travelhub.backend.dto.response.AgentPackageDetailResponse;
 import com.travelhub.backend.dto.response.PackageSummaryResponse;
 import com.travelhub.backend.entity.*;
 import com.travelhub.backend.entity.Package;
+import com.travelhub.backend.repository.AgentRepository;
+import com.travelhub.backend.repository.HotelRepository;
 import com.travelhub.backend.repository.PackageItineraryRepository;
 import com.travelhub.backend.repository.PackageRepository;
-import com.travelhub.backend.repository.AgentRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -30,9 +31,10 @@ public class AgentPackageService {
 
     private final PackageRepository packageRepository;
     private final PackageItineraryRepository itineraryRepository;
+    private final HotelRepository hotelRepository;
+    private final AgentRepository agentRepository;
     private final ImageUploadService imageUploadService;
     private final ObjectMapper objectMapper;
-    private final AgentRepository agentRepository;
 
     private static final Set<String> VALID_DISTRICTS = Set.of(
             "Ampara", "Anuradhapura", "Badulla", "Batticaloa", "Colombo",
@@ -53,19 +55,17 @@ public class AgentPackageService {
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
                         "Agent profile not found for user ID: " + agentId));
         Long realAgentId = agent.getId();
+
         List<Package> packages;
 
         if (search != null && !search.isBlank()) {
-            // Prioritize text search when provided.
             packages = packageRepository.searchByAgentId(realAgentId, search);
         } else if (isActive != null) {
-            // Filter by active state when explicitly requested.
             packages = packageRepository
-                    .findByAgentIdAndIsActiveAndDeletedAtIsNullOrderByCreatedAtDesc(realAgentId, isActive);
+                    .findByAgent_IdAndIsActiveAndDeletedAtIsNullOrderByCreatedAtDesc(realAgentId, isActive);
         } else {
-            // Default: all non-deleted packages for the agent.
             packages = packageRepository
-                    .findByAgentIdAndDeletedAtIsNullOrderByCreatedAtDesc(realAgentId);
+                    .findByAgent_IdAndDeletedAtIsNullOrderByCreatedAtDesc(realAgentId);
         }
 
         return packages.stream().map(this::toSummary).collect(Collectors.toList());
@@ -90,22 +90,23 @@ public class AgentPackageService {
         CreatePackageRequest req = parseRequest(dataJson);
         validateRequest(req);
 
+        String pkgType = req.getPackageType() != null ? req.getPackageType() : "SINGLE_DISTRICT";
+
         Package pkg = Package.builder()
                 .packageId(generatePackageId())
                 .agent(agentRef(agentId))
                 .packageName(req.getName())
                 .category(req.getCategory().toUpperCase())
-                .destination(req.getDestination())
                 .district(req.getDistrict())
                 .startPlace(req.getStartPlace())
                 .endPlace(req.getEndPlace())
                 .duration(req.getDuration())
-                .priceFrom(req.getPriceFrom())
-                .priceTo(req.getPriceTo())
+                .packageType(pkgType)
+                .basePriceAdult(req.getBasePriceAdult())
+                .basePriceChild(req.getBasePriceChild())
                 .description(req.getDescription())
-                .festivalDetails(req.getFestivalDetails())
+                .inclusions(req.getInclusions() != null ? String.join(",", req.getInclusions()) : "")
                 .isActive(req.getIsActive() != null ? req.getIsActive() : true)
-                .trending(req.getTrending() != null ? req.getTrending() : false)
                 .applicationStatus("Pending")
                 .itinerary(new ArrayList<>())
                 .images(new ArrayList<>())
@@ -114,7 +115,7 @@ public class AgentPackageService {
         if (imageFiles != null && !imageFiles.isEmpty()) {
             int order = 0;
             for (MultipartFile file : imageFiles) {
-                String url = imageUploadService.uploadPackageImage(file).getImageUrl();
+                String url = imageUploadService.uploadRoomImage(file).getImageUrl();
                 PackageImage image = PackageImage.builder()
                         .pkg(pkg)
                         .imageUrl(url)
@@ -126,7 +127,6 @@ public class AgentPackageService {
             }
         }
 
-        // Build itinerary day entities from request payload.
         if (req.getDays() != null) {
             buildItinerary(pkg, req.getDays());
         }
@@ -146,22 +146,22 @@ public class AgentPackageService {
         CreatePackageRequest req = parseRequest(dataJson);
         validateRequest(req);
 
-        // Update top-level package fields.
         pkg.setPackageName(req.getName());
         pkg.setCategory(req.getCategory().toUpperCase());
-        pkg.setDestination(req.getDestination());
         pkg.setDistrict(req.getDistrict());
         pkg.setStartPlace(req.getStartPlace());
         pkg.setEndPlace(req.getEndPlace());
         pkg.setDuration(req.getDuration());
-        pkg.setPriceFrom(req.getPriceFrom());
-        pkg.setPriceTo(req.getPriceTo());
+        pkg.setPackageType(req.getPackageType() != null ? req.getPackageType() : "SINGLE_DISTRICT");
+        pkg.setBasePriceAdult(req.getBasePriceAdult());
+        pkg.setBasePriceChild(req.getBasePriceChild());
         pkg.setDescription(req.getDescription());
-        pkg.setFestivalDetails(req.getFestivalDetails());
-        if (req.getIsActive() != null) pkg.setIsActive(req.getIsActive());
-        if (req.getTrending() != null) pkg.setTrending(req.getTrending());
+        if (req.getInclusions() != null) {
+            pkg.setInclusions(String.join(",", req.getInclusions()));
+        }
 
-        // Keep only images explicitly retained by client.
+        if (req.getIsActive() != null) pkg.setIsActive(req.getIsActive());
+
         List<String> keepUrls = req.getExistingImageUrls() != null
                 ? req.getExistingImageUrls() : List.of();
         pkg.getImages().removeIf(img -> !keepUrls.contains(img.getImageUrl()));
@@ -170,7 +170,6 @@ public class AgentPackageService {
                 .mapToInt(PackageImage::getDisplayOrder)
                 .max().orElse(-1) + 1;
 
-        // Append newly uploaded images after current max display order.
         if (imageFiles != null && !imageFiles.isEmpty()) {
             for (MultipartFile file : imageFiles) {
                 String url = imageUploadService.uploadPackageImage(file).getImageUrl();
@@ -183,13 +182,11 @@ public class AgentPackageService {
             }
         }
 
-        // Update cover image from displayOrder 0 image if present.
         pkg.getImages().stream()
                 .filter(img -> img.getDisplayOrder() == 0)
                 .findFirst()
                 .ifPresent(img -> pkg.setImageUrl(img.getImageUrl()));
 
-        // Replace itinerary with incoming day list.
         pkg.getItinerary().clear();
         if (req.getDays() != null) buildItinerary(pkg, req.getDays());
 
@@ -223,21 +220,31 @@ public class AgentPackageService {
         packageRepository.save(pkg);
     }
 
-    /**
-     * Creates itinerary row entities from day requests.
-     */
     private void buildItinerary(Package pkg, List<PackageDayRequest> days) {
         for (PackageDayRequest dayReq : days) {
             String activitiesText = "";
             if (dayReq.getActivities() != null && !dayReq.getActivities().isEmpty()) {
-                activitiesText = String.join(", ", dayReq.getActivities());
+                try {
+                    activitiesText = objectMapper.writeValueAsString(dayReq.getActivities());
+                } catch (Exception e) {
+                    activitiesText = "[]";
+                }
             }
+
+            Hotel hotelRef = null;
+            if (dayReq.getHotelId() != null) {
+                hotelRef = hotelRepository.findById(dayReq.getHotelId()).orElse(null);
+            }
+
             PackageItinerary day = PackageItinerary.builder()
                     .pkg(pkg)
                     .dayNumber(dayReq.getDayNumber())
                     .title(dayReq.getTitle())
                     .description(dayReq.getDescription())
                     .activities(activitiesText)
+                    .district(dayReq.getDistrict())
+                    .hotel(hotelRef)
+                    .hotelNameCustom(dayReq.getHotelNameCustom())
                     .build();
             pkg.getItinerary().add(day);
         }
@@ -274,15 +281,28 @@ public class AgentPackageService {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
                     "Invalid category: " + req.getCategory());
         }
-        if (req.getPriceTo().compareTo(req.getPriceFrom()) < 0) {
+
+        if (req.getBasePriceAdult() != null && req.getBasePriceAdult() < 0) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
-                    "priceTo must be >= priceFrom");
+                    "Base price per adult must be >= 0");
+        }
+        if (req.getBasePriceChild() != null && req.getBasePriceChild() < 0) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "Base price per child must be >= 0");
         }
         if (req.getDays() != null && !req.getDays().isEmpty()) {
             for (int i = 0; i < req.getDays().size(); i++) {
                 if (!req.getDays().get(i).getDayNumber().equals(i + 1)) {
                     throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
                             "Day numbers must be sequential starting at 1");
+                }
+            }
+            if ("MULTI_DISTRICT".equals(req.getPackageType())) {
+                for (PackageDayRequest day : req.getDays()) {
+                    if (day.getDistrict() == null || day.getDistrict().isBlank()) {
+                        throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                                "Each day must have a district for multi-district packages");
+                    }
                 }
             }
         }
@@ -292,8 +312,7 @@ public class AgentPackageService {
      * Generates the next public package id.
      */
     private String generatePackageId() {
-        long count = packageRepository.count() + 1;
-        return String.format("PKG%03d", count);
+        return "PKG-" + java.util.UUID.randomUUID().toString().substring(0, 8).toUpperCase();
     }
 
     /**
@@ -303,18 +322,6 @@ public class AgentPackageService {
         return agentRepository.findByOwnerId(agentId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
                         "Agent profile not found for user ID: " + agentId));
-    }
-
-    /**
-     * Parses JSON payload into CreatePackageRequest.
-     */
-    private CreatePackageRequest parseRequest(String dataJson) {
-        try {
-            return objectMapper.readValue(dataJson, CreatePackageRequest.class);
-        } catch (Exception e) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
-                    "Invalid request data: " + e.getMessage());
-        }
     }
 
     /**
@@ -329,13 +336,12 @@ public class AgentPackageService {
                 .packageId(pkg.getPackageId())
                 .name(pkg.getPackageName())
                 .category(pkg.getCategory())
-                .destination(pkg.getDestination())
                 .district(pkg.getDistrict())
                 .duration(pkg.getDuration())
-                .priceFrom(pkg.getPriceFrom())
-                .priceTo(pkg.getPriceTo())
+                .basePriceAdult(pkg.getBasePriceAdult())
+                .basePriceChild(pkg.getBasePriceChild())
                 .isActive(pkg.getIsActive())
-                .trending(pkg.getTrending())
+                .applicationStatus(pkg.getApplicationStatus())
                 .coverImageUrl(coverUrl)
                 .createdAt(pkg.getCreatedAt())
                 .build();
@@ -360,18 +366,58 @@ public class AgentPackageService {
         if (pkg.getItinerary() != null) {
             days = pkg.getItinerary().stream()
                     .map(day -> {
-                        List<String> activityList = new ArrayList<>();
+                        List<AgentPackageDetailResponse.PackageActivityResponse> activityList = new ArrayList<>();
                         if (day.getActivities() != null && !day.getActivities().isBlank()) {
-                            for (String a : day.getActivities().split(",")) {
-                                activityList.add(a.trim());
+                            String raw = day.getActivities().trim();
+                            if (raw.startsWith("[")) {
+                                try {
+                                    com.fasterxml.jackson.databind.JsonNode arrayNode = objectMapper.readTree(raw);
+                                    for (com.fasterxml.jackson.databind.JsonNode node : arrayNode) {
+                                        if (node.isObject()) {
+                                            activityList.add(AgentPackageDetailResponse.PackageActivityResponse.builder()
+                                                    .description(node.has("description") ? node.get("description").asText() : "")
+                                                    .imageUrl(node.has("imageUrl") && !node.get("imageUrl").isNull() ? node.get("imageUrl").asText() : null)
+                                                    .build());
+                                        } else if (node.isTextual()) {
+                                            activityList.add(AgentPackageDetailResponse.PackageActivityResponse.builder()
+                                                    .description(node.asText())
+                                                    .build());
+                                        }
+                                    }
+                                } catch (Exception e) {
+                                    // fallback if parsing fails
+                                }
+                            } else {
+                                for (String a : raw.split(",")) {
+                                    if (!a.trim().isEmpty()) {
+                                        activityList.add(AgentPackageDetailResponse.PackageActivityResponse.builder()
+                                                .description(a.trim())
+                                                .build());
+                                    }
+                                }
                             }
                         }
+                        String hotelName = null;
+                        String hotelImageUrl = null;
+                        Long hotelId = null;
+                        if (day.getHotel() != null) {
+                            hotelId = day.getHotel().getId();
+                            hotelName = day.getHotel().getHotelName();
+                            hotelImageUrl = day.getHotel().getImageUrl();
+                        } else if (day.getHotelNameCustom() != null) {
+                            hotelName = day.getHotelNameCustom();
+                        }
+
                         return AgentPackageDetailResponse.AgentPackageDayResponse.builder()
                                 .dayId(day.getId())
                                 .dayNumber(day.getDayNumber())
                                 .title(day.getTitle())
                                 .description(day.getDescription())
                                 .activities(activityList)
+                                .district(day.getDistrict())
+                                .hotelId(hotelId)
+                                .hotelName(hotelName)
+                                .hotelImageUrl(hotelImageUrl)
                                 .build();
                     })
                     .collect(Collectors.toList());
@@ -381,21 +427,35 @@ public class AgentPackageService {
                 .packageId(pkg.getPackageId())
                 .name(pkg.getPackageName())
                 .category(pkg.getCategory())
-                .destination(pkg.getDestination())
                 .district(pkg.getDistrict())
                 .startPlace(pkg.getStartPlace())
                 .endPlace(pkg.getEndPlace())
                 .duration(pkg.getDuration())
-                .priceFrom(pkg.getPriceFrom())
-                .priceTo(pkg.getPriceTo())
+                .packageType(pkg.getPackageType())
+                .basePriceAdult(pkg.getBasePriceAdult())
+                .basePriceChild(pkg.getBasePriceChild())
                 .description(pkg.getDescription())
-                .festivalDetails(pkg.getFestivalDetails())
+                .inclusions(pkg.getInclusions() != null && !pkg.getInclusions().isEmpty() ? java.util.Arrays.asList(pkg.getInclusions().split(",")) : new ArrayList<>())
                 .isActive(pkg.getIsActive())
-                .trending(pkg.getTrending())
+                .applicationStatus(pkg.getApplicationStatus())
                 .images(images)
                 .days(days)
                 .createdAt(pkg.getCreatedAt())
                 .updatedAt(pkg.getUpdatedAt())
                 .build();
+    }
+
+    private CreatePackageRequest parseRequest(String dataJson) {
+        try {
+            return objectMapper.readValue(dataJson, CreatePackageRequest.class);
+        } catch (Exception e) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "Invalid request data: " + e.getMessage());
+        }
+    }
+
+    @Transactional
+    public String uploadImageOnly(Long agentId, org.springframework.web.multipart.MultipartFile image) {
+        return imageUploadService.uploadPackageImage(image).getImageUrl();
     }
 }
