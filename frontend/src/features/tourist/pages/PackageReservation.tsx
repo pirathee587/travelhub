@@ -22,11 +22,21 @@ import {
     CardTitle,
 } from "@/components/common/ui/card";
 import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from "@/components/common/ui/alert-dialog";
+import {
     ArrowLeft,
     Calendar,
     Users,
     Building2,
     MapPin,
+    Home,
     DollarSign,
     AlertCircle,
     X
@@ -100,6 +110,8 @@ const PackageReservation = () => {
     const [pkg, setPkg] = useState(null);
     const [loading, setLoading] = useState(true);
     const [submitting, setSubmitting] = useState(false);
+    const [showSuccessDialog, setShowSuccessDialog] = useState(false);
+    const [confirmedBookingId, setConfirmedBookingId] = useState("");
 
     const [startDate, setStartDate] = useState(() => getSavedState('startDate', ""));
     const [adults, setAdults] = useState(() => getSavedState('adults', 1));
@@ -180,8 +192,9 @@ const PackageReservation = () => {
             const booking = await api.createBooking(bookingData);
             if (booking && booking.id) {
                 sessionStorage.removeItem(`reservation_state_${id}`);
-                toast.success(`Booking confirmed! Booking ID: BK${String(booking.id).padStart(5, "0")}`);
-                navigate("/tourist/trips");
+                const formattedId = `BK${String(booking.id).padStart(5, "0")}`;
+                setConfirmedBookingId(formattedId);
+                setShowSuccessDialog(true);
             }
         } catch (error) {
             const errorMsg = error.message || "Booking failed. Please try again.";
@@ -335,14 +348,36 @@ const PackageReservation = () => {
                                     </CardDescription>
                                 </CardHeader>
                                 <CardContent className="space-y-4">
-                                    <RadioGroup value={accommodationOption} onValueChange={setAccommodationOption}>
-                                        <div className="flex items-center space-x-2">
-                                            <RadioGroupItem value="BY_MY_OWN" id="by_my_own" />
-                                            <Label htmlFor="by_my_own">I will decide my own accommodation</Label>
+                                    <RadioGroup 
+                                        value={accommodationOption} 
+                                        onValueChange={setAccommodationOption}
+                                        className="grid grid-cols-1 md:grid-cols-2 gap-4"
+                                    >
+                                        <div>
+                                            <RadioGroupItem value="BY_MY_OWN" id="by_my_own" className="peer sr-only" />
+                                            <Label 
+                                                htmlFor="by_my_own"
+                                                className="flex flex-col items-center justify-between rounded-xl border-2 border-muted bg-transparent p-6 hover:bg-muted/50 peer-data-[state=checked]:border-primary peer-data-[state=checked]:bg-primary/5 [&:has([data-state=checked])]:border-primary cursor-pointer transition-all h-full"
+                                            >
+                                                <div className="rounded-full bg-primary/10 p-3 mb-4">
+                                                    <Home className="h-6 w-6 text-primary" />
+                                                </div>
+                                                <span className="font-semibold text-lg mb-1 text-center">I will decide my own</span>
+                                                <span className="text-sm text-muted-foreground text-center">I'll handle my own stay</span>
+                                            </Label>
                                         </div>
-                                        <div className="flex items-center space-x-2">
-                                            <RadioGroupItem value="AGENCY_ARRANGE" id="agency_arrange" />
-                                            <Label htmlFor="agency_arrange">Agency will arrange accommodation</Label>
+                                        <div>
+                                            <RadioGroupItem value="AGENCY_ARRANGE" id="agency_arrange" className="peer sr-only" />
+                                            <Label 
+                                                htmlFor="agency_arrange"
+                                                className="flex flex-col items-center justify-between rounded-xl border-2 border-muted bg-transparent p-6 hover:bg-muted/50 peer-data-[state=checked]:border-primary peer-data-[state=checked]:bg-primary/5 [&:has([data-state=checked])]:border-primary cursor-pointer transition-all h-full"
+                                            >
+                                                <div className="rounded-full bg-primary/10 p-3 mb-4">
+                                                    <Building2 className="h-6 w-6 text-primary" />
+                                                </div>
+                                                <span className="font-semibold text-lg mb-1 text-center">Agency will arrange</span>
+                                                <span className="text-sm text-muted-foreground text-center">Let us pick hotels for you</span>
+                                            </Label>
                                         </div>
                                     </RadioGroup>
 
@@ -376,9 +411,9 @@ const PackageReservation = () => {
                                                                 className="w-full justify-start text-left font-normal bg-white"
                                                                 onClick={() => {
                                                                     const nextPref = hotelSelections.length + 1;
-                                                                    const currentPath = `/explore/package/${id}/reserve`;
+                                                                    const currentPath = `/tourist/explore/package/${id}/reserve`;
                                                                     const districtParam = pkg?.district ? `&district=${encodeURIComponent(pkg.district)}` : "";
-                                                                    navigate(`/hotels?mode=select&preference=${nextPref}&returnTo=${encodeURIComponent(currentPath)}${districtParam}`);
+                                                                    navigate(`/tourist/hotels?mode=select&preference=${nextPref}&returnTo=${encodeURIComponent(currentPath)}${districtParam}`);
                                                                 }}
                                                             >
                                                                 + {hotelSelections.length > 0 ? "Add Another Hotel" : "Select Hotel"}
@@ -451,6 +486,24 @@ const PackageReservation = () => {
                     </div>
                 </div>
             </div>
+
+            <AlertDialog open={showSuccessDialog} onOpenChange={setShowSuccessDialog}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Reservation Successful!</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            Your package has been successfully reserved. 
+                            Your booking reference is <strong className="text-foreground">{confirmedBookingId}</strong>.
+                            You can view and manage this trip in your dashboard.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogAction onClick={() => navigate("/tourist/trips")}>
+                            Go to My Trips
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </DashboardLayout>
     );
 };

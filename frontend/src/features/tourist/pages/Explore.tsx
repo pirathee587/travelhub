@@ -45,6 +45,7 @@ const MemoizedTravelCard = memo(TravelCard);
 const Explore = () => {
     const { isAuthenticated } = useAuth();
     const [searchQuery, setSearchQuery] = useState("");
+    const [submittedQuery, setSubmittedQuery] = useState("");
     const [searchSuggestions, setSearchSuggestions] = useState([]);
     const [showSuggestions, setShowSuggestions] = useState(false);
     const [selectedCategory, setSelectedCategory] = useState("all");
@@ -71,7 +72,7 @@ const Explore = () => {
                 }))
                 .filter(
                     (item, index, self) =>
-                        index === self.findIndex((t) => t.district === item.district)
+                        index === self.findIndex((t) => t.id === item.id)
                 );
             setSearchSuggestions(suggestions);
             setShowSuggestions(true);   //Show Results
@@ -91,7 +92,7 @@ const Explore = () => {
 
     // Memoize filtered + sorted packages — avoids recalculation on unrelated state changes
     const filteredPackages = useMemo(() => {
-        const query = searchQuery.toLowerCase();
+        const query = submittedQuery.toLowerCase();
         return allPackages
             .filter((pkg) => {
                 const matchesSearch =
@@ -111,7 +112,7 @@ const Explore = () => {
                 if (sortBy === "rating-low") return (a.rating || 0) - (b.rating || 0);
                 return 0;
             });
-    }, [allPackages, searchQuery, selectedCategory, selectedDistrict, sortBy]);
+    }, [allPackages, submittedQuery, selectedCategory, selectedDistrict, sortBy]);
 
     // Stable callback refs for category/filter changes
     const handleCategoryChange = useCallback((id) => setSelectedCategory(id), []);          //UseCallback effect
@@ -156,11 +157,18 @@ const Explore = () => {
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
                                 onFocus={() => searchQuery.trim().length > 0 && setShowSuggestions(true)}
+                                onKeyDown={(e) => {
+                                    if (e.key === 'Enter') {
+                                        setSubmittedQuery(searchQuery);
+                                        setShowSuggestions(false);
+                                    }
+                                }}
                             />
                             {searchQuery && (                       //SearchQuery start search function above
                                 <button
                                     onClick={() => {
                                         setSearchQuery("");
+                                        setSubmittedQuery("");
                                         setShowSuggestions(false);
                                     }}
                                     className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
@@ -170,7 +178,13 @@ const Explore = () => {
                             )}
                         </div>
                         <div className="hidden md:block w-px h-10 bg-border mx-2" />
-                        <Button className="w-full md:w-auto bg-primary hover:bg-primary/90 text-white rounded-xl px-8 h-12 text-lg shadow-glow">        {/*Search btn click to get data*/}
+                        <Button 
+                            onClick={() => {
+                                setSubmittedQuery(searchQuery);
+                                setShowSuggestions(false);
+                            }}
+                            className="w-full md:w-auto bg-primary hover:bg-primary/90 text-white rounded-xl px-8 h-12 text-lg shadow-glow"
+                        >        {/*Search btn click to get data*/}
                             Search
                         </Button>
 
@@ -182,7 +196,8 @@ const Explore = () => {
                                         <button
                                             key={suggestion.id}
                                             onClick={() => {
-                                                setSearchQuery(suggestion.district || "");
+                                                setSearchQuery(suggestion.packageName || "");
+                                                setSubmittedQuery(suggestion.packageName || "");
                                                 setShowSuggestions(false);
                                             }}
                                             className="w-full px-4 py-4 text-left hover:bg-primary/5 flex items-center gap-4 transition-colors border-b border-border/30 last:border-b-0 group"
@@ -218,8 +233,8 @@ const Explore = () => {
                 </div>
             </section>
 
-            {/* Trending Section - Hidden when searching or for guests */}
-            {isAuthenticated && !searchQuery && (
+            {/* Trending Section - Hidden when searching or for guests, and hidden if empty */}
+            {isAuthenticated && !submittedQuery && (trendingLoading || trendingPackages.length > 0) && (
                 <section className="animate-slide-up" style={{ animationDelay: "0.1s" }}>
                     <div className="flex items-center justify-between mb-6">
                         <div className="flex items-center gap-3">

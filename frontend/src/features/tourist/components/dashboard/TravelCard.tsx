@@ -88,7 +88,7 @@ export function TravelCard({ recommendation, className, onClick, children, showH
                             {recommendation.amenities && recommendation.amenities.length > 0 && (
                                 <div className="flex flex-wrap gap-1 mt-2.5">
                                     {recommendation.amenities.slice(0, 2).map((amenity, idx) => (
-                                        <span key={idx} className="bg-secondary text-secondary-foreground text-xs px-1.5 py-0.5 rounded-sm font-medium border border-border/40 shadow-sm">
+                                        <span key={idx} className="bg-green-200 text-green-800 text-xs px-1.5 py-0.5 rounded-sm font-medium border border-green-200 shadow-sm">
                                             {amenity}
                                         </span>
                                     ))}

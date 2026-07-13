@@ -5,8 +5,9 @@ import { toast } from 'sonner';
 import { Card, CardContent } from '@/components/common/ui/card';
 import { Button } from '@/components/common/ui/button';
 import { Badge } from '@/components/common/ui/badge';
-import { Bell, CreditCard, Loader2, CheckCircle2 } from 'lucide-react';
+import { Bell, CreditCard, Loader2, CheckCircle2, ArrowLeft } from 'lucide-react';
 import { cn } from '@/features/tourist/services/utils';
+import { DashboardLayout } from '@/features/tourist/components/dashboard/DashboardLayout';
 
 const UserNotifications = () => {
   const [notifications, setNotifications] = useState<any[]>([]);
@@ -54,8 +55,13 @@ const UserNotifications = () => {
   };
 
   return (
-    <div className="container max-w-4xl py-8 mx-auto animate-slide-up">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
+    <DashboardLayout>
+      <div className="max-w-[1600px] mx-auto pb-10 animate-slide-up mt-16 md:mt-0">
+        <Button variant="ghost" className="mb-6 gap-2 text-muted-foreground hover:text-foreground -ml-4" onClick={() => navigate('/tourist/settings')}>
+          <ArrowLeft className="w-4 h-4" />
+          Back to Settings
+        </Button>
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
         <div>
           <h2 className="text-3xl font-bold tracking-tight">Notifications</h2>
           <p className="text-muted-foreground mt-1">Stay updated on bookings, payments, and account activity.</p>
@@ -118,7 +124,8 @@ const UserNotifications = () => {
           </div>
         </Card>
       )}
-    </div>
+      </div>
+    </DashboardLayout>
   );
 };
 

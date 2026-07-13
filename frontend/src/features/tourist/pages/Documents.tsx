@@ -43,8 +43,8 @@ const Documents = () => {
             <section className="animate-slide-up">
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                     <div className="flex items-center gap-3">
-                        <div className="h-12 w-12 rounded-xl bg-secondary flex items-center justify-center">
-                            <FileText className="h-6 w-6 text-foreground" />.                                {/* Document Icon */}
+                        <div className="h-12 w-12 rounded-xl bg-green-500 flex items-center justify-center">
+                            <FileText className="h-6 w-6 text-black" />                                {/* Document Icon */}
                         </div>
                         <div>
                             <h1 className="text-2xl lg:text-3xl font-bold">Documents</h1>
@@ -105,17 +105,17 @@ const Documents = () => {
             {/* Documents Tabs */}
             <section className="animate-slide-up py-1" style={{ animationDelay: "0.2s" }}>
                 <Tabs defaultValue="all" className="space-y-4">
-                    <TabsList className="bg-secondary p-1.5 rounded-xl h-auto">
-                        <TabsTrigger value="all" className="rounded-lg py-2 px-4 data-[state=active]:bg-white data-[state=active]:shadow-soft font-medium">
+                    <TabsList className="bg-green-100 p-2 rounded-2xl border border-green-200 shadow-soft overflow-hidden inline-flex w-fit gap-2 overflow-x-auto scrollbar-hide h-auto justify-start max-w-3xl">
+                        <TabsTrigger value="all" className="h-11 px-6 rounded-xl transition-all duration-300 flex-shrink-0 font-bold data-[state=active]:bg-primary data-[state=active]:text-white data-[state=active]:shadow-glow data-[state=active]:scale-105 text-green-800 hover:bg-green-200/50 hover:text-green-900">
                             All ({allDocuments.length})                                 {/* All Tab */}
                         </TabsTrigger>
-                        <TabsTrigger value="invoices" className="rounded-lg py-2 px-4 data-[state=active]:bg-white data-[state=active]:shadow-soft font-medium">
+                        <TabsTrigger value="invoices" className="h-11 px-6 rounded-xl transition-all duration-300 flex-shrink-0 font-bold data-[state=active]:bg-primary data-[state=active]:text-white data-[state=active]:shadow-glow data-[state=active]:scale-105 text-green-800 hover:bg-green-200/50 hover:text-green-900">
                             Invoices ({invoices.length})                                {/* Invoice Tab */}
                         </TabsTrigger>
-                        <TabsTrigger value="receipts" className="rounded-lg py-2 px-4 data-[state=active]:bg-white data-[state=active]:shadow-soft font-medium">
+                        <TabsTrigger value="receipts" className="h-11 px-6 rounded-xl transition-all duration-300 flex-shrink-0 font-bold data-[state=active]:bg-primary data-[state=active]:text-white data-[state=active]:shadow-glow data-[state=active]:scale-105 text-green-800 hover:bg-green-200/50 hover:text-green-900">
                             Receipts ({receipts.length})                                {/* Recipts Tab */}
                         </TabsTrigger>
-                        <TabsTrigger value="itineraries" className="rounded-lg py-2 px-4 data-[state=active]:bg-white data-[state=active]:shadow-soft font-medium">
+                        <TabsTrigger value="itineraries" className="h-11 px-6 rounded-xl transition-all duration-300 flex-shrink-0 font-bold data-[state=active]:bg-primary data-[state=active]:text-white data-[state=active]:shadow-glow data-[state=active]:scale-105 text-green-800 hover:bg-green-200/50 hover:text-green-900">
                             Itineraries ({itineraries.length})                          {/* Itineraries Tab */}
                         </TabsTrigger>
                     </TabsList>

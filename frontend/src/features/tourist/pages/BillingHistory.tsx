@@ -6,6 +6,7 @@ import { Card, CardContent } from '@/components/common/ui/card';
 import { Button } from '@/components/common/ui/button';
 import { Badge } from '@/components/common/ui/badge';
 import { Receipt, Download, Bell, Loader2 } from 'lucide-react';
+import { DashboardLayout } from '@/features/tourist/components/dashboard/DashboardLayout';
 
 const BillingHistory = () => {
   const [history, setHistory] = useState<any[]>([]);
@@ -49,7 +50,8 @@ const BillingHistory = () => {
   };
 
   return (
-    <div className="container max-w-5xl py-8 mx-auto animate-slide-up">
+    <DashboardLayout>
+    <div className="max-w-[1600px] mx-auto pb-10 animate-slide-up mt-8 md:mt-0">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
         <div>
           <h2 className="text-3xl font-bold tracking-tight">Billing & Payments</h2>
@@ -125,6 +127,7 @@ const BillingHistory = () => {
         </div>
       )}
     </div>
+    </DashboardLayout>
   );
 };
 

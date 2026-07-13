@@ -7,6 +7,7 @@ import com.travelhub.backend.repository.BookingRepository;
 import com.travelhub.backend.repository.DocumentRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import com.travelhub.backend.entity.Booking;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -20,10 +21,23 @@ public class DashboardService {
 
     // Get stats for dashboard
     public StatsResponse getStats(Long userId) {
-        Long totalTrips = (long) bookingRepository.findByUserId(userId).size();
-        Long ongoingTrips = bookingRepository.countByUserIdAndStatus(userId, "in_progress");
-        Long completedTrips = bookingRepository.countByUserIdAndStatus(userId, "completed");
-        Long upcomingTrips = bookingRepository.countByUserIdAndStatus(userId, "confirmed");
+        List<Booking> allTrips = bookingRepository.findByUserId(userId);
+        Long totalTrips = (long) allTrips.size();
+        
+        Long ongoingTrips = allTrips.stream()
+            .filter(b -> b.getStatus() != null && b.getStatus().equalsIgnoreCase("in_progress"))
+            .count();
+            
+        Long completedTrips = allTrips.stream()
+            .filter(b -> b.getStatus() != null && b.getStatus().equalsIgnoreCase("completed"))
+            .count();
+            
+        Long upcomingTrips = allTrips.stream()
+            .filter(b -> b.getStatus() != null && 
+                (b.getStatus().equalsIgnoreCase("confirmed") || 
+                 b.getStatus().equalsIgnoreCase("active") || 
+                 b.getStatus().equalsIgnoreCase("paid")))
+            .count();
 
         return StatsResponse.builder()
                 .totalTrips(totalTrips)
