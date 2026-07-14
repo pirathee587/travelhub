@@ -205,6 +205,17 @@ const BookingDetailsModal = ({ booking, open, onClose }) => {
             </div>
           </div>
 
+          {/* Tourist Details */}
+          {booking.touristName && (
+            <div className="rounded-lg border border-border bg-muted/30 p-4 space-y-3">
+              <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Tourist Info</p>
+              <div className="flex items-center gap-2 text-sm">
+                <Users className="h-4 w-4 text-muted-foreground" />
+                <span className="font-medium">{booking.touristName}</span>
+              </div>
+            </div>
+          )}
+
           {/* Passengers */}
           {(booking.adults != null || booking.children != null) && (
             <div className="rounded-lg border border-border bg-muted/30 p-4 space-y-3">
@@ -231,6 +242,34 @@ const BookingDetailsModal = ({ booking, open, onClose }) => {
                     <p className="font-medium">{formatPrice(booking.totalPrice || 0)}</p>
                   </div>
                 </div>
+              </div>
+            </div>
+          )}
+
+          {/* Hotel Preferences (Single District) */}
+          {booking.packageType !== 'MULTI_DISTRICT' && booking.preferredHotels && booking.preferredHotels.length > 0 && (
+            <div className="rounded-lg border border-border bg-muted/30 p-4 space-y-3">
+              <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground flex items-center gap-1.5">
+                <Hotel className="h-3.5 w-3.5" /> Tourist Hotel Preferences
+              </p>
+              <div className="space-y-1.5 text-sm">
+                {booking.preferredHotels.map((hotelStr, i) => (
+                  <p key={i} className="font-medium text-foreground">{hotelStr}</p>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Hotel Information (Multi District Itinerary) */}
+          {booking.packageType === 'MULTI_DISTRICT' && booking.itineraryHotels && booking.itineraryHotels.length > 0 && (
+            <div className="rounded-lg border border-border bg-muted/30 p-4 space-y-3">
+              <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground flex items-center gap-1.5">
+                <Hotel className="h-3.5 w-3.5" /> Package Hotel Itinerary
+              </p>
+              <div className="space-y-1.5 text-sm">
+                {booking.itineraryHotels.map((hotelStr, i) => (
+                  <p key={i} className="font-medium text-foreground">{hotelStr}</p>
+                ))}
               </div>
             </div>
           )}

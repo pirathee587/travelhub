@@ -90,6 +90,38 @@ public class BookingService {
 
     // Map Booking → BookingResponse
     private BookingResponse toBookingResponse(Booking booking) {
+        String touristName = booking.getUser() != null ? booking.getUser().getName() : null;
+        String packageType = booking.getPkg() != null ? booking.getPkg().getPackageType() : null;
+        String imageUrl = booking.getPkg() != null ? booking.getPkg().getImageUrl() : null;
+        if (imageUrl == null && booking.getPkg() != null && booking.getPkg().getImages() != null && !booking.getPkg().getImages().isEmpty()) {
+            imageUrl = booking.getPkg().getImages().get(0).getImageUrl();
+        }
+
+        java.util.List<String> preferredHotels = new java.util.ArrayList<>();
+        try {
+            if (booking.getHotelPreferences() != null) {
+                for (com.travelhub.backend.entity.BookingHotelPreference pref : booking.getHotelPreferences()) {
+                    if (pref.getHotel() != null) {
+                        preferredHotels.add(pref.getPreferenceNumber() + ". " + pref.getHotel().getHotelName() + " (" + pref.getHotel().getLocation() + ")");
+                    }
+                }
+                preferredHotels.sort(java.util.Comparator.comparing(s -> Integer.parseInt(s.split("\\.")[0])));
+            }
+        } catch (Exception e) {}
+
+        java.util.List<String> itineraryHotels = new java.util.ArrayList<>();
+        try {
+            if ("MULTI_DISTRICT".equals(packageType) && booking.getPkg() != null && booking.getPkg().getItinerary() != null) {
+                for (com.travelhub.backend.entity.PackageItinerary itin : booking.getPkg().getItinerary()) {
+                    if (itin.getHotel() != null) {
+                        itineraryHotels.add("Day " + itin.getDayNumber() + ": " + itin.getHotel().getHotelName() + " (" + itin.getHotel().getLocation() + ")");
+                    } else if (itin.getHotelNameCustom() != null && !itin.getHotelNameCustom().isEmpty()) {
+                        itineraryHotels.add("Day " + itin.getDayNumber() + ": " + itin.getHotelNameCustom());
+                    }
+                }
+            }
+        } catch (Exception e) {}
+
         return BookingResponse.builder()
                 .id(booking.getId())
                 .bookingId(String.format("BK%05d", booking.getId()))
@@ -100,7 +132,10 @@ public class BookingService {
                 .status(booking.getStatus())
                 .totalPrice(booking.getTotalPrice())
                 .progress(booking.getProgress())
-                .imageUrl(booking.getPkg() != null ? booking.getPkg().getImageUrl() : null)
+                .touristName(touristName)
+                .packageType(packageType)
+                .accommodationOption(booking.getAccommodationOption())
+                .imageUrl(imageUrl)
                 .category(booking.getPkg() != null ? booking.getPkg().getCategory() : null)
                 .startPlace(booking.getPkg() != null ? booking.getPkg().getStartPlace() : null)
                 .endPlace(booking.getPkg() != null ? booking.getPkg().getEndPlace() : null)
@@ -122,6 +157,8 @@ public class BookingService {
                 .specialRequests(booking.getSpecialRequests())
                 .duration(booking.getDuration())
                 .hotelIdsWithPreference(booking.getHotelIdsWithPreference())
+                .preferredHotels(preferredHotels)
+                .itineraryHotels(itineraryHotels)
                 .build();
     }
 }

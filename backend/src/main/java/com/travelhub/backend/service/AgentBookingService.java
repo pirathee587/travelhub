@@ -237,6 +237,50 @@ public class AgentBookingService {
         } catch (Exception e) {
             // Relation access failed; keep vehicle fields as null.
         }
+        String touristName = null;
+        try {
+            if (booking.getUser() != null) {
+                touristName = booking.getUser().getName();
+            }
+        } catch (Exception e) {}
+
+        String packageType = null;
+        String imageUrl = null;
+        try {
+            if (booking.getPkg() != null) {
+                packageType = booking.getPkg().getPackageType();
+                // If package uses PackageImage entities, you can fetch the first one if imageUrl is null
+                imageUrl = booking.getPkg().getImageUrl();
+                if (imageUrl == null && booking.getPkg().getImages() != null && !booking.getPkg().getImages().isEmpty()) {
+                    imageUrl = booking.getPkg().getImages().get(0).getImageUrl();
+                }
+            }
+        } catch (Exception e) {}
+
+        java.util.List<String> preferredHotels = new java.util.ArrayList<>();
+        try {
+            if (booking.getHotelPreferences() != null) {
+                for (com.travelhub.backend.entity.BookingHotelPreference pref : booking.getHotelPreferences()) {
+                    if (pref.getHotel() != null) {
+                        preferredHotels.add(pref.getPreferenceNumber() + ". " + pref.getHotel().getHotelName() + " (" + pref.getHotel().getLocation() + ")");
+                    }
+                }
+                preferredHotels.sort(java.util.Comparator.comparing(s -> Integer.parseInt(s.split("\\.")[0])));
+            }
+        } catch (Exception e) {}
+
+        java.util.List<String> itineraryHotels = new java.util.ArrayList<>();
+        try {
+            if ("MULTI_DISTRICT".equals(packageType) && booking.getPkg() != null && booking.getPkg().getItinerary() != null) {
+                for (com.travelhub.backend.entity.PackageItinerary itin : booking.getPkg().getItinerary()) {
+                    if (itin.getHotel() != null) {
+                        itineraryHotels.add("Day " + itin.getDayNumber() + ": " + itin.getHotel().getHotelName() + " (" + itin.getHotel().getLocation() + ")");
+                    } else if (itin.getHotelNameCustom() != null && !itin.getHotelNameCustom().isEmpty()) {
+                        itineraryHotels.add("Day " + itin.getDayNumber() + ": " + itin.getHotelNameCustom());
+                    }
+                }
+            }
+        } catch (Exception e) {}
 
         return BookingResponse.builder()
                 .id(booking.getId())
@@ -256,6 +300,13 @@ public class AgentBookingService {
                 .children(booking.getChildren())
                 .specialRequests(booking.getSpecialRequests())
                 .duration(booking.getDuration())
+                .touristName(touristName)
+                .packageType(packageType)
+                .imageUrl(imageUrl)
+                .accommodationOption(booking.getAccommodationOption())
+                .hotelIdsWithPreference(booking.getHotelIdsWithPreference())
+                .preferredHotels(preferredHotels)
+                .itineraryHotels(itineraryHotels)
                 .build();
     }
 }

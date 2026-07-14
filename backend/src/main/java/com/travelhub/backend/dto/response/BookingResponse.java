@@ -31,6 +31,10 @@ public class BookingResponse {
     private Integer children;
     private String specialRequests;
     private String duration;
+    
+    private String touristName;
+    private String packageType;
+    private String accommodationOption;
 
     // Hotel info
     private String hotelName;
@@ -48,4 +52,6 @@ public class BookingResponse {
 
     // Booking details
     private String hotelIdsWithPreference;
+    private java.util.List<String> preferredHotels;
+    private java.util.List<String> itineraryHotels;
 }
