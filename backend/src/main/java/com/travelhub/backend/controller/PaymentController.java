@@ -55,10 +55,14 @@ public class PaymentController {
         }
 
         Payment payment;
-        if (paymentService.verifyNotification(params)) {
-            payment = paymentService.processNotification(params);
+        if (params.containsKey("md5sig")) {
+            if (paymentService.verifyNotification(params)) {
+                payment = paymentService.processNotification(params);
+            } else {
+                throw new BadRequestException("Invalid payment signature");
+            }
         } else {
-            throw new BadRequestException("Invalid payment signature");
+            payment = paymentService.getPaymentByTransactionId(orderId);
         }
 
         return ResponseEntity.ok(new ApiResponse(true, "Payment processed", Map.of(

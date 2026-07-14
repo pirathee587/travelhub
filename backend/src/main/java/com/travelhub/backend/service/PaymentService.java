@@ -184,6 +184,11 @@ public class PaymentService {
         return payment;
     }
 
+    public Payment getPaymentByTransactionId(String transactionId) {
+        return paymentRepository.findByTransactionId(transactionId)
+                .orElseThrow(() -> new ResourceNotFoundException("Payment", "transactionId", transactionId));
+    }
+
     private String md5(String input) {
         return org.springframework.util.DigestUtils.md5DigestAsHex(input.getBytes(StandardCharsets.UTF_8));
     }
