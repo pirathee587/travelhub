@@ -54,11 +54,13 @@ const MyTrips = () => {
             });
     }, []);
 
-    const pendingTrips = trips.filter((t) => t.status === "pending");           //Pending
-    const confirmedTrips = trips.filter((t) => t.status === "confirmed");       //Confirmed
-    const inProgressTrips = trips.filter((t) => t.status === "in_progress");   //In Progress
-    const completedTrips = trips.filter((t) => t.status === "completed");      //Completed
-    const cancelledTrips = trips.filter((t) => t.status === "cancelled");        //Cancelled
+    const pendingTrips = trips.filter((t) => t.status?.toLowerCase() === "pending");           //Pending
+    const confirmedTrips = trips.filter((t) => 
+        ["confirmed", "paid", "refund_requested", "refunded"].includes(t.status?.toLowerCase())
+    );       //Confirmed
+    const inProgressTrips = trips.filter((t) => t.status?.toLowerCase() === "in_progress");   //In Progress
+    const completedTrips = trips.filter((t) => t.status?.toLowerCase() === "completed");      //Completed
+    const cancelledTrips = trips.filter((t) => t.status?.toLowerCase() === "cancelled");        //Cancelled
 
     const handleTripClick = async (trip) => {
         const bookingDetail = await api.getBookingById(trip.id);

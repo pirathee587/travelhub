@@ -12,6 +12,7 @@ import {
 import { api } from "@/features/tourist/services/api";
 import { DocumentsPageSkeleton } from "@/components/common/ui/skeletons";
 import { defaultUserId } from "@/features/tourist/services/userHelpers";
+import { toast } from "sonner";
 
 const Documents = () => {
     const [allDocuments, setAllDocuments] = useState([]);
@@ -29,6 +30,33 @@ const Documents = () => {
     const itineraries = allDocuments.filter((d) => d.docType?.toLowerCase() === "itinerary");
     const confirmations = allDocuments.filter((d) => d.docType?.toLowerCase() === "confirmation");
 
+    const handleDownload = async (filePath: string, title: string) => {
+        const toastId = toast.loading("Downloading document...");
+        try {
+            const token = localStorage.getItem("token");
+            const host = import.meta.env.VITE_API_URL || "http://localhost:8080";
+            const response = await fetch(`${host}${filePath}`, {
+                headers: {
+                    "Authorization": `Bearer ${token}`
+                }
+            });
+            if (!response.ok) throw new Error("Download failed");
+            const blob = await response.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = title.endsWith(".pdf") ? title : `${title}.pdf`;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            window.URL.revokeObjectURL(url);
+            toast.success("Document downloaded successfully", { id: toastId });
+        } catch (error) {
+            console.error("Download failed:", error);
+            toast.error("Failed to download document", { id: toastId });
+        }
+    };
+
     if (loading) {
         return (
             <DashboardLayout>
@@ -44,7 +72,7 @@ const Documents = () => {
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                     <div className="flex items-center gap-3">
                         <div className="h-12 w-12 rounded-xl bg-secondary flex items-center justify-center">
-                            <FileText className="h-6 w-6 text-foreground" />.                                {/* Document Icon */}
+                            <FileText className="h-6 w-6 text-foreground" />                                {/* Document Icon */}
                         </div>
                         <div>
                             <h1 className="text-2xl lg:text-3xl font-bold">Documents</h1>
@@ -129,6 +157,7 @@ const Documents = () => {
                                     type={doc.docType}
                                     date={new Date(doc.createdAt).toLocaleDateString()}
                                     size={doc.fileSize}
+                                    onDownload={() => handleDownload(doc.filePath, doc.title)}
                                 />
                             ))}
                             {allDocuments.length === 0 && (
@@ -148,6 +177,7 @@ const Documents = () => {
                                     type={doc.docType}
                                     date={new Date(doc.createdAt).toLocaleDateString()}
                                     size={doc.fileSize}
+                                    onDownload={() => handleDownload(doc.filePath, doc.title)}
                                 />
                             ))}
                         </div>
@@ -162,6 +192,7 @@ const Documents = () => {
                                     type={doc.docType}
                                     date={new Date(doc.createdAt).toLocaleDateString()}
                                     size={doc.fileSize}
+                                    onDownload={() => handleDownload(doc.filePath, doc.title)}
                                 />
                             ))}
                         </div>
@@ -176,6 +207,7 @@ const Documents = () => {
                                     type={doc.docType}
                                     date={new Date(doc.createdAt).toLocaleDateString()}
                                     size={doc.fileSize}
+                                    onDownload={() => handleDownload(doc.filePath, doc.title)}
                                 />
                             ))}
                         </div>
