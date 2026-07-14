@@ -9,6 +9,7 @@ import com.travelhub.backend.entity.Booking;
 import com.travelhub.backend.repository.BookingRepository;
 import com.travelhub.backend.repository.VehicleRepository;
 import com.travelhub.backend.repository.AgentRepository;
+import com.travelhub.backend.repository.HotelRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -18,6 +19,9 @@ import java.util.stream.Collectors;
 import org.springframework.context.ApplicationEventPublisher;
 import com.travelhub.backend.event.BookingEvent;
 import com.travelhub.backend.entity.Vehicle;
+import com.travelhub.backend.entity.Hotel;
+import com.travelhub.backend.entity.Driver;
+import com.travelhub.backend.repository.DriverRepository;
 
 @Service
 @RequiredArgsConstructor
@@ -27,6 +31,8 @@ public class AgentBookingService {
     private final VehicleRepository vehicleRepository;
     private final ApplicationEventPublisher eventPublisher;
     private final AgentRepository agentRepository;
+    private final HotelRepository hotelRepository;
+    private final DriverRepository driverRepository;
 
     /**
      * Returns all bookings visible to the agent.
@@ -42,11 +48,22 @@ public class AgentBookingService {
             // Filter by requested booking status.
             bookings = bookingRepository.findByAgentIdAndStatus(realAgentId, status);
         } else {
-            // Return all bookings for the agent.
+            // Retrieve all bookings for this agent.
             bookings = bookingRepository.findByAgentId(realAgentId);
         }
-        // Convert entities to response DTOs.
         return bookings.stream().map(this::toResponse).collect(Collectors.toList());
+    }
+
+    public Object debugVehicles(Long agentId) {
+        com.travelhub.backend.entity.Agent agent = agentRepository.findByOwnerId(agentId).orElse(null);
+        if (agent == null) return "Agent not found";
+        Long realAgentId = agent.getId();
+        return java.util.Map.of(
+            "realAgentId", realAgentId,
+            "allVehicles", vehicleRepository.findByAgentId(realAgentId),
+            "activeVehicles", vehicleRepository.findByAgentIdAndLifecycleStatus(realAgentId, "active"),
+            "allBookings", bookingRepository.findByAgentId(realAgentId)
+        );
     }
 
     /**
@@ -92,12 +109,67 @@ public class AgentBookingService {
             vehicleRepository.save(vehicle);
         }
 
+        // For Single District packages, assign the selected hotel preference or clear it if null/none
+        if (booking.getPkg() != null && "SINGLE_DISTRICT".equals(booking.getPkg().getPackageType())) {
+            if (request != null && request.getHotelId() != null) {
+                Hotel hotel = hotelRepository.findById(request.getHotelId())
+                        .orElseThrow(() -> new ResourceNotFoundException("Hotel", "id", request.getHotelId()));
+                booking.setHotel(hotel);
+            } else {
+                booking.setHotel(null);
+            }
+        }
+
         // Move booking to confirmed state (pending → confirmed).
         booking.setStatus("confirmed");
         booking.setProgress(25);
         Booking saved = bookingRepository.save(booking);
         eventPublisher.publishEvent(new BookingEvent(this, saved, "APPROVED"));
         return toResponse(saved);
+    }
+
+    /**
+     * Assigns a vehicle to a booking.
+     */
+    @Transactional
+    public BookingResponse assignVehicle(Long agentId, Long bookingId, BookingActionRequest request) {
+        Booking booking = bookingRepository.findById(bookingId)
+                .orElseThrow(() -> new ResourceNotFoundException("Booking", "id", bookingId));
+        if (!isOwnedByAgent(booking, agentId)) {
+            throw new ResourceNotFoundException("Booking", "id", bookingId);
+        }
+
+        if (request != null && request.getVehicleId() != null) {
+            Vehicle vehicle = vehicleRepository.findById(request.getVehicleId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Vehicle", "id", request.getVehicleId()));
+            booking.setVehicle(vehicle);
+            vehicle.setStatus("booked");
+            vehicleRepository.save(vehicle);
+            bookingRepository.save(booking);
+        }
+        return toResponse(booking);
+    }
+
+    /**
+     * Assigns a driver to a booking.
+     */
+    @Transactional
+    public BookingResponse assignDriver(Long agentId, Long bookingId, BookingActionRequest request) {
+        Booking booking = bookingRepository.findById(bookingId)
+                .orElseThrow(() -> new ResourceNotFoundException("Booking", "id", bookingId));
+        if (!isOwnedByAgent(booking, agentId)) {
+            throw new ResourceNotFoundException("Booking", "id", bookingId);
+        }
+
+        if (request != null && request.getDriverId() != null) {
+            Driver driver = driverRepository.findById(request.getDriverId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Driver", "id", request.getDriverId()));
+            booking.setDriver(driver);
+            driver.setStatus("on-trip");
+            driverRepository.save(driver);
+            bookingRepository.save(booking);
+        }
+        return toResponse(booking);
     }
 
     /**
@@ -213,6 +285,7 @@ public class AgentBookingService {
      * Uses null-safe fallback reads for optional package/vehicle relations.
      */
     private BookingResponse toResponse(Booking booking) {
+        String packageId = null;
         String packageName = null;
         String destination = null;
         String vehicleType = null;
@@ -221,6 +294,7 @@ public class AgentBookingService {
 
         try {
             if (booking.getPkg() != null) {
+                packageId = booking.getPkg().getPackageId();
                 packageName = booking.getPkg().getPackageName();
                 destination = booking.getPkg().getDestination();
             }
@@ -238,9 +312,13 @@ public class AgentBookingService {
             // Relation access failed; keep vehicle fields as null.
         }
         String touristName = null;
+        String touristEmail = null;
+        String touristPhone = null;
         try {
             if (booking.getUser() != null) {
                 touristName = booking.getUser().getName();
+                touristEmail = booking.getUser().getEmail();
+                touristPhone = booking.getUser().getTelephone();
             }
         } catch (Exception e) {}
 
@@ -258,14 +336,30 @@ public class AgentBookingService {
         } catch (Exception e) {}
 
         java.util.List<String> preferredHotels = new java.util.ArrayList<>();
+        java.util.List<BookingResponse.HotelPreferenceDetail> hotelPrefDetails = new java.util.ArrayList<>();
         try {
             if (booking.getHotelPreferences() != null) {
                 for (com.travelhub.backend.entity.BookingHotelPreference pref : booking.getHotelPreferences()) {
                     if (pref.getHotel() != null) {
                         preferredHotels.add(pref.getPreferenceNumber() + ". " + pref.getHotel().getHotelName() + " (" + pref.getHotel().getLocation() + ")");
+                        
+                        com.travelhub.backend.entity.Hotel h = pref.getHotel();
+                        hotelPrefDetails.add(BookingResponse.HotelPreferenceDetail.builder()
+                                .id(pref.getId())
+                                .hotelId(h.getId())
+                                .preferenceNumber(pref.getPreferenceNumber())
+                                .hotelName(h.getHotelName())
+                                .imageUrl(h.getImageUrl())
+                                .starRating("4") // Defaulting to 4-Star since starRating column is not in entity
+                                .district(h.getDistrict())
+                                .roomName(pref.getRoomName() != null ? pref.getRoomName() : "Standard Room")
+                                .contactNumber(h.getHotelContactNumber() != null ? h.getHotelContactNumber() : h.getPhoneNumber())
+                                .email(h.getHotelEmail() != null ? h.getHotelEmail() : h.getOwnerEmail())
+                                .build());
                     }
                 }
                 preferredHotels.sort(java.util.Comparator.comparing(s -> Integer.parseInt(s.split("\\.")[0])));
+                hotelPrefDetails.sort(java.util.Comparator.comparing(p -> p.getPreferenceNumber() != null ? p.getPreferenceNumber() : 99));
             }
         } catch (Exception e) {}
 
@@ -285,6 +379,7 @@ public class AgentBookingService {
         return BookingResponse.builder()
                 .id(booking.getId())
                 .bookingId(String.format("BK%05d", booking.getId()))
+                .packageId(packageId)
                 .packageName(packageName)
                 .destination(destination)
                 .startDate(booking.getStartDate())
@@ -301,12 +396,15 @@ public class AgentBookingService {
                 .specialRequests(booking.getSpecialRequests())
                 .duration(booking.getDuration())
                 .touristName(touristName)
+                .touristEmail(touristEmail)
+                .touristPhone(touristPhone)
                 .packageType(packageType)
                 .imageUrl(imageUrl)
                 .accommodationOption(booking.getAccommodationOption())
                 .hotelIdsWithPreference(booking.getHotelIdsWithPreference())
                 .preferredHotels(preferredHotels)
                 .itineraryHotels(itineraryHotels)
+                .hotelPreferences(hotelPrefDetails)
                 .build();
     }
 }

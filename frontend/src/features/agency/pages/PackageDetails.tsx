@@ -189,6 +189,7 @@ const PackageDetails = () => {
             description: day.description || '',
             district: day.district || '',
             hotelId: day.hotelId || null,
+            hotelName: day.hotelName || '',
             hotelNameCustom: day.hotelNameCustom || (day.hotelName || ''),
             activities: (day.activities && day.activities.length) ? day.activities.map(act => (typeof act === 'string' ? { description: act, imageUrl: '' } : { description: act.description || '', imageUrl: act.imageUrl || '' })) : [{ description: '', imageUrl: '' }]
           })),

@@ -8,6 +8,7 @@ import com.travelhub.backend.entity.Agent;
 import com.travelhub.backend.entity.Driver;
 import com.travelhub.backend.repository.AgentRepository;
 import com.travelhub.backend.repository.DriverRepository;
+import com.travelhub.backend.repository.BookingRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -21,12 +22,14 @@ public class DriverService {
 
     private final DriverRepository driverRepository;
     private final AgentRepository agentRepository;
+    private final BookingRepository bookingRepository;
 
     /**
      * Returns all drivers owned by the given agent.
      * If lifecycleStatus is provided, results are filtered (e.g. "active", "inactive").
+     * If startDate and endDate are provided, filters out drivers booked during that period.
      */
-    public List<DriverResponse> getAllDrivers(Long agentId, String lifecycleStatus) {
+    public List<DriverResponse> getAllDrivers(Long agentId, String lifecycleStatus, String startDate, String endDate) {
         Agent agent = getAgentOrThrow(agentId);
         Long realAgentId = agent.getId();
         List<Driver> drivers;
@@ -36,6 +39,15 @@ public class DriverService {
         } else {
             // Otherwise return all drivers for the agent.
             drivers = driverRepository.findByAgentId(realAgentId);
+        }
+
+        if (startDate != null && endDate != null) {
+            LocalDate start = LocalDate.parse(startDate);
+            LocalDate end = LocalDate.parse(endDate);
+            List<Long> bookedDriverIds = bookingRepository.findBookedDriverIds(realAgentId, start, end);
+            drivers = drivers.stream()
+                    .filter(d -> !bookedDriverIds.contains(d.getId()))
+                    .collect(Collectors.toList());
         }
 
         // Convert entities to response DTOs.

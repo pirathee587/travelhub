@@ -15,6 +15,7 @@ import lombok.NoArgsConstructor;
 public class BookingResponse {
     private Long id;
     private String bookingId;
+    private String packageId;
     private String packageName;
     private String destination;
     private LocalDate startDate;
@@ -33,6 +34,8 @@ public class BookingResponse {
     private String duration;
     
     private String touristName;
+    private String touristEmail;
+    private String touristPhone;
     private String packageType;
     private String accommodationOption;
 
@@ -54,4 +57,22 @@ public class BookingResponse {
     private String hotelIdsWithPreference;
     private java.util.List<String> preferredHotels;
     private java.util.List<String> itineraryHotels;
+    private java.util.List<HotelPreferenceDetail> hotelPreferences;
+
+    @lombok.Data
+    @lombok.Builder
+    @lombok.NoArgsConstructor
+    @lombok.AllArgsConstructor
+    public static class HotelPreferenceDetail {
+        private Long id;
+        private Long hotelId;
+        private Integer preferenceNumber;
+        private String hotelName;
+        private String imageUrl;
+        private String starRating;
+        private String district;
+        private String roomName;
+        private String contactNumber;
+        private String email;
+    }
 }

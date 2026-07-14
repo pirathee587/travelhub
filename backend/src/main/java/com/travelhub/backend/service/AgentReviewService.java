@@ -19,26 +19,33 @@ import lombok.RequiredArgsConstructor;
 public class AgentReviewService {
 
     private final ReviewRepository reviewRepository;
+    private final com.travelhub.backend.repository.AgentRepository agentRepository;
 
     @Transactional(readOnly = true)
-    public List<ReviewResponse> getReviews(Long agentId, Integer rating) {
+    public List<ReviewResponse> getReviews(Long ownerId, Integer rating) {
+        com.travelhub.backend.entity.Agent agent = agentRepository.findByOwnerId(ownerId)
+                .orElseThrow(() -> new ResourceNotFoundException("Agent", "ownerId", ownerId));
+        
         List<Review> reviews;
         if (rating != null) {
-            reviews = reviewRepository.findByAgent_IdAndRating(agentId, rating);
+            reviews = reviewRepository.findByAgent_IdAndRating(agent.getId(), rating);
         } else {
-            reviews = reviewRepository.findByAgent_Id(agentId);
+            reviews = reviewRepository.findByAgent_Id(agent.getId());
         }
         return reviews.stream().map(this::toResponse).collect(Collectors.toList());
     }
 
     @Transactional
-    public ReviewResponse replyToReview(Long agentId, Long reviewId, ReviewReplyRequest request) {
+    public ReviewResponse replyToReview(Long ownerId, Long reviewId, ReviewReplyRequest request) {
+        com.travelhub.backend.entity.Agent agent = agentRepository.findByOwnerId(ownerId)
+                .orElseThrow(() -> new ResourceNotFoundException("Agent", "ownerId", ownerId));
+
         Review review = reviewRepository.findById(reviewId)
                 .orElseThrow(() -> new ResourceNotFoundException("Review", "id", reviewId));
 
         // Agent validation
-        if (review.getAgent() == null || !review.getAgent().getId().equals(agentId)) {
-            throw new ResourceNotFoundException("Review for this agent", "agentId", agentId);
+        if (review.getAgent() == null || !review.getAgent().getId().equals(agent.getId())) {
+            throw new ResourceNotFoundException("Review for this agent", "agentId", agent.getId());
         }
 
         review.setReply(request.getReply());
