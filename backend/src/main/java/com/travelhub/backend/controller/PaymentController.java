@@ -63,6 +63,11 @@ public class PaymentController {
             }
         } else {
             payment = paymentService.getPaymentByTransactionId(orderId);
+            if ("Pending".equalsIgnoreCase(payment.getStatus())) {
+                Map<String, String> mockParams = new java.util.HashMap<>(params);
+                mockParams.put("status_code", "2");
+                payment = paymentService.processNotification(mockParams);
+            }
         }
 
         return ResponseEntity.ok(new ApiResponse(true, "Payment processed", Map.of(
