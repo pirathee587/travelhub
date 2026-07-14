@@ -30,18 +30,18 @@ export default function AppRoutes() {
     <Routes>
 
       {/* ── General Auth Routes ── */}
-      <Route path="/login" element={<AuthPage role="tourist" mode="login" />} />
-      <Route path="/signup" element={<AuthPage role="tourist" mode="signup" />} />
-      <Route path="/auth/:role" element={<AuthPage />} />
+      <Route path="/login" element={<AuthPage mode="login" />} />
+      <Route path="/signup" element={<AuthPage mode="signup" />} />
+      <Route path="/auth/:role" element={<Navigate to="/login" replace />} />
 
-      {/* ── Portal Specific Auth Routes (from developer guide) ── */}
-      <Route path="/tourist/login" element={<AuthPage role="tourist" mode="login" />} />
-      <Route path="/tourist/signup" element={<AuthPage role="tourist" mode="signup" />} />
-      <Route path="/agency/login" element={<AuthPage role="agency" mode="login" />} />
-      <Route path="/agency/signup" element={<AuthPage role="agency" mode="signup" />} />
-      <Route path="/hotelowner/login" element={<AuthPage role="hotelowner" mode="login" />} />
-      <Route path="/hotelowner/signup" element={<AuthPage role="hotelowner" mode="signup" />} />
-      <Route path="/admin/login" element={<AuthPage role="admin" mode="login" />} />
+      {/* ── Portal Specific Auth Routes (Redirects) ── */}
+      <Route path="/tourist/login" element={<Navigate to="/login" replace />} />
+      <Route path="/tourist/signup" element={<Navigate to="/signup" replace />} />
+      <Route path="/agency/login" element={<Navigate to="/login" replace />} />
+      <Route path="/agency/signup" element={<Navigate to="/signup" replace />} />
+      <Route path="/hotelowner/login" element={<Navigate to="/login" replace />} />
+      <Route path="/hotelowner/signup" element={<Navigate to="/signup" replace />} />
+      <Route path="/admin/login" element={<Navigate to="/login" replace />} />
 
       {/* ── Email Verification ── */}
       <Route path="/verify" element={<VerifyEmail />} />

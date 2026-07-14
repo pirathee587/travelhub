@@ -15,6 +15,13 @@ const DISTRICTS = [
 ];
 
 const ROLE_CONFIG = {
+  general: {
+    label: 'TravelHub',
+    icon: Plane,
+    color: 'from-sky-500 to-cyan-400',
+    dashboardPath: '/',
+    apiRole: 'TOURIST',
+  },
   tourist: {
     label: 'Tourist',
     icon: Plane,
@@ -25,21 +32,21 @@ const ROLE_CONFIG = {
   agency: {
     label: 'Travel Agency',
     icon: Users,
-    color: 'from-violet-500 to-purple-400',
+    color: 'from-sky-500 to-cyan-400',
     dashboardPath: '/agency',
     apiRole: 'AGENT',
   },
   hotelowner: {
     label: 'Hotel Owner',
     icon: Building2,
-    color: 'from-emerald-500 to-teal-400',
+    color: 'from-sky-500 to-cyan-400',
     dashboardPath: '/hotelowner',
     apiRole: 'HOTEL_OWNER',
   },
   admin: {
     label: 'Admin',
     icon: ShieldCheck,
-    color: 'from-rose-500 to-pink-400',
+    color: 'from-sky-500 to-cyan-400',
     dashboardPath: '/admin',
     apiRole: 'ADMIN',
   },
@@ -65,11 +72,11 @@ export default function AuthPage({ role: propRole, mode }: AuthPageProps = {}) {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [selectedRole, setSelectedRole] = useState(() => {
-    const r = role || 'tourist';
-    return ROLE_CONFIG[r] ? r : 'tourist';
+    const r = role || 'general';
+    return ROLE_CONFIG[r] ? r : 'general';
   });
 
-  const config = ROLE_CONFIG[selectedRole] || ROLE_CONFIG.tourist;
+  const config = ROLE_CONFIG[selectedRole] || ROLE_CONFIG.general;
   const [isLogin, setIsLogin] = useState(() => mode !== 'signup');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -146,6 +153,11 @@ export default function AuthPage({ role: propRole, mode }: AuthPageProps = {}) {
     if (!isLogin) {
       if (form.password !== form.confirmPassword) {
         setError('Passwords do not match');
+        return;
+      }
+      const passwordRegex = /^(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z])(?=.*[@#$%^&+=!])(?=\S+$).{8,}$/;
+      if (!passwordRegex.test(form.password)) {
+        setError('Password must be at least 8 characters long, contain at least one digit, one uppercase letter, one lowercase letter, and one special character');
         return;
       }
       if (!form.telephone) {
@@ -345,7 +357,7 @@ export default function AuthPage({ role: propRole, mode }: AuthPageProps = {}) {
                     User Type
                   </label>
                   <select
-                    value={selectedRole}
+                    value={selectedRole === 'general' ? 'tourist' : selectedRole}
                     onChange={(e) => setSelectedRole(e.target.value)}
                     className="w-full h-10 px-3 rounded-lg border border-slate-200 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-teal-500/30 focus:border-teal-500 transition"
                   >

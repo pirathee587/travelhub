@@ -60,8 +60,8 @@ public class AuthService {
                 .businessAddress(request.getBusinessAddress())
                 .district(request.getDistrict())
                 .verificationToken(verificationToken)
-                .isEmailVerified(request.getRole() == Role.TOURIST) // Auto-verify tourists
-                .status(request.getRole() == Role.TOURIST ? "ACTIVE" : "PENDING") // Set to ACTIVE for tourists
+                .isEmailVerified(false)
+                .status("PENDING")
                 .isActive(true)
                 .agentApproved(request.getRole() != Role.AGENT)
                 .build();
@@ -103,7 +103,7 @@ public class AuthService {
             return new ApiResponse(true, "User registered successfully, but verification email could not be sent. Please contact support.");
         }
 
-        return new ApiResponse(true, "User registered successfully. " + (request.getRole() == Role.TOURIST ? "You can now make bookings!" : "Please check your email for verification."));
+        return new ApiResponse(true, "User registered successfully. Please check your email for verification.");
     }
 
     @Transactional

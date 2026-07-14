@@ -54,10 +54,10 @@ const MyTrips = () => {
             });
     }, []);
 
-    // Filter trips by status (Case-insensitive)
     const pendingTrips = trips.filter((t) => t.status?.toLowerCase() === "pending");           //Pending
-    const confirmedTrips = trips.filter((t) => ["confirmed", "active"].includes(t.status?.toLowerCase()));       //Confirmed
-    const paidTrips = trips.filter((t) => t.status?.toLowerCase() === "paid");                //Paid
+    const confirmedTrips = trips.filter((t) => 
+        ["confirmed", "paid", "refund_requested", "refunded"].includes(t.status?.toLowerCase())
+    );       //Confirmed
     const inProgressTrips = trips.filter((t) => t.status?.toLowerCase() === "in_progress");   //In Progress
     const completedTrips = trips.filter((t) => t.status?.toLowerCase() === "completed");      //Completed
     const cancelledTrips = trips.filter((t) => t.status?.toLowerCase() === "cancelled");        //Cancelled

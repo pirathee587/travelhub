@@ -4,6 +4,7 @@ import com.travelhub.backend.event.BookingEvent;
 import com.travelhub.backend.event.HotelEvent;
 import com.travelhub.backend.event.PackageEvent;
 import com.travelhub.backend.event.UserAccountEvent;
+import com.travelhub.backend.event.PaymentEvent;
 import com.travelhub.backend.repository.UserRepository;
 import com.travelhub.backend.service.EmailService;
 import com.travelhub.backend.service.UserNotificationService;
@@ -33,13 +34,8 @@ public class NotificationListener {
 
         switch (event.getType()) {
             case "CREATED":
-                emailService.sendBookingConfirmation(booking);
-                if (booking.getUser() != null) {
-                    userNotificationService.notifyUser(booking.getUser().getId(), "booking", "Booking Received", "Your booking " + bookingRef + " for " + pkgName + " has been received and is pending approval.", "/tourist/trips");
-                }
-                if (booking.getPkg() != null && booking.getPkg().getAgent() != null) {
-                    userNotificationService.notifyAgent(booking.getPkg().getAgent(), "booking", "New Booking Received", "You have received a new booking " + bookingRef + " for " + pkgName + ".");
-                }
+                emailService.sendBookingConfirmation(event.getBooking());
+                emailService.sendAgentBookingNotification(event.getBooking());
                 break;
             case "APPROVED":
                 emailService.sendBookingApprovalNotification(booking);
@@ -53,6 +49,15 @@ public class NotificationListener {
                     userNotificationService.notifyUser(booking.getUser().getId(), "booking", "Booking Declined", "Your booking " + bookingRef + " for " + pkgName + " has been declined. Reason: " + event.getReason(), "/tourist/trips");
                 }
                 break;
+        }
+    }
+
+    @Async
+    @EventListener
+    public void handlePaymentEvent(PaymentEvent event) {
+        log.info("Handling payment event: {} for payment ID: {}", event.getType(), event.getPayment().getId());
+        if ("COMPLETED".equalsIgnoreCase(event.getType())) {
+            emailService.sendPaymentConfirmation(event.getPayment());
         }
     }
 
