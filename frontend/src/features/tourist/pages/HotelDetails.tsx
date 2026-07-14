@@ -445,11 +445,11 @@ const HotelDetails = () => {
                         </h3>
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                             {hotel.amenities?.map((amenity, idx) => (
-                                <div key={idx} className="flex items-center gap-3 bg-secondary/30 p-4 rounded-xl border border-border/50 hover:shadow-sm transition-all">
-                                    <div className="h-8 w-8 rounded-lg bg-background flex items-center justify-center text-primary shadow-sm">
-                                        {getAmenityIcon(amenity)}   {/* Icon from above function */}
+                                <div key={idx} className="flex items-center gap-3 bg-card p-4 rounded-xl border border-border shadow-sm">
+                                    <div className="h-8 w-8 rounded-full bg-orange-100/80 text-orange-600 flex items-center justify-center flex-shrink-0">
+                                        {getAmenityIcon(amenity)}
                                     </div>
-                                    <span className="text-sm font-medium capitalize">{amenity}</span> {/*Amenities name*/}
+                                    <span className="text-base font-medium capitalize">{amenity}</span>
                                 </div>
                             ))}
                         </div>

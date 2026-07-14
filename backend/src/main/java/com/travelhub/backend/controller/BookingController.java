@@ -68,7 +68,9 @@ public class BookingController {
 
     // PUT /api/tourist/bookings/1/cancel
     @PutMapping("/bookings/{id}/cancel")
-    public ResponseEntity<BookingResponse> cancelBooking(@PathVariable Long id) {
-        return ResponseEntity.ok(bookingCreationService.cancelBooking(id));
+    public ResponseEntity<BookingResponse> cancelBooking(
+            @PathVariable Long id,
+            @RequestParam Long userId) {
+        return ResponseEntity.ok(bookingCreationService.cancelBooking(id, userId));
     }
 }

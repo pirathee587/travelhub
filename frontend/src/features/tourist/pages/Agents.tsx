@@ -200,7 +200,7 @@ const Agents = () => {
                             </div>
                             <div>
                                 <h1 className="text-3xl lg:text-4xl font-extrabold tracking-tight text-white">
-                                    Meet Our Agents
+                                    Meet Our Agency
                                 </h1>
                                 <p className="text-white/75 text-sm mt-0.5">
                                     Verified travel experts ready to plan your perfect adventure
@@ -212,7 +212,7 @@ const Agents = () => {
                         <div className="flex flex-wrap items-center gap-3 mt-2">
                             <div className="flex items-center gap-2 bg-white/10 backdrop-blur-sm rounded-xl px-4 py-2 text-sm font-semibold">
                                 <Users className="h-4 w-4 text-white/80" />
-                                {agents.length} Verified Agents
+                                {agents.length} Verified Agency
                             </div>
                             <div className="flex items-center gap-2 bg-white/10 backdrop-blur-sm rounded-xl px-4 py-2 text-sm font-semibold">
                                 <Star className="h-4 w-4 fill-yellow-300 text-yellow-300" />
@@ -244,7 +244,7 @@ const Agents = () => {
                 <section>
                     <div className="flex items-center gap-2 mb-5">
                         <Users className="h-5 w-5 text-primary" />
-                        <h2 className="text-lg font-semibold">All Agents</h2>
+                        <h2 className="text-lg font-semibold">All Agency</h2>
                         <Badge variant="secondary">{filteredAgents.length} available</Badge>
                     </div>
 

@@ -11,13 +11,17 @@ const handleResponse = async (res: Response) => {
 
 const mapPackagePrices = (pkg: any) => {
     if (pkg && typeof pkg === 'object') {
-        if (pkg.priceFrom !== undefined && pkg.priceFrom !== null) {
-            pkg.basePriceAdult = pkg.priceFrom;
+        if (pkg.basePriceAdult === undefined || pkg.basePriceAdult === null) {
+            if (pkg.priceFrom !== undefined && pkg.priceFrom !== null) {
+                pkg.basePriceAdult = pkg.priceFrom;
+            }
         }
-        if (pkg.priceTo !== undefined && pkg.priceTo !== null) {
-            pkg.basePriceChild = pkg.priceTo;
-        } else {
-            pkg.basePriceChild = pkg.priceFrom ? Math.round(pkg.priceFrom * 0.7) : 0;
+        if (pkg.basePriceChild === undefined || pkg.basePriceChild === null) {
+            if (pkg.priceTo !== undefined && pkg.priceTo !== null) {
+                pkg.basePriceChild = pkg.priceTo;
+            } else {
+                pkg.basePriceChild = pkg.priceFrom ? Math.round(pkg.priceFrom * 0.7) : 0;
+            }
         }
     }
     return pkg;
@@ -155,8 +159,8 @@ export const api = {
             throw err;  // ← Re-throw to ensure frontend catches it
         }),
 
-    cancelBooking: (id: string | number) =>
-        fetch(`${BASE_URL}/tourist/bookings/${id}/cancel`, {
+    cancelBooking: (id: string | number, userId: string | number) =>
+        fetch(`${BASE_URL}/tourist/bookings/${id}/cancel?userId=${userId}`, {
             method: "PUT"
         }).then(handleResponse)
         .catch((err) => {

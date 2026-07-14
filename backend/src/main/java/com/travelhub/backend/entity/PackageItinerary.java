@@ -40,6 +40,10 @@ public class PackageItinerary {
     @JoinColumn(name = "hotel_id")
     private Hotel hotel;
 
+    public Long getHotelId() {
+        return hotel != null ? hotel.getId() : null;
+    }
+
     @Column(name = "hotel_name_custom")
     private String hotelNameCustom;
 }

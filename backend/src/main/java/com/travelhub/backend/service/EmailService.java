@@ -10,6 +10,8 @@ import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import com.travelhub.backend.entity.Booking;
 import com.travelhub.backend.entity.User;
+import com.travelhub.backend.entity.Payment;
+import com.travelhub.backend.entity.RefundRequest;
 import com.travelhub.backend.repository.UserRepository;
 
 @Service
@@ -22,6 +24,9 @@ public class EmailService {
 
     @Value("${app.base-url:http://localhost:5173}")
     private String baseUrl;
+
+    @Value("${app.backend-url:http://localhost:8080}")
+    private String backendUrl;
 
     public void sendVerificationEmail(String email, String token) {
         String verificationUrl = "http://localhost:5173/verify?token=" + token;
@@ -40,6 +45,30 @@ public class EmailService {
                 + "<p>Status: <b>PENDING</b></p>"
                 + "<p>We will notify you once the agent approves it.</p>";
         sendEmail(booking.getUser().getEmail(), "Booking Received - TravelHub", message, "BOOKING", booking.getId());
+    }
+
+    public void sendAgentBookingNotification(Booking booking) {
+        if (booking.getPkg() == null || booking.getPkg().getAgent() == null || booking.getPkg().getAgent().getOwner() == null) {
+            return;
+        }
+        
+        String agentEmail = booking.getPkg().getAgent().getOwner().getEmail();
+        String approveUrl = backendUrl + "/api/v1/agent/bookings/" + booking.getId() + "/email-accept";
+        String declineUrl = backendUrl + "/api/v1/agent/bookings/" + booking.getId() + "/email-decline";
+        
+        String message = "<h3>New Booking Request</h3>"
+                + "<p>Dear Agent, you have received a new booking request for <b>" + booking.getPkg().getPackageName() + "</b>.</p>"
+                + "<p>Tourist: <b>" + booking.getUser().getName() + "</b></p>"
+                + "<p>Dates: <b>" + booking.getStartDate() + " to " + booking.getEndDate() + "</b></p>"
+                + "<p>Total Price: <b>$" + booking.getTotalPrice() + "</b></p>"
+                + "<p>Please click below to action this booking:</p>"
+                + "<p>"
+                + "<a href=\"" + approveUrl + "\" style=\"background-color:#10b981;color:white;padding:10px 15px;text-decoration:none;border-radius:5px;margin-right:10px;display:inline-block;\">Approve Booking</a>"
+                + "<a href=\"" + declineUrl + "\" style=\"background-color:#ef4444;color:white;padding:10px 15px;text-decoration:none;border-radius:5px;display:inline-block;\">Decline Booking</a>"
+                + "</p>"
+                + "<p>Or log into your dashboard to review details.</p>";
+                
+        sendEmail(agentEmail, "New Booking Request - TravelHub", message, "BOOKING", booking.getId());
     }
 
     public void sendBookingApprovalNotification(Booking booking) {
@@ -108,6 +137,58 @@ public class EmailService {
         User user = userRepository.findByEmail(email).orElse(null);
         Long userId = user != null ? user.getId() : null;
         sendEmail(email, "Reset your password - TravelHub", message, "USER", userId);
+    }
+
+    public void sendPaymentConfirmation(Payment payment) {
+        if (payment.getUser() == null) {
+            return;
+        }
+        String message = "<h3>Payment Confirmation</h3>"
+                + "<p>Dear " + payment.getUser().getName() + ",</p>"
+                + "<p>We have successfully received your payment of <b>$" + payment.getAmount() + "</b> for the package: <b>" 
+                + (payment.getBooking() != null && payment.getBooking().getPkg() != null ? payment.getBooking().getPkg().getPackageName() : "Travel Booking") + "</b>.</p>"
+                + "<p>Transaction ID: <b>" + payment.getTransactionId() + "</b></p>"
+                + "<p>Status: <b>SUCCESS</b></p>"
+                + "<p>Thank you for booking with TravelHub!</p>";
+        sendEmail(payment.getUser().getEmail(), "Payment Confirmation - TravelHub", message, "PAYMENT", payment.getId());
+    }
+
+    public void sendAgentRefundAlert(RefundRequest request) {
+        if (request.getAgent() == null || request.getAgent().getOwner() == null) return;
+        String agentEmail = request.getAgent().getOwner().getEmail();
+        String message = "<h3>Refund Requested</h3>"
+                + "<p>Dear Agent, a tourist has requested a refund for Booking <b>BK-" + request.getBooking().getId() + "</b>.</p>"
+                + "<p>Amount: <b>$" + request.getBooking().getTotalPrice() + "</b></p>"
+                + "<h4>Tourist Bank Details:</h4>"
+                + "<ul>"
+                + "<li>Bank Name: <b>" + request.getBankName() + "</b></li>"
+                + "<li>Account No: <b>" + request.getAccountNo() + "</b></li>"
+                + "<li>Account Holder: <b>" + request.getAccountHolderName() + "</b></li>"
+                + "<li>Branch: <b>" + request.getBranchName() + "</b></li>"
+                + "</ul>"
+                + "<p>Reason: <i>" + request.getReason() + "</i></p>"
+                + "<p>Please process the transfer manually via your bank and upload the deposit receipt in your dashboard to confirm.</p>";
+        sendEmail(agentEmail, "Refund Request Alert - TravelHub", message, "BOOKING", request.getBooking().getId());
+    }
+
+    public void sendTouristRefundApproved(RefundRequest request) {
+        String touristEmail = request.getUser().getEmail();
+        String message = "<h3>Refund Approved</h3>"
+                + "<p>Dear " + request.getUser().getName() + ",</p>"
+                + "<p>Your refund request for booking <b>BK-" + request.getBooking().getId() + "</b> has been approved.</p>"
+                + "<p>Amount refunded: <b>$" + request.getBooking().getTotalPrice() + "</b></p>"
+                + "<p>The agent has completed the bank deposit transfer. You can view the deposit receipt proof here:</p>"
+                + "<p><a href=\"" + request.getRefundSlipUrl() + "\">View Deposit Slip</a></p>";
+        sendEmail(touristEmail, "Refund Request Approved - TravelHub", message, "BOOKING", request.getBooking().getId());
+    }
+
+    public void sendTouristRefundDeclined(RefundRequest request, String reason) {
+        String touristEmail = request.getUser().getEmail();
+        String message = "<h3>Refund Request Declined</h3>"
+                + "<p>Dear " + request.getUser().getName() + ",</p>"
+                + "<p>Your refund request for booking <b>BK-" + request.getBooking().getId() + "</b> has been declined by the agent.</p>"
+                + "<p>Reason provided: <i>" + reason + "</i></p>";
+        sendEmail(touristEmail, "Refund Request Declined - TravelHub", message, "BOOKING", request.getBooking().getId());
     }
 
     private void sendEmail(String to, String subject, String content, String relatedType, Long relatedId) {

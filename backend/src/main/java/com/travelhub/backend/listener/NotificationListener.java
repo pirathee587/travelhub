@@ -4,8 +4,10 @@ import com.travelhub.backend.event.BookingEvent;
 import com.travelhub.backend.event.HotelEvent;
 import com.travelhub.backend.event.PackageEvent;
 import com.travelhub.backend.event.UserAccountEvent;
+import com.travelhub.backend.event.PaymentEvent;
 import com.travelhub.backend.repository.UserRepository;
 import com.travelhub.backend.service.EmailService;
+import com.travelhub.backend.service.UserNotificationService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.event.EventListener;
@@ -21,25 +23,49 @@ public class NotificationListener {
     private final UserRepository userRepository;
     private final com.travelhub.backend.service.AgentNotificationService agentNotificationService;
     private final com.travelhub.backend.repository.AgentRepository agentRepository;
+    private final UserNotificationService userNotificationService;
 
     @Async
     @EventListener
     public void handleBookingEvent(BookingEvent event) {
         log.info("Handling booking event: {} for booking ID: {}", event.getType(), event.getBooking().getId());
+        
+        var booking = event.getBooking();
+        String bookingRef = "BK" + String.format("%05d", booking.getId());
+        String pkgName = booking.getPkg() != null ? booking.getPkg().getPackageName() : "a package";
 
         switch (event.getType()) {
             case "CREATED":
                 emailService.sendBookingConfirmation(event.getBooking());
+                emailService.sendAgentBookingNotification(event.getBooking());
                 if (event.getBooking().getPkg() != null && event.getBooking().getPkg().getAgent() != null) {
                     agentNotificationService.createNotification(event.getBooking().getPkg().getAgent(), "booking", "New Booking Request", "You have a new booking request for package " + event.getBooking().getPkg().getPackageName() + ".");
                 }
                 break;
             case "APPROVED":
-                emailService.sendBookingApprovalNotification(event.getBooking());
+                emailService.sendBookingApprovalNotification(booking);
+                if (booking.getUser() != null) {
+                    userNotificationService.notifyUser(booking.getUser().getId(), "booking", "Booking Approved", "Your booking " + bookingRef + " for " + pkgName + " has been approved. Please complete the payment.", "/tourist/trips");
+                }
                 break;
             case "DECLINED":
-                emailService.sendBookingDeclineNotification(event.getBooking(), event.getReason());
+                emailService.sendBookingDeclineNotification(booking, event.getReason());
+                if (booking.getUser() != null) {
+                    userNotificationService.notifyUser(booking.getUser().getId(), "booking", "Booking Declined", "Your booking " + bookingRef + " for " + pkgName + " has been declined. Reason: " + event.getReason(), "/tourist/trips");
+                }
                 break;
+        }
+    }
+
+    @Async
+    @EventListener
+    public void handlePaymentEvent(PaymentEvent event) {
+        log.info("Handling payment event: {} for payment ID: {}", event.getType(), event.getPayment().getId());
+        if ("COMPLETED".equalsIgnoreCase(event.getType())) {
+            emailService.sendPaymentConfirmation(event.getPayment());
+            if (event.getPayment().getAgent() != null) {
+                agentNotificationService.createNotification(event.getPayment().getAgent(), "payment", "Payment Received", "You received a payment of $" + event.getPayment().getAmount() + " for booking " + event.getPayment().getBooking().getId() + ".");
+            }
         }
     }
 
@@ -100,13 +126,5 @@ public class NotificationListener {
         }
     }
 
-    @Async
-    @EventListener
-    public void handlePaymentEvent(com.travelhub.backend.event.PaymentEvent event) {
-        log.info("Handling payment event: {} for payment ID: {}", event.getType(), event.getPayment().getId());
-        
-        if ("COMPLETED".equals(event.getType()) && event.getPayment().getAgent() != null) {
-            agentNotificationService.createNotification(event.getPayment().getAgent(), "payment", "Payment Received", "You received a payment of $" + event.getPayment().getAmount() + " for booking " + event.getPayment().getBooking().getId() + ".");
-        }
-    }
+
 }

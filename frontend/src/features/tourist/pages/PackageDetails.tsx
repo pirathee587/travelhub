@@ -17,7 +17,7 @@ import {
     Grid,
     Building2,
     Bus, Train, Ticket, BedDouble, Binoculars, Receipt,
-    Camera, Map, Headphones, ShoppingBag, Umbrella, Bike, Mountain, Tent, Ship, Plane,
+    Camera, Map, Headphones, ShoppingBag, Umbrella, Bike, Mountain, Tent, Ship, Plane, DollarSign,
     Utensils, Coffee, ShieldCheck, Wifi, CheckCircle2, Car
 } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/common/ui/avatar";
@@ -373,15 +373,19 @@ const PackageDetails = () => {
                                 )}
                             </div>
                             <div>
-                                <label className="text-sm text-muted-foreground block mb-1">Base Price</label>
-                                <p className="font-medium">Starts from ${pkg.basePriceAdult}</p>               {/* Base Price*/}
-                            </div>
-                            <div>
                                 <label className="text-sm text-muted-foreground block mb-1">District</label>
                                 <p className="font-medium">{pkg.district || "Not specified"}</p>               {/* District*/}
                             </div>
+                            {pkg.basePriceAdult != null && (
+                                <div>
+                                    <label className="text-sm text-muted-foreground block mb-1">Starts From (Per Adult)</label>
+                                    <p className="font-medium text-primary text-lg">${pkg.basePriceAdult}</p>
+                                </div>
+                            )}
                         </div>
                     </section>
+
+
 
                     {/* What's Included */}
                     {pkg.inclusions && pkg.inclusions.length > 0 && (
@@ -391,11 +395,11 @@ const PackageDetails = () => {
                             </h3>
                             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                                 {pkg.inclusions.map((inclusion, idx) => (
-                                    <div key={idx} className="flex items-center gap-3 bg-accent/10 p-4 rounded-xl border border-accent/20 hover:shadow-sm transition-all">
-                                        <div className="h-8 w-8 rounded-lg bg-background flex items-center justify-center text-accent shadow-sm">
+                                    <div key={idx} className="flex items-center gap-3 bg-card p-4 rounded-xl border border-border shadow-sm">
+                                        <div className="h-8 w-8 rounded-full bg-orange-100/80 text-orange-600 flex items-center justify-center flex-shrink-0">
                                             {getInclusionIcon(inclusion)}
                                         </div>
-                                        <span className="text-sm font-medium capitalize">{inclusion}</span>
+                                        <span className="text-base font-medium">{inclusion}</span>
                                     </div>
                                 ))}
                             </div>
@@ -432,33 +436,39 @@ const PackageDetails = () => {
                                         </p>
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                              {item.activities?.map((activity, aIdx) => {
-                                                 const hasImage = activity && typeof activity === 'object' && activity.imageUrl;
-                                                 const desc = activity && typeof activity === 'object' ? activity.description : activity;
+                                                 // Parse activity if it's a JSON string
+                                                 let parsedActivity = activity;
+                                                 if (typeof activity === 'string') {
+                                                     try { parsedActivity = JSON.parse(activity); } catch { parsedActivity = { description: activity }; }
+                                                 }
+                                                 const hasImage = parsedActivity && typeof parsedActivity === 'object' && parsedActivity.imageUrl && parsedActivity.imageUrl !== 'null';
+                                                 const desc = parsedActivity && typeof parsedActivity === 'object' ? parsedActivity.description : parsedActivity;
+                                                 const imageUrl = hasImage ? parsedActivity.imageUrl : null;
                                                  return (
-                                                     <div key={aIdx} className="flex flex-col gap-3 bg-secondary/30 p-4 rounded-xl border border-border/50 hover:shadow-sm transition-all">
-                                                         <div className="flex items-start gap-2">
-                                                             <div className="h-2 w-2 rounded-full bg-primary mt-1.5 flex-shrink-0" />
-                                                             <span className="text-sm font-semibold text-foreground">
-                                                                 Activity {aIdx + 1}: {desc}
-                                                             </span>
-                                                         </div>
+                                                     <div key={aIdx} className="flex flex-col gap-3 bg-secondary/30 rounded-xl border border-border/50 hover:shadow-sm transition-all overflow-hidden">
                                                          {hasImage && (
                                                              <div 
-                                                                 className="mt-1 overflow-hidden rounded-lg border border-border/60 cursor-pointer"
-                                                                 onClick={() => setSelectedImage(activity.imageUrl)}
+                                                                 className="overflow-hidden cursor-pointer"
+                                                                 onClick={() => setSelectedImage(imageUrl)}
                                                              >
                                                                  <img
-                                                                     src={activity.imageUrl}
+                                                                     src={imageUrl}
                                                                      alt={desc}
-                                                                     className="w-full h-48 md:h-64 object-cover hover:scale-105 transition-transform duration-500"
+                                                                     className="w-full h-48 object-cover hover:scale-105 transition-transform duration-500"
                                                                  />
                                                              </div>
                                                          )}
+                                                         <div className="flex items-start gap-2 p-4 pt-2">
+                                                             <div className="h-2 w-2 rounded-full bg-primary mt-1.5 flex-shrink-0" />
+                                                             <span className="text-sm font-semibold text-foreground">
+                                                                 {desc}
+                                                             </span>
+                                                         </div>
                                                      </div>
                                                  );
                                              })}
                                          </div>
-                                        {pkg.packageType === "MULTI_DISTRICT" && item.hotelName && (
+                                        {pkg.packageType === "MULTI_DISTRICT" && (item.hotelName || item.hotelNameCustom) && (
                                             <div className="mt-4 p-3 bg-primary/5 rounded-xl border border-primary/20 flex items-center gap-2">
                                                 <Building2 className="h-4 w-4 text-primary" />
                                                 <span className="text-sm font-medium text-primary">
@@ -468,10 +478,10 @@ const PackageDetails = () => {
                                                             onClick={() => navigate(`/tourist/hotels/${item.hotelId}`)}
                                                             className="underline hover:text-primary/80 transition-colors font-bold cursor-pointer text-base ml-1"
                                                         >
-                                                            {item.hotelName}
+                                                            {item.hotelNameCustom || item.hotelName}
                                                         </button>
                                                     ) : (
-                                                        <span className="font-bold text-base ml-1">{item.hotelName}</span>
+                                                        <span className="font-bold text-base ml-1">{item.hotelNameCustom || item.hotelName}</span>
                                                     )}
                                                 </span>
                                             </div>

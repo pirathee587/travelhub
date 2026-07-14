@@ -12,6 +12,7 @@ import com.travelhub.backend.dto.response.RoomResponse;
 import com.travelhub.backend.entity.Hotel;
 import com.travelhub.backend.repository.HotelRepository;
 import com.travelhub.backend.repository.ReviewRepository;
+import com.travelhub.backend.repository.RoomRepository;
 import com.travelhub.backend.service.HotelPricingService.PriceRange;
 
 import lombok.RequiredArgsConstructor;
@@ -26,6 +27,7 @@ public class HotelService {
     private final HotelRepository hotelRepository;
     private final ReviewRepository reviewRepository;
     private final HotelPricingService hotelPricingService;
+    private final RoomRepository roomRepository;
 
     public List<HotelResponse> getAllHotels() {
         List<Hotel> hotels = hotelRepository.findByApplicationStatus("Approved");
@@ -109,8 +111,9 @@ public class HotelService {
         }
 
         List<RoomResponse> roomResponses = null;
-        if (hotel.getRooms() != null && !hotel.getRooms().isEmpty()) {
-            roomResponses = hotel.getRooms().stream()
+        List<com.travelhub.backend.entity.Room> rooms = roomRepository.findByHotelId(hotel.getId());
+        if (rooms != null && !rooms.isEmpty()) {
+            roomResponses = rooms.stream()
                     .map(room -> new RoomResponse(
                             room.getId(),
                             room.getName(),
@@ -147,8 +150,10 @@ public class HotelService {
         if (img != null && !img.trim().isEmpty()) {
             return img;
         }
-        if (h.getRooms() != null) {
-            for (com.travelhub.backend.entity.Room r : h.getRooms()) {
+        // Fetch rooms from DB to get image URL (avoid lazy loading issues)
+        List<com.travelhub.backend.entity.Room> rooms = roomRepository.findByHotelId(h.getId());
+        if (rooms != null) {
+            for (com.travelhub.backend.entity.Room r : rooms) {
                 if (r.getImageUrl() != null && !r.getImageUrl().trim().isEmpty()) {
                     return r.getImageUrl();
                 }
