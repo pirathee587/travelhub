@@ -97,7 +97,9 @@ export function TripDetailsSheet({ trip, open, onOpenChange }: { trip: any, open
             toast.success("Refund request submitted successfully!");
             setRefundDialogOpen(false);
             onOpenChange(false);
-            window.location.reload();
+            setTimeout(() => {
+                window.location.reload();
+            }, 1500);
         } catch (err: any) {
             const msg = err.response?.data?.message || "Failed to submit refund request";
             toast.error(msg);
