@@ -70,7 +70,7 @@ export function AddAmenityDrawer({ hotelId, onSuccess, children }: AddAmenityDra
   return (
     <Drawer open={open} onOpenChange={setOpen}>
       <DrawerTrigger asChild>{children}</DrawerTrigger>
-      <DrawerContent className="max-h-[90vh]">
+      <DrawerContent className="hotel-owner-theme max-h-[90vh]">
         <DrawerHeader>
           <DrawerTitle>Add New Amenity</DrawerTitle>
           <DrawerDescription>
@@ -113,7 +113,7 @@ export function AddAmenityDrawer({ hotelId, onSuccess, children }: AddAmenityDra
               <Button
                 type="submit"
                 disabled={loading}
-                className="w-full rounded-xl bg-[#1e293b] hover:bg-[#0f172a] text-white"
+                className="w-full rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground"
               >
                 {loading ? (
                   <>

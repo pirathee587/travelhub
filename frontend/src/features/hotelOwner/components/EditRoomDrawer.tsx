@@ -70,7 +70,7 @@ export function EditRoomDrawer({
         data.append("image", image);
       }
 
-      const res = await fetch(`http://localhost:8080/api/v1/rooms/${roomId}`, {
+      const res = await fetch(`http://localhost:8080/api/rooms/${roomId}`, {
         method: "PUT",
         headers: {
           Authorization: `Bearer ${localStorage.getItem("token")}`,
@@ -117,7 +117,7 @@ export function EditRoomDrawer({
       }}
     >
       <DrawerTrigger asChild>{children}</DrawerTrigger>
-      <DrawerContent className="max-h-[90vh]">
+      <DrawerContent className="hotel-owner-theme max-h-[90vh]">
         <DrawerHeader>
           <DrawerTitle>Edit Room</DrawerTitle>
           <DrawerDescription>Update the details of your room.</DrawerDescription>
@@ -204,7 +204,7 @@ export function EditRoomDrawer({
               <Button
                 type="submit"
                 disabled={loading}
-                className="w-full rounded-xl bg-[#1e293b] hover:bg-[#0f172a] text-white"
+                className="w-full rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground"
               >
                 {loading ? (
                   <>
