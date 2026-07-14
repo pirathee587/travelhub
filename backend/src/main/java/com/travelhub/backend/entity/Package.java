@@ -87,6 +87,9 @@ public class Package {
     @Column(name = "deleted_at")
     private LocalDateTime deletedAt;
 
+    @Column(name = "package_type")
+    private String packageType;
+
     // ── Timestamps ─────────────────────────────────────────────
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)

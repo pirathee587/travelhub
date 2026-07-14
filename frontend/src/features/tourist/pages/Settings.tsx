@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { DashboardLayout } from "@/features/tourist/components/dashboard/DashboardLayout";
 import { Button } from "@/components/common/ui/button";
 import { Input } from "@/components/common/ui/input";
@@ -50,6 +51,7 @@ import { mutate } from "swr";
 
 
 const SettingsPage = () => {
+    const navigate = useNavigate();
     const userId = defaultUserId();
 
     const [isEditing, setIsEditing] = useState(false);
@@ -257,17 +259,17 @@ const SettingsPage = () => {
                             <div className="space-y-2">
                                 <Label htmlFor="name" className="text-sm font-semibold">Full Name</Label>
                                 <div className="relative">
-                                    <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                                    <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-primary" />
                                     <Input
                                         id="name"
                                         value={editForm.name}
                                         onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEditForm({ ...editForm, name: e.target.value })}
                                         disabled={!isEditing}
                                         className={cn(
-                                            "pl-10 h-11 bg-background transition-all",
+                                            "pl-10 h-11 transition-all",
                                             isEditing
-                                                ? "border-primary focus-visible:ring-primary/20"
-                                                : "border-transparent bg-muted/20"
+                                                ? "border-primary focus-visible:ring-primary/20 shadow-sm bg-background"
+                                                : "border-primary/20 bg-primary/5 text-foreground disabled:opacity-100 disabled:cursor-default font-medium"
                                         )}
                                     />
                                 </div>
@@ -277,12 +279,12 @@ const SettingsPage = () => {
                             <div className="space-y-2">
                                 <Label htmlFor="email" className="text-sm font-semibold">Email Address</Label>
                                 <div className="relative">
-                                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-primary" />
                                     <Input
                                         id="email"
                                         value={profile.email}
                                         disabled
-                                        className="pl-10 h-11 bg-muted/20 border-transparent cursor-not-allowed opacity-70"
+                                        className="pl-10 h-11 bg-primary/5 border-primary/20 text-foreground font-medium cursor-not-allowed disabled:opacity-80"
                                     />
                                 </div>
                                 <p className="text-xs text-muted-foreground italic">Email cannot be changed for security reasons.</p>
@@ -292,7 +294,7 @@ const SettingsPage = () => {
                             <div className="space-y-2">
                                 <Label htmlFor="telephone" className="text-sm font-semibold">Phone Number</Label>
                                 <div className="relative">
-                                    <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                                    <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-primary" />
                                     <Input
                                         id="telephone"
                                         placeholder="e.g. +94 77 123 4567"
@@ -300,10 +302,10 @@ const SettingsPage = () => {
                                         onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEditForm({ ...editForm, telephone: e.target.value })}
                                         disabled={!isEditing}
                                         className={cn(
-                                            "pl-10 h-11 bg-background transition-all",
+                                            "pl-10 h-11 transition-all",
                                             isEditing
-                                                ? "border-primary focus-visible:ring-primary/20"
-                                                : "border-transparent bg-muted/20"
+                                                ? "border-primary focus-visible:ring-primary/20 shadow-sm bg-background"
+                                                : "border-primary/20 bg-primary/5 text-foreground disabled:opacity-100 disabled:cursor-default font-medium"
                                         )}
                                     />
                                 </div>
@@ -313,7 +315,7 @@ const SettingsPage = () => {
                             <div className="space-y-2">
                                 <Label htmlFor="nationality" className="text-sm font-semibold">Nationality</Label>
                                 <div className="relative">
-                                    <Globe className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground z-10 pointer-events-none" />
+                                    <Globe className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-primary z-10 pointer-events-none" />
                                     <Select
                                         disabled={!isEditing}
                                         value={editForm.nationality}
@@ -321,16 +323,16 @@ const SettingsPage = () => {
                                     >
                                         <SelectTrigger 
                                             className={cn(
-                                                "pl-10 h-11 bg-background transition-all",
+                                                "pl-10 h-11 transition-all data-[disabled]:opacity-100",
                                                 isEditing
-                                                    ? "border-primary focus-visible:ring-primary/20"
-                                                    : "border-transparent bg-muted/20"
+                                                    ? "border-primary focus-visible:ring-primary/20 shadow-sm bg-background"
+                                                    : "border-primary/20 bg-primary/5 text-foreground cursor-default font-medium"
                                             )}
                                         >
                                             <SelectValue placeholder="Select Country" />
                                         </SelectTrigger>
                                         <SelectContent className="max-h-[300px]">
-                                            {COUNTRIES.map((country) => (
+                                            {Array.from(new Set([...COUNTRIES, editForm.nationality])).filter(Boolean).map((country) => (
                                                 <SelectItem key={country} value={country}>
                                                     {country}
                                                 </SelectItem>
@@ -359,7 +361,10 @@ const SettingsPage = () => {
                 <section className="space-y-4 pt-6">
                     <h3 className="text-xl font-bold">Preferences</h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <Card className="border-border hover:border-primary/20 transition-colors cursor-pointer group">
+                        <Card 
+                            className="border-border hover:border-primary/20 transition-colors cursor-pointer group"
+                            onClick={() => navigate('/tourist/notifications')}
+                        >
                             <CardContent className="p-6 flex items-center justify-between">
                                 <div className="space-y-1">
                                     <p className="font-semibold group-hover:text-primary transition-colors">Notification Settings</p>

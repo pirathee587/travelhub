@@ -59,10 +59,11 @@ export default function WelcomePage() {
   }, [location.search]);
 
   const { session } = useOwnerSession();
-  const { hotels, loading } = useHotels(filterStatus);
+  const { hotels, loading, refresh } = useHotels(filterStatus);
   const { summary, loading: summaryLoading } = useHotelSummary();
   const firstName = (session?.name || "there").split(" ")[0];
   const [toDelete, setToDelete] = useState<Hotel | null>(null);
+
   
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedDistrict, setSelectedDistrict] = useState("All");
@@ -118,7 +119,7 @@ export default function WelcomePage() {
         <div className="mt-7 flex justify-center">
           <button
             onClick={() => navigate("/hotelowner/hotels/new")}
-            className="group inline-flex h-11 items-center gap-2 rounded-[10px] bg-primary px-5 text-sm font-semibold text-primary-foreground shadow-md shadow-primary/20 transition-all duration-200 hover:bg-[var(--color-primary-hover)] hover:shadow-lg hover:shadow-primary/30 active:scale-[0.97]"
+            className="group inline-flex h-11 items-center gap-2 rounded-[10px] bg-primary px-5 text-sm font-semibold text-primary-foreground shadow-md shadow-primary/20 transition-all duration-200 hover:bg-primary/90 hover:shadow-lg hover:shadow-primary/30 active:scale-[0.97]"
           >
             <Plus className="h-4 w-4 transition-transform group-hover:rotate-90" strokeWidth={2.5} />
             Add Hotel
@@ -226,7 +227,8 @@ export default function WelcomePage() {
                     ease: [0.2, 0.8, 0.2, 1],
                   }}
                 >
-                  <HotelCard hotel={hotel} onDelete={() => setToDelete(hotel)} />
+                  <HotelCard hotel={hotel} onDelete={() => setToDelete(hotel)} onRefresh={refresh} />
+
                 </motion.div>
               ))}
             </AnimatePresence>
@@ -262,11 +264,25 @@ export default function WelcomePage() {
   );
 }
 
-function HotelCard({ hotel, onDelete }: { hotel: Hotel; onDelete: () => void }) {
+function HotelCard({ hotel, onDelete, onRefresh }: { hotel: Hotel; onDelete: () => void; onRefresh?: () => void }) {
+  const navigate = useNavigate();
   const isPending = hotel.applicationStatus === "Pending";
   const isRejected = hotel.applicationStatus === "Rejected";
   const isSuspended = hotel.applicationStatus === "Approved" && hotel.isActive === false;
   const isLocked = isPending || isRejected || isSuspended;
+
+  // Pick the best available image
+  const displayImage =
+    (hotel.images && hotel.images.length > 0)
+      ? hotel.images[0]
+      : hotel.imageUrl
+      ? hotel.imageUrl
+      : "https://images.unsplash.com/photo-1566073771259-6a8506099945?q=80&w=2070&auto=format&fit=crop";
+
+  const handleDashboardClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    navigate(`/hotelowner/dashboard/${String(hotel.id)}`);
+  };
 
   return (
     <motion.div
@@ -276,10 +292,20 @@ function HotelCard({ hotel, onDelete }: { hotel: Hotel; onDelete: () => void }) 
         isLocked ? "grayscale-[0.5]" : "hover:shadow-lg"
       }`}
     >
-      <Link to={`/hotelowner/dashboard/${String(hotel.id)}`} className="block">
+      <div 
+        onClick={handleDashboardClick}
+        className="block cursor-pointer"
+        role="button"
+        tabIndex={0}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            handleDashboardClick(e as any);
+          }
+        }}
+      >
         <div className="relative aspect-[16/10] overflow-hidden bg-muted">
           <img
-            src={hotel.images && hotel.images.length > 0 ? hotel.images[0] : "https://images.unsplash.com/photo-1566073771259-6a8506099945?q=80&w=2070&auto=format&fit=crop"}
+            src={displayImage}
             alt={hotel.hotelName}
             className="h-full w-full object-cover transition-transform duration-500 ease-[cubic-bezier(0.2,0.8,0.2,1)] group-hover:scale-[1.04]"
           />
@@ -349,19 +375,20 @@ function HotelCard({ hotel, onDelete }: { hotel: Hotel; onDelete: () => void }) 
             <span className="line-clamp-1">{hotel.location}</span>
           </div>
         </div>
-      </Link>
+      </div>
 
       {/* Action Buttons */}
       <div className="flex gap-2 px-5 pb-5">
-        <Link to={`/hotelowner/dashboard/${String(hotel.id)}`}
+        <button
+          onClick={handleDashboardClick}
           className={`flex flex-[2] items-center justify-center gap-1.5 h-9 rounded-[8px] text-xs font-semibold shadow-sm transition ${
             isLocked
               ? "bg-secondary text-foreground hover:bg-secondary/80"
               : "bg-primary text-primary-foreground hover:bg-primary/90"
           }`}
         >
-          {isSuspended ? "View Suspended Dashboard" : isLocked ? "View Locked Dashboard" : "Manage Dashboard"}
-        </Link>
+          {isSuspended ? "Dashboard Locked" : isLocked ? "View Locked Dashboard" : "Manage Dashboard"}
+        </button>
         
         {!isLocked && (
           <Link to={`/hotelowner/hotels/${String(hotel.id)}/edit`}

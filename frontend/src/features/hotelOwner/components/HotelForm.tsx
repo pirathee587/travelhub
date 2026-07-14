@@ -427,7 +427,7 @@ export function HotelForm({
           </button>
           <button
             type="submit"
-            className="inline-flex h-11 items-center justify-center rounded-[10px] bg-primary px-6 text-sm font-semibold text-primary-foreground shadow-md shadow-primary/20 transition hover:bg-[var(--color-primary-hover)] hover:shadow-lg hover:shadow-primary/30 active:scale-[0.97]"
+            className="inline-flex h-11 items-center justify-center rounded-[10px] bg-blue-950 px-6 text-sm font-semibold text-white shadow-md transition hover:bg-blue-900 hover:shadow-lg active:scale-[0.97]"
           >
             {mode === "create" ? "Add Hotel" : "Save Changes"}
           </button>

@@ -5,6 +5,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.core.type.TypeReference;
+
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -31,7 +34,7 @@ public class PackageService {
     public List<PackageResponse> getAllPackages() {
         List<Package> packages = packageRepository.findByIsActiveTrue()
                 .stream()
-                .filter(p -> "Approved".equalsIgnoreCase(p.getApplicationStatus())) //Approved package
+                .filter(p -> p.getApplicationStatus() != null && "Approved".equalsIgnoreCase(p.getApplicationStatus().trim())) //Approved package
                 .collect(Collectors.toList());
         return toPackageResponses(packages);
     }
@@ -39,7 +42,7 @@ public class PackageService {
     public List<PackageResponse> getPackagesByCategory(String category) {
         List<Package> packages = packageRepository.findByCategory(category)
                 .stream()
-                .filter(p -> "Approved".equalsIgnoreCase(p.getApplicationStatus()) && Boolean.TRUE.equals(p.getIsActive()))
+                .filter(p -> p.getApplicationStatus() != null && "Approved".equalsIgnoreCase(p.getApplicationStatus().trim()) && Boolean.TRUE.equals(p.getIsActive()))
                 .collect(Collectors.toList());
         return toPackageResponses(packages);
     }
@@ -47,7 +50,7 @@ public class PackageService {
     public List<PackageResponse> getTrendingPackages() {
         List<Package> packages = packageRepository.findByTrendingTrue()
                 .stream()
-                .filter(p -> "Approved".equalsIgnoreCase(p.getApplicationStatus()) && Boolean.TRUE.equals(p.getIsActive()))
+                .filter(p -> p.getApplicationStatus() != null && "Approved".equalsIgnoreCase(p.getApplicationStatus().trim()) && Boolean.TRUE.equals(p.getIsActive()))
                 .collect(Collectors.toList());
         return toPackageResponses(packages);
     }
@@ -117,6 +120,8 @@ public class PackageService {
                 .endPlace(pkg.getEndPlace())
                 .priceFrom(pkg.getPriceFrom())
                 .priceTo(pkg.getPriceTo())
+                .basePriceAdult(pkg.getBasePriceAdult())
+                .basePriceChild(pkg.getBasePriceChild())
                 .duration(pkg.getDuration())
                 .category(pkg.getCategory())
                 .imageUrl(imgUrl)
@@ -126,6 +131,7 @@ public class PackageService {
                 .trending(pkg.getTrending())
                 .agentName(getSafeAgentName(pkg.getAgent()))
                 .district(pkg.getDistrict())
+                .packageType(pkg.getPackageType())
                 .build();
     }
 
@@ -167,6 +173,14 @@ public class PackageService {
             aName = "Unknown Agent";
         }
 
+        List<String> inclusions = null;
+        if (pkg.getInclusions() != null && !pkg.getInclusions().trim().isEmpty()) {
+            inclusions = Arrays.stream(pkg.getInclusions().split(","))
+                    .map(String::trim)
+                    .filter(s -> !s.isEmpty())
+                    .collect(Collectors.toList());
+        }
+
         return PackageDetailResponse.builder()
                 .id(pkg.getId())
                 .packageName(pkg.getPackageName())
@@ -175,6 +189,8 @@ public class PackageService {
                 .endPlace(pkg.getEndPlace())
                 .priceFrom(pkg.getPriceFrom())
                 .priceTo(pkg.getPriceTo())
+                .basePriceAdult(pkg.getBasePriceAdult())
+                .basePriceChild(pkg.getBasePriceChild())
                 .duration(pkg.getDuration())
                 .category(pkg.getCategory())
                 .imageUrl(pkg.getImageUrl())
@@ -189,28 +205,52 @@ public class PackageService {
                 .itinerary(itineraryDays)
                 .images(imageUrls)
                 .district(pkg.getDistrict())
+                .inclusions(inclusions)
+                .packageType(pkg.getPackageType())
                 .build();
     }
+
+    private static final ObjectMapper objectMapper = new ObjectMapper();
 
     private PackageDetailResponse.ItineraryDayResponse toItineraryDayResponse(PackageItinerary day) {
         List<String> activities = null;
         if (day.getActivities() != null) {
             String raw = day.getActivities().trim();
-            // ✅ FIXED: DB stores JSON array ["activity1","activity2"]
-            // Remove [ ] brackets, split by comma, clean quotes and whitespace
-            if (raw.startsWith("[")) {
-                raw = raw.substring(1, raw.length() - 1);
+            try {
+                if (raw.startsWith("[")) {
+                    // DB stores JSON array of objects: [{"description":"...","imageUrl":"..."}]
+                    // Parse each object and re-serialize as individual JSON strings for the frontend
+                    List<Map<String, Object>> activityObjects = objectMapper.readValue(
+                        raw, new TypeReference<List<Map<String, Object>>>() {}
+                    );
+                    activities = activityObjects.stream()
+                        .map(obj -> {
+                            try { return objectMapper.writeValueAsString(obj); }
+                            catch (Exception e) { return obj.getOrDefault("description", "").toString(); }
+                        })
+                        .collect(Collectors.toList());
+                } else {
+                    // Fallback: plain comma-separated text
+                    activities = Arrays.stream(raw.split(","))
+                            .map(String::trim)
+                            .filter(s -> !s.isEmpty())
+                            .collect(Collectors.toList());
+                }
+            } catch (Exception e) {
+                // Fallback if JSON parsing fails
+                activities = Arrays.stream(raw.split(","))
+                        .map(String::trim)
+                        .filter(s -> !s.isEmpty())
+                        .collect(Collectors.toList());
             }
-            activities = Arrays.stream(raw.split(",(?=(?:[^\"]*\"[^\"]*\")*[^\"]*$)"))
-                    .map(s -> s.trim().replaceAll("^\"|\"$", "").trim())
-                    .filter(s -> !s.isEmpty())
-                    .collect(Collectors.toList());
         }
         return PackageDetailResponse.ItineraryDayResponse.builder()
                 .dayNumber(day.getDayNumber())
                 .title(day.getTitle())
                 .description(day.getDescription())
                 .activities(activities)
+                .hotelId(day.getHotelId())
+                .hotelNameCustom(day.getHotelNameCustom())
                 .build();
     }
     // ── Chatbot data method ────────────────────────────────────────────────

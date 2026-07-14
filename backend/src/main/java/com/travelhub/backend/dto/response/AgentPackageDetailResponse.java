@@ -18,6 +18,8 @@ public class AgentPackageDetailResponse {
     private String duration;
     private Double priceFrom;
     private Double priceTo;
+    private Double basePriceAdult;
+    private Double basePriceChild;
     private String description;
     private String festivalDetails;
     private Boolean isActive;

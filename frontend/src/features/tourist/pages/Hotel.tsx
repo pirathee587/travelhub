@@ -116,7 +116,7 @@ const Hotel = () => {
 
     const handleHotelClick = useCallback((hotelId) => {
         if (isSelectionMode && returnTo && preferenceNumber) {
-            navigate(`/hotels/${hotelId}?mode=select&preference=${preferenceNumber}&returnTo=${encodeURIComponent(returnTo)}`);
+            navigate(`/tourist/hotels/${hotelId}?mode=select&preference=${preferenceNumber}&returnTo=${encodeURIComponent(returnTo)}`);
         } else {
             navigate(`/tourist/hotels/${hotelId}`);
         }
@@ -149,8 +149,8 @@ const Hotel = () => {
                 <section className="animate-slide-up">
                     <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                         <div className="flex items-center gap-3">
-                        <div className="h-12 w-12 rounded-xl bg-secondary flex items-center justify-center">
-                                <Building2 className="h-6 w-6 text-primary-foreground" />
+                        <div className="h-12 w-12 rounded-xl bg-green-500 flex items-center justify-center">
+                                <Building2 className="h-6 w-6 text-black" />
                             </div>
                             <div>
                                 <h1 className="text-2xl lg:text-3xl font-bold">

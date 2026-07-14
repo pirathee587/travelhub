@@ -13,6 +13,7 @@ export type Hotel = {
   priceTo: number;
   rating: number | null;
   reviewCount: number | null;
+  imageUrl?: string;
   images: string[];
   amenities: string[];
   district: string;
@@ -141,6 +142,35 @@ export async function deleteHotel(id: string) {
     return false;
   }
 }
+
+export async function suspendHotel(id: string): Promise<Hotel | null> {
+  try {
+    const response = await fetch(`${API_BASE}/${id}/suspend`, {
+      method: "PATCH",
+      headers: getOwnerAuthHeaders(),
+    });
+    if (!response.ok) return null;
+    return (await response.json()) as Hotel;
+  } catch (error) {
+    console.error("Failed to suspend hotel:", error);
+    return null;
+  }
+}
+
+export async function reactivateHotel(id: string): Promise<Hotel | null> {
+  try {
+    const response = await fetch(`${API_BASE}/${id}/reactivate`, {
+      method: "PATCH",
+      headers: getOwnerAuthHeaders(),
+    });
+    if (!response.ok) return null;
+    return (await response.json()) as Hotel;
+  } catch (error) {
+    console.error("Failed to reactivate hotel:", error);
+    return null;
+  }
+}
+
 
 export function useHotel(hotelId: string) {
   const [hotel, setHotel] = useState<Hotel | null>(null);

@@ -7,6 +7,7 @@ import com.travelhub.backend.event.UserAccountEvent;
 import com.travelhub.backend.event.PaymentEvent;
 import com.travelhub.backend.repository.UserRepository;
 import com.travelhub.backend.service.EmailService;
+import com.travelhub.backend.service.UserNotificationService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.event.EventListener;
@@ -20,11 +21,16 @@ public class NotificationListener {
 
     private final EmailService emailService;
     private final UserRepository userRepository;
+    private final UserNotificationService userNotificationService;
 
     @Async
     @EventListener
     public void handleBookingEvent(BookingEvent event) {
         log.info("Handling booking event: {} for booking ID: {}", event.getType(), event.getBooking().getId());
+        
+        var booking = event.getBooking();
+        String bookingRef = "BK" + String.format("%05d", booking.getId());
+        String pkgName = booking.getPkg() != null ? booking.getPkg().getPackageName() : "a package";
 
         switch (event.getType()) {
             case "CREATED":
@@ -32,10 +38,16 @@ public class NotificationListener {
                 emailService.sendAgentBookingNotification(event.getBooking());
                 break;
             case "APPROVED":
-                emailService.sendBookingApprovalNotification(event.getBooking());
+                emailService.sendBookingApprovalNotification(booking);
+                if (booking.getUser() != null) {
+                    userNotificationService.notifyUser(booking.getUser().getId(), "booking", "Booking Approved", "Your booking " + bookingRef + " for " + pkgName + " has been approved. Please complete the payment.", "/tourist/trips");
+                }
                 break;
             case "DECLINED":
-                emailService.sendBookingDeclineNotification(event.getBooking(), event.getReason());
+                emailService.sendBookingDeclineNotification(booking, event.getReason());
+                if (booking.getUser() != null) {
+                    userNotificationService.notifyUser(booking.getUser().getId(), "booking", "Booking Declined", "Your booking " + bookingRef + " for " + pkgName + " has been declined. Reason: " + event.getReason(), "/tourist/trips");
+                }
                 break;
         }
     }

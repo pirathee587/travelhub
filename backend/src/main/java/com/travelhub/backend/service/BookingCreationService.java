@@ -12,6 +12,8 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.travelhub.backend.common.BadRequestException;
+import com.travelhub.backend.common.ForbiddenException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.travelhub.backend.dto.request.BookingRequest;
 import com.travelhub.backend.dto.response.BookingResponse;
@@ -212,15 +214,29 @@ public class BookingCreationService {
         }
     }
 
-    public BookingResponse cancelBooking(Long bookingId) {
+    public BookingResponse cancelBooking(Long bookingId, Long userId) {
         logger.info("========== BOOKING CANCELLATION START ==========");
         logger.info("Booking ID: {}", bookingId);
+        logger.info("User ID: {}", userId);
 
         Booking booking = bookingRepository.findById(bookingId)
                 .orElseThrow(() -> {
                     logger.error("Booking not found: {}", bookingId);
                     return new RuntimeException("Booking not found");
                 });
+
+        logger.info("Booking Owner: {}", booking.getUser().getId());
+        logger.info("Current Status: {}", booking.getStatus());
+
+        if (!booking.getUser().getId().equals(userId)) {
+            logger.error("Cancellation denied: Booking belongs to user {}", booking.getUser().getId());
+            throw new ForbiddenException("Unauthorized: You can only cancel your own bookings");
+        }
+
+        if (!"pending".equalsIgnoreCase(booking.getStatus())) {
+            logger.error("Cancellation denied: Booking status is {}", booking.getStatus());
+            throw new BadRequestException("Only pending bookings can be cancelled");
+        }
 
         booking.setStatus("cancelled");
         Booking saved = bookingRepository.save(booking);
