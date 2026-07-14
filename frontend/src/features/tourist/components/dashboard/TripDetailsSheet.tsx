@@ -86,7 +86,7 @@ export function TripDetailsSheet({ trip, open, onOpenChange }: { trip: any, open
         }
         setSubmittingRefund(true);
         try {
-            const bookingId = trip.bookingId || trip.id;
+            const bookingId = trip.id;
             await refundService.requestRefund(bookingId, {
                 bankName,
                 accountNo,
@@ -334,7 +334,7 @@ export function TripDetailsSheet({ trip, open, onOpenChange }: { trip: any, open
                                     <Button
                                         className="w-full"
                                         onClick={() => {
-                                            const paymentId = trip.bookingId || trip.id;
+                                            const paymentId = trip.id;
                                             navigate(`/tourist/payment/${paymentId}`);
                                             onOpenChange(false);
                                         }}
