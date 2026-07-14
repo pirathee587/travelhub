@@ -70,6 +70,17 @@ public class AgentNotificationService {
         notificationRepository.delete(notification);
     }
 
+    public void createNotification(com.travelhub.backend.entity.Agent agent, String type, String title, String message) {
+        Notification notification = Notification.builder()
+                .agent(agent)
+                .type(type)
+                .title(title)
+                .message(message)
+                .read(false)
+                .build();
+        notificationRepository.save(notification);
+    }
+
     /**
      * Maps Notification entity -> response DTO.
      */

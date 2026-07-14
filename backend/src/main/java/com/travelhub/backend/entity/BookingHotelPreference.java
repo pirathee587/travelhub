@@ -33,6 +33,9 @@ public class BookingHotelPreference {
     @Column(nullable = false)
     private Boolean isSelected = false;
 
+    @Column(name = "room_name")
+    private String roomName;
+
     @Column(updatable = false)
     private LocalDateTime createdAt;
 

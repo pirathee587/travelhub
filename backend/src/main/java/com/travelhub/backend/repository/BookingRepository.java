@@ -7,6 +7,8 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import java.util.List;
 
+import java.time.LocalDate;
+
 @Repository
 public interface BookingRepository
         extends JpaRepository<Booking, Long> {
@@ -62,4 +64,10 @@ public interface BookingRepository
 
     @Query("SELECT b FROM Booking b JOIN FETCH b.pkg WHERE LOWER(b.status) IN ('completed', 'finished', 'done')")
     List<Booking> findCompletedBookingsWithPackages();
+
+    @Query("SELECT b.driver.id FROM Booking b WHERE b.pkg.agent.id = :agentId AND b.status IN ('confirmed', 'in_progress') AND b.driver IS NOT NULL AND b.startDate <= :endDate AND b.endDate >= :startDate")
+    List<Long> findBookedDriverIds(@Param("agentId") Long agentId, @Param("startDate") LocalDate startDate, @Param("endDate") LocalDate endDate);
+
+    @Query("SELECT b.vehicle.id FROM Booking b WHERE b.pkg.agent.id = :agentId AND b.status IN ('confirmed', 'in_progress') AND b.vehicle IS NOT NULL AND b.startDate <= :endDate AND b.endDate >= :startDate")
+    List<Long> findBookedVehicleIds(@Param("agentId") Long agentId, @Param("startDate") LocalDate startDate, @Param("endDate") LocalDate endDate);
 }

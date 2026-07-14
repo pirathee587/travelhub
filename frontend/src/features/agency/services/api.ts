@@ -16,6 +16,10 @@ const AGENT_ID = {
   }
 };
 
+const getAuthHeaders = () => {
+    const token = localStorage.getItem('travelhub_token') || localStorage.getItem('token');
+    return token ? { Authorization: `Bearer ${token}` } : {};
+};
 export const api = {
     // Profile
     getProfile: () =>
@@ -169,11 +173,11 @@ export const api = {
         fetch(`${BASE_URL}/agent/${AGENT_ID}/bookings/${bookingId}`).then(r => r.json()),
 
     // pending → confirmed (agent accepts, assigns vehicle)
-    acceptBooking: (bookingId, vehicleId) =>
+    acceptBooking: (bookingId, vehicleId, hotelId) =>
         fetch(`${BASE_URL}/agent/${AGENT_ID}/bookings/${bookingId}/accept`, {
             method: "PATCH",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ vehicleId })
+            body: JSON.stringify({ vehicleId, hotelId })
         }).then(r => r.json()),
 
     assignVehicle: (bookingId, vehicleId) =>
@@ -220,32 +224,42 @@ export const api = {
 
     // Dashboard
     getDashboardStats: () =>
-        fetch(`${BASE_URL}/agent/${AGENT_ID}/dashboard/stats`).then(r => r.json()),
+        fetch(`${BASE_URL}/agent/${AGENT_ID}/dashboard/stats`, {
+            headers: { ...getAuthHeaders() }
+        }).then(r => r.json()),
 
     // Analytics
     getAnalytics: (period = "monthly") =>
-        fetch(`${BASE_URL}/agent/${AGENT_ID}/analytics?period=${period}`).then(r => r.json()),
+        fetch(`${BASE_URL}/agent/${AGENT_ID}/analytics?period=${period}`, {
+            headers: { ...getAuthHeaders() }
+        }).then(r => r.json()),
 
     // Reviews
     getReviews: (rating) =>
-        fetch(`${BASE_URL}/agent/${AGENT_ID}/reviews${rating ? `?rating=${rating}` : ""}`).then(r => r.json()),
+        fetch(`${BASE_URL}/agent/${AGENT_ID}/reviews${rating ? `?rating=${rating}` : ""}`, {
+            headers: { ...getAuthHeaders() }
+        }).then(r => r.json()),
     replyToReview: (reviewId, reply) =>
         fetch(`${BASE_URL}/agent/${AGENT_ID}/reviews/${reviewId}/reply`, {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
+            headers: { "Content-Type": "application/json", ...getAuthHeaders() },
             body: JSON.stringify({ reply })
         }).then(r => r.json()),
 
     // Notifications
     getNotifications: () =>
-        fetch(`${BASE_URL}/agent/notifications`).then(r => r.json()),
+        fetch(`${BASE_URL}/agent/notifications`, {
+            headers: { ...getAuthHeaders() }
+        }).then(r => r.json()),
     markNotificationRead: (notificationId) =>
         fetch(`${BASE_URL}/agent/notifications/${notificationId}/read`, {
-            method: "PATCH"
+            method: "PATCH",
+            headers: { ...getAuthHeaders() }
         }).then(r => r.json()),
     markAllNotificationsRead: () =>
         fetch(`${BASE_URL}/agent/notifications/read-all`, {
-            method: "PATCH"
+            method: "PATCH",
+            headers: { ...getAuthHeaders() }
         }),
 
     // Settings
@@ -267,6 +281,7 @@ export const api = {
     // Notifications
     deleteNotification: (notificationId) =>
         fetch(`${BASE_URL}/agent/notifications/${notificationId}`, {
-            method: 'DELETE'
+            method: 'DELETE',
+            headers: { ...getAuthHeaders() }
         }),
 };

@@ -44,6 +44,25 @@ public class HotelService {
         return toHotelResponses(hotels);
     }
 
+    public List<HotelResponse> searchHotels(String query, String district) {
+        List<Hotel> hotels;
+        if (district != null && !district.isEmpty()) {
+            hotels = hotelRepository.findByApplicationStatusAndDistrictIgnoreCase("Approved", district);
+        } else {
+            hotels = hotelRepository.findByApplicationStatus("Approved");
+        }
+        
+        if (query != null && !query.isEmpty()) {
+            String lowerQuery = query.toLowerCase();
+            hotels = hotels.stream()
+                .filter(h -> h.getHotelName().toLowerCase().contains(lowerQuery) || 
+                             (h.getDestination() != null && h.getDestination().toLowerCase().contains(lowerQuery)))
+                .collect(Collectors.toList());
+        }
+        
+        return toHotelResponses(hotels);
+    }
+
     public HotelResponse getHotelById(Long id) {
         Hotel hotel = hotelRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Hotel not found with id: " + id));                 //Error handle

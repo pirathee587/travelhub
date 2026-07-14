@@ -6,6 +6,7 @@ import {
   MapPin, Calendar, Car, User, Users, ArrowLeft,
   Download, Package, CheckCircle, Circle, CreditCard,
   Clock, Hotel, Hash, Baby, MessageSquare, Check, X, Mail, Phone,
+  Loader2, Building2,
 } from 'lucide-react';
 import {
   Dialog, DialogContent, DialogDescription, DialogFooter,
@@ -202,6 +203,7 @@ const BookingDetails = () => {
   const { formatPrice } = useCurrency();
 
   const [booking, setBooking] = useState(null);
+  const [packageDetails, setPackageDetails] = useState(null);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
 
@@ -223,6 +225,7 @@ const BookingDetails = () => {
   const [tempDriver, setTempDriver] = useState(null);
   const [isEditingVehicle, setIsEditingVehicle] = useState(false);
   const [isEditingDriver, setIsEditingDriver] = useState(false);
+  const [tempHotelId, setTempHotelId] = useState(null);
 
   // ── Decline state ──────────────────────────────────────────────
   const [declineDialogOpen, setDeclineDialogOpen] = useState(false);
@@ -232,12 +235,28 @@ const BookingDetails = () => {
   useEffect(() => {
     const fetchBooking = async () => {
       setLoading(true);
+      setTempVehicle(null);
+      setTempDriver(null);
+      setTempHotelId(null);
+      setIsEditingVehicle(false);
+      setIsEditingDriver(false);
+      setSelectedVehicleId('');
+      setSelectedDriverId('');
       try {
         const data = await api.getBookingById(id);
         if (!data || data.error) {
           setNotFound(true);
         } else {
           setBooking(data);
+          setTempHotelId(data.hotelId || null);
+          if (data.packageType === 'MULTI_DISTRICT' && data.packageId) {
+            try {
+              const pkgData = await api.getAgentPackage(data.packageId);
+              setPackageDetails(pkgData);
+            } catch (err) {
+              console.error("Failed to fetch package details", err);
+            }
+          }
         }
       } catch {
         setNotFound(true);
@@ -268,8 +287,8 @@ const BookingDetails = () => {
 
   // ── Simple Accept: just confirms the booking ───────────────────
   const handleAccept = async () => {
-    const hasVehicle = tempVehicle || vehicleLabel || booking.vehicle?.type || booking.vehicleType;
-    const hasDriver = tempDriver || booking.driverName;
+    const hasVehicle = tempVehicle;
+    const hasDriver = tempDriver;
 
     if (!hasVehicle && !hasDriver) {
       toast.error('Please assign both a vehicle and a driver before accepting the booking.');
@@ -291,10 +310,11 @@ const BookingDetails = () => {
       if (tempDriver) {
         await api.assignDriver(booking.id, tempDriver.id);
       }
-      const updated = await api.acceptBooking(booking.id);
+      const updated = await api.acceptBooking(booking.id, tempVehicle?.id || null, tempHotelId);
       setBooking(updated);
       setTempVehicle(null);
       setTempDriver(null);
+      setTempHotelId(updated.hotelId || null);
       setIsEditingVehicle(false);
       setIsEditingDriver(false);
       toast.success('Booking accepted! Status is now Confirmed.');
@@ -423,31 +443,31 @@ const BookingDetails = () => {
   })();
 
   const hasVehicleAssigned = booking.status === 'pending'
-    ? (tempVehicle !== null || !!vehicleLabel || !!booking.vehicle?.type || !!booking.vehicleType)
+    ? (tempVehicle !== null)
     : (!!vehicleLabel || !!booking.vehicle?.type || !!booking.vehicleType);
 
   const hasDriverAssigned = booking.status === 'pending'
-    ? (tempDriver !== null || !!booking.driverName)
+    ? (tempDriver !== null)
     : (!!booking.driverName);
 
-  const displayedVehicleLabel = booking.status === 'pending' && tempVehicle
-    ? `${tempVehicle.brand || ''} ${tempVehicle.model || ''} · ${tempVehicle.registrationNumber || tempVehicle.registration || ''}`
+  const displayedVehicleLabel = booking.status === 'pending'
+    ? (tempVehicle ? `${tempVehicle.brand || ''} ${tempVehicle.model || ''} · ${tempVehicle.registrationNumber || tempVehicle.registration || ''}` : null)
     : vehicleLabel;
 
-  const displayedVehicleType = booking.status === 'pending' && tempVehicle
-    ? tempVehicle.vehicleType
+  const displayedVehicleType = booking.status === 'pending'
+    ? (tempVehicle ? tempVehicle.vehicleType : null)
     : (booking.vehicle?.type || booking.vehicleType);
 
-  const displayedDriverName = booking.status === 'pending' && tempDriver
-    ? `${tempDriver.firstName} ${tempDriver.lastName || ''}`
+  const displayedDriverName = booking.status === 'pending'
+    ? (tempDriver ? `${tempDriver.firstName} ${tempDriver.lastName || ''}` : null)
     : booking.driverName;
 
-  const displayedDriverPhone = booking.status === 'pending' && tempDriver
-    ? tempDriver.mobileNumber
+  const displayedDriverPhone = booking.status === 'pending'
+    ? (tempDriver ? tempDriver.mobileNumber : null)
     : booking.driverPhone;
 
-  const displayedDriverRating = booking.status === 'pending' && tempDriver
-    ? tempDriver.rating
+  const displayedDriverRating = booking.status === 'pending'
+    ? (tempDriver ? tempDriver.rating : null)
     : booking.driverRating;
 
   return (
@@ -591,13 +611,81 @@ const BookingDetails = () => {
               </h3>
 
               {booking.packageType === 'MULTI_DISTRICT' ? (
-                <div className="space-y-2">
-                  <span className="inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-medium bg-indigo-50 text-indigo-700 border border-indigo-200">
-                    📦 Included in Package
-                  </span>
-                  <p className="text-sm text-muted-foreground mt-2">
-                    Accommodation is pre-arranged by the agency and built directly into the package. Please refer to the daily itinerary details to see the hotels selected for each day.
-                  </p>
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <span className="inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-medium bg-indigo-50 text-indigo-700 border border-indigo-200">
+                      📦 Included in Package (Multi-District)
+                    </span>
+                    {packageDetails && (
+                      <span className="text-xs text-muted-foreground">
+                        {packageDetails.days?.length || 0} Days Itinerary
+                      </span>
+                    )}
+                  </div>
+
+                  {!packageDetails ? (
+                    <div className="flex items-center gap-2 py-4 text-sm text-muted-foreground animate-pulse">
+                      <Loader2 className="h-4 w-4 animate-spin text-primary" />
+                      Loading accommodation details...
+                    </div>
+                  ) : packageDetails.days && packageDetails.days.length > 0 ? (
+                    <div className="divide-y divide-border/60 border border-border/80 rounded-xl overflow-hidden bg-muted/5 shadow-sm">
+                      {packageDetails.days
+                        .slice()
+                        .sort((a: any, b: any) => (a.dayNumber || 0) - (b.dayNumber || 0))
+                        .map((day: any) => {
+                          const isCustom = !day.hotelId;
+                          return (
+                            <div
+                              key={day.dayId || day.dayNumber}
+                              className="flex items-center justify-between p-3.5 hover:bg-muted/15 transition-colors gap-4"
+                            >
+                              <div className="flex items-center gap-3.5 min-w-0">
+                                {/* Compact image / placeholder */}
+                                {day.hotelImageUrl ? (
+                                  <img
+                                    src={day.hotelImageUrl}
+                                    alt={day.hotelName || "Hotel"}
+                                    className="h-10 w-14 object-cover rounded-lg border border-border shrink-0"
+                                  />
+                                ) : (
+                                  <div className="h-10 w-14 bg-muted/40 rounded-lg border border-dashed flex items-center justify-center text-lg text-muted-foreground/60 shrink-0 select-none">
+                                    🏨
+                                  </div>
+                                )}
+
+                                {/* Hotel and District Info */}
+                                <div className="min-w-0">
+                                  <span className="text-[10px] font-bold uppercase tracking-wider text-primary block">
+                                    Day {day.dayNumber} · {day.district || "N/A"}
+                                  </span>
+                                  <p className="font-semibold text-sm text-foreground truncate mt-0.5">
+                                    {day.hotelName || <span className="text-muted-foreground/60 italic font-normal">No hotel selected</span>}
+                                  </p>
+                                </div>
+                              </div>
+
+                              {/* Badge / Type */}
+                              <div className="flex items-center gap-2 shrink-0">
+                                {day.hotelName && (
+                                  isCustom ? (
+                                    <span className="inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium bg-amber-50 text-amber-700 border border-amber-200">
+                                      Typed Entry
+                                    </span>
+                                  ) : (
+                                    <span className="inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium bg-success/10 text-success border border-success/30">
+                                      Searched Hotel
+                                    </span>
+                                  )
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })}
+                    </div>
+                  ) : (
+                    <p className="text-xs text-muted-foreground italic py-2">No accommodation details defined for this package.</p>
+                  )}
                 </div>
               ) : booking.accommodationOption === 'SELF_ARRANGE' ? (
                 <div className="space-y-2">
@@ -610,55 +698,108 @@ const BookingDetails = () => {
                 </div>
               ) : (booking.accommodationOption === 'AGENCY' || booking.hotelPreferences) ? (
                 <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <span className="inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-medium bg-sky-50 text-sky-700 border border-sky-200">
-                      🏨 Agency Selected Preferences
-                    </span>
-                    <span className="text-xs text-muted-foreground">Ranked by Priority</span>
+                  <div className="flex items-center justify-between gap-4">
+                    <div className="flex items-center gap-2">
+                      <span className="inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-medium bg-sky-50 text-sky-700 border border-sky-200">
+                        🏨 Agency Selected Preferences
+                      </span>
+                      <span className="text-xs text-muted-foreground">Ranked by Priority</span>
+                    </div>
+                    {booking.status === 'pending' && tempHotelId !== null && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-7 px-3 text-xs font-semibold text-destructive hover:text-destructive/80 border border-destructive/20 hover:bg-destructive/5"
+                        onClick={() => setTempHotelId(null)}
+                      >
+                        Select None (Clear)
+                      </Button>
+                    )}
                   </div>
 
                   {booking.hotelPreferences && booking.hotelPreferences.length > 0 ? (
                     <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                      {booking.hotelPreferences.map((hotel) => (
-                        <div key={hotel.id || hotel.hotelId} className="relative border rounded-xl p-4 bg-muted/5 flex flex-col gap-3 hover:border-primary/40 transition-colors shadow-sm">
-                          <span className="absolute top-3 left-3 flex items-center justify-center h-6 w-6 rounded-full bg-primary text-primary-foreground text-xs font-bold shadow-md">
-                            {hotel.preferenceNumber}
-                          </span>
-                          {hotel.imageUrl ? (
-                            <img src={hotel.imageUrl} alt={hotel.hotelName} className="h-32 w-full object-cover rounded-lg border" />
-                          ) : (
-                            <div className="h-32 w-full bg-muted rounded-lg border flex items-center justify-center text-xl">🏨</div>
-                          )}
-                          <div className="space-y-1.5 flex-1 flex flex-col justify-between">
-                            <div>
-                              <p className="font-bold text-sm text-foreground leading-tight truncate">{hotel.hotelName}</p>
-                              <p className="text-[11px] text-muted-foreground mt-0.5">{hotel.starRating || '4'}-Star · {hotel.district}</p>
-                            </div>
-                            
-                            {/* Room Choice */}
-                            <div className="bg-primary/5 border border-primary/10 rounded-md p-2 text-xs flex items-center gap-1.5 text-primary-dark">
-                              <Hotel className="h-3.5 w-3.5 shrink-0 text-primary" />
-                              <span className="truncate font-medium text-primary">Room: {hotel.roomName || 'Not Specified'}</span>
-                            </div>
+                      {booking.hotelPreferences.map((hotel) => {
+                        const isPending = booking.status === 'pending';
+                        const isSelected = isPending
+                          ? tempHotelId === hotel.hotelId
+                          : booking.hotelId === hotel.hotelId;
+                        
+                        return (
+                          <div
+                            key={hotel.id || hotel.hotelId}
+                            className={cn(
+                              "group relative border rounded-xl p-4 flex flex-col gap-3 transition-all duration-200 shadow-sm",
+                              isPending ? "cursor-pointer" : "",
+                              isSelected
+                                ? (isPending ? "border-primary bg-primary/5 ring-1 ring-primary/30" : "border-success/60 bg-success/5")
+                                : "border-border bg-card hover:border-border/80"
+                            )}
+                            onClick={() => {
+                              if (isPending) {
+                                setTempHotelId(hotel.hotelId);
+                              }
+                            }}
+                          >
+                            <span className={cn(
+                              "absolute top-3 left-3 flex items-center justify-center h-6 w-6 rounded-full text-xs font-bold shadow-md",
+                              isSelected ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground border"
+                            )}>
+                              {hotel.preferenceNumber}
+                            </span>
 
-                            {/* Contact Details */}
-                            <div className="border-t border-border/60 pt-2 space-y-1 mt-1 text-[11px]">
-                              {hotel.contactNumber && (
-                                <div className="flex items-center gap-1.5 text-muted-foreground">
-                                  <Phone className="h-3.5 w-3.5 shrink-0 text-muted-foreground/60" />
-                                  <span className="truncate font-medium text-foreground">{hotel.contactNumber}</span>
-                                </div>
-                              )}
-                              {hotel.email && (
-                                <div className="flex items-center gap-1.5 text-muted-foreground">
-                                  <Mail className="h-3.5 w-3.5 shrink-0 text-muted-foreground/60" />
-                                  <a href={`mailto:${hotel.email}`} className="truncate font-medium text-foreground hover:underline">{hotel.email}</a>
-                                </div>
-                              )}
+                            {/* Selection indicators */}
+                            {isSelected && (
+                              <span className={cn(
+                                "absolute top-3 right-3 inline-flex items-center gap-1 rounded px-2 py-0.5 text-[10px] font-bold shadow-sm",
+                                isPending ? "bg-primary text-primary-foreground" : "bg-success text-success-foreground"
+                              )}>
+                                ✓ {isPending ? "Selected" : "Assigned"}
+                              </span>
+                            )}
+
+                            {!isSelected && isPending && (
+                              <span className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity inline-flex items-center gap-1 rounded bg-muted text-muted-foreground px-2 py-0.5 text-[10px] font-medium border border-border">
+                                Select Hotel
+                              </span>
+                            )}
+
+                            {hotel.imageUrl ? (
+                              <img src={hotel.imageUrl} alt={hotel.hotelName} className="h-32 w-full object-cover rounded-lg border" />
+                            ) : (
+                              <div className="h-32 w-full bg-muted rounded-lg border flex items-center justify-center text-xl">🏨</div>
+                            )}
+                            <div className="space-y-1.5 flex-1 flex flex-col justify-between">
+                              <div>
+                                <p className="font-bold text-sm text-foreground leading-tight truncate">{hotel.hotelName}</p>
+                                <p className="text-[11px] text-muted-foreground mt-0.5">{hotel.starRating || '4'}-Star · {hotel.district}</p>
+                              </div>
+                              
+                              {/* Room Choice */}
+                              <div className="bg-primary/5 border border-primary/10 rounded-md p-2 text-xs flex items-center gap-1.5 text-primary-dark">
+                                <Hotel className="h-3.5 w-3.5 shrink-0 text-primary" />
+                                <span className="truncate font-medium text-primary">Room: {hotel.roomName || 'Not Specified'}</span>
+                              </div>
+
+                              {/* Contact Details */}
+                              <div className="border-t border-border/60 pt-2 space-y-1 mt-1 text-[11px]">
+                                {hotel.contactNumber && (
+                                  <div className="flex items-center gap-1.5 text-muted-foreground">
+                                    <Phone className="h-3.5 w-3.5 shrink-0 text-muted-foreground/60" />
+                                    <span className="truncate font-medium text-foreground">{hotel.contactNumber}</span>
+                                  </div>
+                                )}
+                                {hotel.email && (
+                                  <div className="flex items-center gap-1.5 text-muted-foreground">
+                                    <Mail className="h-3.5 w-3.5 shrink-0 text-muted-foreground/60" />
+                                    <a href={`mailto:${hotel.email}`} className="truncate font-medium text-foreground hover:underline">{hotel.email}</a>
+                                  </div>
+                                )}
+                              </div>
                             </div>
                           </div>
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   ) : (
                     <p className="text-xs text-muted-foreground italic">No hotel preferences specified.</p>
@@ -710,16 +851,30 @@ const BookingDetails = () => {
                           ✓ Assigned
                         </span>
                         {booking.status !== 'cancelled' && booking.status !== 'completed' && !isEditingVehicle && (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="h-6 px-2 text-[10px] font-semibold text-primary hover:text-primary-dark"
-                            onClick={() => {
-                              setIsEditingVehicle(true);
-                              loadResources();
-                            }}>
-                            Change
-                          </Button>
+                          booking.status === 'pending' ? (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-6 px-2 text-[10px] font-semibold text-destructive hover:text-destructive/80"
+                              onClick={() => {
+                                setTempVehicle(null);
+                                setSelectedVehicleId('');
+                                setIsEditingVehicle(false);
+                              }}>
+                              Clear
+                            </Button>
+                          ) : (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-6 px-2 text-[10px] font-semibold text-primary hover:text-primary-dark"
+                              onClick={() => {
+                                setIsEditingVehicle(true);
+                                loadResources();
+                              }}>
+                              Change
+                            </Button>
+                          )
                         )}
                       </div>
                     ) : (
@@ -796,16 +951,30 @@ const BookingDetails = () => {
                           ✓ Assigned
                         </span>
                         {booking.status !== 'cancelled' && booking.status !== 'completed' && !isEditingDriver && (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="h-6 px-2 text-[10px] font-semibold text-primary hover:text-primary-dark"
-                            onClick={() => {
-                              setIsEditingDriver(true);
-                              loadResources();
-                            }}>
-                            Change
-                          </Button>
+                          booking.status === 'pending' ? (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-6 px-2 text-[10px] font-semibold text-destructive hover:text-destructive/80"
+                              onClick={() => {
+                                setTempDriver(null);
+                                setSelectedDriverId('');
+                                setIsEditingDriver(false);
+                              }}>
+                              Clear
+                            </Button>
+                          ) : (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-6 px-2 text-[10px] font-semibold text-primary hover:text-primary-dark"
+                              onClick={() => {
+                                setIsEditingDriver(true);
+                                loadResources();
+                              }}>
+                              Change
+                            </Button>
+                          )
                         )}
                       </div>
                     ) : (

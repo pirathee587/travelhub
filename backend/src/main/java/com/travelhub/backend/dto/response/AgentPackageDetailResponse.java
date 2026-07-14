@@ -11,19 +11,21 @@ public class AgentPackageDetailResponse {
     private String packageId;
     private String name;
     private String category;
-    private String destination;
+
     private String district;
     private String startPlace;
     private String endPlace;
     private String duration;
-    private Double priceFrom;
-    private Double priceTo;
+    private String packageType;
     private Double basePriceAdult;
     private Double basePriceChild;
     private String description;
-    private String festivalDetails;
+    private List<String> inclusions;
+
+
     private Boolean isActive;
-    private Boolean trending;
+    private String applicationStatus;
+
     private List<AgentPackageImageResponse> images;
     private List<AgentPackageDayResponse> days;
     private LocalDateTime createdAt;
@@ -44,6 +46,17 @@ public class AgentPackageDetailResponse {
         private Integer dayNumber;
         private String title;
         private String description;
-        private List<String> activities;
+        private List<PackageActivityResponse> activities;
+        private String district;
+        private Long hotelId;
+        private String hotelName;
+        private String hotelImageUrl;
+    }
+
+    // ── Nested: Activity ──────────────────────────────────────────────────
+    @Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
+    public static class PackageActivityResponse {
+        private String description;
+        private String imageUrl;
     }
 }

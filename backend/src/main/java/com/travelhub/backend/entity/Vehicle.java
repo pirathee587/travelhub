@@ -23,24 +23,9 @@ public class Vehicle {
     private Agent agent;
 
     // Owner Information
-    @Column(nullable = true)
-    private String ownerFirstName;
-
-    private String ownerLastName;
-
-    @Column(nullable = true, unique = true)
-    private String nicNumber;
-
-    private String nicFrontImage;
-    private String nicRearImage;
-    private String addressLine1;
-    private String addressLine2;
-
-    @Column(nullable = true)
-    private String mobileNumber;
-
-    private String secondaryMobileNumber;
-    private String ownerEmail;
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "owner_id", nullable = true)
+    private VehicleOwner owner;
 
     // Vehicle Details
     @Column(nullable = true)

@@ -28,6 +28,13 @@ public class HotelController {
         return ResponseEntity.ok(hotelService.getAllHotels());
     }
 
+    @GetMapping("/search")
+    public ResponseEntity<List<HotelResponse>> searchHotels(
+            @RequestParam(required = false) String query,
+            @RequestParam(required = false) String district) {
+        return ResponseEntity.ok(hotelService.searchHotels(query, district));
+    }
+
     @GetMapping("/{id}")
     public ResponseEntity<HotelResponse> getHotelById(@PathVariable Long id) {
         return ResponseEntity.ok(hotelService.getHotelById(id));

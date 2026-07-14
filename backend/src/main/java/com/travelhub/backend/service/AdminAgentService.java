@@ -110,7 +110,7 @@ public class AdminAgentService {
                                 "Agent", "id", agentId));
 
         return packageRepository
-                .findByAgentId(agentId)
+                .findByAgent_Id(agentId)
                 .stream()
                 .map(this::mapToPackageResponse)
                 .toList();

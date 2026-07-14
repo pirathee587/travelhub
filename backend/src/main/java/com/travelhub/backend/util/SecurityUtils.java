@@ -38,6 +38,9 @@ public class SecurityUtils {
         }
 
         String token = authentication.getCredentials().toString();
+        if (token == null || token.trim().isEmpty()) {
+            return null;
+        }
         try {
             return Jwts.parser()
                     .verifyWith((javax.crypto.SecretKey) getSigningKey())

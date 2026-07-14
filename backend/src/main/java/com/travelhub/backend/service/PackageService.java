@@ -60,7 +60,7 @@ public class PackageService {
      * Now that Package.@JoinColumn is corrected (no referencedColumnName), this works correctly.
      */
     public List<PackageResponse> getPackagesByAgentId(Long agentId) {
-        List<Package> packages = packageRepository.findByAgentId(agentId)
+        List<Package> packages = packageRepository.findByAgent_Id(agentId)
                 .stream()
                 .filter(p -> "Approved".equalsIgnoreCase(p.getApplicationStatus()) && Boolean.TRUE.equals(p.getIsActive()))
                 .collect(Collectors.toList());

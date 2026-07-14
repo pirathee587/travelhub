@@ -22,6 +22,11 @@ public class AgentBookingController {
         return ResponseEntity.ok(agentBookingService.getAllBookings(agentId, status));
     }
 
+    @GetMapping("/{agentId}/debug-vehicles")
+    public ResponseEntity<?> debugVehicles(@PathVariable Long agentId) {
+        return ResponseEntity.ok(agentBookingService.debugVehicles(agentId));
+    }
+
     @GetMapping("/{agentId}/bookings/{bookingId}")
     public ResponseEntity<BookingResponse> getBookingById(
             @PathVariable Long agentId,
@@ -43,6 +48,22 @@ public class AgentBookingController {
             @PathVariable Long bookingId,
             @RequestBody BookingActionRequest request) {
         return ResponseEntity.ok(agentBookingService.declineBooking(agentId, bookingId, request));
+    }
+
+    @PatchMapping("/{agentId}/bookings/{bookingId}/assign-vehicle")
+    public ResponseEntity<BookingResponse> assignVehicle(
+            @PathVariable Long agentId,
+            @PathVariable Long bookingId,
+            @RequestBody BookingActionRequest request) {
+        return ResponseEntity.ok(agentBookingService.assignVehicle(agentId, bookingId, request));
+    }
+
+    @PatchMapping("/{agentId}/bookings/{bookingId}/assign-driver")
+    public ResponseEntity<BookingResponse> assignDriver(
+            @PathVariable Long agentId,
+            @PathVariable Long bookingId,
+            @RequestBody BookingActionRequest request) {
+        return ResponseEntity.ok(agentBookingService.assignDriver(agentId, bookingId, request));
     }
 
     // confirmed → in_progress: agent manually starts the trip on trip day

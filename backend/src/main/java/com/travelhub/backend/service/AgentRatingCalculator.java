@@ -19,7 +19,7 @@ public class AgentRatingCalculator {
     private final ReviewRepository reviewRepository;
 
     public Double getAgentRating(Long agentId) {
-        List<Package> packages = packageRepository.findByAgentId(agentId)
+        List<Package> packages = packageRepository.findByAgent_Id(agentId)
                 .stream()
                 .filter(p -> "Approved".equalsIgnoreCase(p.getApplicationStatus())
                         && Boolean.TRUE.equals(p.getIsActive()))

@@ -82,4 +82,14 @@ public class AgentPackageController {
         packageService.deletePackage(agentId, packageId);
         return ResponseEntity.noContent().build();
     }
+
+    // POST /api/v1/agent/{agentId}/packages/upload-image
+    @PostMapping(value = "/upload-image", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<java.util.Map<String, String>> uploadPackageImage(
+            @PathVariable Long agentId,
+            @RequestPart("image") MultipartFile image) {
+
+        String imageUrl = packageService.uploadImageOnly(agentId, image);
+        return ResponseEntity.ok(java.util.Map.of("imageUrl", imageUrl));
+    }
 }

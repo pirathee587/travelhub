@@ -21,6 +21,8 @@ public class NotificationListener {
 
     private final EmailService emailService;
     private final UserRepository userRepository;
+    private final com.travelhub.backend.service.AgentNotificationService agentNotificationService;
+    private final com.travelhub.backend.repository.AgentRepository agentRepository;
     private final UserNotificationService userNotificationService;
 
     @Async
@@ -36,6 +38,9 @@ public class NotificationListener {
             case "CREATED":
                 emailService.sendBookingConfirmation(event.getBooking());
                 emailService.sendAgentBookingNotification(event.getBooking());
+                if (event.getBooking().getPkg() != null && event.getBooking().getPkg().getAgent() != null) {
+                    agentNotificationService.createNotification(event.getBooking().getPkg().getAgent(), "booking", "New Booking Request", "You have a new booking request for package " + event.getBooking().getPkg().getPackageName() + ".");
+                }
                 break;
             case "APPROVED":
                 emailService.sendBookingApprovalNotification(booking);
@@ -58,6 +63,9 @@ public class NotificationListener {
         log.info("Handling payment event: {} for payment ID: {}", event.getType(), event.getPayment().getId());
         if ("COMPLETED".equalsIgnoreCase(event.getType())) {
             emailService.sendPaymentConfirmation(event.getPayment());
+            if (event.getPayment().getAgent() != null) {
+                agentNotificationService.createNotification(event.getPayment().getAgent(), "payment", "Payment Received", "You received a payment of $" + event.getPayment().getAmount() + " for booking " + event.getPayment().getBooking().getId() + ".");
+            }
         }
     }
 
@@ -69,9 +77,19 @@ public class NotificationListener {
         switch (event.getType()) {
             case "APPROVED":
                 emailService.sendAccountApprovalNotification(event.getUser());
+                if (com.travelhub.backend.enums.Role.AGENT.equals(event.getUser().getRole())) {
+                    agentRepository.findByOwnerId(event.getUser().getId()).ifPresent(agent -> {
+                        agentNotificationService.createNotification(agent, "account", "Account Verified", "Your account has been verified successfully.");
+                    });
+                }
                 break;
             case "REJECTED":
                 emailService.sendAccountRejectionNotification(event.getUser(), event.getReason());
+                if (com.travelhub.backend.enums.Role.AGENT.equals(event.getUser().getRole())) {
+                    agentRepository.findByOwnerId(event.getUser().getId()).ifPresent(agent -> {
+                        agentNotificationService.createNotification(agent, "account", "Account Rejected", "Your account verification was rejected. " + (event.getReason() != null ? event.getReason() : ""));
+                    });
+                }
                 break;
             case "REGISTERED":
                 emailService.sendVerificationEmail(event.getUser().getEmail(), event.getToken());
@@ -99,6 +117,14 @@ public class NotificationListener {
 
         if (event.getPkg().getAgent() != null && event.getPkg().getAgent().getOwner() != null) {
             emailService.sendPackageStatusNotification(event.getPkg().getAgent().getOwner().getEmail(), event.getPkg().getPackageName(), event.getType(), event.getReason());
+            
+            if ("APPROVED".equals(event.getType())) {
+                agentNotificationService.createNotification(event.getPkg().getAgent(), "package", "Package Approved", "Your package " + event.getPkg().getPackageName() + " has been approved.");
+            } else if ("REJECTED".equals(event.getType())) {
+                agentNotificationService.createNotification(event.getPkg().getAgent(), "package", "Package Rejected", "Your package " + event.getPkg().getPackageName() + " has been rejected. " + (event.getReason() != null ? event.getReason() : ""));
+            }
         }
     }
+
+
 }

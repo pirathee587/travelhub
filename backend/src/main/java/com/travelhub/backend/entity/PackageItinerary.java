@@ -33,8 +33,16 @@ public class PackageItinerary {
     @Column(columnDefinition = "TEXT")
     private String activities;
 
-    @Column(name = "hotel_id")
-    private Long hotelId;
+    // ── Multi-district fields ─────────────────────────────────
+    private String district;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "hotel_id")
+    private Hotel hotel;
+
+    public Long getHotelId() {
+        return hotel != null ? hotel.getId() : null;
+    }
 
     @Column(name = "hotel_name_custom")
     private String hotelNameCustom;
