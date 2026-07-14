@@ -1,6 +1,7 @@
 package com.travelhub.backend.controller;
 
 import com.travelhub.backend.common.ApiResponse;
+import com.travelhub.backend.common.BadRequestException;
 import com.travelhub.backend.common.UnauthorizedException;
 import com.travelhub.backend.dto.response.BillingHistoryResponse;
 import com.travelhub.backend.entity.Payment;
@@ -57,11 +58,7 @@ public class PaymentController {
         if (paymentService.verifyNotification(params)) {
             payment = paymentService.processNotification(params);
         } else {
-            // For local development and sandbox testing, since PayHere cannot trigger server-to-server callbacks
-            // on localhost, we mark the redirect request as a completed payment.
-            Map<String, String> localParams = new java.util.HashMap<>(params);
-            localParams.put("status_code", "2"); // 2 = Completed
-            payment = paymentService.processNotification(localParams);
+            throw new BadRequestException("Invalid payment signature");
         }
 
         return ResponseEntity.ok(new ApiResponse(true, "Payment processed", Map.of(

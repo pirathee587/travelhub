@@ -13,6 +13,7 @@ const Payment = () => {
   const [loading, setLoading] = useState(true);
   const [checkoutData, setCheckoutData] = useState<any>(null);
   const [error, setError] = useState('');
+  const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
     if (!id) return;
@@ -93,7 +94,11 @@ const Payment = () => {
           </div>
 
           {checkoutData && (
-            <form method="post" action={checkoutData.checkout_url}>
+            <form 
+              method="post" 
+              action={checkoutData.checkout_url}
+              onSubmit={() => setSubmitting(true)}
+            >
               {Object.entries(checkoutData).map(([key, value]) => {
                 if (key !== 'checkout_url') {
                   return <input key={key} type="hidden" name={key} value={value as string} />;
@@ -101,9 +106,23 @@ const Payment = () => {
                 return null;
               })}
 
-              <Button type="submit" size="lg" className="w-full h-14 text-lg font-bold gap-2">
-                <CreditCard className="w-5 h-5" />
-                Pay Now with PayHere
+              <Button 
+                type="submit" 
+                size="lg" 
+                className="w-full h-14 text-lg font-bold gap-2"
+                disabled={submitting}
+              >
+                {submitting ? (
+                  <>
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                    Connecting to PayHere...
+                  </>
+                ) : (
+                  <>
+                    <CreditCard className="w-5 h-5" />
+                    Pay Now with PayHere
+                  </>
+                )}
               </Button>
             </form>
           )}

@@ -4,6 +4,7 @@ import com.travelhub.backend.event.BookingEvent;
 import com.travelhub.backend.event.HotelEvent;
 import com.travelhub.backend.event.PackageEvent;
 import com.travelhub.backend.event.UserAccountEvent;
+import com.travelhub.backend.event.PaymentEvent;
 import com.travelhub.backend.repository.UserRepository;
 import com.travelhub.backend.service.EmailService;
 import lombok.RequiredArgsConstructor;
@@ -36,6 +37,15 @@ public class NotificationListener {
             case "DECLINED":
                 emailService.sendBookingDeclineNotification(event.getBooking(), event.getReason());
                 break;
+        }
+    }
+
+    @Async
+    @EventListener
+    public void handlePaymentEvent(PaymentEvent event) {
+        log.info("Handling payment event: {} for payment ID: {}", event.getType(), event.getPayment().getId());
+        if ("COMPLETED".equalsIgnoreCase(event.getType())) {
+            emailService.sendPaymentConfirmation(event.getPayment());
         }
     }
 

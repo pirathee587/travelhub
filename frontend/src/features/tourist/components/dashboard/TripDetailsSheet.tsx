@@ -3,6 +3,10 @@ import { Badge } from "@/components/common/ui/badge";
 import { Button } from "@/components/common/ui/button";
 import { Separator } from "@/components/common/ui/separator";
 import { Progress } from "@/components/common/ui/progress";
+import { useState } from "react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/common/ui/dialog";
+import { toast } from "sonner";
+import refundService from "@/services/refundService";
 import {
     MapPin,
     Calendar,
@@ -31,6 +35,18 @@ const statusConfig = {
         label: "Confirmed",
         className: "bg-primary/10 text-primary border-primary/20",
     },
+    paid: {
+        label: "Paid",
+        className: "bg-success/10 text-success border-success/20",
+    },
+    refund_requested: {
+        label: "Refund Requested",
+        className: "bg-orange-500/10 text-orange-500 border-orange-500/20",
+    },
+    refunded: {
+        label: "Refunded",
+        className: "bg-orange-500/10 text-orange-500 border-orange-500/20",
+    },
     in_progress: {
         label: "In Progress",
         className: "bg-success/10 text-success border-success/20",
@@ -51,9 +67,46 @@ const statusConfig = {
 
 export function TripDetailsSheet({ trip, open, onOpenChange }: { trip: any, open: boolean, onOpenChange: (open: boolean) => void }) {
     const navigate = useNavigate();
+    
+    const [refundDialogOpen, setRefundDialogOpen] = useState(false);
+    const [bankName, setBankName] = useState("");
+    const [accountNo, setAccountNo] = useState("");
+    const [accountHolderName, setAccountHolderName] = useState("");
+    const [branchName, setBranchName] = useState("");
+    const [reason, setReason] = useState("");
+    const [submittingRefund, setSubmittingRefund] = useState(false);
+
     if (!trip) return null;
 
-    const status = statusConfig[trip.status] || statusConfig.pending;
+    const handleRequestRefund = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!bankName || !accountNo || !accountHolderName || !branchName) {
+            toast.error("Please fill all required fields");
+            return;
+        }
+        setSubmittingRefund(true);
+        try {
+            const bookingId = trip.bookingId || trip.id;
+            await refundService.requestRefund(bookingId, {
+                bankName,
+                accountNo,
+                accountHolderName,
+                branchName,
+                reason
+            });
+            toast.success("Refund request submitted successfully!");
+            setRefundDialogOpen(false);
+            onOpenChange(false);
+            window.location.reload();
+        } catch (err: any) {
+            const msg = err.response?.data?.message || "Failed to submit refund request";
+            toast.error(msg);
+        } finally {
+            setSubmittingRefund(false);
+        }
+    };
+
+    const status = statusConfig[trip.status?.toLowerCase()] || statusConfig.pending;
 
     return (
         <Sheet open={open} onOpenChange={onOpenChange}>
@@ -276,7 +329,7 @@ export function TripDetailsSheet({ trip, open, onOpenChange }: { trip: any, open
                                 <span>Total</span>
                                 <span className="text-primary">${trip.totalPrice?.toLocaleString()}</span>
                             </div>
-                            {trip.status === "confirmed" && (
+                            {trip.status?.toLowerCase() === "confirmed" && (
                                 <div className="mt-4">
                                     <Button
                                         className="w-full"
@@ -287,6 +340,37 @@ export function TripDetailsSheet({ trip, open, onOpenChange }: { trip: any, open
                                         }}
                                     >
                                         Pay Now
+                                    </Button>
+                                </div>
+                            )}
+                            {trip.status?.toLowerCase() === "paid" && (
+                                <div className="mt-4">
+                                    <Button
+                                        className="w-full bg-orange-600 hover:bg-orange-700 text-white font-bold"
+                                        onClick={() => setRefundDialogOpen(true)}
+                                    >
+                                        Request Refund
+                                    </Button>
+                                </div>
+                            )}
+                            {trip.status?.toLowerCase() === "refund_requested" && (
+                                <div className="mt-4">
+                                    <Button
+                                        className="w-full"
+                                        variant="outline"
+                                        disabled
+                                    >
+                                        Refund Requested
+                                    </Button>
+                                </div>
+                            )}
+                            {trip.status?.toLowerCase() === "refunded" && (
+                                <div className="mt-4">
+                                    <Button
+                                        className="w-full bg-orange-500/10 text-orange-500 border border-orange-500/20"
+                                        disabled
+                                    >
+                                        Refunded
                                     </Button>
                                 </div>
                             )}
@@ -310,6 +394,90 @@ export function TripDetailsSheet({ trip, open, onOpenChange }: { trip: any, open
                     </div>
                 </div>
             </SheetContent>
+
+            <Dialog open={refundDialogOpen} onOpenChange={setRefundDialogOpen}>
+                <DialogContent className="sm:max-w-md">
+                    <DialogHeader>
+                        <DialogTitle>Request Refund</DialogTitle>
+                        <DialogDescription>
+                            Please enter your bank transfer details. The agent will process your refund manually via bank deposit.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <form onSubmit={handleRequestRefund} className="space-y-4 py-2">
+                        <div className="space-y-1">
+                            <label className="text-xs font-semibold text-muted-foreground">Bank Name *</label>
+                            <input
+                                type="text"
+                                className="w-full p-2 border rounded-md text-sm"
+                                value={bankName}
+                                onChange={(e) => setBankName(e.target.value)}
+                                placeholder="e.g. Commercial Bank"
+                                required
+                            />
+                        </div>
+                        <div className="space-y-1">
+                            <label className="text-xs font-semibold text-muted-foreground">Account Number *</label>
+                            <input
+                                type="text"
+                                className="w-full p-2 border rounded-md text-sm"
+                                value={accountNo}
+                                onChange={(e) => setAccountNo(e.target.value)}
+                                placeholder="e.g. 1000293412"
+                                required
+                            />
+                        </div>
+                        <div className="space-y-1">
+                            <label className="text-xs font-semibold text-muted-foreground">Account Holder Name *</label>
+                            <input
+                                type="text"
+                                className="w-full p-2 border rounded-md text-sm"
+                                value={accountHolderName}
+                                onChange={(e) => setAccountHolderName(e.target.value)}
+                                placeholder="e.g. John Doe"
+                                required
+                            />
+                        </div>
+                        <div className="space-y-1">
+                            <label className="text-xs font-semibold text-muted-foreground">Branch Name *</label>
+                            <input
+                                type="text"
+                                className="w-full p-2 border rounded-md text-sm"
+                                value={branchName}
+                                onChange={(e) => setBranchName(e.target.value)}
+                                placeholder="e.g. Colombo 07"
+                                required
+                            />
+                        </div>
+                        <div className="space-y-1">
+                            <label className="text-xs font-semibold text-muted-foreground">Reason for Refund</label>
+                            <textarea
+                                className="w-full p-2 border rounded-md text-sm"
+                                value={reason}
+                                onChange={(e) => setReason(e.target.value)}
+                                placeholder="Describe why you want a refund..."
+                                rows={2}
+                            />
+                        </div>
+                        <DialogFooter className="pt-2 gap-2 flex-row justify-end">
+                            <Button
+                                type="button"
+                                variant="outline"
+                                onClick={() => setRefundDialogOpen(false)}
+                                disabled={submittingRefund}
+                            >
+                                Cancel
+                            </Button>
+                            <Button
+                                type="submit"
+                                className="bg-orange-600 hover:bg-orange-700 text-white"
+                                disabled={submittingRefund}
+                            >
+                                {submittingRefund ? "Submitting..." : "Submit Request"}
+                            </Button>
+                        </DialogFooter>
+                    </form>
+                </DialogContent>
+            </Dialog>
         </Sheet>
     );
 }
