@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE suite SYSTEM "https://testng.org/testng-1.0.dtd">
+<suite name="TravelHub Test Suite" verbose="1" parallel="false">
+
+    <!-- ===== UNIT TESTS ===== -->
+    <test name="Unit Tests - Auth">
+        <classes>
+            <class name="com.travelhub.backend.unit.auth.AuthServiceTest"/>
+        </classes>
+    </test>
+
+    <test name="Unit Tests - Admin">
+        <classes>
+            <class name="com.travelhub.backend.unit.admin.AdminUserServiceTest"/>
+            <class name="com.travelhub.backend.unit.admin.AdminHotelServiceTest"/>
+        </classes>
+    </test>
+
+    <test name="Unit Tests - Tourist">
+        <classes>
+            <class name="com.travelhub.backend.unit.tourist.BookingServiceTest"/>
+            <class name="com.travelhub.backend.unit.tourist.PackageServiceTest"/>
+        </classes>
+    </test>
+
+    <test name="Unit Tests - Hotel Owner">
+        <classes>
+            <class name="com.travelhub.backend.unit.hotelowner.HotelServiceTest"/>
+        </classes>
+    </test>
+
+    <test name="Unit Tests - Agency">
+        <classes>
+            <class name="com.travelhub.backend.unit.agency.AgentServiceTest"/>
+        </classes>
+    </test>
+
+    <!-- ===== CONTROLLER TESTS ===== -->
+    <test name="Controller Tests - Auth">
+        <classes>
+            <class name="com.travelhub.backend.controller.auth.AuthControllerTest"/>
+        </classes>
+    </test>
+
+    <test name="Controller Tests - Admin">
+        <classes>
+            <class name="com.travelhub.backend.controller.admin.AdminUserControllerTest"/>
+        </classes>
+    </test>
+
+    <test name="Controller Tests - Tourist">
+        <classes>
+            <class name="com.travelhub.backend.controller.tourist.BookingControllerTest"/>
+        </classes>
+    </test>
+
+    <test name="Controller Tests - Hotel Owner">
+        <classes>
+            <class name="com.travelhub.backend.controller.hotelowner.HotelControllerTest"/>
+        </classes>
+    </test>
+
+    <test name="Controller Tests - Agency">
+        <classes>
+            <class name="com.travelhub.backend.controller.agency.AgencyControllerTest"/>
+        </classes>
+    </test>
+
+    <!-- ===== SECURITY TESTS ===== -->
+    <test name="Security Tests">
+        <classes>
+            <class name="com.travelhub.backend.security.JwtAuthFilterTest"/>
+        </classes>
+    </test>
+
+</suite>
