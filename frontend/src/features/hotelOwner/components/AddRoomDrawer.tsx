@@ -59,7 +59,7 @@ export function AddRoomDrawer({ hotelId, onSuccess, children }: AddRoomDrawerPro
         data.append("image", image);
       }
 
-      const res = await fetch("http://localhost:8080/api/v1/rooms", {
+      const res = await fetch("http://localhost:8080/api/rooms", {
         method: "POST",
         body: data,
       });
@@ -90,7 +90,7 @@ export function AddRoomDrawer({ hotelId, onSuccess, children }: AddRoomDrawerPro
   return (
     <Drawer open={open} onOpenChange={setOpen}>
       <DrawerTrigger asChild>{children}</DrawerTrigger>
-      <DrawerContent className="max-h-[90vh]">
+      <DrawerContent className="hotel-owner-theme max-h-[90vh]">
         <DrawerHeader>
           <DrawerTitle>Add New Room</DrawerTitle>
           <DrawerDescription>
@@ -187,7 +187,7 @@ export function AddRoomDrawer({ hotelId, onSuccess, children }: AddRoomDrawerPro
               <Button
                 type="submit"
                 disabled={loading}
-                className="w-full rounded-xl bg-[#1e293b] hover:bg-[#0f172a] text-white"
+                className="w-full rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground"
               >
                 {loading ? (
                   <>
