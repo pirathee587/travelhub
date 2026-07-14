@@ -17,8 +17,6 @@ public class AgentPackageDetailResponse {
     private String endPlace;
     private String duration;
     private String packageType;
-    private Double priceFrom;
-    private Double priceTo;
     private Double basePriceAdult;
     private Double basePriceChild;
     private String description;
