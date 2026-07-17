@@ -18,3 +18,9 @@ target/
 
 # Log files
 *.log
+
+# Environment variables
+.env
+.env.local
+.env.*
+!.env.example

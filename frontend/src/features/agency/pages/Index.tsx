@@ -57,40 +57,58 @@ const Index = () => {
       title: 'Total Packages',
       value: stats.totalPackages != null ? String(stats.totalPackages) : '—',
       icon: Package,
-      trend: { value: 0, isPositive: true },
+      trend: { 
+        value: stats.totalPackagesTrend != null ? Math.round(stats.totalPackagesTrend) : 0, 
+        isPositive: (stats.totalPackagesTrend ?? 0) >= 0 
+      },
     },
     {
       title: 'Active Trips',
       value: stats.activeTrips != null ? String(stats.activeTrips) : '—',
       icon: Plane,
-      trend: { value: 0, isPositive: true },
+      trend: { 
+        value: stats.activeTripsTrend != null ? Math.round(stats.activeTripsTrend) : 0, 
+        isPositive: (stats.activeTripsTrend ?? 0) >= 0 
+      },
       variant: 'primary',
     },
     {
       title: 'Completed Trips',
       value: stats.completedTrips != null ? String(stats.completedTrips) : '—',
       icon: CheckCircle,
-      trend: { value: 0, isPositive: true },
+      trend: { 
+        value: stats.completedTripsTrend != null ? Math.round(stats.completedTripsTrend) : 0, 
+        isPositive: (stats.completedTripsTrend ?? 0) >= 0 
+      },
       variant: 'success',
     },
     {
       title: 'Pending Requests',
       value: stats.pendingRequests != null ? String(stats.pendingRequests) : '—',
       icon: Clock,
-      trend: { value: 0, isPositive: false },
+      trend: { 
+        value: stats.pendingRequestsTrend != null ? Math.round(stats.pendingRequestsTrend) : 0, 
+        isPositive: (stats.pendingRequestsTrend ?? 0) >= 0 
+      },
     },
     {
       title: 'Total Revenue',
       value: stats.totalRevenue != null ? formatPrice(stats.totalRevenue) : '—',
       icon: DollarSign,
-      trend: { value: 0, isPositive: true },
+      trend: { 
+        value: stats.totalRevenueTrend != null ? Math.round(stats.totalRevenueTrend) : 0, 
+        isPositive: (stats.totalRevenueTrend ?? 0) >= 0 
+      },
       variant: 'accent',
     },
     {
       title: 'Average Rating',
       value: stats.averageRating != null ? String(stats.averageRating.toFixed(1)) : '0.0',
       icon: Star,
-      trend: { value: 0, isPositive: true },
+      trend: { 
+        value: stats.averageRatingTrend != null ? Math.round(stats.averageRatingTrend) : 0, 
+        isPositive: (stats.averageRatingTrend ?? 0) >= 0 
+      },
     },
   ] : [];
 

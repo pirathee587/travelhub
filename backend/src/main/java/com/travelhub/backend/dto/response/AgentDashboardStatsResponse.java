@@ -14,4 +14,11 @@ public class AgentDashboardStatsResponse {
     private Double averageRating;
     private Long totalVehicles;
     private Long totalDrivers;
+
+    private Double totalPackagesTrend;
+    private Double activeTripsTrend;
+    private Double completedTripsTrend;
+    private Double pendingRequestsTrend;
+    private Double totalRevenueTrend;
+    private Double averageRatingTrend;
 }
