@@ -39,7 +39,8 @@ node_modules/
 target/
 *.log
 .DS_Store
-
 ### Secrets — never commit these ###
 .env
 *.env
+!.env.example
+.env.local
