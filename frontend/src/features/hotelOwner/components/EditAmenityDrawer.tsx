@@ -89,7 +89,7 @@ export function EditAmenityDrawer({
       }}
     >
       <DrawerTrigger asChild>{children}</DrawerTrigger>
-      <DrawerContent className="max-h-[90vh]">
+      <DrawerContent className="hotel-owner-theme max-h-[90vh]">
         <DrawerHeader>
           <DrawerTitle>Edit Amenity</DrawerTitle>
           <DrawerDescription>Update the details of your property's amenity.</DrawerDescription>
@@ -126,7 +126,7 @@ export function EditAmenityDrawer({
               <Button
                 type="submit"
                 disabled={loading}
-                className="w-full rounded-xl bg-[#1e293b] hover:bg-[#0f172a] text-white"
+                className="w-full rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground"
               >
                 {loading ? (
                   <>
