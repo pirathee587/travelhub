@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/common/ui
 import { Button } from '@/components/common/ui/button';
 import { Loader2, AlertCircle, ShieldCheck, CreditCard } from 'lucide-react';
 import { useTouristCurrency } from '@/features/tourist/hooks/TouristCurrencyContext';
+import { Shimmer } from "@/components/common/ui/skeletons";
 
 const Payment = () => {
   const { id } = useParams<{ id: string }>();
@@ -38,8 +39,27 @@ const Payment = () => {
 
   if (loading) {
     return (
-      <div className="flex justify-center items-center min-h-[60vh]">
-        <Loader2 className="w-10 h-10 animate-spin text-primary" />
+      <div className="container max-w-xl py-12 mx-auto animate-slide-up">
+        <div className="rounded-xl overflow-hidden shadow-lg border-0 bg-white">
+          <Shimmer className="h-20 w-full" />
+          <div className="p-8 space-y-6">
+            <div className="flex justify-center mb-6">
+              <Shimmer className="h-16 w-16 rounded-full" />
+            </div>
+            <div className="space-y-4 mb-8">
+              <Shimmer className="h-6 w-3/4 mx-auto" />
+              <Shimmer className="h-4 w-1/2 mx-auto" />
+            </div>
+            <div className="bg-secondary/50 p-6 rounded-xl space-y-4">
+              <Shimmer className="h-4 w-32 mb-4" />
+              <div className="flex justify-between"><Shimmer className="h-4 w-24" /><Shimmer className="h-4 w-32" /></div>
+              <div className="flex justify-between"><Shimmer className="h-4 w-24" /><Shimmer className="h-4 w-20" /></div>
+              <Shimmer className="h-px w-full my-4" />
+              <div className="flex justify-between"><Shimmer className="h-6 w-24" /><Shimmer className="h-6 w-28" /></div>
+            </div>
+            <Shimmer className="h-14 w-full rounded-xl" />
+          </div>
+        </div>
       </div>
     );
   }

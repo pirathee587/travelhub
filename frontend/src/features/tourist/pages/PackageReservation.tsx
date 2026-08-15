@@ -47,6 +47,7 @@ import { defaultUserId } from "@/features/tourist/services/userHelpers";
 import { Alert, AlertDescription } from "@/components/common/ui/alert";
 import { toast } from "sonner";
 import { useTouristCurrency } from "@/features/tourist/hooks/TouristCurrencyContext";
+import { ReservationSkeleton } from "@/components/common/ui/skeletons";
 
 const HotelPreferenceCard = ({ selection, index, onRemove, onUpdate, allHotels }) => {
     const { data: rooms } = useHotelRooms(selection.hotelId);
@@ -210,9 +211,7 @@ const PackageReservation = () => {
     if (loading) {
         return (
             <DashboardLayout>
-                <div className="flex items-center justify-center h-64">
-                    <p className="text-muted-foreground">Loading package...</p>
-                </div>
+                <ReservationSkeleton />
             </DashboardLayout>
         );
     }

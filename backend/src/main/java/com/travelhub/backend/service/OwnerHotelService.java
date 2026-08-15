@@ -11,6 +11,7 @@ import com.travelhub.backend.repository.HotelRepository;
 import com.travelhub.backend.repository.ReviewRepository;
 import com.travelhub.backend.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -53,6 +54,7 @@ public class OwnerHotelService {
     }
 
     @Transactional
+    @CacheEvict(value = {"touristHotels", "touristHotelDetails"}, allEntries = true)
     public HotelResponse createHotel(OwnerHotelRequest request, MultipartFile hotelImage, Long ownerId) {
         User owner = userRepository.findById(ownerId)
                 .orElseThrow(() -> new RuntimeException("Owner not found with id: " + ownerId));
@@ -96,6 +98,7 @@ public class OwnerHotelService {
     }
 
     @Transactional
+    @CacheEvict(value = {"touristHotels", "touristHotelDetails"}, allEntries = true)
     public HotelResponse updateHotel(Long id, OwnerHotelRequest request, MultipartFile hotelImage, Long ownerId) {
         Hotel hotel = getOwnedHotel(id, ownerId);
 
@@ -128,12 +131,14 @@ public class OwnerHotelService {
     }
 
     @Transactional
+    @CacheEvict(value = {"touristHotels", "touristHotelDetails"}, allEntries = true)
     public void deleteHotel(Long id, Long ownerId) {
         Hotel hotel = getOwnedHotel(id, ownerId);
         hotelRepository.delete(hotel);
     }
 
     @Transactional
+    @CacheEvict(value = {"touristHotels", "touristHotelDetails"}, allEntries = true)
     public HotelResponse suspendHotel(Long id, Long ownerId) {
         Hotel hotel = getOwnedHotel(id, ownerId);
         hotel.setIsActive(false);
@@ -142,6 +147,7 @@ public class OwnerHotelService {
     }
 
     @Transactional
+    @CacheEvict(value = {"touristHotels", "touristHotelDetails"}, allEntries = true)
     public HotelResponse reactivateHotel(Long id, Long ownerId) {
         Hotel hotel = getOwnedHotel(id, ownerId);
         hotel.setIsActive(true);

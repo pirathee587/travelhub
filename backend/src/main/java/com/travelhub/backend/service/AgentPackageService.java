@@ -14,6 +14,7 @@ import com.travelhub.backend.repository.PackageItineraryRepository;
 import com.travelhub.backend.repository.PackageRepository;
 import com.travelhub.backend.repository.ReviewRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -103,6 +104,7 @@ public class AgentPackageService {
      * Creates a new package, uploads images, and builds itinerary rows.
      */
     @Transactional
+    @CacheEvict(value = {"touristPackages", "touristPackageDetails"}, allEntries = true)
     public AgentPackageDetailResponse createPackage(Long agentId,
                                                     String dataJson,
                                                     List<MultipartFile> imageFiles) {
@@ -157,6 +159,7 @@ public class AgentPackageService {
      * Updates package metadata, images, and itinerary for an owned package.
      */
     @Transactional
+    @CacheEvict(value = {"touristPackages", "touristPackageDetails"}, allEntries = true)
     public AgentPackageDetailResponse updatePackage(Long agentId,
                                                     String packageId,
                                                     String dataJson,
@@ -216,6 +219,7 @@ public class AgentPackageService {
      * Toggles active status for an owned package.
      */
     @Transactional
+    @CacheEvict(value = {"touristPackages", "touristPackageDetails"}, allEntries = true)
     public PackageSummaryResponse updateStatus(Long agentId,
                                                String packageId,
                                                UpdatePackageStatusRequest req) {
@@ -232,6 +236,7 @@ public class AgentPackageService {
      * Soft-deletes an owned package by setting deletedAt and deactivating it.
      */
     @Transactional
+    @CacheEvict(value = {"touristPackages", "touristPackageDetails"}, allEntries = true)
     public void deletePackage(Long agentId, String packageId) {
         Package pkg = findAndValidateOwnership(agentId, packageId);
         pkg.setDeletedAt(LocalDateTime.now());

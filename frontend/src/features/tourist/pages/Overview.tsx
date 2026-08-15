@@ -27,20 +27,15 @@ const Overview = () => {
     const [selectedPackageId, setSelectedPackageId] = useState(null);
     const [selectedHotelId, setSelectedHotelId] = useState(null);
 
-    // Single aggregated SWR hook — replaces 4 separate API calls:
-    //   GET /api/tourist/stats, /trips, /documents, /recommendations
-    // All four sub-calls execute in parallel on the backend.
+    // Single aggregated SWR hook (Overview Dashboard: 4 requests -> 1 request)
     const userId = defaultUserId();
     const { data: overview, isLoading: overviewLoading } = useTouristOverview(userId);
 
-    // Destructure the aggregated response into the same variable names
-    // used by the rest of this component — no further changes needed.
     const stats = overview?.stats ?? { totalTrips: 0, ongoingTrips: 0, completedTrips: 0, upcomingTrips: 0 };
     const trips = overview?.trips ?? [];
     const allDocs = overview?.documents ?? [];
     const recommendations = overview?.recommendations ?? [];
 
-    // Derive loading states from the single overview loading flag
     const statsLoading = overviewLoading;
     const tripsLoading = overviewLoading;
     const recsLoading = overviewLoading;

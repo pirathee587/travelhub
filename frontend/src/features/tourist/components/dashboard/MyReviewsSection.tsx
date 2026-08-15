@@ -11,6 +11,7 @@ import { useToast } from "@/hooks/use-toast";
 import { defaultUserId } from "@/features/tourist/services/userHelpers";
 import { EditReviewDialog } from "./EditReviewDialog";
 import { DeleteConfirmDialog } from "./DeleteConfirmDialog";
+import { Shimmer } from "@/components/common/ui/skeletons";
 
 export function MyReviewsSection() {
     const navigate = useNavigate();
@@ -213,7 +214,25 @@ export function MyReviewsSection() {
                 <h3 className="text-xl font-bold">⭐ My Reviews</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {[1, 2, 3].map((i) => (
-                        <Card key={i} className="h-64 bg-muted animate-pulse" />
+                        <Card key={i} className="border-border overflow-hidden">
+                            <CardContent className="p-4 space-y-4">
+                                <div className="flex justify-between items-center mb-3">
+                                    <Shimmer className="h-6 w-20 rounded-full" />
+                                    <Shimmer className="h-4 w-24" />
+                                </div>
+                                <Shimmer className="h-5 w-3/4 mb-2" />
+                                <Shimmer className="h-4 w-full" />
+                                <Shimmer className="h-4 w-5/6 mb-3" />
+                                <div className="space-y-2 mb-3">
+                                    <Shimmer className="h-4 w-32" />
+                                    <Shimmer className="h-4 w-24" />
+                                </div>
+                                <div className="flex gap-2 pt-3 border-t">
+                                    <Shimmer className="h-8 flex-1 rounded-md" />
+                                    <Shimmer className="h-8 flex-1 rounded-md" />
+                                </div>
+                            </CardContent>
+                        </Card>
                     ))}
                 </div>
             </section>

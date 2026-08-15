@@ -35,9 +35,7 @@ const Hotel = () => {
     const returnTo = searchParams.get("returnTo");
 
     // Fetch all hotels. The backend GET /api/hotels already includes priceFrom
-    // and priceTo computed via HotelPricingService in a single bulk DB query.
-    // Previously the frontend fired 1 + N calls (one per hotel) to compute
-    // room price ranges — that N+1 pattern is now eliminated.
+    // and priceTo computed via bulk query. Eliminates the 1 + N network calls.
     const { data: hotels = [], isLoading } = useAllHotels(null);
 
     // Sync district param to local state, normalizing it to remove " District"
@@ -56,7 +54,7 @@ const Hotel = () => {
         );
         return Array.from(uniqueDists).sort();
     }, [hotels]);
-
+  
     const filteredHotels = useMemo(() =>
         hotels
             .filter((hotel) => {
@@ -91,7 +89,7 @@ const Hotel = () => {
                 if (sortBy === "rating-low") return (a.rating || 0) - (b.rating || 0);      //Sorting by rating low to high
                 return 0;
             }),
-        [hotels, selectedDistrict, searchQuery, sortBy]  // hotelsWithRoomPrice replaced with hotels directly
+        [hotels, selectedDistrict, searchQuery, sortBy]
     );
 
     const handleHotelClick = useCallback((hotelId) => {

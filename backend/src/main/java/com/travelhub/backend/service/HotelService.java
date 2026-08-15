@@ -19,6 +19,8 @@ import lombok.RequiredArgsConstructor;
 import java.util.Map;
 import org.springframework.transaction.annotation.Transactional;
 
+import org.springframework.cache.annotation.Cacheable;
+
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
@@ -29,16 +31,19 @@ public class HotelService {
     private final HotelPricingService hotelPricingService;
     private final RoomRepository roomRepository;
 
+    @Cacheable(value = "touristHotels", key = "'all'")
     public List<HotelResponse> getAllHotels() {
         List<Hotel> hotels = hotelRepository.findByApplicationStatus("Approved");
         return toHotelResponses(hotels);
     }
 
+    @Cacheable(value = "touristHotels", key = "'dest_' + #destination")
     public List<HotelResponse> getHotelsByDestination(String destination) {
         List<Hotel> hotels = hotelRepository.findByDestinationIgnoreCase(destination);
         return toHotelResponses(hotels);
     }
 
+    @Cacheable(value = "touristHotels", key = "'dist_' + #district")
     public List<HotelResponse> getHotelsByDistrict(String district) {
         List<Hotel> hotels = hotelRepository.findByApplicationStatusAndDistrictIgnoreCase("Approved", district);
         return toHotelResponses(hotels);
@@ -63,6 +68,7 @@ public class HotelService {
         return toHotelResponses(hotels);
     }
 
+    @Cacheable(value = "touristHotelDetails", key = "#id")
     public HotelResponse getHotelById(Long id) {
         Hotel hotel = hotelRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Hotel not found with id: " + id));                 //Error handle
