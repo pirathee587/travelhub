@@ -14,6 +14,8 @@ export interface RefundResponseDto {
   packageName: string;
   touristName: string;
   amount: number;
+  cancellationFee?: number;
+  netRefundAmount?: number;
   bankName: string;
   accountNo: string;
   accountHolderName: string;

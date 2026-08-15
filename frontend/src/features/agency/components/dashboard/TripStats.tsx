@@ -16,7 +16,7 @@ export function TripStats() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const analytics = await api.getAnalytics('monthly');
+        const analytics = await api.getAnalytics('yearly');
         if (analytics?.tripStatusData) {
           const t = analytics.tripStatusData;
           setData([

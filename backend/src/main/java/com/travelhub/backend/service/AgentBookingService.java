@@ -122,6 +122,9 @@ public class AgentBookingService {
 
         // Move booking to confirmed state (pending → confirmed).
         booking.setStatus("confirmed");
+        if (booking.getPaymentStatus() == null) {
+            booking.setPaymentStatus("UNPAID");
+        }
         booking.setProgress(25);
         Booking saved = bookingRepository.save(booking);
         eventPublisher.publishEvent(new BookingEvent(this, saved, "APPROVED"));
@@ -228,7 +231,9 @@ public class AgentBookingService {
         // Mark booking as completed.
         booking.setStatus("completed");
         booking.setProgress(100);
-        return toResponse(bookingRepository.save(booking));
+        Booking saved = bookingRepository.save(booking);
+        eventPublisher.publishEvent(new BookingEvent(this, saved, "COMPLETED"));
+        return toResponse(saved);
     }
 
     /**
@@ -242,12 +247,14 @@ public class AgentBookingService {
         if (!isOwnedByAgent(booking, agentId)) {
             throw new ResourceNotFoundException("Booking", "agentId", agentId);
         }
-        if (!booking.getStatus().equals("confirmed")) {
+        if (!"confirmed".equalsIgnoreCase(booking.getStatus()) && !"active".equalsIgnoreCase(booking.getStatus())) {
             throw new BadRequestException("Only confirmed bookings can be started");
         }
         booking.setStatus("in_progress");
         booking.setProgress(50);
-        return toResponse(bookingRepository.save(booking));
+        Booking saved = bookingRepository.save(booking);
+        eventPublisher.publishEvent(new BookingEvent(this, saved, "STARTED"));
+        return toResponse(saved);
     }
 
     /**
@@ -267,7 +274,10 @@ public class AgentBookingService {
         }
         booking.setStatus("cancelled");
         booking.setProgress(0);
-        return toResponse(bookingRepository.save(booking));
+        String reason = (request != null) ? request.getCancelReason() : null;
+        Booking saved = bookingRepository.save(booking);
+        eventPublisher.publishEvent(new BookingEvent(this, saved, "CANCELLED", reason));
+        return toResponse(saved);
     }
 
     /**
@@ -391,6 +401,7 @@ public class AgentBookingService {
                 .startDate(booking.getStartDate())
                 .endDate(booking.getEndDate())
                 .status(booking.getStatus())
+                .paymentStatus(booking.getPaymentStatus() != null ? booking.getPaymentStatus() : "UNPAID")
                 .totalPrice(booking.getTotalPrice())
                 .progress(booking.getProgress())
                 .vehicleType(vehicleType)

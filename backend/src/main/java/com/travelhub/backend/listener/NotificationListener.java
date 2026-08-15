@@ -57,7 +57,34 @@ public class NotificationListener {
             case "DECLINED":
                 emailService.sendBookingDeclineNotification(booking, event.getReason());
                 if (booking.getUser() != null) {
-                    userNotificationService.notifyUser(booking.getUser().getId(), "booking", "Booking Declined", "Your booking " + bookingRef + " for " + pkgName + " has been declined. Reason: " + event.getReason(), "/tourist/trips");
+                    userNotificationService.notifyUser(booking.getUser().getId(), "booking", "Booking Declined", "Your booking " + bookingRef + " for " + pkgName + " has been declined. Reason: " + (event.getReason() != null ? event.getReason() : "None"), "/tourist/trips");
+                }
+                break;
+            case "STARTED":
+                if (booking.getUser() != null) {
+                    userNotificationService.notifyUser(booking.getUser().getId(), "booking", "Trip Started", "Your trip " + bookingRef + " for " + pkgName + " has officially started! Have a great journey.", "/tourist/trips");
+                }
+                break;
+            case "COMPLETED":
+                if (booking.getUser() != null) {
+                    userNotificationService.notifyUser(booking.getUser().getId(), "booking", "Trip Completed", "Your trip " + bookingRef + " for " + pkgName + " is completed! Tap here to leave a review for your experience.", "/tourist/trips");
+                }
+                if (booking.getPkg() != null && booking.getPkg().getAgent() != null) {
+                    var agent = booking.getPkg().getAgent();
+                    if (shouldNotify(agent, "trip-completed")) {
+                        agentNotificationService.createNotification(agent, "booking", "Trip Completed", "Trip " + bookingRef + " for package " + pkgName + " has been completed.");
+                    }
+                }
+                break;
+            case "CANCELLED":
+                if (booking.getUser() != null) {
+                    userNotificationService.notifyUser(booking.getUser().getId(), "booking", "Booking Cancelled", "Booking " + bookingRef + " for " + pkgName + " was cancelled.", "/tourist/trips");
+                }
+                if (booking.getPkg() != null && booking.getPkg().getAgent() != null) {
+                    var agent = booking.getPkg().getAgent();
+                    if (shouldNotify(agent, "cancellation")) {
+                        agentNotificationService.createNotification(agent, "cancellation", "Booking Cancelled", "Booking " + bookingRef + " for package " + pkgName + " was cancelled.");
+                    }
                 }
                 break;
         }

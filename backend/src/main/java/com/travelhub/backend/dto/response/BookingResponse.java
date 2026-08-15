@@ -21,6 +21,7 @@ public class BookingResponse {
     private LocalDate startDate;
     private LocalDate endDate;
     private String status;
+    private String paymentStatus;
     private Double totalPrice;
     private Integer progress;
     private String imageUrl;

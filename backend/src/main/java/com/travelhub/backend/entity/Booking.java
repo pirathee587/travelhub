@@ -70,6 +70,9 @@ public class Booking {
     @OneToMany(mappedBy = "booking", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private List<BookingHotelPreference> hotelPreferences;
 
+    @Column(name = "payment_status")
+    private String paymentStatus;
+
     @Column(updatable = false)
     private LocalDateTime createdAt;
 
@@ -78,6 +81,9 @@ public class Booking {
         createdAt = LocalDateTime.now();
         if (status == null) {
             status = "pending";
+        }
+        if (paymentStatus == null) {
+            paymentStatus = "UNPAID";
         }
     }
 }

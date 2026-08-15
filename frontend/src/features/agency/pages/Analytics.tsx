@@ -10,28 +10,40 @@ import { Button } from '@/components/common/ui/button';
 import { api } from '@/features/agency/services/api';
 import { Skeleton } from '@/components/common/ui/skeleton';
 import { useCurrency } from '@/features/agency/hooks/CurrencyContext';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
 const Analytics = () => {
   const { formatPrice, currency, rate } = useCurrency();
   /* --- ANALYTICS STATE MANAGEMENT --- */
   const [viewMode, setViewMode] = useState('monthly'); // Time period (monthly/quarterly/yearly)
   const [analytics, setAnalytics] = useState(null);
+  const [profile, setProfile] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
-  /* DATA FETCHING: Load analytics data whenever viewMode changes */
+  /* DATA FETCHING: Load analytics and agent profile data */
   useEffect(() => {
-    const fetchAnalytics = async () => {
+    const fetchAnalyticsAndProfile = async () => {
       setLoading(true);
       try {
-        const data = await api.getAnalytics(viewMode);
-        setAnalytics(data);
+        const [analyticsData, profileData] = await Promise.all([
+          api.getAnalytics(viewMode),
+          api.getProfile().catch(err => {
+            console.error('Failed to load profile in analytics:', err);
+            return null;
+          })
+        ]);
+        setAnalytics(analyticsData);
+        if (profileData) {
+          setProfile(profileData);
+        }
       } catch (error) {
-        console.error('Failed to load analytics:', error);
+        console.error('Failed to load analytics data:', error);
       } finally {
         setLoading(false);
       }
     };
-    fetchAnalytics();
+    fetchAnalyticsAndProfile();
   }, [viewMode]);
 
   // ── DATA PROCESSING: Convert API data into Recharts-friendly formats ────────
@@ -62,36 +74,194 @@ const Analytics = () => {
   const maxVehicleTrips = Math.max(...vehicleUtilization.map(v => v.trips ?? 0), 1);
   const maxDestBookings = Math.max(...topDestinations.map(d => d.bookings ?? 0), 1);
 
-  // ── Download CSV ────────────────────────────────────────────
+  // ── Download Personalized PDF Report ───────────────────────
   const handleDownload = () => {
-    const rows = [];
-    rows.push('--- Revenue Data ---');
-    rows.push('Period,Revenue');
-    revenueData.forEach(r => rows.push(`${r.name},${r.revenue}`));
-    rows.push('');
-    rows.push('--- Trip Status ---');
-    rows.push('Status,Count');
-    tripStatusData.forEach(t => rows.push(`${t.name},${t.value}`));
-    rows.push('');
-    rows.push('--- Top Destinations ---');
-    rows.push('Destination,Trips');
-    topDestinations.forEach(d => rows.push(`${d.name},${d.bookings}`));
-    rows.push('');
-    rows.push('--- Driver Performance ---');
-    rows.push('Driver,Rating,Status');
-    driverPerformance.forEach(d => rows.push(`${d.name},${d.rating},${d.status}`));
-    rows.push('');
-    rows.push('--- Vehicle Utilization ---');
-    rows.push('Vehicle,Trips');
-    vehicleUtilization.forEach(v => rows.push(`${v.vehicle},${v.trips}`));
+    const doc = new jsPDF();
+    const agencyName = profile?.agencyName || profile?.agentName || 'TravelHub Agency Partner';
 
-    const csvContent = 'data:text/csv;charset=utf-8,' + rows.join('\n');
-    const link = document.createElement('a');
-    link.setAttribute('href', encodeURI(csvContent));
-    link.setAttribute('download', `analytics_${viewMode}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    // ── PAGE DECORATION & BRANDING ────────────────────────────────
+    // Primary Header Background Bar (Teal color)
+    doc.setFillColor(13, 148, 136); // #0d9488
+    doc.rect(0, 0, 210, 42, 'F');
+
+    // Header Content
+    doc.setTextColor(255, 255, 255);
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(22);
+    doc.text('TRAVELHUB', 15, 18);
+    
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(10);
+    doc.text('Business Intelligence Platform', 15, 24);
+
+    // Agency Personalization Info
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(12);
+    doc.text(agencyName.toUpperCase(), 15, 33);
+
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(9);
+    const contactInfo = `Email: ${profile?.email || 'N/A'}  |  Phone: ${profile?.phone || 'N/A'}`;
+    doc.text(contactInfo, 15, 38);
+
+    // Right-aligned report period metadata in header
+    doc.setFontSize(10);
+    const periodLabel = `Period: ${viewMode.toUpperCase()}`;
+    const generatedDate = `Date: ${new Date().toLocaleDateString()}`;
+    doc.text(periodLabel, 195, 18, { align: 'right' });
+    doc.text(generatedDate, 195, 24, { align: 'right' });
+
+    // ── SUBTITLE SECTION ──────────────────────────────────────────
+    doc.setTextColor(51, 65, 85); // Slate-700
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(15);
+    doc.text('Business Performance & Analytics Report', 15, 55);
+
+    // ── KPI SUMMARY CARDS ──────────────────────────────────────────
+    const cardWidth = 43;
+    const cardHeight = 22;
+    const cardY = 62;
+    const spacing = 6;
+    const startX = 15;
+
+    const cards = [
+      { title: 'Total Revenue', value: formatPrice(totalRevenue), color: [13, 148, 136] },
+      { title: 'Total Trips', value: String(totalTrips), color: [16, 185, 129] },
+      { title: 'Average Rating', value: avgRating ? avgRating.toFixed(1) : '0.0', color: [245, 158, 11] },
+      { title: 'Cancellation Rate', value: `${cancelRate}%`, color: [239, 68, 68] }
+    ];
+
+    cards.forEach((card, index) => {
+      const cardX = startX + index * (cardWidth + spacing);
+      // Soft background box
+      doc.setFillColor(248, 250, 252); // Slate-50
+      doc.setDrawColor(226, 232, 240); // Slate-200
+      doc.rect(cardX, cardY, cardWidth, cardHeight, 'FD');
+
+      // Metric Title
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(8);
+      doc.setTextColor(100, 116, 139); // Slate-500
+      doc.text(card.title, cardX + 4, cardY + 6);
+
+      // Metric Value
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(12);
+      doc.setTextColor(card.color[0], card.color[1], card.color[2]);
+      doc.text(card.value, cardX + 4, cardY + 16);
+    });
+
+    // ── TABLES SECTION ────────────────────────────────────────────
+    let currentY = 94;
+
+    // 1. Revenue breakdown Table
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(11);
+    doc.setTextColor(15, 23, 42); // Slate-900
+    doc.text('Revenue Breakdown by Period', 15, currentY);
+
+    const revenueRows = revenueData.map(r => [r.name, formatPrice(r.revenue)]);
+    autoTable(doc, {
+      startY: currentY + 3,
+      head: [['Period', 'Revenue']],
+      body: revenueRows,
+      theme: 'striped',
+      headStyles: { fillColor: [13, 148, 136], textColor: [255, 255, 255], fontStyle: 'bold' },
+      styles: { fontSize: 9 },
+      margin: { left: 15, right: 15 }
+    });
+
+    currentY = (doc as any).lastAutoTable.finalY + 10;
+
+    // 2. Driver Performance Table
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(11);
+    doc.setTextColor(15, 23, 42);
+    doc.text('Driver Performance Summary', 15, currentY);
+
+    const driverRows = driverPerformance.map(d => [
+      d.name,
+      d.rating ? d.rating.toFixed(1) : '—',
+      String(d.trips),
+      d.status || '—'
+    ]);
+    autoTable(doc, {
+      startY: currentY + 3,
+      head: [['Driver Name', 'Rating', 'Completed Trips', 'Status']],
+      body: driverRows,
+      theme: 'striped',
+      headStyles: { fillColor: [13, 148, 136], textColor: [255, 255, 255], fontStyle: 'bold' },
+      styles: { fontSize: 9 },
+      margin: { left: 15, right: 15 }
+    });
+
+    currentY = (doc as any).lastAutoTable.finalY + 10;
+
+    // Page Break Check: If next table will overflow, add page
+    if (currentY + 40 > 280) {
+      doc.addPage();
+      currentY = 20;
+    }
+
+    // 3. Vehicle Utilization Table
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(11);
+    doc.setTextColor(15, 23, 42);
+    doc.text('Vehicle Utilization & Bookings', 15, currentY);
+
+    const vehicleRows = vehicleUtilization.map(v => [v.vehicle, String(v.trips)]);
+    autoTable(doc, {
+      startY: currentY + 3,
+      head: [['Vehicle Details', 'Trips Assigned']],
+      body: vehicleRows,
+      theme: 'striped',
+      headStyles: { fillColor: [13, 148, 136], textColor: [255, 255, 255], fontStyle: 'bold' },
+      styles: { fontSize: 9 },
+      margin: { left: 15, right: 15 }
+    });
+
+    currentY = (doc as any).lastAutoTable.finalY + 10;
+
+    // 4. Top Destinations Table
+    if (currentY + 40 > 280) {
+      doc.addPage();
+      currentY = 20;
+    }
+
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(11);
+    doc.setTextColor(15, 23, 42);
+    doc.text('Top Visited Districts', 15, currentY);
+
+    const destinationRows = topDestinations.map(d => [d.name, String(d.bookings)]);
+    autoTable(doc, {
+      startY: currentY + 3,
+      head: [['District Name', 'Total Bookings']],
+      body: destinationRows,
+      theme: 'striped',
+      headStyles: { fillColor: [13, 148, 136], textColor: [255, 255, 255], fontStyle: 'bold' },
+      styles: { fontSize: 9 },
+      margin: { left: 15, right: 15 }
+    });
+
+    // ── FOOTER & WATERMARK ────────────────────────────────────────
+    const pageCount = (doc as any).internal.getNumberOfPages();
+    for (let i = 1; i <= pageCount; i++) {
+      doc.setPage(i);
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(8);
+      doc.setTextColor(148, 163, 184); // Slate-400
+      doc.text(
+        `TravelHub Business Analytics Report — Generated for ${agencyName} on ${new Date().toLocaleDateString()}`,
+        15,
+        288
+      );
+      doc.text(`Page ${i} of ${pageCount}`, 195, 288, { align: 'right' });
+    }
+
+    // Save the PDF
+    const filename = `${agencyName.toLowerCase().replace(/\s+/g, '_')}_analytics_${viewMode}.pdf`;
+    doc.save(filename);
   };
 
   /* --- SUMMARY STATISTICS (Top Row Values) --- */

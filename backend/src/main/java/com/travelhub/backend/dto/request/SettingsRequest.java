@@ -7,4 +7,6 @@ import java.util.Map;
 public class SettingsRequest {
     private Map<String, Boolean> notificationPreferences;
     private String currency;
+    private Integer freeCancellationDays;
+    private Double cancellationFeePercent;
 }

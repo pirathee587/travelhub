@@ -81,6 +81,9 @@ public class User {
     
     private Long hotelId; // Link to the Hotel table
     
+    @Column(name = "outstanding_fine_balance")
+    @Builder.Default
+    private Double outstandingFineBalance = 0.0;
 
     @Column(updatable = false)
     private LocalDateTime createdAt;

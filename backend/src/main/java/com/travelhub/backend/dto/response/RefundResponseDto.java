@@ -16,6 +16,8 @@ public class RefundResponseDto {
     private String packageName;
     private String touristName;
     private Double amount;
+    private Double cancellationFee;
+    private Double netRefundAmount;
     private String bankName;
     private String accountNo;
     private String accountHolderName;

@@ -19,6 +19,7 @@ public class TripResponse {
     private LocalDate startDate;
     private LocalDate endDate;
     private String status;
+    private String paymentStatus;
     private Integer progress;
     private String imageUrl;
     private Double price;

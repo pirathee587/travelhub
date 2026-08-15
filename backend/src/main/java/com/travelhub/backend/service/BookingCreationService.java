@@ -29,6 +29,10 @@ import com.travelhub.backend.repository.PackageRepository;
 import com.travelhub.backend.repository.UserRepository;
 import com.travelhub.backend.repository.VehicleRepository;
 
+import com.travelhub.backend.entity.AgentSettings;
+import com.travelhub.backend.repository.AgentSettingsRepository;
+import com.travelhub.backend.repository.DriverRepository;
+
 import lombok.RequiredArgsConstructor;
 
 @Service
@@ -43,6 +47,8 @@ public class BookingCreationService {
     private final PackageRepository packageRepository;
     private final HotelRepository hotelRepository;
     private final VehicleRepository vehicleRepository;
+    private final DriverRepository driverRepository;
+    private final AgentSettingsRepository agentSettingsRepository;
     private final BookingService bookingService;
     private final BookingHotelPreferenceRepository bookingHotelPreferenceRepository;
     private final ApplicationEventPublisher eventPublisher;
@@ -57,8 +63,6 @@ public class BookingCreationService {
         logger.info("Guests: {} adults, {} children", request.getAdults(), request.getChildren());
 
         logger.debug("Step 1: Validating user ID {}", request.getUserId());
-        {
-            /* User validate */}
         User user = userRepository.findById(request.getUserId())
                 .orElseThrow(() -> {
                     logger.error("User not found: {}", request.getUserId());
@@ -68,8 +72,6 @@ public class BookingCreationService {
         logger.info("✓ User validated: {}", user.getEmail());
 
         logger.debug("Step 2: Validating package ID {}", request.getPackageId());
-        {
-            /* Package validate */}
         Package pkg = packageRepository.findById(request.getPackageId())
                 .orElseThrow(() -> {
                     logger.error("Package not found: {}", request.getPackageId());
@@ -77,17 +79,15 @@ public class BookingCreationService {
                 });
         logger.info("✓ Package validated: {}", pkg.getPackageName());
 
-        // Validate hotel preferences if hotelIds provided
         if (request.getHotelIds() != null && !request.getHotelIds().isEmpty()) {
             logger.debug("Step 3: Validating {} hotels", request.getHotelIds().size());
             for (Long hotelId : request.getHotelIds()) {
-                Hotel h = hotelRepository.findById(hotelId) // Hotel District Validation
+                Hotel h = hotelRepository.findById(hotelId)
                         .orElseThrow(() -> {
                             logger.error("Hotel not found: {}", hotelId);
                             return new RuntimeException("Hotel not found: " + hotelId);
                         });
 
-                // District Matching Validation
                 if (h.getDistrict() != null && pkg.getDistrict() != null) {
                     String hDist = h.getDistrict().replaceAll("(?i)\\s*district$", "").trim();
                     String pDist = pkg.getDistrict().replaceAll("(?i)\\s*district$", "").trim();
@@ -101,17 +101,14 @@ public class BookingCreationService {
             logger.info("✓ All hotels validated");
         }
 
-        // Step 4: Calculate end date from start date + duration
         logger.debug("Step 4: Calculating end date from {} + {}", request.getStartDate(), request.getDuration());
         LocalDate endDate = calculateEndDate(request.getStartDate(),
                 request.getDuration() != null ? request.getDuration() : pkg.getDuration());
         logger.info("✓ End date calculated: {}", endDate);
 
-        // Step 5: Convert hotelIds list with preference order to JSON string
         String hotelIdsWithPreference = convertHotelIdsToJson(request.getHotelIds());
         logger.debug("Step 5: Hotel IDs JSON: {}", hotelIdsWithPreference);
 
-        // Step 6: Create Booking //Booking Here
         logger.debug("Step 6: Creating booking entity");
         Booking booking = Booking.builder()
                 .user(user)
@@ -119,6 +116,7 @@ public class BookingCreationService {
                 .hotel(null)
                 .vehicle(null)
                 .status("pending")
+                .paymentStatus("UNPAID")
                 .startDate(request.getStartDate())
                 .endDate(endDate)
                 .totalPrice(request.getTotalPrice())
@@ -133,7 +131,6 @@ public class BookingCreationService {
         Booking saved = bookingRepository.save(booking);
         logger.info("✓ Booking saved: ID={}", saved.getId());
 
-        // Step 7: Save hotel preferences to separate table
         if (request.getHotelIds() != null && !request.getHotelIds().isEmpty()) {
             logger.debug("Step 7: Saving {} hotel preferences", request.getHotelIds().size());
             List<BookingHotelPreference> preferences = new ArrayList<>();
@@ -153,23 +150,20 @@ public class BookingCreationService {
             logger.info("✓ Hotel preferences saved");
         }
 
-        // Step 8: Fetch and return response
         logger.debug("Step 8: Fetching booking response");
         BookingResponse response = bookingService.getBookingById(saved.getId());
-        
-        // Step 9: Initialize lazy properties before publishing event to prevent LazyInitializationException in async listener
+
         try {
             if (saved.getPkg() != null && saved.getPkg().getAgent() != null && saved.getPkg().getAgent().getOwner() != null) {
-                saved.getPkg().getAgent().getOwner().getEmail(); // Force fetch email
-                saved.getPkg().getAgent().getOwner().getName(); // Force fetch name
+                saved.getPkg().getAgent().getOwner().getEmail();
+                saved.getPkg().getAgent().getOwner().getName();
             }
         } catch (Exception e) {
-            logger.warn("Could not initialize agent details for notification (agent may not exist in DB): {}", e.getMessage());
+            logger.warn("Could not initialize agent details for notification: {}", e.getMessage());
         }
-        
-        // Step 10: Publish event to trigger email notifications
+
         eventPublisher.publishEvent(new com.travelhub.backend.event.BookingEvent(this, saved, "CREATED"));
-        
+
         logger.info("========== BOOKING CREATION SUCCESS ==========");
         logger.info("Booking ID: {}", response.getId());
         logger.info("Booking Reference: {}", response.getBookingId());
@@ -233,13 +227,54 @@ public class BookingCreationService {
             throw new ForbiddenException("Unauthorized: You can only cancel your own bookings");
         }
 
-        if (!"pending".equalsIgnoreCase(booking.getStatus())) {
-            logger.error("Cancellation denied: Booking status is {}", booking.getStatus());
-            throw new BadRequestException("Only pending bookings can be cancelled");
+        // Allow cancellation for both pending and confirmed unpaid bookings
+        boolean isPending = "pending".equalsIgnoreCase(booking.getStatus());
+        boolean isConfirmedUnpaid = "confirmed".equalsIgnoreCase(booking.getStatus()) && !"PAID".equalsIgnoreCase(booking.getPaymentStatus());
+
+        if (!isPending && !isConfirmedUnpaid) {
+            logger.error("Cancellation denied: Booking status is {} / paymentStatus is {}", booking.getStatus(), booking.getPaymentStatus());
+            throw new BadRequestException("Only pending or unpaid confirmed bookings can be cancelled directly");
+        }
+
+        // If confirmed unpaid, evaluate late cancellation deadline & fee
+        if (isConfirmedUnpaid) {
+            com.travelhub.backend.entity.Agent agent = booking.getPkg() != null ? booking.getPkg().getAgent() : null;
+            if (agent != null) {
+                AgentSettings settings = agentSettingsRepository.findByAgentId(agent.getId()).orElse(null);
+                int freeDays = (settings != null && settings.getFreeCancellationDays() != null) ? settings.getFreeCancellationDays() : 2;
+                double feePercent = (settings != null && settings.getCancellationFeePercent() != null) ? settings.getCancellationFeePercent() : 10.0;
+
+                if (booking.getStartDate() != null) {
+                    LocalDate deadline = booking.getStartDate().minusDays(freeDays);
+                    if (LocalDate.now().isAfter(deadline)) {
+                        double totalPrice = booking.getTotalPrice() != null ? booking.getTotalPrice() : 0.0;
+                        double fineAmount = Math.round(totalPrice * (feePercent / 100.0) * 100.0) / 100.0;
+
+                        User user = booking.getUser();
+                        double currentBalance = user.getOutstandingFineBalance() != null ? user.getOutstandingFineBalance() : 0.0;
+                        user.setOutstandingFineBalance(currentBalance + fineAmount);
+                        userRepository.save(user);
+                        logger.info("Late cancellation fine of ${} applied to user {}", fineAmount, user.getId());
+                    }
+                }
+            }
+
+            // Release assigned vehicle if present
+            if (booking.getVehicle() != null) {
+                booking.getVehicle().setStatus("active");
+                vehicleRepository.save(booking.getVehicle());
+            }
+
+            // Release assigned driver if present
+            if (booking.getDriver() != null) {
+                booking.getDriver().setStatus("off-duty");
+                driverRepository.save(booking.getDriver());
+            }
         }
 
         booking.setStatus("cancelled");
         Booking saved = bookingRepository.save(booking);
+        eventPublisher.publishEvent(new com.travelhub.backend.event.BookingEvent(this, saved, "CANCELLED"));
         logger.info("✓ Booking cancelled: {}", saved.getId());
 
         return bookingService.getBookingById(saved.getId());

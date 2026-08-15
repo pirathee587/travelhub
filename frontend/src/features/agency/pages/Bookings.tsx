@@ -800,12 +800,23 @@ const Bookings = () => {
                           </p>
                         </div>
                         <div className="flex flex-col items-end gap-2 shrink-0">
-                          <span className={cn(
-                            'inline-flex items-center rounded-full px-3 py-1 text-xs font-medium capitalize',
-                            statusBadge[booking.status] || statusBadge['confirmed']
-                          )}>
-                            {statusLabel(booking.status)}
-                          </span>
+                          <div className="flex items-center gap-1.5">
+                            <span className={cn(
+                              'inline-flex items-center rounded-full px-3 py-1 text-xs font-medium capitalize',
+                              statusBadge[booking.status] || statusBadge['confirmed']
+                            )}>
+                              {statusLabel(booking.status)}
+                            </span>
+                            {booking.paymentStatus === 'PAID' ? (
+                              <span className="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold bg-emerald-100 text-emerald-800 border border-emerald-300">
+                                💳 Paid
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold bg-slate-100 text-slate-600 border border-slate-300">
+                                ⏳ Unpaid
+                              </span>
+                            )}
+                          </div>
                           {booking.packageType === 'MULTI_DISTRICT' ? (
                             <span className="inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-medium bg-indigo-50 text-indigo-700 border border-indigo-200">
                               📦 Hotel Included

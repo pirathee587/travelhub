@@ -27,6 +27,8 @@ public class RefundRequestService {
     private final ImageUploadService imageUploadService;
     private final EmailService emailService;
     private final AgentSettingsRepository agentSettingsRepository;
+    private final AgentNotificationService agentNotificationService;
+    private final UserNotificationService userNotificationService;
 
     @Transactional
     public RefundResponseDto createRefundRequest(Long userId, Long bookingId, RefundRequestDto dto) {
@@ -36,8 +38,9 @@ public class RefundRequestService {
         if (!booking.getUser().getId().equals(userId)) {
             throw new BadRequestException("Unauthorized access to booking");
         }
-        if (!"Paid".equalsIgnoreCase(booking.getStatus())) {
-            throw new BadRequestException("Only bookings with status 'Paid' can be refunded");
+        boolean isPaid = "PAID".equalsIgnoreCase(booking.getPaymentStatus()) || "Paid".equalsIgnoreCase(booking.getStatus());
+        if (!isPaid) {
+            throw new BadRequestException("Only paid bookings can be refunded");
         }
         if (refundRequestRepository.findByBookingId(bookingId).isPresent()) {
             throw new BadRequestException("A refund request already exists for this booking");
@@ -62,18 +65,21 @@ public class RefundRequestService {
 
         RefundRequest saved = refundRequestRepository.save(request);
 
+        booking.setPaymentStatus("REFUND_REQUESTED");
         booking.setStatus("Refund_Requested");
         bookingRepository.save(booking);
 
-        // Notify Agent via Email
+        // Notify Agent via Email & In-App
         if (saved.getAgent() != null) {
             boolean notifyCancellation = agentSettingsRepository.findByAgentId(saved.getAgent().getId())
                     .map(AgentSettings::getNotifyCancellation)
                     .orElse(true);
             if (notifyCancellation) {
                 emailService.sendAgentRefundAlert(saved);
+                agentNotificationService.createNotification(saved.getAgent(), "refund", "New Refund Request", "Tourist " + booking.getUser().getName() + " requested a refund for booking #" + booking.getId() + ".");
             }
         }
+        userNotificationService.notifyUser(userId, "refund", "Refund Requested", "Your refund request for booking #" + booking.getId() + " was submitted successfully.", "/tourist/trips");
 
         return mapToResponse(saved);
     }
@@ -109,15 +115,33 @@ public class RefundRequestService {
             throw new BadRequestException("This refund request is already processed");
         }
 
+        Booking booking = request.getBooking();
+        AgentSettings settings = agentSettingsRepository.findByAgentId(agent.getId()).orElse(null);
+        int freeDays = (settings != null && settings.getFreeCancellationDays() != null) ? settings.getFreeCancellationDays() : 2;
+        double feePercent = (settings != null && settings.getCancellationFeePercent() != null) ? settings.getCancellationFeePercent() : 10.0;
+
+        double totalAmount = booking.getTotalPrice() != null ? booking.getTotalPrice() : 0.0;
+        double feeAmount = 0.0;
+
+        if (booking.getStartDate() != null) {
+            java.time.LocalDate deadline = booking.getStartDate().minusDays(freeDays);
+            if (java.time.LocalDate.now().isAfter(deadline)) {
+                feeAmount = Math.round(totalAmount * (feePercent / 100.0) * 100.0) / 100.0;
+            }
+        }
+        double netRefund = Math.max(0.0, totalAmount - feeAmount);
+
         // Upload deposit slip
         String slipUrl = imageUploadService.uploadRoomImage(file).getImageUrl();
         request.setRefundSlipUrl(slipUrl);
+        request.setCancellationFee(feeAmount);
+        request.setNetRefundAmount(netRefund);
         request.setStatus("APPROVED");
         refundRequestRepository.save(request);
 
         // Update booking status
-        Booking booking = request.getBooking();
-        booking.setStatus("Refunded");
+        booking.setPaymentStatus("REFUNDED");
+        booking.setStatus("cancelled");
         bookingRepository.save(booking);
 
         // Create completed payment record of type Refund
@@ -127,12 +151,14 @@ public class RefundRequestService {
         refundPayment.setUser(booking.getUser());
         refundPayment.setAgent(agent);
         refundPayment.setType("Refund");
-        refundPayment.setAmount(booking.getTotalPrice());
+        refundPayment.setAmount(netRefund);
         refundPayment.setStatus("Completed");
         paymentRepository.save(refundPayment);
 
-        // Email tourist
+        // Email & In-App notify tourist & agent
         emailService.sendTouristRefundApproved(request);
+        userNotificationService.notifyUser(booking.getUser().getId(), "refund", "Refund Approved", "Your refund of $" + netRefund + " for booking #" + booking.getId() + " was approved.", "/tourist/trips");
+        agentNotificationService.createNotification(agent, "refund", "Refund Approved", "You approved a refund of $" + netRefund + " for booking #" + booking.getId() + ".");
 
         return mapToResponse(request);
     }
@@ -156,13 +182,15 @@ public class RefundRequestService {
         request.setReason(reason);
         refundRequestRepository.save(request);
 
-        // Revert booking status to Paid
+        // Revert booking payment status to PAID
         Booking booking = request.getBooking();
-        booking.setStatus("Paid");
+        booking.setPaymentStatus("PAID");
+        booking.setStatus("confirmed");
         bookingRepository.save(booking);
 
-        // Email tourist
+        // Email & In-App notify tourist
         emailService.sendTouristRefundDeclined(request, reason);
+        userNotificationService.notifyUser(booking.getUser().getId(), "refund", "Refund Declined", "Your refund request for booking #" + booking.getId() + " was declined. Reason: " + reason, "/tourist/trips");
 
         return mapToResponse(request);
     }
@@ -174,6 +202,8 @@ public class RefundRequestService {
                 .packageName(r.getBooking().getPkg() != null ? r.getBooking().getPkg().getPackageName() : "Package")
                 .touristName(r.getUser().getName())
                 .amount(r.getBooking().getTotalPrice())
+                .cancellationFee(r.getCancellationFee())
+                .netRefundAmount(r.getNetRefundAmount())
                 .bankName(r.getBankName())
                 .accountNo(r.getAccountNo())
                 .accountHolderName(r.getAccountHolderName())

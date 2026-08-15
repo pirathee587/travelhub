@@ -212,7 +212,8 @@ const MyTrips = () => {
                                     key={trip.id}
                                     trip={trip}
                                     onClick={() => handleTripClick(trip)}
-                                    onReview={() => handleReviewClick(trip)}    //Confirmed trips tab content   
+                                    onCancel={() => handleCancelClick(trip)}
+                                    onReview={() => handleReviewClick(trip)}
                                     onHotelReview={() => handleHotelReviewClick(trip)}  
                                 />
                             ))}

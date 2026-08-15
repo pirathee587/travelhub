@@ -46,6 +46,12 @@ public class AgentSettingsService {
         if (request.getCurrency() != null) {
             settings.setCurrency(request.getCurrency());
         }
+        if (request.getFreeCancellationDays() != null) {
+            settings.setFreeCancellationDays(request.getFreeCancellationDays());
+        }
+        if (request.getCancellationFeePercent() != null) {
+            settings.setCancellationFeePercent(request.getCancellationFeePercent());
+        }
 
         return toResponse(agentSettingsRepository.save(settings));
     }
@@ -65,6 +71,8 @@ public class AgentSettingsService {
                             .notifyPaymentReceived(true)
                             .notifyPromoUpdates(false)
                             .currency("USD")
+                            .freeCancellationDays(2)
+                            .cancellationFeePercent(10.0)
                             .build();
                     return agentSettingsRepository.save(newSettings);
                 });
@@ -82,6 +90,8 @@ public class AgentSettingsService {
         return SettingsResponse.builder()
                 .notificationPreferences(prefs)
                 .currency(s.getCurrency())
+                .freeCancellationDays(s.getFreeCancellationDays() != null ? s.getFreeCancellationDays() : 2)
+                .cancellationFeePercent(s.getCancellationFeePercent() != null ? s.getCancellationFeePercent() : 10.0)
                 .build();
     }
 }
