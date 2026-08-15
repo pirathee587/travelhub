@@ -308,4 +308,13 @@ export const api = {
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(data),
         }).then(handleResponse),
+
+    uploadUserProfileImage: (userId: string | number, file: File) => {
+        const formData = new FormData();
+        formData.append("file", file);
+        return fetch(`${BASE_URL}/tourist/profile/image?userId=${userId}`, {
+            method: "POST",
+            body: formData,
+        }).then(handleResponse);
+    },
 };

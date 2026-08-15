@@ -4,12 +4,15 @@ import com.travelhub.backend.dto.request.UpdateProfileRequest;
 import com.travelhub.backend.dto.response.StatsResponse;
 import com.travelhub.backend.dto.response.TripResponse;
 import com.travelhub.backend.dto.response.UserProfileResponse;
+import com.travelhub.backend.dto.response.ImageUploadResponse;
 import com.travelhub.backend.entity.User;
 import com.travelhub.backend.service.DashboardService;
+import com.travelhub.backend.service.ImageUploadService;
 import com.travelhub.backend.service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 import java.util.List;
 
 @RestController
@@ -19,6 +22,7 @@ public class DashboardController {
 
     private final DashboardService dashboardService;
     private final UserService userService;
+    private final ImageUploadService imageUploadService;
 
     // GET /api/tourist/stats?userId=1
     @GetMapping("/stats")
@@ -57,6 +61,19 @@ public class DashboardController {
             @RequestParam Long userId,
             @RequestBody UpdateProfileRequest request) {
         User user = userService.updateProfile(userId, request);
+        return ResponseEntity.ok(toProfileResponse(user));
+    }
+
+    /**
+     * POST /api/tourist/profile/image?userId=32
+     * Uploads and updates the profile picture of the tourist.
+     */
+    @PostMapping("/profile/image")
+    public ResponseEntity<UserProfileResponse> uploadProfileImage(
+            @RequestParam Long userId,
+            @RequestParam("file") MultipartFile file) {
+        ImageUploadResponse uploadResponse = imageUploadService.uploadProfileImage(file);
+        User user = userService.updateProfileImage(userId, uploadResponse.getImageUrl());
         return ResponseEntity.ok(toProfileResponse(user));
     }
 

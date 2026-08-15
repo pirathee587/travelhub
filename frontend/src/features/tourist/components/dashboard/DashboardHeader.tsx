@@ -1,5 +1,6 @@
 import { Bell, Search, User, X, LogIn } from "lucide-react";
 import { Input } from "@/components/common/ui/input";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/common/ui/avatar";
 import { Button } from "@/components/common/ui/button";
 import { Badge } from "@/components/common/ui/badge";
 import { useState, useEffect } from "react";
@@ -18,11 +19,13 @@ import {
 
 interface DashboardHeaderProps {
     userName?: string;
+    userImage?: string;
 }
 
-export function DashboardHeader({ userName: propUserName }: DashboardHeaderProps) {
+export function DashboardHeader({ userName: propUserName, userImage }: DashboardHeaderProps) {
     const navigate = useNavigate();
     const { user, logout } = useAuth();
+    const displayImage = user?.profileImage || userImage;
     const [notifications, setNotifications] = useState<any[]>([]);
     const [unreadCount, setUnreadCount] = useState(0);
 
@@ -117,11 +120,14 @@ export function DashboardHeader({ userName: propUserName }: DashboardHeaderProps
                             {/* User Menu */}
                             <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
-                                    <Button variant="ghost" className="gap-2">
-                                        <div className="h-8 w-8 rounded-full bg-primary flex items-center justify-center shadow-sm">
-                                            <User className="h-4 w-4 text-white" />
-                                        </div>
-                                        <span className="hidden sm:inline font-medium">{displayName}</span>
+                                    <Button variant="ghost" className="gap-2 px-1.5 md:px-3">
+                                        <Avatar className="h-8 w-8 shadow-sm">
+                                            <AvatarImage src={displayImage || undefined} alt={displayName} />
+                                            <AvatarFallback className="bg-primary text-white">
+                                                <User className="h-4 w-4" />
+                                            </AvatarFallback>
+                                        </Avatar>
+                                        <span className="hidden sm:inline font-medium text-sm">{displayName}</span>
                                     </Button>
                                 </DropdownMenuTrigger>
                                 <DropdownMenuContent align="end">
