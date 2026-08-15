@@ -8,7 +8,7 @@ import { useCurrency } from '@/features/agency/hooks/CurrencyContext';
 import refundService, { RefundResponseDto } from '@/services/refundService';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/common/ui/dialog';
 
-const Refunds = () => {
+const Refunds = ({ embedded = false }: { embedded?: boolean }) => {
   const { formatPrice } = useCurrency();
   const [requests, setRequests] = useState<RefundResponseDto[]>([]);
   const [loading, setLoading] = useState(true);
@@ -97,18 +97,20 @@ const Refunds = () => {
     return req.status === activeTab && matchesSearch;
   });
 
-  return (
-    <DashboardLayout>
-      <div className="space-y-8 animate-fade-in p-6">
+  const renderContent = () => (
+    <>
+      <div className={`space-y-8 animate-fade-in ${embedded ? '' : 'p-6'}`}>
         {/* Header */}
-        <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight text-white">Refund Requests</h1>
-            <p className="text-muted-foreground text-sm mt-1">
-              Manage and process manual bank deposit refunds requested by tourists.
-            </p>
+        {!embedded && (
+          <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+            <div>
+              <h1 className="text-3xl font-bold tracking-tight text-white">Refund Requests</h1>
+              <p className="text-muted-foreground text-sm mt-1">
+                Manage and process manual bank deposit refunds requested by tourists.
+              </p>
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Filters and Search */}
         <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between bg-sidebar-accent/30 p-4 rounded-xl border border-sidebar-border/40">
@@ -394,6 +396,16 @@ const Refunds = () => {
           )}
         </DialogContent>
       </Dialog>
+    </>
+  );
+
+  if (embedded) {
+    return renderContent();
+  }
+
+  return (
+    <DashboardLayout>
+      {renderContent()}
     </DashboardLayout>
   );
 };

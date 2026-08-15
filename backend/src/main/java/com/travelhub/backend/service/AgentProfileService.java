@@ -94,6 +94,7 @@ public class AgentProfileService {
                 .totalTrips(agent.getTotalTrips())
                 .totalRevenue(agent.getTotalRevenue())
                 .completionRate(agent.getCompletionRate())
+                .agentApproved(user != null ? user.getAgentApproved() : false)
                 .build();
     }
 }

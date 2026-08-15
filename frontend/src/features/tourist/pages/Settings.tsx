@@ -7,11 +7,12 @@ import { Label } from "@/components/common/ui/label";
 import { Card, CardContent, CardHeader, CardFooter } from "@/components/common/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/common/ui/avatar";
 import { toast } from "@/components/common/ui/use-toast";
-import { User, Mail, Camera, Save, X, Edit2, Phone, Globe } from "lucide-react";
+import { User, Mail, Camera, Save, X, Edit2, Phone, Globe, DollarSign } from "lucide-react";
 import { MyReviewsSection } from "@/features/tourist/components/dashboard/MyReviewsSection";
 import { ChevronRight } from "lucide-react";
 import { cn } from "@/features/tourist/services/utils";
 import { api } from "@/features/tourist/services/api";
+import { useTouristCurrency } from "@/features/tourist/hooks/TouristCurrencyContext";
 import {
     Select,
     SelectContent,
@@ -58,6 +59,10 @@ const SettingsPage = () => {
     const [isEditing, setIsEditing] = useState(false);
     const [loadingProfile, setLoadingProfile] = useState(true);
     const [saving, setSaving] = useState(false);
+
+    // Currency preference from the Tourist currency context
+    const { currency, setCurrency, rateError } = useTouristCurrency();
+    const [savingCurrency, setSavingCurrency] = useState(false);
 
     // Profile state populated from the backend
     const [profile, setProfile] = useState({
@@ -379,6 +384,97 @@ const SettingsPage = () => {
                     <ChangePasswordCard />
                 </section>
                     </div>
+
+                    {/* Currency Preference */}
+                    <Card className="border-border shadow-soft overflow-hidden">
+                        <CardHeader className="border-b bg-muted/20 pb-4">
+                            <div className="flex items-center gap-3">
+                                <div className="h-9 w-9 rounded-lg bg-primary/10 flex items-center justify-center">
+                                    <DollarSign className="h-5 w-5 text-primary" />
+                                </div>
+                                <div>
+                                    <h4 className="font-semibold text-base">Currency Preference</h4>
+                                    <p className="text-sm text-muted-foreground">Choose how package prices are displayed</p>
+                                </div>
+                            </div>
+                        </CardHeader>
+                        <CardContent className="pt-5 space-y-3">
+                            {rateError && (
+                                <div className="text-xs text-amber-600 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
+                                    ⚠ Live exchange rate unavailable. Prices shown using fallback rate (1 USD ≈ 300 LKR).
+                                </div>
+                            )}
+                            {/* USD Option */}
+                            <label
+                                htmlFor="currency-usd"
+                                className={cn(
+                                    "flex items-center gap-4 p-4 rounded-xl border-2 cursor-pointer transition-all duration-200",
+                                    currency === 'USD'
+                                        ? "border-primary bg-primary/5 shadow-sm"
+                                        : "border-border hover:border-primary/40 hover:bg-muted/30"
+                                )}
+                            >
+                                <input
+                                    id="currency-usd"
+                                    type="radio"
+                                    name="currency"
+                                    value="USD"
+                                    checked={currency === 'USD'}
+                                    onChange={async () => {
+                                        setSavingCurrency(true);
+                                        await setCurrency('USD');
+                                        setSavingCurrency(false);
+                                    }}
+                                    className="accent-primary h-4 w-4"
+                                    disabled={savingCurrency}
+                                />
+                                <div className="flex-1">
+                                    <p className="font-semibold text-foreground">USD — US Dollar</p>
+                                    <p className="text-sm text-muted-foreground">Prices displayed as $500.00</p>
+                                </div>
+                                {currency === 'USD' && (
+                                    <span className="text-xs font-semibold text-primary bg-primary/10 px-2 py-0.5 rounded-full">Active</span>
+                                )}
+                            </label>
+
+                            {/* LKR Option */}
+                            <label
+                                htmlFor="currency-lkr"
+                                className={cn(
+                                    "flex items-center gap-4 p-4 rounded-xl border-2 cursor-pointer transition-all duration-200",
+                                    currency === 'LKR'
+                                        ? "border-primary bg-primary/5 shadow-sm"
+                                        : "border-border hover:border-primary/40 hover:bg-muted/30"
+                                )}
+                            >
+                                <input
+                                    id="currency-lkr"
+                                    type="radio"
+                                    name="currency"
+                                    value="LKR"
+                                    checked={currency === 'LKR'}
+                                    onChange={async () => {
+                                        setSavingCurrency(true);
+                                        await setCurrency('LKR');
+                                        setSavingCurrency(false);
+                                    }}
+                                    className="accent-primary h-4 w-4"
+                                    disabled={savingCurrency}
+                                />
+                                <div className="flex-1">
+                                    <p className="font-semibold text-foreground">LKR — Sri Lankan Rupee</p>
+                                    <p className="text-sm text-muted-foreground">Prices displayed as Rs. 160,000</p>
+                                </div>
+                                {currency === 'LKR' && (
+                                    <span className="text-xs font-semibold text-primary bg-primary/10 px-2 py-0.5 rounded-full">Active</span>
+                                )}
+                            </label>
+
+                            {savingCurrency && (
+                                <p className="text-xs text-muted-foreground text-center animate-pulse">Saving preference...</p>
+                            )}
+                        </CardContent>
+                    </Card>
                 </section>
 
                 {/* My Reviews Section */}

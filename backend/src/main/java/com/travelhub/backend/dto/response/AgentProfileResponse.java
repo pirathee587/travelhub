@@ -25,4 +25,5 @@ public class AgentProfileResponse {
     private Integer totalTrips;
     private Integer totalRevenue;
     private Double completionRate;
+    private Boolean agentApproved;
 }

@@ -25,6 +25,7 @@ import {
 import { cn } from "@/features/tourist/services/utils";
 import { useHotelById } from "@/features/tourist/hooks/useApi";
 import { useNavigate } from "react-router-dom";
+import { useTouristCurrency } from "@/features/tourist/hooks/TouristCurrencyContext";
 
 const statusConfig = {
     pending: {
@@ -329,7 +330,7 @@ export function TripDetailsSheet({ trip, open, onOpenChange }: { trip: any, open
                             <Separator className="my-2" />
                             <div className="flex items-center justify-between font-semibold text-lg">
                                 <span>Total</span>
-                                <span className="text-primary">${trip.totalPrice?.toLocaleString()}</span>
+                                <span className="text-primary"><TripPriceDisplay amount={trip.totalPrice} /></span>
                             </div>
                             {trip.status?.toLowerCase() === "confirmed" && (
                                 <div className="mt-4">
@@ -494,12 +495,18 @@ function InfoItem({ label, value }) {
 }
 
 function PriceRow({ label, value }: { label: string, value: any }) {
+    const { formatPrice } = useTouristCurrency();
     return (
         <div className="flex items-center justify-between text-sm">
             <span className="text-muted-foreground">{label}</span>
-            <span>${value?.toLocaleString()}</span>
+            <span>{formatPrice(value)}</span>
         </div>
     );
+}
+
+function TripPriceDisplay({ amount }: { amount: any }) {
+    const { formatPrice } = useTouristCurrency();
+    return <>{formatPrice(amount)}</>;
 }
 
 function HotelNameById({ id }) {

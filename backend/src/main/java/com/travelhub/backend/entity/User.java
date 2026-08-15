@@ -50,6 +50,10 @@ public class User {
     // Preferred Language (EN, SI, TA)
     private String preferredLanguage;
 
+    // Currency preference for Tourists (USD or LKR), default USD
+    @Column(name = "currency_preference", length = 10)
+    private String currencyPreference = "USD";
+
     // Auth & Status
     @Column(name = "is_email_verified", nullable = true)
     private boolean isEmailVerified = false;

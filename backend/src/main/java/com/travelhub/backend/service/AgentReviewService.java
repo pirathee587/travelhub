@@ -53,16 +53,29 @@ public class AgentReviewService {
     }
 
     private ReviewResponse toResponse(Review r) {
+        String trip = null;
+        String packageName = null;
+        Long packageId = null;
+
+        if (r.getPkg() != null) {
+            trip = r.getPkg().getDestination();
+            packageName = r.getPkg().getPackageName();
+            packageId = r.getPkg().getId();
+        } else if (r.getBooking() != null && r.getBooking().getPkg() != null) {
+            trip = r.getBooking().getPkg().getDestination();
+            packageName = r.getBooking().getPkg().getPackageName();
+            packageId = r.getBooking().getPkg().getId();
+        }
+
         return ReviewResponse.builder()
                 .id(r.getId())
                 .customerName(r.getUser() != null ? r.getUser().getEmail() : "Anonymous")
                 .rating(r.getRating())
                 .comment(r.getComment())
                 .date(r.getReviewDate() != null ? r.getReviewDate().toLocalDate().toString() : null)
-                .trip(r.getBooking() != null && r.getBooking().getPkg() != null ?
-                        r.getBooking().getPkg().getDestination() : null)
-                .packageName(r.getBooking() != null && r.getBooking().getPkg() != null ?
-                        r.getBooking().getPkg().getPackageName() : null)
+                .trip(trip)
+                .packageName(packageName)
+                .packageId(packageId)
                 .reply(r.getReply())
                 .hasReply(r.getReply() != null && !r.getReply().isEmpty())
                 .build();

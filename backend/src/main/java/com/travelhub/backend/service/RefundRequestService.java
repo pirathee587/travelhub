@@ -9,6 +9,7 @@ import com.travelhub.backend.repository.AgentRepository;
 import com.travelhub.backend.repository.BookingRepository;
 import com.travelhub.backend.repository.PaymentRepository;
 import com.travelhub.backend.repository.RefundRequestRepository;
+import com.travelhub.backend.repository.AgentSettingsRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -25,6 +26,7 @@ public class RefundRequestService {
     private final AgentRepository agentRepository;
     private final ImageUploadService imageUploadService;
     private final EmailService emailService;
+    private final AgentSettingsRepository agentSettingsRepository;
 
     @Transactional
     public RefundResponseDto createRefundRequest(Long userId, Long bookingId, RefundRequestDto dto) {
@@ -64,7 +66,14 @@ public class RefundRequestService {
         bookingRepository.save(booking);
 
         // Notify Agent via Email
-        emailService.sendAgentRefundAlert(saved);
+        if (saved.getAgent() != null) {
+            boolean notifyCancellation = agentSettingsRepository.findByAgentId(saved.getAgent().getId())
+                    .map(AgentSettings::getNotifyCancellation)
+                    .orElse(true);
+            if (notifyCancellation) {
+                emailService.sendAgentRefundAlert(saved);
+            }
+        }
 
         return mapToResponse(saved);
     }

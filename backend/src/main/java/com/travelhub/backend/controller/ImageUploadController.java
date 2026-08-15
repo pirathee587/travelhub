@@ -42,4 +42,26 @@ public class ImageUploadController {
                 new ApiResponse(true, "Image uploaded successfully", uploadResponse)
         );
     }
+
+    @PostMapping("/identity")
+    public ResponseEntity<ApiResponse> uploadIdentityImage(
+            @RequestParam("file") MultipartFile file) {
+
+        ImageUploadResponse uploadResponse = imageUploadService.uploadProfileImage(file);          
+
+        return ResponseEntity.ok(
+                new ApiResponse(true, "Identity image uploaded successfully", uploadResponse)
+        );
+    }
+
+    @PostMapping("/agent")
+    public ResponseEntity<ApiResponse> uploadAgentImage(
+            @RequestParam("file") MultipartFile file) {
+
+        ImageUploadResponse uploadResponse = imageUploadService.uploadAgentImage(file);          
+
+        return ResponseEntity.ok(
+                new ApiResponse(true, "Agent image uploaded successfully", uploadResponse)
+        );
+    }
 }

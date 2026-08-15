@@ -42,6 +42,12 @@ public class ImageUploadService {
     @Value("${supabase.user-bucket}")
     private String userBucket;
 
+    @Value("${supabase.agent-bucket}")
+    private String agentBucket;
+
+    @Value("${supabase.package-bucket}")
+    private String packageBucket;
+
     @Autowired
     private RestTemplate restTemplate;
 
@@ -53,7 +59,7 @@ public class ImageUploadService {
             ".jpg", ".jpeg", ".png", ".webp"
     );
 
-    private static final long MAX_SIZE_BYTES = 5 * 1024 * 1024L;
+    private static final long MAX_SIZE_BYTES = 10 * 1024 * 1024L;
 
     // Old method — keeps working for agent image uploads
     public ImageUploadResponse uploadRoomImage(MultipartFile file) {
@@ -74,7 +80,11 @@ public class ImageUploadService {
     }
 
     public ImageUploadResponse uploadPackageImage(MultipartFile file) {
-        return uploadToBucket(file, roomBucket);
+        return uploadToBucket(file, packageBucket);
+    }
+
+    public ImageUploadResponse uploadAgentImage(MultipartFile file) {
+        return uploadToBucket(file, agentBucket);
     }
 
     private ImageUploadResponse uploadToBucket(MultipartFile file, String bucketName) {

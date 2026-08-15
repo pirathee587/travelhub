@@ -1,4 +1,5 @@
 import { useState, useMemo, useCallback, memo, useEffect } from "react";
+import { useLocation } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import beachResort from "@/assets/images/beach-resort.jpeg";
 import { DashboardLayout } from "@/features/tourist/components/dashboard/DashboardLayout";
@@ -44,6 +45,7 @@ const MemoizedTravelCard = memo(TravelCard);
 
 const Explore = () => {
     const { isAuthenticated } = useAuth();
+    const location = useLocation();
     const [searchQuery, setSearchQuery] = useState("");
     const [submittedQuery, setSubmittedQuery] = useState("");
     const [searchSuggestions, setSearchSuggestions] = useState([]);
@@ -55,6 +57,25 @@ const Explore = () => {
     // SWR hooks — cached, deduplicated, background revalidated
     const { data: allPackages = [], isLoading: packagesLoading } = useAllPackages();
     const { data: trendingPackages = [], isLoading: trendingLoading } = useRecommendations(defaultUserId());
+
+    // Scroll to "All Packages" section if requested via hash or location state
+    useEffect(() => {
+        const hash = location.hash;
+        const scrollTo = (location.state as { scrollTo?: string })?.scrollTo;
+        if (hash === "#all-packages" || hash === "#packages" || scrollTo === "all-packages" || scrollTo === "packages") {
+            const scrollToElement = () => {
+                const el = document.getElementById("all-packages");
+                if (el) {
+                    el.scrollIntoView({ behavior: "smooth", block: "start" });
+                }
+            };
+
+            // Run immediately and after a short delay to account for layout / render
+            scrollToElement();
+            const timer = setTimeout(scrollToElement, 150);
+            return () => clearTimeout(timer);
+        }
+    }, [location.hash, location.state]);
 
     // Search suggestions logic
     useEffect(() => {
@@ -320,7 +341,7 @@ const Explore = () => {
             </section>
 
             {/* All Packages */}
-            <section className="animate-slide-up" style={{ animationDelay: "0.2s" }}>
+            <section id="all-packages" className="animate-slide-up scroll-mt-6" style={{ animationDelay: "0.2s" }}>
                 <div className="flex items-center gap-2 mb-4">
                     <Sparkles className="h-5 w-5 text-primary" />
                     <h2 className="text-lg font-semibold">All Packages</h2>

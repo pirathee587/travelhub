@@ -6,6 +6,8 @@ import com.travelhub.backend.event.PackageEvent;
 import com.travelhub.backend.event.UserAccountEvent;
 import com.travelhub.backend.event.PaymentEvent;
 import com.travelhub.backend.repository.UserRepository;
+import com.travelhub.backend.repository.AgentSettingsRepository;
+import com.travelhub.backend.entity.AgentSettings;
 import com.travelhub.backend.service.EmailService;
 import com.travelhub.backend.service.UserNotificationService;
 import lombok.RequiredArgsConstructor;
@@ -13,17 +15,18 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.event.EventListener;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
-
+ 
 @Component
 @Slf4j
 @RequiredArgsConstructor
 public class NotificationListener {
-
+ 
     private final EmailService emailService;
     private final UserRepository userRepository;
     private final com.travelhub.backend.service.AgentNotificationService agentNotificationService;
     private final com.travelhub.backend.repository.AgentRepository agentRepository;
     private final UserNotificationService userNotificationService;
+    private final AgentSettingsRepository agentSettingsRepository;
 
     @Async
     @EventListener
@@ -37,9 +40,12 @@ public class NotificationListener {
         switch (event.getType()) {
             case "CREATED":
                 emailService.sendBookingConfirmation(event.getBooking());
-                emailService.sendAgentBookingNotification(event.getBooking());
                 if (event.getBooking().getPkg() != null && event.getBooking().getPkg().getAgent() != null) {
-                    agentNotificationService.createNotification(event.getBooking().getPkg().getAgent(), "booking", "New Booking Request", "You have a new booking request for package " + event.getBooking().getPkg().getPackageName() + ".");
+                    var agent = event.getBooking().getPkg().getAgent();
+                    if (shouldNotify(agent, "new-booking")) {
+                        emailService.sendAgentBookingNotification(event.getBooking());
+                        agentNotificationService.createNotification(agent, "booking", "New Booking Request", "You have a new booking request for package " + event.getBooking().getPkg().getPackageName() + ".");
+                    }
                 }
                 break;
             case "APPROVED":
@@ -64,7 +70,10 @@ public class NotificationListener {
         if ("COMPLETED".equalsIgnoreCase(event.getType())) {
             emailService.sendPaymentConfirmation(event.getPayment());
             if (event.getPayment().getAgent() != null) {
-                agentNotificationService.createNotification(event.getPayment().getAgent(), "payment", "Payment Received", "You received a payment of $" + event.getPayment().getAmount() + " for booking " + event.getPayment().getBooking().getId() + ".");
+                var agent = event.getPayment().getAgent();
+                if (shouldNotify(agent, "payment-received")) {
+                    agentNotificationService.createNotification(agent, "payment", "Payment Received", "You received a payment of $" + event.getPayment().getAmount() + " for booking " + event.getPayment().getBooking().getId() + ".");
+                }
             }
         }
     }
@@ -126,5 +135,27 @@ public class NotificationListener {
         }
     }
 
-
+    private boolean shouldNotify(com.travelhub.backend.entity.Agent agent, String preference) {
+        if (agent == null) return false;
+        return agentSettingsRepository.findByAgentId(agent.getId())
+                .map(settings -> {
+                    switch (preference) {
+                        case "new-booking":
+                            return settings.getNotifyNewBooking();
+                        case "cancellation":
+                            return settings.getNotifyCancellation();
+                        case "trip-completed":
+                            return settings.getNotifyTripCompleted();
+                        case "new-review":
+                            return settings.getNotifyNewReview();
+                        case "payment-received":
+                            return settings.getNotifyPaymentReceived();
+                        case "promo-updates":
+                            return settings.getNotifyPromoUpdates();
+                        default:
+                            return true;
+                    }
+                })
+                .orElseGet(() -> !"promo-updates".equals(preference)); // default fallback: true for all except promo-updates
+    }
 }

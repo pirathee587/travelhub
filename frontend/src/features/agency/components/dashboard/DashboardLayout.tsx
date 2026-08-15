@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Sidebar } from './Sidebar';
 import {
   Bell, Search, Menu, X, CalendarCheck, CreditCard,
-  Star, AlertTriangle, CheckCheck, XCircle,
+  Star, AlertTriangle, CheckCheck, XCircle, Clock,
 } from 'lucide-react';
 import { Button } from '@/components/common/ui/button';
 import { Input } from '@/components/common/ui/input';
@@ -284,7 +284,43 @@ export function DashboardLayout({ children, title, subtitle, showSearch = true }
         </header>
 
         {/* Page content */}
-        <main className="p-4 md:p-6">{children}</main>
+        <main className="p-4 md:p-6">
+          {profile && !profile.nicImage && (
+            <div className="mb-6 flex flex-col md:flex-row md:items-center justify-between gap-4 p-4 rounded-xl border border-amber-500/20 bg-amber-500/10 text-amber-900 dark:text-amber-200 animate-in fade-in slide-in-from-top-4 duration-300">
+              <div className="flex items-start gap-3">
+                <AlertTriangle className="h-5 w-5 text-amber-500 shrink-0 mt-0.5" />
+                <div>
+                  <h4 className="font-semibold text-sm">Identity Verification Required</h4>
+                  <p className="text-xs opacity-95 mt-0.5">
+                    To activate your agency account and receive tourist booking requests, please upload your National Identity Card (NIC).
+                  </p>
+                </div>
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                className="shrink-0 border-amber-500/30 text-amber-600 hover:bg-amber-500 hover:text-white"
+                onClick={() => navigate('/agency/settings?tab=account')}
+              >
+                Upload NIC
+              </Button>
+            </div>
+          )}
+
+          {profile && profile.nicImage && !profile.agentApproved && (
+            <div className="mb-6 flex items-start gap-3 p-4 rounded-xl border border-blue-500/20 bg-blue-500/10 text-blue-900 dark:text-blue-200 animate-in fade-in slide-in-from-top-4 duration-300">
+              <Clock className="h-5 w-5 text-blue-500 shrink-0 mt-0.5" />
+              <div>
+                <h4 className="font-semibold text-sm">Verification Under Review</h4>
+                <p className="text-xs opacity-95 mt-0.5">
+                  Your identity verification document has been uploaded. Administrators are currently reviewing your request. We'll verify your account shortly.
+                </p>
+              </div>
+            </div>
+          )}
+
+          {children}
+        </main>
       </div>
     </div>
   );

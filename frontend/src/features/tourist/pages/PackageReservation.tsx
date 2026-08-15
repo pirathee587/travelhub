@@ -46,6 +46,7 @@ import { useAllHotels, useHotelRooms } from "@/features/tourist/hooks/useApi";
 import { defaultUserId } from "@/features/tourist/services/userHelpers";
 import { Alert, AlertDescription } from "@/components/common/ui/alert";
 import { toast } from "sonner";
+import { useTouristCurrency } from "@/features/tourist/hooks/TouristCurrencyContext";
 
 const HotelPreferenceCard = ({ selection, index, onRemove, onUpdate, allHotels }) => {
     const { data: rooms } = useHotelRooms(selection.hotelId);
@@ -87,6 +88,7 @@ const PackageReservation = () => {
     const { id } = useParams();
     const navigate = useNavigate();
     const [searchParams, setSearchParams] = useSearchParams();
+    const { formatPrice, convertPrice } = useTouristCurrency();
 
     const today = (() => {
         const d = new Date();
@@ -451,11 +453,11 @@ const PackageReservation = () => {
                                     </div>
                                     <div className="flex justify-between text-sm pt-2">
                                         <span className="text-muted-foreground">Adults Total</span>
-                                        <span className="font-medium">${(adults || 0) * (pkg.basePriceAdult || 0)}</span>
+                                        <span className="font-medium">{formatPrice((adults || 0) * (pkg.basePriceAdult || 0))}</span>
                                     </div>
                                     <div className="flex justify-between text-sm pt-2 border-b pb-2">
                                         <span className="text-muted-foreground">Children Total</span>
-                                        <span className="font-medium">${(children || 0) * (pkg.basePriceChild || 0)}</span>
+                                        <span className="font-medium">{formatPrice((children || 0) * (pkg.basePriceChild || 0))}</span>
                                     </div>
                                 </div>
 
@@ -463,7 +465,8 @@ const PackageReservation = () => {
                                     <div className="flex justify-between items-center mb-4">
                                         <span className="font-semibold">Estimated Total</span>
                                         <span className="text-2xl font-bold text-primary">
-                                            ${calculateTotalPrice()}
+                                            {/* Display price in user's currency; booking payload stays in USD */}
+                                            {formatPrice(calculateTotalPrice())}
                                         </span>
                                     </div>
 

@@ -22,4 +22,6 @@ public class PackageSummaryResponse {
 
     private String coverImageUrl;
     private LocalDateTime createdAt;
+    private Double rating;
+    private Long reviewCount;
 }

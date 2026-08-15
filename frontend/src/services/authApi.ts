@@ -37,6 +37,15 @@ const authApi = {
             { token, newPassword });
         return res.data;
     },
+
+    // POST /api/users/change-password
+    changePassword: async (currentPassword: string, newPassword: string) => {
+        const res = await api.post('/users/change-password', {
+            currentPassword,
+            newPassword,
+        });
+        return res.data;
+    },
 };
 
 export default authApi;

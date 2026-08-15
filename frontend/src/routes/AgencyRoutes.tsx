@@ -1,4 +1,4 @@
-import { Route, Outlet } from 'react-router-dom';
+import { Route, Outlet, Navigate } from 'react-router-dom';
 import { lazy } from 'react';
 import { CurrencyProvider } from '@/features/agency/hooks/CurrencyContext';
 import ProtectedRoute from '@/auth/components/ProtectedRoute';
@@ -35,7 +35,7 @@ export default function AgencyRoutes() {
         <Route path="/agency/bookings/:id"  element={<BookingDetail />} />
         <Route path="/agency/packages"      element={<Packages />} />
         <Route path="/agency/packages/:id"  element={<PackageDetail />} />
-        <Route path="/agency/refunds"       element={<Refunds />} />
+        <Route path="/agency/refunds"       element={<Navigate to="/agency/settings?tab=refunds" replace />} />
         <Route path="/agency/analytics"     element={<Analytics />} />
         <Route path="/agency/profile"       element={<Profile />} />
         <Route path="/agency/settings"      element={<Settings />} />

@@ -10,4 +10,5 @@ public class UpdateProfileRequest {
     private String profileImage;
     private String preferredLanguage;
     private String nationality;
+    private String currencyPreference;
 }

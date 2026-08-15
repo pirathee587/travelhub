@@ -33,7 +33,6 @@ const navItems = [
   { icon: Car, label: 'Vehicles & Drivers', path: '/agency/vehicles' },
   { icon: CalendarCheck, label: 'Bookings', path: '/agency/bookings' },
   { icon: Package, label: 'Packages', path: '/agency/packages' },
-  { icon: Undo2, label: 'Refund Requests', path: '/agency/refunds' },
   { icon: BarChart3, label: 'Analytics', path: '/agency/analytics' },
   { icon: User, label: 'Profile', path: '/agency/profile' },
   { icon: Settings, label: 'Settings', path: '/agency/settings' },

@@ -12,6 +12,7 @@ import com.travelhub.backend.repository.AgentRepository;
 import com.travelhub.backend.repository.HotelRepository;
 import com.travelhub.backend.repository.PackageItineraryRepository;
 import com.travelhub.backend.repository.PackageRepository;
+import com.travelhub.backend.repository.ReviewRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -35,6 +36,7 @@ public class AgentPackageService {
     private final AgentRepository agentRepository;
     private final ImageUploadService imageUploadService;
     private final ObjectMapper objectMapper;
+    private final ReviewRepository reviewRepository;
 
     private static final Set<String> VALID_DISTRICTS = Set.of(
             "Ampara", "Anuradhapura", "Badulla", "Batticaloa", "Colombo",
@@ -68,7 +70,24 @@ public class AgentPackageService {
                     .findByAgent_IdAndDeletedAtIsNullOrderByCreatedAtDesc(realAgentId);
         }
 
-        return packages.stream().map(this::toSummary).collect(Collectors.toList());
+        // Collect numeric IDs for bulk rating query
+        List<Long> numericIds = packages.stream()
+                .map(Package::getId)
+                .collect(Collectors.toList());
+
+        java.util.Map<Long, Double> ratingMap = numericIds.isEmpty()
+                ? java.util.Collections.emptyMap()
+                : reviewRepository.getAverageRatingsByPackageIds(numericIds);
+        java.util.Map<Long, Long> countMap = numericIds.isEmpty()
+                ? java.util.Collections.emptyMap()
+                : reviewRepository.getReviewCountsByPackageIds(numericIds);
+
+        return packages.stream().map(pkg -> {
+            PackageSummaryResponse summary = toSummary(pkg);
+            summary.setRating(ratingMap.get(pkg.getId()));
+            summary.setReviewCount(countMap.getOrDefault(pkg.getId(), 0L));
+            return summary;
+        }).collect(Collectors.toList());
     }
 
     /**

@@ -7,9 +7,11 @@ import {
     HoverCard,
     HoverCardTrigger,
 } from "@/components/common/ui/hover-card";
+import { useTouristCurrency } from "@/features/tourist/hooks/TouristCurrencyContext";
 
 export function TravelCard({ recommendation, className, onClick, children, showHotelHeader, isSelectionMode }) {
     const navigate = useNavigate();
+    const { formatPrice } = useTouristCurrency();
 
     const handleClick = () => {
         if (onClick) {
@@ -105,7 +107,7 @@ export function TravelCard({ recommendation, className, onClick, children, showH
                             <div className="flex flex-col">
                                 <span className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider mb-0.5">Price Range</span>
                                 {Number.isFinite(recommendation?.priceFrom) && Number.isFinite(recommendation?.priceTo)
-                                    ? <span className="text-lg font-extrabold text-primary">${recommendation.priceFrom} - ${recommendation.priceTo}</span>
+                                    ? <span className="text-lg font-extrabold text-primary">{formatPrice(recommendation.priceFrom)} - {formatPrice(recommendation.priceTo)}</span>
                                     : <span className="text-base font-semibold text-muted-foreground">Not Available</span>}
                             </div>
 
@@ -141,7 +143,7 @@ export function TravelCard({ recommendation, className, onClick, children, showH
                                     <div className="flex flex-col">
                                         <span className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider mb-0.5">Starts from</span>
                                         <span className="text-base font-bold text-foreground">
-                                             ${recommendation.basePriceAdult}
+                                             {formatPrice(recommendation.basePriceAdult)}
                                         </span>
                                     </div>
                                 )}

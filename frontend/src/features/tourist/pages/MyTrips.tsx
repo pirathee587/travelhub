@@ -133,7 +133,7 @@ const MyTrips = () => {
                             </p>
                         </div>
                     </div>
-                    <Link to="/tourist">
+                    <Link to="/tourist#all-packages" state={{ scrollTo: "all-packages" }}>
                         <Button className="bg-gradient-to-r from-orange-400 to-orange-600 hover:from-orange-500 hover:to-orange-700 text-white shadow-md border-0">
                             <Plane className="h-4 w-4 mr-2" />
                             Plan New Trip                                   {/* Booking Button */}

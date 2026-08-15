@@ -5,7 +5,7 @@ const CurrencyContext = createContext();
 
 export const CurrencyProvider = ({ children }) => {
   const [currency, setCurrencyState] = useState('USD');
-  const [rate] = useState(300); // 1 USD = 300 LKR
+  const [rate, setRate] = useState(300); // 1 USD = 300 LKR fallback
   const [loading, setLoading] = useState(true);
 
   const fetchCurrencyPreference = async () => {
@@ -14,8 +14,17 @@ export const CurrencyProvider = ({ children }) => {
       if (settingsData?.currency) {
         setCurrencyState(settingsData.currency);
       }
+
+      // Fetch dynamic exchange rate
+      const res = await fetch('https://open.er-api.com/v6/latest/USD');
+      if (res.ok) {
+        const data = await res.json();
+        if (data && data.rates && data.rates.LKR) {
+          setRate(data.rates.LKR);
+        }
+      }
     } catch (error) {
-      console.error('Failed to load currency setting:', error);
+      console.error('Failed to load currency setting or dynamic rate:', error);
     } finally {
       setLoading(false);
     }

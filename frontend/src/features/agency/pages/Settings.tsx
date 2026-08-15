@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useSearchParams, Link } from 'react-router-dom';
 import {
   Bell, Lock, Eye, EyeOff, DollarSign, Save,
   ShieldCheck, BellRing, BellOff, CreditCard,
@@ -17,19 +18,21 @@ import { userApi } from '@/services/userApi';
 import { useRef } from 'react';
 import { Skeleton } from '@/components/common/ui/skeleton';
 import { useCurrency } from '@/features/agency/hooks/CurrencyContext';
+import Refunds from './Refunds';
+import authApi from '@/services/authApi';
 
 // ── Upload helper ──────────────────────────────────────────────
 const uploadImage = async (file: File) => {
   const formData = new FormData();
   formData.append('file', file);
   const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:8080';
-  const response = await fetch(`${apiBase}/api/upload/image`, {
+  const response = await fetch(`${apiBase}/api/upload/identity`, {
     method: 'POST',
     body: formData,
   });
   const result = await response.json();
   if (result.success && result.data?.imageUrl) return result.data.imageUrl;
-  throw new Error('Upload failed');
+  throw new Error(result.message || 'Upload failed');
 };
 
 const notificationDefaults = [
@@ -41,8 +44,37 @@ const notificationDefaults = [
   { id: 'promo-updates', label: 'Promotional Updates', description: 'Receive updates about new features and offers', defaultOn: false, icon: Megaphone },
 ];
 
+const getPasswordStrength = (pwd: string) => {
+  if (!pwd) return { score: 0, label: '', color: 'bg-muted-foreground/20' };
+  let score = 0;
+  if (pwd.length >= 8) score++;
+  if (/[0-9]/.test(pwd)) score++;
+  if (/[A-Z]/.test(pwd)) score++;
+  if (/[^A-Za-z0-9]/.test(pwd)) score++;
+
+  switch (score) {
+    case 1:
+      return { score: 25, label: 'Weak', color: 'bg-red-500' };
+    case 2:
+      return { score: 50, label: 'Fair', color: 'bg-orange-500' };
+    case 3:
+      return { score: 75, label: 'Good', color: 'bg-yellow-500' };
+    case 4:
+      return { score: 100, label: 'Strong', color: 'bg-emerald-500' };
+    default:
+      return { score: 0, label: '', color: 'bg-muted-foreground/20' };
+  }
+};
+
 const Settings = () => {
   const { setCurrency: setGlobalCurrency } = useCurrency();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const activeTabParam = searchParams.get('tab') === 'refunds' ? 'refunds' : 'account';
+
+  const handleTabChange = (tab: 'account' | 'refunds') => {
+    setSearchParams({ tab });
+  };
+
   // ── State ──────────────────────────────────────────────────
   /* --- SETTINGS STATE MANAGEMENT --- */
   const [notifications, setNotifications] = useState(() => {
@@ -64,9 +96,11 @@ const Settings = () => {
   const [savingContact, setSavingContact] = useState(false);
 
   /* --- IDENTITY VERIFICATION STATE --- */
-  const [fullProfile, setFullProfile] = useState(null);
+  const [fullProfile, setFullProfile] = useState<any>(null);
   const [uploadingNic, setUploadingNic] = useState(false);
-  const nicInputRef = useRef(null);
+  const [tempNicImage, setTempNicImage] = useState<string | null>(null);
+  const [savingNic, setSavingNic] = useState(false);
+  const nicInputRef = useRef<HTMLInputElement>(null);
 
   /* DATA FETCHING: Load user preferences from server */
   useEffect(() => {
@@ -85,6 +119,7 @@ const Settings = () => {
         }
         if (profileData) {
           setFullProfile(profileData);
+          setTempNicImage(profileData.nicImage || null);
           setContactDetails({
             phone: profileData.phone || '',
             secondaryPhone: profileData.secondaryPhone || '',
@@ -180,35 +215,66 @@ const Settings = () => {
     }
   };
 
-  // ── Handle NIC Upload ──────────────────────────────────────
   const handleNicUpload = async (e) => {
     const file = e.target.files?.[0];
     if (!file || !fullProfile) return;
+
+    // Validate file size limit (10MB)
+    const MAX_SIZE = 10 * 1024 * 1024;
+    if (file.size > MAX_SIZE) {
+      toast.error('File size exceeds the 10MB limit. Please upload a smaller image.');
+      if (nicInputRef.current) nicInputRef.current.value = '';
+      return;
+    }
+
     setUploadingNic(true);
     try {
       const url = await uploadImage(file);
-      // Save the full profile to prevent nullifying other fields
-      const updatedProfile = { ...fullProfile, nicImage: url };
-      await api.updateProfile(updatedProfile);
-      setFullProfile(updatedProfile);
-      toast.success('NIC Image uploaded successfully');
-    } catch (error) {
-      toast.error('Failed to upload NIC Image');
+      setTempNicImage(url);
+      toast.info('NIC Image uploaded. Click "Submit Verification" below to save.');
+    } catch (error: any) {
+      console.error('Failed to upload NIC Image:', error);
+      toast.error(`Failed to upload NIC Image: ${error.message || error}`);
     } finally {
       setUploadingNic(false);
       if (nicInputRef.current) nicInputRef.current.value = '';
     }
   };
 
-  const removeNicImage = async () => {
-    if (!fullProfile) return;
+  const handleNicSubmit = async () => {
+    if (!fullProfile || !tempNicImage) return;
+    setSavingNic(true);
     try {
-      const updatedProfile = { ...fullProfile, nicImage: '' };
+      const updatedProfile = { ...fullProfile, nicImage: tempNicImage };
       await api.updateProfile(updatedProfile);
       setFullProfile(updatedProfile);
-      toast.success('NIC Image removed');
+      toast.success('Identity verification submitted successfully!');
     } catch (error) {
-      toast.error('Failed to remove NIC Image');
+      toast.error('Failed to save identity verification');
+    } finally {
+      setSavingNic(false);
+    }
+  };
+
+  const removeNicImage = async () => {
+    if (!fullProfile) return;
+    
+    if (fullProfile.nicImage) {
+      setSavingNic(true);
+      try {
+        const updatedProfile = { ...fullProfile, nicImage: '' };
+        await api.updateProfile(updatedProfile);
+        setFullProfile(updatedProfile);
+        setTempNicImage(null);
+        toast.success('NIC Image removed successfully');
+      } catch (error) {
+        toast.error('Failed to remove NIC Image');
+      } finally {
+        setSavingNic(false);
+      }
+    } else {
+      setTempNicImage(null);
+      toast.success('Upload cancelled');
     }
     if (nicInputRef.current) nicInputRef.current.value = '';
   };
@@ -216,11 +282,37 @@ const Settings = () => {
   // ── Render ─────────────────────────────────────────────────
   return (
     <DashboardLayout
-      title="Settings"
-      subtitle="Manage your account preferences"
+      title={activeTabParam === 'refunds' ? 'Refund Requests' : 'Settings'}
+      subtitle={activeTabParam === 'refunds' ? 'Manage and process manual bank deposit refunds requested by tourists.' : 'Manage your account preferences'}
       showSearch={false}
     >
-      <div className="max-w-3xl space-y-6">
+      <div className="space-y-6">
+        {/* Tab Headers */}
+        <div className="flex border-b border-border/40 gap-4 mb-6">
+          <button
+            onClick={() => handleTabChange('account')}
+            className={`pb-3 font-semibold text-sm transition-all border-b-2 ${
+              activeTabParam === 'account'
+                ? 'border-primary text-primary'
+                : 'border-transparent text-muted-foreground hover:text-white'
+            }`}
+          >
+            Account Settings
+          </button>
+          <button
+            onClick={() => handleTabChange('refunds')}
+            className={`pb-3 font-semibold text-sm transition-all border-b-2 ${
+              activeTabParam === 'refunds'
+                ? 'border-primary text-primary'
+                : 'border-transparent text-muted-foreground hover:text-white'
+            }`}
+          >
+            Refund Requests
+          </button>
+        </div>
+
+        {activeTabParam === 'account' ? (
+          <div className="max-w-3xl space-y-6">
 
         {/* 1. CONTACT DETAILS SECTION */}
         <div className="rounded-xl border border-border bg-card p-6">
@@ -337,36 +429,107 @@ const Settings = () => {
               { key: 'current', label: 'Current Password', placeholder: 'Enter current password' },
               { key: 'new', label: 'New Password', placeholder: 'Enter new password' },
               { key: 'confirm', label: 'Confirm New Password', placeholder: 'Confirm new password' },
-            ].map(({ key, label, placeholder }) => (
-              <div key={key} className="space-y-2">
-                <Label htmlFor={`${key}-password`}>{label}</Label>
-                <div className="relative">
-                  <Input
-                    id={`${key}-password`}
-                    type={showPasswords[key] ? 'text' : 'password'}
-                    value={passwords[key]}
-                    onChange={(e) => {
-                      setPasswords(prev => ({ ...prev, [key]: e.target.value }));
-                      if (passwordErrors[key]) setPasswordErrors(prev => ({ ...prev, [key]: '' }));
-                    }}
-                    placeholder={placeholder}
-                    className={passwordErrors[key] ? 'border-destructive' : ''}
-                  />
-                  <button
-                    type="button"
-                    onClick={() => togglePasswordVisibility(key)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
-                  >
-                    {showPasswords[key] ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                  </button>
+            ].map(({ key, label, placeholder }) => {
+              const strength = key === 'new' ? getPasswordStrength(passwords.new) : null;
+              return (
+                <div key={key} className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor={`${key}-password`}>{label}</Label>
+                    {key === 'current' && (
+                      <Link
+                        to="/forgot-password"
+                        className="text-xs font-semibold text-primary hover:underline hover:text-primary/90"
+                      >
+                        Forgot password?
+                      </Link>
+                    )}
+                  </div>
+                  <div className="relative">
+                    <Input
+                      id={`${key}-password`}
+                      type={showPasswords[key] ? 'text' : 'password'}
+                      value={passwords[key]}
+                      onChange={(e) => {
+                        setPasswords(prev => ({ ...prev, [key]: e.target.value }));
+                        if (passwordErrors[key]) setPasswordErrors(prev => ({ ...prev, [key]: '' }));
+                      }}
+                      placeholder={placeholder}
+                      className={passwordErrors[key] ? 'border-destructive' : ''}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => togglePasswordVisibility(key)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                    >
+                      {showPasswords[key] ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </button>
+                  </div>
+                  {passwordErrors[key] && <p className="text-xs text-destructive">{passwordErrors[key]}</p>}
+                  
+                  {key === 'new' && passwords.new && (
+                    <div className="mt-2 space-y-1.5 bg-sidebar-accent/15 p-3 rounded-lg border border-sidebar-border/30">
+                      <div className="flex justify-between items-center text-xs">
+                        <span className="text-muted-foreground">Password Strength:</span>
+                        <span className={`font-semibold ${
+                          strength.label === 'Weak' ? 'text-red-400' :
+                          strength.label === 'Fair' ? 'text-orange-400' :
+                          strength.label === 'Good' ? 'text-yellow-400' : 'text-emerald-400'
+                        }`}>{strength.label}</span>
+                      </div>
+                      <div className="h-1.5 w-full bg-muted-foreground/15 rounded-full overflow-hidden">
+                        <div
+                          className={`h-full ${strength.color} transition-all duration-300`}
+                          style={{ width: `${strength.score}%` }}
+                        />
+                      </div>
+                      <ul className="text-xs text-muted-foreground space-y-1 mt-1 list-none">
+                        <li className="flex items-center gap-1.5">
+                          <span className={passwords.new.length >= 8 ? 'text-emerald-400 font-bold' : 'text-muted-foreground'}>
+                            {passwords.new.length >= 8 ? '✓' : '•'}
+                          </span>
+                          <span className={passwords.new.length >= 8 ? 'text-emerald-400/90' : ''}>Minimum 8 characters</span>
+                        </li>
+                        <li className="flex items-center gap-1.5">
+                          <span className={/[0-9]/.test(passwords.new) ? 'text-emerald-400 font-bold' : 'text-muted-foreground'}>
+                            {/[0-9]/.test(passwords.new) ? '✓' : '•'}
+                          </span>
+                          <span className={/[0-9]/.test(passwords.new) ? 'text-emerald-400/90' : ''}>At least one number</span>
+                        </li>
+                        <li className="flex items-center gap-1.5">
+                          <span className={/[A-Z]/.test(passwords.new) ? 'text-emerald-400 font-bold' : 'text-muted-foreground'}>
+                            {/[A-Z]/.test(passwords.new) ? '✓' : '•'}
+                          </span>
+                          <span className={/[A-Z]/.test(passwords.new) ? 'text-emerald-400/90' : ''}>At least one uppercase letter</span>
+                        </li>
+                      </ul>
+                    </div>
+                  )}
+
+                  {key === 'confirm' && passwords.confirm && (
+                    <p className={`text-xs mt-1 font-semibold flex items-center gap-1 ${
+                      passwords.new === passwords.confirm ? 'text-emerald-400' : 'text-red-400'
+                    }`}>
+                      <span>{passwords.new === passwords.confirm ? '✓' : '✗'}</span>
+                      <span>{passwords.new === passwords.confirm ? 'Passwords match' : 'Passwords do not match'}</span>
+                    </p>
+                  )}
                 </div>
-                {passwordErrors[key] && <p className="text-xs text-destructive">{passwordErrors[key]}</p>}
-              </div>
-            ))}
+              );
+            })}
           </div>
 
           <div className="mt-6 flex justify-end border-t border-border pt-4">
-            <Button onClick={handlePasswordSubmit} className="gap-2">
+            <Button
+              onClick={handlePasswordSubmit}
+              className="gap-2 font-semibold"
+              disabled={
+                !passwords.current ||
+                !passwords.new ||
+                !passwords.confirm ||
+                passwords.new.length < 8 ||
+                passwords.new !== passwords.confirm
+              }
+            >
               <ShieldCheck className="h-4 w-4" />Update Password
             </Button>
           </div>
@@ -437,14 +600,21 @@ const Settings = () => {
 
         {/* 4. IDENTITY VERIFICATION SECTION: Upload NIC */}
         <div className="rounded-xl border border-border bg-card p-6">
-          <div className="flex items-center gap-3 mb-1">
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
-              <IdCard className="h-5 w-5 text-primary" />
+          <div className="flex items-center justify-between gap-3 mb-1">
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
+                <IdCard className="h-5 w-5 text-primary" />
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold text-foreground">Identity Verification</h3>
+                <p className="text-sm text-muted-foreground">Upload your National Identity Card (NIC) for verification</p>
+              </div>
             </div>
-            <div>
-              <h3 className="text-lg font-semibold text-foreground">Identity Verification</h3>
-              <p className="text-sm text-muted-foreground">Upload your National Identity Card (NIC) for verification</p>
-            </div>
+            {fullProfile?.nicImage && (
+              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
+                ✓ Submitted
+              </span>
+            )}
           </div>
 
           <div className="mt-6 flex flex-col items-start gap-4 max-w-md">
@@ -457,9 +627,9 @@ const Settings = () => {
                   <div className="h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent" />
                   <span className="text-xs text-muted-foreground">Uploading...</span>
                 </div>
-              ) : fullProfile?.nicImage ? (
+              ) : tempNicImage ? (
                 <>
-                  <img src={fullProfile.nicImage} alt="NIC Preview" className="h-full w-full object-cover opacity-80 group-hover:opacity-60 transition-opacity" />
+                  <img src={tempNicImage} alt="NIC Preview" className="h-full w-full object-cover opacity-80 group-hover:opacity-60 transition-opacity" />
                   <div className="absolute inset-0 flex items-center justify-center">
                     <Camera className="h-8 w-8 text-white opacity-0 group-hover:opacity-100 transition-opacity drop-shadow-md" />
                   </div>
@@ -472,14 +642,35 @@ const Settings = () => {
               )}
               <input type="file" ref={nicInputRef} className="hidden" accept="image/*" onChange={handleNicUpload} />
             </div>
-            {fullProfile?.nicImage && (
-              <Button variant="outline" size="sm" onClick={removeNicImage} className="text-destructive hover:text-destructive w-full">
-                Remove NIC Document
-              </Button>
+            {tempNicImage && (
+              <div className="flex flex-col sm:flex-row gap-2 w-full">
+                {tempNicImage !== fullProfile?.nicImage && (
+                  <Button
+                    onClick={handleNicSubmit}
+                    disabled={savingNic}
+                    className="flex-1 gap-2"
+                  >
+                    <Save className="h-4 w-4" />
+                    {savingNic ? 'Submitting...' : 'Submit Verification'}
+                  </Button>
+                )}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={removeNicImage}
+                  disabled={savingNic}
+                  className={`text-destructive hover:text-destructive shrink-0 ${tempNicImage === fullProfile?.nicImage ? 'w-full' : 'flex-1'}`}
+                >
+                  Remove NIC Document
+                </Button>
+              </div>
             )}
           </div>
         </div>
-
+          </div>
+        ) : (
+          <Refunds embedded={true} />
+        )}
       </div>
     </DashboardLayout>
   );
