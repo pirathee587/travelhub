@@ -72,6 +72,7 @@ public class DashboardController {
                 .nationality(user.getNationality())
                 .preferredLanguage(user.getPreferredLanguage())
                 .role(user.getRole() != null ? user.getRole().name() : null)
+                .currencyPreference(user.getCurrencyPreference() != null ? user.getCurrencyPreference() : "USD")
                 .build();
     }
 }

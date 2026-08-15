@@ -7,6 +7,7 @@ import { Progress } from "@/components/common/ui/progress";
 import { Badge } from "@/components/common/ui/badge";
 import { Button } from "@/components/common/ui/button";
 import { useNavigate } from "react-router-dom";
+import { useTouristCurrency } from "@/features/tourist/hooks/TouristCurrencyContext";
 
 const statusConfig = {                                    // Status Badge Color Settings
     pending: {
@@ -45,8 +46,9 @@ const statusConfig = {                                    // Status Badge Color 
 
 export function TripCard({ trip, onClick, onReview, onHotelReview }: { trip: any, onClick?: any, onReview?: any, onHotelReview?: any }) {
     const statusKey = trip.status?.toLowerCase() || "pending";
-    const status = statusConfig[statusKey] || statusConfig.pending; // Status Badge Logic
+    const status = statusConfig[statusKey] || statusConfig.pending;
     const navigate = useNavigate();
+    const { formatPrice } = useTouristCurrency();
     const averageRating = Number(trip.rating ?? 0).toFixed(1);
     const hasHotelReview = trip.hotelId != null || Boolean(trip.hotelName);
     const paymentId = trip.bookingId || trip.id;
@@ -107,7 +109,7 @@ export function TripCard({ trip, onClick, onReview, onHotelReview }: { trip: any
                 )}
 
                 <div className="flex items-center justify-between pt-2 border-t border-border mt-3">
-                    <span className="text-lg font-semibold text-primary">${(trip.totalPrice || trip.price || 0).toLocaleString()}</span>     {/*Price of the trip*/}
+                    <span className="text-lg font-semibold text-primary">{formatPrice(trip.totalPrice || trip.price || 0)}</span>     {/*Price of the trip*/}
                     <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
                         {trip.status?.toLowerCase() === "confirmed" && paymentId && (
                             <Button

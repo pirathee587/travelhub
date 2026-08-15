@@ -33,6 +33,10 @@ public class UserService {
         if (request.getProfileImage() != null) user.setProfileImage(request.getProfileImage());
         if (request.getPreferredLanguage() != null) user.setPreferredLanguage(request.getPreferredLanguage());
         if (request.getNationality() != null) user.setNationality(request.getNationality());
+        if (request.getCurrencyPreference() != null &&
+                (request.getCurrencyPreference().equals("USD") || request.getCurrencyPreference().equals("LKR"))) {
+            user.setCurrencyPreference(request.getCurrencyPreference());
+        }
 
         return userRepository.save(user);
     }

@@ -6,6 +6,7 @@ import { Toaster as Sonner } from '@/components/common/ui/sonner';
 import { Suspense } from 'react';
 
 import { AuthProvider } from '@/context/AuthContext';
+import { TouristCurrencyProvider } from '@/features/tourist/hooks/TouristCurrencyContext';
 import AppRoutes from '@/routes/AppRoutes';
 
 const queryClient = new QueryClient();
@@ -23,11 +24,13 @@ export default function App() {
         <Toaster />
         <Sonner />
         <AuthProvider>
-          <BrowserRouter>
-            <Suspense fallback={<PageFallback />}>
-              <AppRoutes />
-            </Suspense>
-          </BrowserRouter>
+          <TouristCurrencyProvider>
+            <BrowserRouter>
+              <Suspense fallback={<PageFallback />}>
+                <AppRoutes />
+              </Suspense>
+            </BrowserRouter>
+          </TouristCurrencyProvider>
         </AuthProvider>
       </TooltipProvider>
     </QueryClientProvider>

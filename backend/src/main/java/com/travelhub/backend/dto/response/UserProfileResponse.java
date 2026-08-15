@@ -20,4 +20,5 @@ public class UserProfileResponse {
     private String nationality;
     private String preferredLanguage;
     private String role;
+    private String currencyPreference;
 }

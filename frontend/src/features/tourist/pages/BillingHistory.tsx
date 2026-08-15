@@ -7,10 +7,12 @@ import { Button } from '@/components/common/ui/button';
 import { Badge } from '@/components/common/ui/badge';
 import { Receipt, Download, Bell, Loader2 } from 'lucide-react';
 import { DashboardLayout } from '@/features/tourist/components/dashboard/DashboardLayout';
+import { useTouristCurrency } from '@/features/tourist/hooks/TouristCurrencyContext';
 
 const BillingHistory = () => {
   const [history, setHistory] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const { formatPrice } = useTouristCurrency();
 
   useEffect(() => {
     fetchHistory();
@@ -104,7 +106,7 @@ const BillingHistory = () => {
                   
                   <div className="flex flex-col md:items-end justify-between">
                     <div className="text-2xl font-bold text-primary mb-4 md:mb-0">
-                      ${item.amount?.toLocaleString()}
+                      {formatPrice(item.amount)}
                     </div>
                     <div className="flex gap-3">
                       {item.status !== 'Completed' && item.status !== 'SUCCESS' && item.bookingId && (
