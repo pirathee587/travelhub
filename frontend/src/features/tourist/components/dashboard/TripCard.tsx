@@ -44,7 +44,7 @@ const statusConfig = {                                    // Status Badge Color 
     },
 };
 
-export function TripCard({ trip, onClick, onReview, onHotelReview }: { trip: any, onClick?: any, onReview?: any, onHotelReview?: any }) {
+export function TripCard({ trip, onClick, onReview, onHotelReview, onCancel }: { trip: any, onClick?: any, onReview?: any, onHotelReview?: any, onCancel?: any }) {
     const statusKey = trip.status?.toLowerCase() || "pending";
     const status = statusConfig[statusKey] || statusConfig.pending;
     const navigate = useNavigate();

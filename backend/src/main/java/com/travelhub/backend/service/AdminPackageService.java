@@ -9,6 +9,7 @@ import com.travelhub.backend.entity.PackageItinerary;
 import com.travelhub.backend.event.PackageEvent;
 import com.travelhub.backend.repository.PackageRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -116,6 +117,7 @@ public class AdminPackageService {
 
     // ── Approve Package ───────────────────────────────
     @Transactional
+    @CacheEvict(value = {"touristPackages", "touristPackageDetails"}, allEntries = true)
     public AdminPackageDetailResponse approvePackage(
             Long id) {
         Package pkg = packageRepository.findById(id)
@@ -134,6 +136,7 @@ public class AdminPackageService {
 
     // ── Reject Package ────────────────────────────────
     @Transactional
+    @CacheEvict(value = {"touristPackages", "touristPackageDetails"}, allEntries = true)
     public AdminPackageDetailResponse rejectPackage(
             Long id, String reason) {
         Package pkg = packageRepository.findById(id)
@@ -153,6 +156,7 @@ public class AdminPackageService {
 
     // ── Toggle Active ─────────────────────────────────
     @Transactional
+    @CacheEvict(value = {"touristPackages", "touristPackageDetails"}, allEntries = true)
     public AdminPackageDetailResponse toggleActive(
             Long id) {
         Package pkg = packageRepository.findById(id)
@@ -166,6 +170,7 @@ public class AdminPackageService {
 
     // ── Delete Package ────────────────────────────────
     @Transactional
+    @CacheEvict(value = {"touristPackages", "touristPackageDetails"}, allEntries = true)
     public void deletePackage(Long id) {
         Package pkg = packageRepository.findById(id)
                 .orElseThrow(() ->

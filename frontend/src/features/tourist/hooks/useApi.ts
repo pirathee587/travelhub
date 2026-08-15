@@ -197,21 +197,11 @@ export function useUserProfile(userId) {
     );
 }
 
-// ── Aggregated Hooks ─────────────────────────────────────────────────────
+// ── Tourist Portal Aggregated SWR Hooks ───────────────────────────────────
 
 /**
  * useTouristOverview
- *
- * Single SWR hook that replaces four separate hooks on the Overview page:
- *   useStats()            → data.stats
- *   useTrips()            → data.trips
- *   useDocuments()        → data.documents
- *   useRecommendations()  → data.recommendations
- *
- * Benefits:
- * - 1 network request instead of 4 on every fresh page load
- * - SWR deduplication + caching still applies
- * - Partial failures handled on the backend (each sub-call is fault-tolerant)
+ * Replaces 4 separate SWR hooks (useStats, useTrips, useDocuments, useRecommendations)
  */
 export function useTouristOverview(userId) {
     return useSWR(
@@ -219,7 +209,6 @@ export function useTouristOverview(userId) {
         () => api.getTouristOverview(userId),
         {
             ...defaultOptions,
-            // Provide safe fallback structure so destructuring never throws
             fallbackData: {
                 stats: { totalTrips: 0, ongoingTrips: 0, completedTrips: 0, upcomingTrips: 0 },
                 trips: [],
@@ -229,3 +218,46 @@ export function useTouristOverview(userId) {
         }
     );
 }
+
+/**
+ * useTouristExploreData
+ * Replaces 2 separate SWR hooks (useAllPackages, useRecommendations)
+ */
+export function useTouristExploreData(userId) {
+    return useSWR(
+        `tourist-explore-${userId || "guest"}`,
+        () => api.getTouristExploreData(userId),
+        {
+            ...defaultOptions,
+            fallbackData: {
+                packages: [],
+                recommendations: [],
+            },
+        }
+    );
+}
+
+/**
+ * useTouristPackagePageData
+ * Replaces 3 separate SWR hooks (usePackageById, usePackageReviews, usePackageRating)
+ */
+export function useTouristPackagePageData(packageId) {
+    return useSWR(
+        packageId ? `tourist-package-page-${packageId}` : null,
+        () => api.getTouristPackagePageData(packageId),
+        defaultOptions
+    );
+}
+
+/**
+ * useTouristHotelPageData
+ * Replaces 5 separate SWR hooks (useHotelById, useHotelImages, useHotelRooms, useHotelReviews, useHotelRating)
+ */
+export function useTouristHotelPageData(hotelId) {
+    return useSWR(
+        hotelId ? `tourist-hotel-page-${hotelId}` : null,
+        () => api.getTouristHotelPageData(hotelId),
+        defaultOptions
+    );
+}
+

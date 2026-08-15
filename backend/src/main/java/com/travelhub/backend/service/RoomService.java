@@ -5,6 +5,7 @@ import com.travelhub.backend.entity.Room;
 import com.travelhub.backend.repository.HotelRepository;
 import com.travelhub.backend.repository.RoomRepository;
 import com.travelhub.backend.service.ImageUploadService;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -25,6 +26,7 @@ public class RoomService {
     @Autowired
     private HotelRepository hotelRepository;
 
+    @CacheEvict(value = {"touristHotels", "touristHotelDetails"}, allEntries = true)
     public Room addRoom(String name, String type, double price, String description, MultipartFile image, boolean availability, Long hotelId) {
         Hotel hotel = hotelRepository.findById(hotelId)
                 .orElseThrow(() -> new RuntimeException("Hotel not found"));
@@ -60,6 +62,7 @@ public class RoomService {
         return roomRepository.findByHotelId(hotelId);
     }
 
+    @CacheEvict(value = {"touristHotels", "touristHotelDetails"}, allEntries = true)
     public Room updateRoom(String id, String name, String type, Double price, String description, MultipartFile image) {
         Room room = getRoomById(id);
         room.setName(name);
@@ -75,11 +78,13 @@ public class RoomService {
         return roomRepository.save(room);
     }
 
+    @CacheEvict(value = {"touristHotels", "touristHotelDetails"}, allEntries = true)
     public void deleteRoom(String id) {
         Room room = getRoomById(id);
         roomRepository.delete(room);
     }
 
+    @CacheEvict(value = {"touristHotels", "touristHotelDetails"}, allEntries = true)
     public Room updateRoomAvailability(String id, boolean availability) {
         Room room = getRoomById(id);
         room.setAvailability(availability);

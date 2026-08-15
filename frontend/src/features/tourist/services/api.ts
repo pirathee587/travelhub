@@ -318,18 +318,11 @@ export const api = {
         }).then(handleResponse);
     },
 
-    // ── Aggregated endpoints ────────────────────────────────────────────────
+    // ── Tourist Portal API Aggregators ───────────────────────────────────────
 
     /**
      * GET /api/tourist/overview?userId=X
-     *
-     * Aggregated Overview endpoint — replaces 4 separate calls:
-     *   - GET /api/tourist/stats
-     *   - GET /api/tourist/trips
-     *   - GET /api/tourist/documents
-     *   - GET /api/tourist/recommendations
-     *
-     * Returns: { stats, trips, documents, recommendations }
+     * Combines stats + trips + documents + recommendations into 1 request.
      */
     getTouristOverview: (userId: string | number) =>
         fetch(`${BASE_URL}/tourist/overview?userId=${userId}`)
@@ -340,4 +333,35 @@ export const api = {
                 documents: [],
                 recommendations: [],
             })),
+
+    /**
+     * GET /api/tourist/explore-data?userId=X
+     * Combines packages + recommendations into 1 request.
+     */
+    getTouristExploreData: (userId?: string | number) =>
+        fetch(`${BASE_URL}/tourist/explore-data${userId ? `?userId=${userId}` : ""}`)
+            .then(handleResponse)
+            .catch(() => ({
+                packages: [],
+                recommendations: [],
+            })),
+
+    /**
+     * GET /api/tourist/packages/{id}/page-data
+     * Combines package details + reviews + rating summary into 1 request.
+     */
+    getTouristPackagePageData: (id: string | number) =>
+        fetch(`${BASE_URL}/tourist/packages/${id}/page-data`)
+            .then(handleResponse)
+            .catch(() => null),
+
+    /**
+     * GET /api/tourist/hotels/{id}/page-data
+     * Combines hotel details + images + rooms + reviews + rating summary into 1 request.
+     */
+    getTouristHotelPageData: (id: string | number) =>
+        fetch(`${BASE_URL}/tourist/hotels/${id}/page-data`)
+            .then(handleResponse)
+            .catch(() => null),
 };
+

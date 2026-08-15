@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
@@ -20,6 +21,7 @@ public class RecommendationService {
     private final BookingRepository bookingRepository;
     private final PackageService packageService;
 
+    @Cacheable(value = "touristRecommendations", key = "#userId")
     public List<PackageResponse> getRecommendations(Long userId) {
 
         // Step 1 — Get user's completed bookings

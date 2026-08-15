@@ -39,8 +39,10 @@ import {
 import { Avatar, AvatarFallback } from "@/components/common/ui/avatar";
 import { useEffect, useState, useMemo, useCallback, useRef } from "react";
 import { cn } from "@/features/tourist/services/utils";
-import { useHotelById, useHotelReviews, useHotelRating, useHotelRooms, useHotelImages } from "@/features/tourist/hooks/useApi";
+import { useTouristHotelPageData } from "@/features/tourist/hooks/useApi";
 import { HotelDetailSkeleton } from "@/components/common/ui/skeletons";
+import { ImageWithSkeleton } from "@/components/common/ui/ImageWithSkeleton";
+import { RoomCard } from "@/features/tourist/components/dashboard/RoomCard";
 import { EditReviewDialog } from "@/features/tourist/components/dashboard/EditReviewDialog";
 import { DeleteConfirmDialog } from "@/features/tourist/components/dashboard/DeleteConfirmDialog";
 import { useToast } from "@/hooks/use-toast";
@@ -68,12 +70,15 @@ const HotelDetails = () => {
     const touchStartX = useRef(null);
     const touchEndX = useRef(null);
 
-    // SWR hooks — parallel cached fetching
-    const { data: hotel, isLoading: hotelLoading } = useHotelById(id);
-    const { data: reviews = [], mutate: mutateReviews } = useHotelReviews(id);
-    const { data: ratingInfo = { averageRating: 0, reviewCount: 0 } } = useHotelRating(id);
-    const { data: rooms = [], isLoading: roomsLoading } = useHotelRooms(id);
-    const { data: hotelImages = [] } = useHotelImages(id); // all images from hotel_images table
+    // Single aggregated SWR hook (Hotel Details: 5 requests -> 1 request)
+    const { data: pageData, isLoading: pageDataLoading, mutate: mutateReviews } = useTouristHotelPageData(id);
+    const hotel = pageData?.hotel ?? null;
+    const reviews = pageData?.reviews ?? [];
+    const ratingInfo = pageData?.ratingInfo ?? { averageRating: 0, reviewCount: 0 };
+    const rooms = pageData?.rooms ?? [];
+    const hotelImages = pageData?.images ?? (hotel?.images ?? []);
+    const hotelLoading = pageDataLoading;
+    const roomsLoading = pageDataLoading;
 
     const isSelectionMode = searchParams.get("mode") === "select";
     const preferenceNumber = searchParams.get("preference");
@@ -322,11 +327,10 @@ const HotelDetails = () => {
                             onClick={() => openLightbox(0)}
                         >
                             {galleryImages[0] ? (
-                                <img
+                                <ImageWithSkeleton
                                     src={galleryImages[0]}
                                     alt={`${hotel.hotelName} main view`}
-                                    className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-                                    loading="eager"
+                                    className="transition-transform duration-700 group-hover:scale-105"
                                 />
                             ) : (
                                 <div className="w-full h-full flex flex-col items-center justify-center text-muted-foreground/40 bg-muted/20 gap-2">
@@ -351,11 +355,10 @@ const HotelDetails = () => {
                                     >
                                     {img ? (
                                         <>
-                                            <img
+                                            <ImageWithSkeleton
                                                 src={img}
                                                 alt={`${hotel.hotelName} ${imageIndex + 1}`}
-                                                className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-                                                loading="lazy"
+                                                className="transition-transform duration-500 group-hover:scale-110"
                                             />
                                             <div className="absolute inset-0 bg-gradient-to-t from-black/25 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                                         </>

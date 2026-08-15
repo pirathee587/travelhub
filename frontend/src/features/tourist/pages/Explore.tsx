@@ -26,7 +26,7 @@ import {
     X,
 } from "lucide-react";
 import { cn } from "@/features/tourist/services/utils";
-import { useAllPackages, useRecommendations } from "@/features/tourist/hooks/useApi";
+import { useTouristExploreData } from "@/features/tourist/hooks/useApi";
 import { CardGridSkeleton, RecommendationSkeleton } from "@/components/common/ui/skeletons";
 import { defaultUserId } from "@/features/tourist/services/userHelpers";
 
@@ -54,9 +54,12 @@ const Explore = () => {
     const [selectedDistrict, setSelectedDistrict] = useState("all");
     const [sortBy, setSortBy] = useState("rating");
 
-    // SWR hooks — cached, deduplicated, background revalidated
-    const { data: allPackages = [], isLoading: packagesLoading } = useAllPackages();
-    const { data: trendingPackages = [], isLoading: trendingLoading } = useRecommendations(defaultUserId());
+    // Single aggregated SWR hook (Explore Page: 2 requests -> 1 request)
+    const { data: exploreData, isLoading: exploreLoading } = useTouristExploreData(defaultUserId());
+    const allPackages = exploreData?.packages ?? [];
+    const trendingPackages = exploreData?.recommendations ?? [];
+    const packagesLoading = exploreLoading;
+    const trendingLoading = exploreLoading;
 
     // Scroll to "All Packages" section if requested via hash or location state
     useEffect(() => {
