@@ -48,6 +48,7 @@ const COUNTRIES = [
   "Zambia", "Zimbabwe"
 ];
 import { defaultUserId } from "@/features/tourist/services/userHelpers";
+import { ChangePasswordCard } from "@/components/common/ChangePasswordCard";
 import { mutate } from "swr";
 
 
@@ -378,15 +379,10 @@ const SettingsPage = () => {
                                 <ChevronRight className="h-5 w-5 text-muted-foreground group-hover:text-primary transition-all" />
                             </CardContent>
                         </Card>
-                        <Card className="border-border hover:border-primary/20 transition-colors cursor-pointer group">
-                            <CardContent className="p-6 flex items-center justify-between">
-                                <div className="space-y-1">
-                                    <p className="font-semibold group-hover:text-primary transition-colors">Password &amp; Security</p>
-                                    <p className="text-sm text-muted-foreground">Update your security credentials</p>
-                                </div>
-                                <ChevronRight className="h-5 w-5 text-muted-foreground group-hover:text-primary transition-all" />
-                            </CardContent>
-                        </Card>
+                {/* Security & Password Section */}
+                <section className="pt-6">
+                    <ChangePasswordCard />
+                </section>
                     </div>
 
                     {/* Currency Preference */}

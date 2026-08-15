@@ -5,6 +5,7 @@ import { ArrowLeft, ImagePlus, X, Loader2 } from "lucide-react";
 import { z } from "zod";
 import { toast } from "sonner";
 import { AppShell } from "@/features/hotelOwner/components/AppShell";
+import { ChangePasswordCard } from "@/components/common/ChangePasswordCard";
 import {
   getInitials,
   updateProfile,
@@ -254,6 +255,10 @@ export default function SettingsPage() {
           </button>
         </div>
       </motion.form>
+
+      <div className="mt-8">
+        <ChangePasswordCard />
+      </div>
     </AppShell>
   );
 }

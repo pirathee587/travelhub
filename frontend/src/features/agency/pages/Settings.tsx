@@ -14,6 +14,7 @@ import { Switch } from '@/components/common/ui/switch';
 import { RadioGroup, RadioGroupItem } from '@/components/common/ui/radio-group';
 import { toast } from 'sonner';
 import { api } from '@/features/agency/services/api';
+import { userApi } from '@/services/userApi';
 import { useRef } from 'react';
 import { Skeleton } from '@/components/common/ui/skeleton';
 import { useCurrency } from '@/features/agency/hooks/CurrencyContext';
@@ -166,12 +167,12 @@ const Settings = () => {
     }
   };
 
-  // ── Password change ──────────────────────────────────────────
+  // ── Password change connected to backend ─────
   const handlePasswordSubmit = async () => {
-    const errors = {};
+    const errors: Record<string, string> = {};
     if (!passwords.current) errors.current = 'Current password is required';
     if (!passwords.new) errors.new = 'New password is required';
-    else if (passwords.new.length < 8) errors.new = 'New password must be at least 8 characters';
+    else if (passwords.new.length < 6) errors.new = 'New password must be at least 6 characters';
     if (!passwords.confirm) errors.confirm = 'Please confirm your new password';
     else if (passwords.new && passwords.new !== passwords.confirm) errors.confirm = 'Passwords do not match';
 
@@ -182,13 +183,15 @@ const Settings = () => {
     }
 
     try {
-      await authApi.changePassword(passwords.current, passwords.new);
-      toast.success('Password changed successfully');
+      const res = await userApi.changePassword({
+        currentPassword: passwords.current,
+        newPassword: passwords.new,
+      });
+      toast.success(res.message || 'Password changed successfully');
       setPasswords({ current: '', new: '', confirm: '' });
       setPasswordErrors({});
-    } catch (error: any) {
-      const msg = error.response?.data?.message || 'Failed to change password. Make sure current password is correct.';
-      toast.error(msg);
+    } catch (err: any) {
+      toast.error(err?.message || 'Failed to change password. Please check your current password.');
     }
   };
 
