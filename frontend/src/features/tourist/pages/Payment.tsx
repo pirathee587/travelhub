@@ -6,6 +6,7 @@ import { toast } from 'sonner';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/common/ui/card';
 import { Button } from '@/components/common/ui/button';
 import { Loader2, AlertCircle, ShieldCheck, CreditCard } from 'lucide-react';
+import { useTouristCurrency } from '@/features/tourist/hooks/TouristCurrencyContext';
 
 const Payment = () => {
   const { id } = useParams<{ id: string }>();
@@ -14,6 +15,7 @@ const Payment = () => {
   const [checkoutData, setCheckoutData] = useState<any>(null);
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const { formatPrice } = useTouristCurrency();
 
   useEffect(() => {
     if (!id) return;
@@ -88,7 +90,7 @@ const Payment = () => {
               </div>
               <div className="border-t border-border my-3 pt-3 flex justify-between items-center">
                 <span className="font-semibold text-lg">Total Amount:</span>
-                <span className="text-2xl font-bold text-primary">${booking.totalPrice?.toLocaleString()}</span>
+                <span className="text-2xl font-bold text-primary">{formatPrice(booking.totalPrice)}</span>
               </div>
             </div>
           </div>

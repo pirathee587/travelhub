@@ -31,6 +31,7 @@ import { useToast } from "@/hooks/use-toast";
 import { api } from "@/features/tourist/services/api";
 import { defaultUserId } from "@/features/tourist/services/userHelpers";
 import { useAuth } from "@/context/AuthContext";
+import { useTouristCurrency } from "@/features/tourist/hooks/TouristCurrencyContext";
 
 const getInclusionIcon = (inclusion) => {
     const lower = inclusion.toLowerCase();
@@ -79,6 +80,7 @@ const PackageDetails = () => {
     const navigate = useNavigate();
     const { toast } = useToast();
     const { user } = useAuth();
+    const { formatPrice } = useTouristCurrency();
     const [activeImage, setActiveImage] = useState(0);
     const [reviewFilter, setReviewFilter] = useState("all");
     const [selectedImage, setSelectedImage] = useState(null);
@@ -257,11 +259,11 @@ const PackageDetails = () => {
                         <div className="flex flex-col items-end gap-1 mb-4 bg-muted/30 p-3 rounded-lg border border-border/50">
                             <div className="flex justify-between w-full min-w-[150px] items-center">
                                 <span className="text-sm font-semibold text-foreground/80">Adult</span>
-                                <span className="text-lg font-bold text-primary">${pkg.basePriceAdult} <span className="text-xs text-muted-foreground font-normal">/ person</span></span>
+                                <span className="text-lg font-bold text-primary">{formatPrice(pkg.basePriceAdult)} <span className="text-xs text-muted-foreground font-normal">/ person</span></span>
                             </div>
                             <div className="flex justify-between w-full min-w-[150px] items-center">
                                 <span className="text-sm font-semibold text-foreground/80">Child</span>
-                                <span className="text-lg font-bold text-primary">${pkg.basePriceChild} <span className="text-xs text-muted-foreground font-normal">/ person</span></span>
+                                <span className="text-lg font-bold text-primary">{formatPrice(pkg.basePriceChild)} <span className="text-xs text-muted-foreground font-normal">/ person</span></span>
                             </div>
                         </div>
                         <Button
@@ -379,7 +381,7 @@ const PackageDetails = () => {
                             {pkg.basePriceAdult != null && (
                                 <div>
                                     <label className="text-sm text-muted-foreground block mb-1">Starts From (Per Adult)</label>
-                                    <p className="font-medium text-primary text-lg">${pkg.basePriceAdult}</p>
+                                    <p className="font-medium text-primary text-lg">{formatPrice(pkg.basePriceAdult)}</p>
                                 </div>
                             )}
                         </div>
@@ -543,7 +545,7 @@ const PackageDetails = () => {
                                 visibleReviews.map((review) => {
                                     const isReviewOwner = review.userId === defaultUserId();
                                     return (
-                                        <div key={review.id} className="bg-card rounded-xl p-6 border shadow-sm space-y-4">
+                                        <div key={review.id} className="bg-slate-100/80 dark:bg-slate-900/65 hover:bg-slate-200/80 dark:hover:bg-slate-900/90 transition-colors duration-200 rounded-xl p-6 border border-slate-200/60 dark:border-slate-800/80 shadow-sm space-y-4">
                                             <div className="flex justify-between items-start">
                                                 <div className="flex items-center gap-3">
                                                     <Avatar className="h-10 w-10 border border-primary/10">
@@ -595,7 +597,7 @@ const PackageDetails = () => {
                                             </div>
                                             <div className="space-y-2">
                                                 {review.title && <h4 className="font-bold text-base">{review.title}</h4>}       {/* Review Title */}
-                                                <p className="text-sm leading-relaxed text-muted-foreground italic">
+                                                <p className="text-base leading-relaxed text-muted-foreground/95 italic font-medium">
                                                     "{review.comment}"
                                                 </p>                                                                            {/* Review Comment */}
                                                 {review.imageUrls && review.imageUrls.length > 0 && (
@@ -610,6 +612,17 @@ const PackageDetails = () => {
                                                                 loading="lazy"
                                                             />
                                                         ))}
+                                                    </div>
+                                                )}
+                                                {/* ✅ Agent Reply — only shown when reply exists */}
+                                                {review.reply && review.reply.trim() !== "" && (
+                                                    <div className="mt-4 pl-4 border-l-2 border-primary/60 bg-primary/5 rounded-r-lg py-3.5 pr-3.5">
+                                                        <p className="text-sm font-bold text-primary mb-1 flex items-center gap-1">
+                                                            ↳ Agent Reply
+                                                        </p>
+                                                        <p className="text-[15px] text-foreground/90 leading-relaxed">
+                                                            {review.reply}
+                                                        </p>
                                                     </div>
                                                 )}
                                             </div>
