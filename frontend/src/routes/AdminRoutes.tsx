@@ -10,6 +10,8 @@ const AgentApprovals   = lazy(() => import('@/features/admin/pages/AgentApproval
 const AgentDetails     = lazy(() => import('@/features/admin/pages/AgentDetails'));
 const HotelApprovals   = lazy(() => import('@/features/admin/pages/HotelApprovals'));
 const HotelDetails     = lazy(() => import('@/features/admin/pages/HotelDetails'));
+const VehicleApprovals = lazy(() => import('@/features/admin/pages/VehicleApprovals'));
+const DriverApprovals  = lazy(() => import('@/features/admin/pages/DriverApprovals'));
 const PackageApprovals = lazy(() => import('@/features/admin/pages/PackageApprovals'));
 const PackageDetails   = lazy(() => import('@/features/admin/pages/PackageDetails'));
 const Payments         = lazy(() => import('@/features/admin/pages/Payments'));
@@ -38,6 +40,8 @@ export default function AdminRoutes() {
         <Route index                element={<Dashboard />} />
         <Route path="agents"        element={<AgentApprovals />} />
         <Route path="hotels"        element={<HotelApprovals />} />
+        <Route path="vehicles"      element={<VehicleApprovals />} />
+        <Route path="drivers"       element={<DriverApprovals />} />
         <Route path="packages"      element={<PackageApprovals />} />
         <Route path="payments"      element={<Payments />} />
         <Route path="analytics"     element={<Analytics />} />

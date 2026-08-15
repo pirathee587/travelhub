@@ -10,6 +10,7 @@ import { Input } from '@/components/common/ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/common/ui/popover';
 import { cn } from '@/utils/utils';
 import { api } from '@/features/agency/services/api';
+import { Skeleton } from '@/components/common/ui/skeleton';
 
 // Map notification type to icon + color
 const typeConfig = {
@@ -36,6 +37,7 @@ export function DashboardLayout({ children, title, subtitle, showSearch = true }
   const [notifications, setNotifications] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [profile, setProfile] = useState<any>(null);
+  const [profileLoading, setProfileLoading] = useState(true);
   const navigate = useNavigate();
 
   const unreadCount = notifications.filter(n => !n.read).length;
@@ -60,6 +62,8 @@ export function DashboardLayout({ children, title, subtitle, showSearch = true }
         setProfile(data);
       } catch (error) {
         console.error('Failed to load profile:', error);
+      } finally {
+        setProfileLoading(false);
       }
     };
     fetchProfile();
@@ -264,20 +268,33 @@ export function DashboardLayout({ children, title, subtitle, showSearch = true }
               className="flex items-center gap-3 cursor-pointer group"
               onClick={() => navigate('/agency/profile')}
             >
-              <div className="h-9 w-9 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center text-sm font-semibold text-primary-foreground shrink-0 transition-shadow group-hover:ring-2 group-hover:ring-primary/30 overflow-hidden">
-                {profile?.profileImage ? (
-                  <img src={profile.profileImage} alt={profile.agencyName || 'Agency'} className="h-full w-full object-cover" />
-                ) : (
-                  <span>{(profile?.agencyName || 'Agency').split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase()}</span>
-                )}
-              </div>
+              {profileLoading ? (
+                <Skeleton className="h-9 w-9 rounded-full shrink-0" />
+              ) : (
+                <div className="h-9 w-9 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center text-sm font-semibold text-primary-foreground shrink-0 transition-shadow group-hover:ring-2 group-hover:ring-primary/30 overflow-hidden">
+                  {profile?.profileImage ? (
+                    <img src={profile.profileImage} alt={profile.agencyName || 'Agency'} className="h-full w-full object-cover" />
+                  ) : (
+                    <span>{(profile?.agencyName || 'Agency').split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase()}</span>
+                  )}
+                </div>
+              )}
               <div className="hidden md:block text-right">
-                <p className="text-sm font-medium text-foreground leading-tight group-hover:text-primary transition-colors">
-                  {profile?.agencyName || 'Agency'}
-                </p>
-                <p className="text-xs text-muted-foreground leading-tight">
-                  {profile?.agentName || 'Harith Keshan'}
-                </p>
+                {profileLoading ? (
+                  <div className="space-y-1">
+                    <Skeleton className="h-4 w-24" />
+                    <Skeleton className="h-3 w-16 ml-auto" />
+                  </div>
+                ) : (
+                  <>
+                    <p className="text-sm font-medium text-foreground leading-tight group-hover:text-primary transition-colors">
+                      {profile?.agencyName || 'Agency'}
+                    </p>
+                    <p className="text-xs text-muted-foreground leading-tight">
+                      {profile?.agentName || 'Harith Keshan'}
+                    </p>
+                  </>
+                )}
               </div>
             </div>
           </div>

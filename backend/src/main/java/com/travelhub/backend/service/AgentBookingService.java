@@ -142,6 +142,9 @@ public class AgentBookingService {
         if (request != null && request.getVehicleId() != null) {
             Vehicle vehicle = vehicleRepository.findById(request.getVehicleId())
                     .orElseThrow(() -> new ResourceNotFoundException("Vehicle", "id", request.getVehicleId()));
+            if (!"active".equals(vehicle.getLifecycleStatus())) {
+                throw new IllegalStateException("Only active and approved vehicles can be assigned to bookings.");
+            }
             booking.setVehicle(vehicle);
             vehicle.setStatus("booked");
             vehicleRepository.save(vehicle);
@@ -164,6 +167,9 @@ public class AgentBookingService {
         if (request != null && request.getDriverId() != null) {
             Driver driver = driverRepository.findById(request.getDriverId())
                     .orElseThrow(() -> new ResourceNotFoundException("Driver", "id", request.getDriverId()));
+            if (!"active".equals(driver.getLifecycleStatus())) {
+                throw new IllegalStateException("Only active and approved drivers can be assigned to bookings.");
+            }
             booking.setDriver(driver);
             driver.setStatus("on-trip");
             driverRepository.save(driver);

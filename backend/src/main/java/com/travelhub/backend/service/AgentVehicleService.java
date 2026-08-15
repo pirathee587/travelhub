@@ -136,8 +136,8 @@ public class AgentVehicleService {
                 .vehicleImageSide(request.getVehicleImageSide())
                 .vehicleImageInside(request.getVehicleImageInside())
                 .status("available")
-                .lifecycleStatus("active")
-                .isAvailable(true)
+                .lifecycleStatus("pending")
+                .isAvailable(false)
                 .build();
 
         // Persist and return the created vehicle.
@@ -194,6 +194,11 @@ public class AgentVehicleService {
         vehicle.setVehicleImageBack(request.getVehicleImageBack());
         vehicle.setVehicleImageSide(request.getVehicleImageSide());
         vehicle.setVehicleImageInside(request.getVehicleImageInside());
+
+        if ("rejected".equals(vehicle.getLifecycleStatus())) {
+            vehicle.setLifecycleStatus("pending");
+            vehicle.setRejectionReason(null);
+        }
 
         // Still locked (not updated here): nicNumber, registration, yearOfManufacture.
 
@@ -316,6 +321,7 @@ public class AgentVehicleService {
                 .status(v.getStatus())
                 .lifecycleStatus(v.getLifecycleStatus())
                 .assignedDriverName(v.getAssignedDriverName())
+                .rejectionReason(v.getRejectionReason())
                 .build();
     }
 }

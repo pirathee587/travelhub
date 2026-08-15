@@ -59,6 +59,7 @@ public class Vehicle {
 
     @Column(nullable = true)
     private String lifecycleStatus = "active"; // active | suspended
+    private String rejectionReason;
 
     // Currently assigned driver name (for display)
     private String assignedDriverName;
