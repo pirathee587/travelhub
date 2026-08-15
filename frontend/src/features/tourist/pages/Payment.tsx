@@ -88,9 +88,23 @@ const Payment = () => {
                 <span className="text-muted-foreground">Status:</span>
                 <span className="font-medium capitalize">{booking.status}</span>
               </div>
+              {checkoutData?.outstanding_fine > 0 && (
+                <>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">Package Price:</span>
+                    <span className="font-medium">${(checkoutData.booking_price || booking.totalPrice)?.toLocaleString()}</span>
+                  </div>
+                  <div className="flex justify-between text-sm text-destructive">
+                    <span>Unpaid Cancellation Fine:</span>
+                    <span className="font-bold">+${checkoutData.outstanding_fine.toLocaleString()}</span>
+                  </div>
+                </>
+              )}
               <div className="border-t border-border my-3 pt-3 flex justify-between items-center">
-                <span className="font-semibold text-lg">Total Amount:</span>
-                <span className="text-2xl font-bold text-primary">{formatPrice(booking.totalPrice)}</span>
+                <span className="font-semibold text-lg">Total Payable Amount:</span>
+                <span className="text-2xl font-bold text-primary">
+                  {formatPrice(checkoutData?.amount || booking.totalPrice)}
+                </span>
               </div>
             </div>
           </div>

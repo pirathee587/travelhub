@@ -107,8 +107,8 @@ public class DriverService {
                 .licenseRearImage(request.getLicenseRearImage())
                 .vehicleTypes(request.getVehicleTypes())
                 .profileImage(request.getProfileImage())
-                .status("available")
-                .lifecycleStatus("active")
+                .status("off-duty")
+                .lifecycleStatus("pending")
                 .build();
 
         // Persist and return created driver.
@@ -142,7 +142,25 @@ public class DriverService {
         driver.setAddressLine2(request.getAddressLine2());
         driver.setVehicleTypes(request.getVehicleTypes());
 
-        // Still locked (not updated here): nic, nicImages, licenseNumber, licenseImages.
+        if (request.getNicFrontImage() != null) {
+            driver.setNicFrontImage(request.getNicFrontImage());
+        }
+        if (request.getNicRearImage() != null) {
+            driver.setNicRearImage(request.getNicRearImage());
+        }
+        if (request.getLicenseFrontImage() != null) {
+            driver.setLicenseFrontImage(request.getLicenseFrontImage());
+        }
+        if (request.getLicenseRearImage() != null) {
+            driver.setLicenseRearImage(request.getLicenseRearImage());
+        }
+
+        if ("rejected".equals(driver.getLifecycleStatus())) {
+            driver.setLifecycleStatus("pending");
+            driver.setRejectionReason(null);
+        }
+
+        // Still locked (not updated here): nic, licenseNumber.
 
         // Persist and return updated driver.
         return toResponse(driverRepository.save(driver));
@@ -230,6 +248,11 @@ public class DriverService {
                 .rating(d.getRating())
                 .profileImage(d.getProfileImage())
                 .assignedVehicle(d.getAssignedVehicle())
+                .nicFrontImage(d.getNicFrontImage())
+                .nicRearImage(d.getNicRearImage())
+                .licenseFrontImage(d.getLicenseFrontImage())
+                .licenseRearImage(d.getLicenseRearImage())
+                .rejectionReason(d.getRejectionReason())
                 .build();
     }
 }

@@ -9,4 +9,6 @@ import java.util.Map;
 public class SettingsResponse {
     private Map<String, Boolean> notificationPreferences;
     private String currency;
+    private Integer freeCancellationDays;
+    private Double cancellationFeePercent;
 }

@@ -63,6 +63,7 @@ public class Driver {
 
     @Column(nullable = false)
     private String lifecycleStatus = "active"; // active | suspended
+    private String rejectionReason;
 
     // Stats
     private Double rating;

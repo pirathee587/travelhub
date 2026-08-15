@@ -81,12 +81,23 @@ export function TripCard({ trip, onClick, onReview, onHotelReview }: { trip: any
                         </div>
                     </div>
                 </div>
-                <Badge
-                    variant="outline"
-                    className={cn("absolute top-3 right-3 border", status.className)}
-                >
-                    {status.label}  {/*Status Badge of the trip*/}
-                </Badge>
+                <div className="absolute top-3 right-3 flex flex-col items-end gap-1">
+                    <Badge
+                        variant="outline"
+                        className={cn("border", status.className)}
+                    >
+                        {status.label}
+                    </Badge>
+                    {trip.paymentStatus === "PAID" ? (
+                        <Badge variant="outline" className="bg-emerald-500 text-white font-bold border-emerald-600 shadow-sm">
+                            PAID
+                        </Badge>
+                    ) : trip.status?.toLowerCase() === "confirmed" ? (
+                        <Badge variant="outline" className="bg-amber-500 text-white font-bold border-amber-600 shadow-sm">
+                            UNPAID
+                        </Badge>
+                    ) : null}
+                </div>
             </div>
 
             {/* Content */}
@@ -111,7 +122,7 @@ export function TripCard({ trip, onClick, onReview, onHotelReview }: { trip: any
                 <div className="flex items-center justify-between pt-2 border-t border-border mt-3">
                     <span className="text-lg font-semibold text-primary">{formatPrice(trip.totalPrice || trip.price || 0)}</span>     {/*Price of the trip*/}
                     <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
-                        {trip.status?.toLowerCase() === "confirmed" && paymentId && (
+                        {(trip.status?.toLowerCase() === "confirmed" || trip.status?.toLowerCase() === "in_progress") && trip.paymentStatus !== "PAID" && paymentId && (
                             <Button
                                 size="sm"
                                 className="h-8 text-xs font-bold gap-1 shadow-sm"
@@ -122,6 +133,19 @@ export function TripCard({ trip, onClick, onReview, onHotelReview }: { trip: any
                             >
                                 <CreditCard className="h-3 w-3" />
                                 Pay Now
+                            </Button>
+                        )}
+                        {(trip.status?.toLowerCase() === "pending" || (trip.status?.toLowerCase() === "confirmed" && trip.paymentStatus !== "PAID")) && onCancel && (
+                            <Button
+                                size="sm"
+                                variant="outline"
+                                className="h-8 text-xs text-destructive hover:bg-destructive hover:text-white border-destructive/30"
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    onCancel();
+                                }}
+                            >
+                                Cancel
                             </Button>
                         )}
                         {trip.status === "completed" && (

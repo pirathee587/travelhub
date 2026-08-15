@@ -67,9 +67,19 @@ public class AgentReviewService {
             packageId = r.getBooking().getPkg().getId();
         }
 
+        String customerName = "Anonymous";
+        if (r.getUser() != null) {
+            if (r.getUser().getName() != null && !r.getUser().getName().trim().isEmpty()) {
+                customerName = r.getUser().getName().trim();
+            } else if (r.getUser().getEmail() != null) {
+                String email = r.getUser().getEmail();
+                customerName = email.contains("@") ? email.split("@")[0] : email;
+            }
+        }
+
         return ReviewResponse.builder()
                 .id(r.getId())
-                .customerName(r.getUser() != null ? r.getUser().getEmail() : "Anonymous")
+                .customerName(customerName)
                 .rating(r.getRating())
                 .comment(r.getComment())
                 .date(r.getReviewDate() != null ? r.getReviewDate().toLocalDate().toString() : null)

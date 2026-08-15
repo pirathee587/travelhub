@@ -30,4 +30,10 @@ public class AgentSettings {
     private Boolean notifyPromoUpdates = false;
 
     private String currency = "USD";
+
+    @Builder.Default
+    private Integer freeCancellationDays = 2;
+
+    @Builder.Default
+    private Double cancellationFeePercent = 10.0;
 }

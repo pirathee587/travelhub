@@ -83,8 +83,11 @@ const Settings = () => {
     return initial;
   });
   const [currency, setCurrency] = useState('USD');
+  const [freeCancellationDays, setFreeCancellationDays] = useState(2);
+  const [cancellationFeePercent, setCancellationFeePercent] = useState(10);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [savingPolicy, setSavingPolicy] = useState(false);
 
   /* --- SECURITY / PASSWORD STATE --- */
   const [passwords, setPasswords] = useState({ current: '', new: '', confirm: '' });
@@ -117,6 +120,12 @@ const Settings = () => {
         if (settingsData?.currency) {
           setCurrency(settingsData.currency);
         }
+        if (settingsData?.freeCancellationDays !== undefined) {
+          setFreeCancellationDays(settingsData.freeCancellationDays);
+        }
+        if (settingsData?.cancellationFeePercent !== undefined) {
+          setCancellationFeePercent(settingsData.cancellationFeePercent);
+        }
         if (profileData) {
           setFullProfile(profileData);
           setTempNicImage(profileData.nicImage || null);
@@ -133,6 +142,21 @@ const Settings = () => {
     };
     fetchSettings();
   }, []);
+
+  const handlePolicySave = async () => {
+    setSavingPolicy(true);
+    try {
+      await api.updateSettings({
+        freeCancellationDays: Number(freeCancellationDays),
+        cancellationFeePercent: Number(cancellationFeePercent),
+      });
+      toast.success('Cancellation policy saved successfully');
+    } catch (error) {
+      toast.error('Failed to save cancellation policy');
+    } finally {
+      setSavingPolicy(false);
+    }
+  };
 
   // ── Save notification preferences ─────────────────────────
   const handleNotificationSave = async () => {
@@ -349,6 +373,57 @@ const Settings = () => {
             <Button onClick={handleContactSave} className="gap-2" disabled={savingContact || loading}>
               <Save className="h-4 w-4" />
               {savingContact ? 'Saving...' : 'Save Mobile Numbers'}
+            </Button>
+          </div>
+        </div>
+
+        {/* 1.5. CANCELLATION & REFUND POLICY SECTION */}
+        <div className="rounded-xl border border-border bg-card p-6">
+          <div className="flex items-center gap-3 mb-1">
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
+              <ShieldCheck className="h-5 w-5 text-primary" />
+            </div>
+            <div>
+              <h3 className="text-lg font-semibold text-foreground">Cancellation & Refund Policy</h3>
+              <p className="text-sm text-muted-foreground">Configure agency default cancellation deadline and fee percentage</p>
+            </div>
+          </div>
+
+          <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4 max-w-xl">
+            <div className="space-y-2">
+              <Label htmlFor="free-cancellation-days">Free Cancellation Window (Days)</Label>
+              <Input
+                id="free-cancellation-days"
+                type="number"
+                min="0"
+                max="30"
+                value={freeCancellationDays}
+                onChange={e => setFreeCancellationDays(Number(e.target.value))}
+                placeholder="e.g. 2"
+              />
+              <p className="text-xs text-muted-foreground">Number of days before trip start date that cancellations are free</p>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="cancellation-fee-percent">Late Cancellation Fee (%)</Label>
+              <Input
+                id="cancellation-fee-percent"
+                type="number"
+                min="0"
+                max="100"
+                step="0.5"
+                value={cancellationFeePercent}
+                onChange={e => setCancellationFeePercent(Number(e.target.value))}
+                placeholder="e.g. 10"
+              />
+              <p className="text-xs text-muted-foreground">Percentage deducted from refund if cancelled after the free window</p>
+            </div>
+          </div>
+
+          <div className="mt-6 flex justify-end border-t border-border pt-4">
+            <Button onClick={handlePolicySave} className="gap-2" disabled={savingPolicy || loading}>
+              <Save className="h-4 w-4" />
+              {savingPolicy ? 'Saving...' : 'Save Policy Settings'}
             </Button>
           </div>
         </div>

@@ -241,7 +241,7 @@ const Refunds = ({ embedded = false }: { embedded?: boolean }) => {
                   <p className="font-semibold text-sm">{selectedRequest.touristName}</p>
                 </div>
                 <div>
-                  <p className="text-xs text-muted-foreground">Refund Amount</p>
+                  <p className="text-xs text-muted-foreground">Original Paid Amount</p>
                   <p className="font-bold text-sm text-primary">${selectedRequest.amount.toLocaleString()}</p>
                 </div>
                 <div>
@@ -252,6 +252,18 @@ const Refunds = ({ embedded = false }: { embedded?: boolean }) => {
                   <p className="text-xs text-muted-foreground">Package</p>
                   <p className="font-semibold text-sm truncate">{selectedRequest.packageName}</p>
                 </div>
+                {selectedRequest.cancellationFee !== undefined && selectedRequest.cancellationFee !== null && (
+                  <div>
+                    <p className="text-xs text-muted-foreground">Cancellation Fee</p>
+                    <p className="font-bold text-sm text-destructive">${selectedRequest.cancellationFee.toLocaleString()}</p>
+                  </div>
+                )}
+                {selectedRequest.netRefundAmount !== undefined && selectedRequest.netRefundAmount !== null && (
+                  <div>
+                    <p className="text-xs text-muted-foreground">Net Payout to Bank</p>
+                    <p className="font-bold text-sm text-emerald-400">${selectedRequest.netRefundAmount.toLocaleString()}</p>
+                  </div>
+                )}
               </div>
 
               {/* Tourist Bank Account Info */}

@@ -13,6 +13,7 @@ public interface DriverRepository extends JpaRepository<Driver, Long> {
 
     // Get drivers by agent and lifecycle status (active/suspended)
     List<Driver> findByAgentIdAndLifecycleStatus(Long agentId, String lifecycleStatus);
+    List<Driver> findByLifecycleStatus(String lifecycleStatus);
 
     // Get drivers by agent and status (available/on-trip/off-duty)
     List<Driver> findByAgentIdAndStatus(Long agentId, String status);

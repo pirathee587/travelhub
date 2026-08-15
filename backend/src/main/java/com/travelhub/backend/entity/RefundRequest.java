@@ -46,6 +46,12 @@ public class RefundRequest {
     @Column(name = "refund_slip_url")
     private String refundSlipUrl;
 
+    @Column(name = "cancellation_fee")
+    private Double cancellationFee;
+
+    @Column(name = "net_refund_amount")
+    private Double netRefundAmount;
+
     @Column(nullable = false)
     private String status; // PENDING, APPROVED, REJECTED
 

@@ -24,4 +24,9 @@ public class DriverResponse {
     private Double rating;
     private String profileImage;
     private String assignedVehicle;
+    private String nicFrontImage;
+    private String nicRearImage;
+    private String licenseFrontImage;
+    private String licenseRearImage;
+    private String rejectionReason;
 }

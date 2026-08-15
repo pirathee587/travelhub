@@ -10,7 +10,9 @@ import {
   CreditCard,
   BarChart3,
   Settings,
-  LogOut
+  LogOut,
+  Car,
+  UserCheck
 } from 'lucide-react'
 import { useModal } from './ModalContext'
 
@@ -90,6 +92,8 @@ export default function Sidebar() {
         <MenuItem icon={<LayoutDashboard size={24} />} label="Dashboard"  to="/admin"         />
         <MenuItem icon={<Users size={24} />}           label="Agency"     to="/admin/agents"   />
         <MenuItem icon={<Hotel size={24} />}           label="Hotels"     to="/admin/hotels"   />
+        <MenuItem icon={<Car size={24} />}             label="Vehicles"   to="/admin/vehicles" />
+        <MenuItem icon={<UserCheck size={24} />}       label="Drivers"    to="/admin/drivers"  />
         <MenuItem icon={<Package size={24} />}         label="Packages"   to="/admin/packages" />
         <MenuItem icon={<CreditCard size={24} />}      label="Payments"   to="/admin/payments" />
         <MenuItem icon={<BarChart3 size={24} />}       label="Analytics"  to="/admin/analytics"/>

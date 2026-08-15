@@ -31,4 +31,5 @@ public class VehicleResponse {
     private String status;
     private String lifecycleStatus;
     private String assignedDriverName;
+    private String rejectionReason;
 }

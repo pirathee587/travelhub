@@ -98,10 +98,16 @@ public class AgentAnalyticsService {
                 .findByAgentId(realAgentId).stream()
                 .limit(5)
                 .map(d -> {
+                    long trips = filtered.stream()
+                            .filter(b -> b.getDriver() != null &&
+                                    b.getDriver().getId().equals(d.getId()) &&
+                                    "completed".equalsIgnoreCase(b.getStatus()))
+                            .count();
                     Map<String, Object> m = new LinkedHashMap<>();
                     m.put("name", d.getFirstName() + " " + (d.getLastName() != null ? d.getLastName() : ""));
                     m.put("rating", d.getRating() != null ? d.getRating() : 0.0);
                     m.put("status", d.getStatus());
+                    m.put("trips", trips);
                     return m;
                 })
                 .collect(Collectors.toList());

@@ -112,12 +112,13 @@ const SectionHeader = ({ icon: Icon, title, subtitle }: { icon: any; title: stri
   </div>
 );
 
-const FormField = ({ label, required, children, className }: { label: string; required?: boolean; children: React.ReactNode; className?: string }) => (
+const FormField = ({ label, required, children, className, error }: { label: string; required?: boolean; children: React.ReactNode; className?: string; error?: string }) => (
   <div className={cn('flex flex-col gap-1.5', className)}>
     <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
       {label}{required && <span className="text-destructive ml-1">*</span>}
     </Label>
     {children}
+    {error && <span className="text-xs font-medium text-destructive mt-0.5 animate-in fade-in slide-in-from-top-1 duration-150">{error}</span>}
   </div>
 );
 
@@ -140,11 +141,17 @@ export function CreatePackageModal({ open, onClose, editData = null, onSave, onC
   const [images, setImages] = useState<any[]>([]);
   const [days, setDays] = useState<any[]>([]);
 
+  // Validation States
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [dayErrors, setDayErrors] = useState<Record<string | number, Record<string, string>>>({});
+
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
+    setErrors({});
+    setDayErrors({});
     if (open && editData) {
       setBasicInfo(pkgToFormState(editData));
       setImages(pkgToImages(editData.images, editData.coverImageUrl));
@@ -158,7 +165,16 @@ export function CreatePackageModal({ open, onClose, editData = null, onSave, onC
     }
   }, [open, editData]);
 
-  const updateBasic = (key: string, val: any) => setBasicInfo((prev: any) => ({ ...prev, [key]: val }));
+  const updateBasic = (key: string, val: any) => {
+    setBasicInfo((prev: any) => ({ ...prev, [key]: val }));
+    if (errors[key]) {
+      setErrors((prev: any) => {
+        const copy = { ...prev };
+        delete copy[key];
+        return copy;
+      });
+    }
+  };
 
   const toggleInclusion = (inc: string) => {
     setInclusions(prev => prev.includes(inc) ? prev.filter(i => i !== inc) : [...prev, inc]);
@@ -186,12 +202,70 @@ export function CreatePackageModal({ open, onClose, editData = null, onSave, onC
 
   // ── Days & Activities ────────────────────────────────────────────────────
   const addDay = () => setDays(prev => [...prev, { id: Date.now(), title: '', description: '', district: '', hotelId: null, hotelNameCustom: '', activities: [{ description: '', imageUrl: null, isUploading: false }] }]);
-  const removeDay = (id: any) => setDays(prev => prev.filter(d => d.id !== id));
-  const updateDay = (id: any, key: string, val: any) => setDays((prev: any[]) => prev.map(d => d.id === id ? { ...d, [key]: val } : d));
+  
+  const removeDay = (id: any) => {
+    setDays(prev => prev.filter(d => d.id !== id));
+    if (dayErrors[id]) {
+      setDayErrors((prev: any) => {
+        const copy = { ...prev };
+        delete copy[id];
+        return copy;
+      });
+    }
+  };
+
+  const updateDay = (id: any, key: string, val: any) => {
+    setDays((prev: any[]) => prev.map(d => d.id === id ? { ...d, [key]: val } : d));
+    if (dayErrors[id]?.[key]) {
+      setDayErrors((prev: any) => {
+        const dayErrCopy = { ...prev[id] };
+        delete dayErrCopy[key];
+        const newDayErrors = { ...prev };
+        if (Object.keys(dayErrCopy).length === 0) {
+          delete newDayErrors[id];
+        } else {
+          newDayErrors[id] = dayErrCopy;
+        }
+        return newDayErrors;
+      });
+    }
+  };
 
   const addActivity = (dayId: any) => setDays(prev => prev.map(d => d.id === dayId ? { ...d, activities: [...d.activities, { description: '', imageUrl: null, isUploading: false }] } : d));
-  const updateActivity = (dayId: any, idx: number, key: string, val: any) => setDays((prev: any[]) => prev.map(d => d.id === dayId ? { ...d, activities: d.activities.map((a: any, i: number) => i === idx ? { ...a, [key]: val } : a) } : d));
-  const removeActivity = (dayId: any, idx: number) => setDays((prev: any[]) => prev.map(d => d.id === dayId ? { ...d, activities: d.activities.filter((_: any, i: number) => i !== idx) } : d));
+
+  const updateActivity = (dayId: any, idx: number, key: string, val: any) => {
+    setDays((prev: any[]) => prev.map(d => d.id === dayId ? { ...d, activities: d.activities.map((a: any, i: number) => i === idx ? { ...a, [key]: val } : a) } : d));
+    if (key === 'description' && dayErrors[dayId]?.[`activity_${idx}`]) {
+      setDayErrors((prev: any) => {
+        const dayErrCopy = { ...prev[dayId] };
+        delete dayErrCopy[`activity_${idx}`];
+        const newDayErrors = { ...prev };
+        if (Object.keys(dayErrCopy).length === 0) {
+          delete newDayErrors[dayId];
+        } else {
+          newDayErrors[dayId] = dayErrCopy;
+        }
+        return newDayErrors;
+      });
+    }
+  };
+
+  const removeActivity = (dayId: any, idx: number) => {
+    setDays((prev: any[]) => prev.map(d => d.id === dayId ? { ...d, activities: d.activities.filter((_: any, i: number) => i !== idx) } : d));
+    if (dayErrors[dayId]?.[`activity_${idx}`]) {
+      setDayErrors((prev: any) => {
+        const dayErrCopy = { ...prev[dayId] };
+        delete dayErrCopy[`activity_${idx}`];
+        const newDayErrors = { ...prev };
+        if (Object.keys(dayErrCopy).length === 0) {
+          delete newDayErrors[dayId];
+        } else {
+          newDayErrors[dayId] = dayErrCopy;
+        }
+        return newDayErrors;
+      });
+    }
+  };
 
   const handleActivityImageUpload = async (dayId: any, actIdx: number, file: any) => {
     if (!file) return;
@@ -239,10 +313,137 @@ export function CreatePackageModal({ open, onClose, editData = null, onSave, onC
     setHotelSearchResults((prev: any) => ({ ...prev, [dayId]: [] }));
   };
 
+  // ── Validation Helper ──────────────────────────────────────────────────────
+  const validateForm = () => {
+    const newErrors: any = {};
+    const newDayErrors: Record<string | number, any> = {};
+    let isValid = true;
+
+    // Package Name Validation
+    if (!basicInfo.packageName?.trim()) {
+      newErrors.packageName = 'Package name is required';
+      isValid = false;
+    } else if (basicInfo.packageName.length < 3 || basicInfo.packageName.length > 200) {
+      newErrors.packageName = 'Name must be 3–200 characters';
+      isValid = false;
+    }
+
+    // Package Type Validation
+    if (!basicInfo.packageType) {
+      newErrors.packageType = 'Package type is required';
+      isValid = false;
+    }
+
+    // Category Validation
+    if (!basicInfo.category) {
+      newErrors.category = 'Category is required';
+      isValid = false;
+    }
+
+    // District Validation
+    if (!basicInfo.district) {
+      newErrors.district = 'District is required';
+      isValid = false;
+    }
+
+    // Start Place Validation
+    if (!basicInfo.startPlace?.trim()) {
+      newErrors.startPlace = 'Start place is required';
+      isValid = false;
+    } else if (basicInfo.startPlace.length > 200) {
+      newErrors.startPlace = 'Start place must not exceed 200 characters';
+      isValid = false;
+    }
+
+    // End Place Validation
+    if (!basicInfo.endPlace?.trim()) {
+      newErrors.endPlace = 'End place is required';
+      isValid = false;
+    } else if (basicInfo.endPlace.length > 200) {
+      newErrors.endPlace = 'End place must not exceed 200 characters';
+      isValid = false;
+    }
+
+    // Duration Validation
+    if (!basicInfo.duration?.trim()) {
+      newErrors.duration = 'Duration is required';
+      isValid = false;
+    } else if (basicInfo.duration.length > 50) {
+      newErrors.duration = 'Duration must not exceed 50 characters';
+      isValid = false;
+    }
+
+    // Base Price Adult Validation
+    const adultPrice = parseFloat(basicInfo.basePriceAdult);
+    if (basicInfo.basePriceAdult === '' || isNaN(adultPrice)) {
+      newErrors.basePriceAdult = 'Base price (Adult) is required';
+      isValid = false;
+    } else if (adultPrice < 0) {
+      newErrors.basePriceAdult = 'Price must be positive or zero';
+      isValid = false;
+    }
+
+    // Base Price Child Validation
+    const childPrice = parseFloat(basicInfo.basePriceChild);
+    if (basicInfo.basePriceChild === '' || isNaN(childPrice)) {
+      newErrors.basePriceChild = 'Base price (Child) is required';
+      isValid = false;
+    } else if (childPrice < 0) {
+      newErrors.basePriceChild = 'Price must be positive or zero';
+      isValid = false;
+    }
+
+    // Description Validation
+    if (basicInfo.description && basicInfo.description.length > 2000) {
+      newErrors.description = 'Description must not exceed 2000 characters';
+      isValid = false;
+    }
+
+    // Days Validation
+    days.forEach((day) => {
+      const dayErr: any = {};
+      if (!day.title?.trim()) {
+        dayErr.title = 'Day title is required';
+        isValid = false;
+      } else if (day.title.length > 200) {
+        dayErr.title = 'Title must not exceed 200 characters';
+        isValid = false;
+      }
+
+      if (day.description && day.description.length > 2000) {
+        dayErr.description = 'Description must not exceed 2000 characters';
+        isValid = false;
+      }
+
+      if (basicInfo.packageType === 'MULTI_DISTRICT' && !day.district) {
+        dayErr.district = 'District is required';
+        isValid = false;
+      }
+
+      // Check activities
+      if (day.activities && day.activities.length > 0) {
+        day.activities.forEach((act: any, actIdx: number) => {
+          if (act.imageUrl && !act.description?.trim()) {
+            dayErr[`activity_${actIdx}`] = 'Description is required when an image is uploaded';
+            isValid = false;
+          }
+        });
+      }
+
+      if (Object.keys(dayErr).length > 0) {
+        newDayErrors[day.id] = dayErr;
+      }
+    });
+
+    setErrors(newErrors);
+    setDayErrors(newDayErrors);
+    return isValid;
+  };
+
   // ── Submit ────────────────────────────────────────────────────────────────
   const handleSubmit = async () => {
-    if (!basicInfo.packageName || !basicInfo.category || !basicInfo.district) {
-      toast.error("Please fill in all required basic fields.");
+    if (!validateForm()) {
+      toast.error("Please correct the errors in the form before submitting.");
       return;
     }
 
@@ -334,11 +535,11 @@ export function CreatePackageModal({ open, onClose, editData = null, onSave, onC
           <section>
             <SectionHeader icon={Tag} title="Basic Information" subtitle="Core details about the package" />
             <div className="grid grid-cols-2 gap-4">
-              <FormField label="Package Name" required className="col-span-2">
+              <FormField label="Package Name" required className="col-span-2" error={errors.packageName}>
                 <Input placeholder="e.g. Cultural Triangle Explorer" className={styledInput} value={basicInfo.packageName} onChange={(e: any) => updateBasic('packageName', e.target.value)} />
               </FormField>
 
-              <FormField label="Package Type" required>
+              <FormField label="Package Type" required error={errors.packageType}>
                 <Select modal={false} value={basicInfo.packageType} onValueChange={(val: any) => updateBasic('packageType', val)}>
                   <SelectTrigger><SelectValue placeholder="Select type" /></SelectTrigger>
                   <SelectContent>
@@ -348,7 +549,7 @@ export function CreatePackageModal({ open, onClose, editData = null, onSave, onC
                 </Select>
               </FormField>
 
-              <FormField label="Category" required>
+              <FormField label="Category" required error={errors.category}>
                 <Select modal={false} value={basicInfo.category} onValueChange={(val: any) => updateBasic('category', val)}>
                   <SelectTrigger><SelectValue placeholder="Select category" /></SelectTrigger>
                   <SelectContent>
@@ -357,7 +558,7 @@ export function CreatePackageModal({ open, onClose, editData = null, onSave, onC
                 </Select>
               </FormField>
 
-              <FormField label="District" required className="col-span-2">
+              <FormField label="District" required className="col-span-2" error={errors.district}>
                 <Select modal={false} value={basicInfo.district} onValueChange={(val: any) => updateBasic('district', val)}>
                   <SelectTrigger><SelectValue placeholder="Select primary district" /></SelectTrigger>
                   <SelectContent>
@@ -371,33 +572,33 @@ export function CreatePackageModal({ open, onClose, editData = null, onSave, onC
                 )}
               </FormField>
 
-              <FormField label="Start Place" required>
+              <FormField label="Start Place" required error={errors.startPlace}>
                 <Input placeholder="e.g. Colombo Airport" className={styledInput} value={basicInfo.startPlace} onChange={(e: any) => updateBasic('startPlace', e.target.value)} />
               </FormField>
 
-              <FormField label="End Place" required>
+              <FormField label="End Place" required error={errors.endPlace}>
                 <Input placeholder="e.g. Galle Fort" className={styledInput} value={basicInfo.endPlace} onChange={(e: any) => updateBasic('endPlace', e.target.value)} />
               </FormField>
 
-              <FormField label="Duration" required className="col-span-2">
+              <FormField label="Duration" required className="col-span-2" error={errors.duration}>
                 <Input placeholder="e.g. 3 Days / 2 Nights" className={styledInput} value={basicInfo.duration} onChange={(e: any) => updateBasic('duration', e.target.value)} />
               </FormField>
 
-              <FormField label="Base Price (Adult) USD" required>
+              <FormField label="Base Price (Adult) USD" required error={errors.basePriceAdult}>
                 <div className="relative">
                   <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input type="number" placeholder="120" className={cn(styledInput, 'pl-9')} value={basicInfo.basePriceAdult} onChange={(e: any) => updateBasic('basePriceAdult', e.target.value)} />
                 </div>
               </FormField>
 
-              <FormField label="Base Price (Child) USD" required>
+              <FormField label="Base Price (Child) USD" required error={errors.basePriceChild}>
                 <div className="relative">
                   <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input type="number" placeholder="70" className={cn(styledInput, 'pl-9')} value={basicInfo.basePriceChild} onChange={(e: any) => updateBasic('basePriceChild', e.target.value)} />
                 </div>
               </FormField>
 
-              <FormField label="Description" className="col-span-2">
+              <FormField label="Description" className="col-span-2" error={errors.description}>
                 <Textarea placeholder="Describe the package..." className={styledTextarea} value={basicInfo.description} onChange={(e: any) => updateBasic('description', e.target.value)} />
               </FormField>
 
@@ -491,7 +692,7 @@ export function CreatePackageModal({ open, onClose, editData = null, onSave, onC
                     {/* Hotel selection only for MULTI_DISTRICT */}
                     {basicInfo.packageType === 'MULTI_DISTRICT' && (
                       <div className="grid grid-cols-2 gap-4 bg-background/50 p-3 rounded-lg border border-border/50">
-                        <FormField label="Day District" required>
+                        <FormField label="Day District" required error={dayErrors[day.id]?.district}>
                           <Select modal={false} value={day.district} onValueChange={(val: any) => updateDay(day.id, 'district', val)}>
                             <SelectTrigger><SelectValue placeholder="Select district" /></SelectTrigger>
                             <SelectContent>
@@ -500,11 +701,11 @@ export function CreatePackageModal({ open, onClose, editData = null, onSave, onC
                           </Select>
                         </FormField>
 
-                        <FormField label="Hotel Assignment" required>
+                        <FormField label="Hotel Assignment">
                           <div className="relative">
                             <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                             <Input
-                              placeholder="Search or type custom hotel..."
+                              placeholder="Search or type custom hotel (optional)..."
                               className={cn(styledInput, 'pl-9')}
                               value={day.hotelNameCustom || hotelSearchQuery[day.id] || ''}
                               onChange={(e: any) => {
@@ -531,11 +732,11 @@ export function CreatePackageModal({ open, onClose, editData = null, onSave, onC
                       </div>
                     )}
 
-                    <FormField label="Day Title" required>
+                    <FormField label="Day Title" required error={dayErrors[day.id]?.title}>
                       <Input placeholder="e.g. Arrival & Orientation" className={styledInput} value={day.title} onChange={(e: any) => updateDay(day.id, 'title', e.target.value)} />
                     </FormField>
 
-                    <FormField label="Description">
+                    <FormField label="Description" error={dayErrors[day.id]?.description}>
                       <Textarea placeholder="Describe what happens this day..." className={styledTextarea} value={day.description} onChange={(e: any) => updateDay(day.id, 'description', e.target.value)} />
                     </FormField>
 
@@ -551,6 +752,11 @@ export function CreatePackageModal({ open, onClose, editData = null, onSave, onC
                           <div key={actIdx} className="flex gap-2 items-start bg-background p-2 rounded-md border border-border/40">
                             <div className="flex-1 space-y-2">
                               <Input placeholder="Activity description..." className={styledInput} value={act.description} onChange={(e: any) => updateActivity(day.id, actIdx, 'description', e.target.value)} />
+                              {dayErrors[day.id]?.[`activity_${actIdx}`] && (
+                                <span className="text-[11px] font-medium text-destructive mt-1 block animate-in fade-in duration-150">
+                                  {dayErrors[day.id][`activity_${actIdx}`]}
+                                </span>
+                              )}
 
                               <div className="flex items-center gap-2">
                                 {act.imageUrl ? (

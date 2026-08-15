@@ -5,9 +5,11 @@ import com.travelhub.backend.common.ResourceNotFoundException;
 import com.travelhub.backend.common.UnauthorizedException;
 import com.travelhub.backend.entity.Booking;
 import com.travelhub.backend.entity.Payment;
+import com.travelhub.backend.entity.User;
 import com.travelhub.backend.event.PaymentEvent;
 import com.travelhub.backend.repository.BookingRepository;
 import com.travelhub.backend.repository.PaymentRepository;
+import com.travelhub.backend.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
@@ -23,13 +25,16 @@ import java.util.Optional;
 public class PaymentService {
     private final PaymentRepository paymentRepository;
     private final BookingRepository bookingRepository;
+    private final UserRepository userRepository;
     private final ApplicationEventPublisher eventPublisher;
 
     public PaymentService(PaymentRepository paymentRepository,
                           BookingRepository bookingRepository,
+                          UserRepository userRepository,
                           ApplicationEventPublisher eventPublisher) {
         this.paymentRepository = paymentRepository;
         this.bookingRepository = bookingRepository;
+        this.userRepository = userRepository;
         this.eventPublisher = eventPublisher;
     }
 
@@ -61,12 +66,14 @@ public class PaymentService {
         }
 
         // Allow payment for both CONFIRMED and ACTIVE bookings
-        String status = booking.getStatus() == null ? "" : booking.getStatus().toLowerCase();
-        if ("paid".equals(status)) {
+        String paymentStatus = booking.getPaymentStatus() == null ? "UNPAID" : booking.getPaymentStatus();
+        if ("PAID".equalsIgnoreCase(paymentStatus)) {
             throw new BadRequestException("This booking has already been paid");
         }
-        if (!"active".equals(status) && !"confirmed".equals(status)) {
-            throw new BadRequestException("Payment is only available after agent approval (status: " + booking.getStatus() + ")");
+
+        String status = booking.getStatus() == null ? "" : booking.getStatus().toLowerCase();
+        if ("cancelled".equalsIgnoreCase(status)) {
+            throw new BadRequestException("Cannot pay for a cancelled booking");
         }
 
         boolean alreadyPaid = paymentRepository.findByBookingId(bookingId).stream()
@@ -80,13 +87,19 @@ public class PaymentService {
                 .filter(p -> "Pending".equalsIgnoreCase(p.getStatus()))
                 .findFirst();
 
+        double bookingPrice = booking.getTotalPrice() != null ? booking.getTotalPrice() : 0.0;
+        User user = booking.getUser();
+        double outstandingFine = (user != null && user.getOutstandingFineBalance() != null) ? user.getOutstandingFineBalance() : 0.0;
+        double amount = Math.round((bookingPrice + outstandingFine) * 100.0) / 100.0;
+
         Payment payment;
         String orderId;
-        double amount = booking.getTotalPrice();
 
         if (existingPendingPayment.isPresent()) {
             payment = existingPendingPayment.get();
             orderId = payment.getTransactionId();
+            payment.setAmount(amount);
+            paymentRepository.save(payment);
         } else {
             orderId = "ORDER-" + booking.getId() + "-" + System.currentTimeMillis();
             payment = new Payment();
@@ -107,7 +120,7 @@ public class PaymentService {
         Map<String, Object> data = new HashMap<>();
         data.put("merchant_id", merchantId);
         data.put("order_id", orderId);
-        data.put("items", "Booking for " + booking.getPkg().getPackageName());
+        data.put("items", "Booking for " + booking.getPkg().getPackageName() + (outstandingFine > 0 ? " (includes $" + outstandingFine + " fine)" : ""));
         data.put("amount", amount);
         data.put("currency", currency);
         data.put("hash", hash);
@@ -122,6 +135,8 @@ public class PaymentService {
         data.put("return_url", frontendBaseUrl + "/tourist/payment/success?bookingId=" + bookingId);
         data.put("cancel_url", frontendBaseUrl + "/tourist/payment/cancel?bookingId=" + bookingId);
         data.put("notify_url", backendBaseUrl + "/api/payments/notify");
+        data.put("booking_price", bookingPrice);
+        data.put("outstanding_fine", outstandingFine);
         return data;
     }
 
@@ -168,8 +183,19 @@ public class PaymentService {
         if (statusCode == 2) {
             payment.setStatus("Completed");
             Booking booking = payment.getBooking();
-            booking.setStatus("Paid");
+            booking.setPaymentStatus("PAID");
+            if (booking.getStatus() == null || "pending".equalsIgnoreCase(booking.getStatus()) || "paid".equalsIgnoreCase(booking.getStatus())) {
+                booking.setStatus("confirmed");
+            }
             bookingRepository.save(booking);
+
+            // Clear outstanding fine balance on user entity upon payment completion
+            if (booking.getUser() != null) {
+                User user = booking.getUser();
+                user.setOutstandingFineBalance(0.0);
+                userRepository.save(user);
+            }
+
             paymentRepository.save(payment);
             eventPublisher.publishEvent(new PaymentEvent(this, payment, "COMPLETED"));
         } else if (statusCode == 0) {

@@ -9,5 +9,7 @@ export { default as adminPaymentApi } from './adminPaymentApi';
 export { default as adminAnalyticsApi } from './adminAnalyticsApi';
 export { default as adminNotificationApi } from './adminNotificationApi';
 export { default as adminProfileApi } from './adminProfileApi';
+export { default as adminVehicleApi } from './adminVehicleApi';
+export { default as adminDriverApi } from './adminDriverApi';
 
 
