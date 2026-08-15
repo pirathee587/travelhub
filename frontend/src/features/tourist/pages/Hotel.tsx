@@ -13,7 +13,7 @@ import { Building2, MapPin, Search, ArrowLeft, SlidersHorizontal } from "lucide-
 import { useNavigate, useSearchParams } from "react-router-dom";
 
 import { useState, useMemo, useCallback, memo } from "react";
-import { useAllHotels, useHotelPriceRanges } from "@/features/tourist/hooks/useApi";
+import { useAllHotels } from "@/features/tourist/hooks/useApi";
 
 import { Button } from "@/components/common/ui/button";
 import { Badge } from "@/components/common/ui/badge";
@@ -34,10 +34,11 @@ const Hotel = () => {
     const preferenceNumber = searchParams.get("preference");
     const returnTo = searchParams.get("returnTo");
 
-    // Always fetch all hotels to allow flexible local filtering of district
+    // Fetch all hotels. The backend GET /api/hotels already includes priceFrom
+    // and priceTo computed via HotelPricingService in a single bulk DB query.
+    // Previously the frontend fired 1 + N calls (one per hotel) to compute
+    // room price ranges — that N+1 pattern is now eliminated.
     const { data: hotels = [], isLoading } = useAllHotels(null);
-    const hotelIds = useMemo(() => hotels.map((hotel) => hotel.id).filter(Boolean), [hotels]);
-    const { data: roomPriceRanges = {} } = useHotelPriceRanges(hotelIds);
 
     // Sync district param to local state, normalizing it to remove " District"
     useState(() => {
@@ -55,30 +56,9 @@ const Hotel = () => {
         );
         return Array.from(uniqueDists).sort();
     }, [hotels]);
-  
-    // Combine hotel data with price ranges from rooms
-    const hotelsWithRoomPrice = useMemo(() =>
-        hotels.map((hotel) => {
-            const roomRange = roomPriceRanges[hotel.id];
-            if (!roomRange) {
-                return {
-                    ...hotel,
-                    priceFrom: null,
-                    priceTo: null,
-                };
-            }
-
-            return {
-                ...hotel,
-                priceFrom: roomRange.priceFrom, // Minimum price among rooms
-                priceTo: roomRange.priceTo,     // Maximum price among rooms
-            };
-        }),
-        [hotels, roomPriceRanges] //Exported to TravelCard for display in hotel Price Range
-    );
 
     const filteredHotels = useMemo(() =>
-        hotelsWithRoomPrice
+        hotels
             .filter((hotel) => {
                 const matchesApproved = hotel.applicationStatus === "Approved";  //show hotels if only "Approved" from Hotel Table 
                 
@@ -111,7 +91,7 @@ const Hotel = () => {
                 if (sortBy === "rating-low") return (a.rating || 0) - (b.rating || 0);      //Sorting by rating low to high
                 return 0;
             }),
-        [hotelsWithRoomPrice, selectedDistrict, searchQuery, sortBy]
+        [hotels, selectedDistrict, searchQuery, sortBy]  // hotelsWithRoomPrice replaced with hotels directly
     );
 
     const handleHotelClick = useCallback((hotelId) => {

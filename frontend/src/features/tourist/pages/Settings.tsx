@@ -7,7 +7,7 @@ import { Label } from "@/components/common/ui/label";
 import { Card, CardContent, CardHeader, CardFooter } from "@/components/common/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/common/ui/avatar";
 import { toast } from "@/components/common/ui/use-toast";
-import { User, Mail, Camera, Save, X, Edit2, Phone, Globe, DollarSign } from "lucide-react";
+import { User, Mail, Camera, Save, X, Edit2, Phone, Globe } from "lucide-react";
 import { MyReviewsSection } from "@/features/tourist/components/dashboard/MyReviewsSection";
 import { ChevronRight } from "lucide-react";
 import { cn } from "@/features/tourist/services/utils";
@@ -488,10 +488,17 @@ const SettingsPage = () => {
                     )}
                 </Card>
 
-                {/* Preferences */}
-                <section className="space-y-4 pt-6">
-                    <h3 className="text-xl font-bold">⚙️ Preferences</h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Security and Preferences side-by-side */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start pt-6">
+                    {/* Security & Password Section */}
+                    <div className="space-y-4">
+                        <h3 className="text-xl font-bold">🔒 Security & Password</h3>
+                        <ChangePasswordCard collapsible={true} />
+                    </div>
+
+                    {/* Preferences Section */}
+                    <div className="space-y-4">
+                        <h3 className="text-xl font-bold">⚙️ Preferences</h3>
                         <Card 
                             className="border-border hover:border-primary/20 transition-colors cursor-pointer group"
                             onClick={() => navigate('/tourist/notifications')}
@@ -504,12 +511,8 @@ const SettingsPage = () => {
                                 <ChevronRight className="h-5 w-5 text-muted-foreground group-hover:text-primary transition-all" />
                             </CardContent>
                         </Card>
-                {/* Security & Password Section */}
-                <section className="pt-6">
-                    <ChangePasswordCard />
-                </section>
                     </div>
-                </section>
+                </div>
 
                 {/* Currency Preference */}
                 <section className="space-y-4 pt-6">

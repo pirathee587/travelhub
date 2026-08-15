@@ -196,3 +196,36 @@ export function useUserProfile(userId) {
         }
     );
 }
+
+// ── Aggregated Hooks ─────────────────────────────────────────────────────
+
+/**
+ * useTouristOverview
+ *
+ * Single SWR hook that replaces four separate hooks on the Overview page:
+ *   useStats()            → data.stats
+ *   useTrips()            → data.trips
+ *   useDocuments()        → data.documents
+ *   useRecommendations()  → data.recommendations
+ *
+ * Benefits:
+ * - 1 network request instead of 4 on every fresh page load
+ * - SWR deduplication + caching still applies
+ * - Partial failures handled on the backend (each sub-call is fault-tolerant)
+ */
+export function useTouristOverview(userId) {
+    return useSWR(
+        userId ? `tourist-overview-${userId}` : null,
+        () => api.getTouristOverview(userId),
+        {
+            ...defaultOptions,
+            // Provide safe fallback structure so destructuring never throws
+            fallbackData: {
+                stats: { totalTrips: 0, ongoingTrips: 0, completedTrips: 0, upcomingTrips: 0 },
+                trips: [],
+                documents: [],
+                recommendations: [],
+            },
+        }
+    );
+}

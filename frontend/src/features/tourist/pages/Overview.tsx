@@ -11,7 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/common/ui
 import { Button } from "@/components/common/ui/button";
 import { Link } from "react-router-dom";
 import { api } from "@/features/tourist/services/api";
-import { useStats, useTrips, useDocuments, useRecommendations } from "@/features/tourist/hooks/useApi";
+import { useTouristOverview } from "@/features/tourist/hooks/useApi";
 import { StatsSkeleton, RecommendationSkeleton } from "@/components/common/ui/skeletons";
 import { defaultUserId } from "@/features/tourist/services/userHelpers";
 
@@ -27,12 +27,23 @@ const Overview = () => {
     const [selectedPackageId, setSelectedPackageId] = useState(null);
     const [selectedHotelId, setSelectedHotelId] = useState(null);
 
-    // SWR hooks — parallel fetching with caching
+    // Single aggregated SWR hook — replaces 4 separate API calls:
+    //   GET /api/tourist/stats, /trips, /documents, /recommendations
+    // All four sub-calls execute in parallel on the backend.
     const userId = defaultUserId();
-    const { data: stats = { totalTrips: 0, ongoingTrips: 0, completedTrips: 0, upcomingTrips: 0 }, isLoading: statsLoading } = useStats(userId);
-    const { data: trips = [], isLoading: tripsLoading } = useTrips(userId);
-    const { data: allDocs = [] } = useDocuments(userId);
-    const { data: recommendations = [], isLoading: recsLoading } = useRecommendations(userId);
+    const { data: overview, isLoading: overviewLoading } = useTouristOverview(userId);
+
+    // Destructure the aggregated response into the same variable names
+    // used by the rest of this component — no further changes needed.
+    const stats = overview?.stats ?? { totalTrips: 0, ongoingTrips: 0, completedTrips: 0, upcomingTrips: 0 };
+    const trips = overview?.trips ?? [];
+    const allDocs = overview?.documents ?? [];
+    const recommendations = overview?.recommendations ?? [];
+
+    // Derive loading states from the single overview loading flag
+    const statsLoading = overviewLoading;
+    const tripsLoading = overviewLoading;
+    const recsLoading = overviewLoading;
 
     const recentDocs = allDocs.slice(0, 4);
 

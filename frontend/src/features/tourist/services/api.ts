@@ -317,4 +317,27 @@ export const api = {
             body: formData,
         }).then(handleResponse);
     },
+
+    // ── Aggregated endpoints ────────────────────────────────────────────────
+
+    /**
+     * GET /api/tourist/overview?userId=X
+     *
+     * Aggregated Overview endpoint — replaces 4 separate calls:
+     *   - GET /api/tourist/stats
+     *   - GET /api/tourist/trips
+     *   - GET /api/tourist/documents
+     *   - GET /api/tourist/recommendations
+     *
+     * Returns: { stats, trips, documents, recommendations }
+     */
+    getTouristOverview: (userId: string | number) =>
+        fetch(`${BASE_URL}/tourist/overview?userId=${userId}`)
+            .then(handleResponse)
+            .catch(() => ({
+                stats: { totalTrips: 0, ongoingTrips: 0, completedTrips: 0, upcomingTrips: 0 },
+                trips: [],
+                documents: [],
+                recommendations: [],
+            })),
 };
