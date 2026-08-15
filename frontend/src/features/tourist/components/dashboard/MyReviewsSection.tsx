@@ -210,7 +210,7 @@ export function MyReviewsSection() {
     if (isLoading) {
         return (
             <section className="space-y-4">
-                <h3 className="text-xl font-bold">My Reviews</h3>
+                <h3 className="text-xl font-bold">⭐ My Reviews</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {[1, 2, 3].map((i) => (
                         <Card key={i} className="h-64 bg-muted animate-pulse" />
@@ -224,7 +224,7 @@ export function MyReviewsSection() {
     if (error) {
         return (
             <section className="space-y-4">
-                <h3 className="text-xl font-bold">My Reviews</h3>
+                <h3 className="text-xl font-bold">⭐ My Reviews</h3>
                 <Card className="p-6 bg-destructive/5 border-destructive/20">
                     <p className="text-sm text-destructive">Failed to load reviews. Please try again later.</p>
                 </Card>
@@ -236,7 +236,7 @@ export function MyReviewsSection() {
     if (!reviews || reviews.length === 0) {
         return (
             <section className="space-y-4">
-                <h3 className="text-xl font-bold">My Reviews</h3>
+                <h3 className="text-xl font-bold">⭐ My Reviews</h3>
                 <Card className="p-8 text-center">
                     <p className="text-muted-foreground">You haven't posted any reviews yet.</p>
                     <p className="text-sm text-muted-foreground mt-2">
@@ -250,7 +250,7 @@ export function MyReviewsSection() {
     // Main content with package and hotel reviews
     return (
         <section className="space-y-8">
-            <h3 className="text-xl font-bold">My Reviews ({reviews.length})</h3>
+            <h3 className="text-xl font-bold">⭐ My Reviews ({reviews.length})</h3>
 
             {/* Package Reviews */}
             {packageReviews.length > 0 && (

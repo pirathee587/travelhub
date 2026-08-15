@@ -57,4 +57,11 @@ public class UserService {
         return userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User", "id", userId));
     }
+
+    public User updateProfileImage(Long userId, String imageUrl) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User", "id", userId));
+        user.setProfileImage(imageUrl);
+        return userRepository.save(user);
+    }
 }

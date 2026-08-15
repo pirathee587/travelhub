@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { DashboardLayout } from "@/features/tourist/components/dashboard/DashboardLayout";
 import { Button } from "@/components/common/ui/button";
@@ -13,6 +13,7 @@ import { ChevronRight } from "lucide-react";
 import { cn } from "@/features/tourist/services/utils";
 import { api } from "@/features/tourist/services/api";
 import { useTouristCurrency } from "@/features/tourist/hooks/TouristCurrencyContext";
+import { ImageCropperDialog } from "@/features/tourist/components/dashboard/ImageCropperDialog";
 import {
     Select,
     SelectContent,
@@ -74,6 +75,15 @@ const SettingsPage = () => {
     });
 
     const [editForm, setEditForm] = useState({ ...profile });
+    const fileInputRef = useRef<HTMLInputElement>(null);
+    const [tempImageFile, setTempImageFile] = useState<File | null>(null);
+    const [tempPreviewUrl, setTempPreviewUrl] = useState<string | null>(null);
+    const [uploading, setUploading] = useState(false);
+    
+    // States for cropping
+    const [imageToCrop, setImageToCrop] = useState<string | null>(null);
+    const [isCropOpen, setIsCropOpen] = useState(false);
+    const [originalFileName, setOriginalFileName] = useState("");
 
     // ── Load the real user profile from the backend on mount ──────────────────
     useEffect(() => {
@@ -160,12 +170,99 @@ const SettingsPage = () => {
         setIsEditing(false);
     };
 
-    const handleImageChange = () => {
-        // Placeholder — image upload will be integrated with backend image service
-        toast({
-            title: "Image Upload",
-            description: "Image upload functionality will be integrated with the backend.",
-        });
+    const handleImageChangeClick = () => {
+        fileInputRef.current?.click();
+    };
+
+    const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        if (!file.type.startsWith("image/")) {
+            toast({
+                title: "Invalid file type",
+                description: "Please select an image file (PNG, JPG, JPEG, WEBP).",
+                variant: "destructive",
+            });
+            return;
+        }
+
+        if (file.size > 5 * 1024 * 1024) {
+            toast({
+                title: "File too large",
+                description: "Profile picture must be less than 5MB.",
+                variant: "destructive",
+            });
+            return;
+        }
+
+        setOriginalFileName(file.name);
+        const reader = new FileReader();
+        reader.onload = () => {
+            setImageToCrop(reader.result as string);
+            setIsCropOpen(true);
+        };
+        reader.readAsDataURL(file);
+    };
+
+    const handleCropSave = (croppedFile: File) => {
+        setTempImageFile(croppedFile);
+        setTempPreviewUrl(URL.createObjectURL(croppedFile));
+    };
+
+    const handleUploadConfirm = async () => {
+        if (!tempImageFile) return;
+        setUploading(true);
+        try {
+            const updated = await api.uploadUserProfileImage(userId, tempImageFile);
+            if (updated) {
+                const saved = {
+                    name: updated.name || profile.name,
+                    email: updated.email || profile.email,
+                    telephone: updated.telephone || "",
+                    nationality: updated.nationality || "",
+                    preferredLanguage: updated.preferredLanguage || "",
+                    profileImage: updated.profileImage || "",
+                };
+                setProfile(saved);
+                setEditForm(saved);
+                
+                const userStr = localStorage.getItem('travelhub_user') || localStorage.getItem('user');
+                if (userStr) {
+                    try {
+                        const user = JSON.parse(userStr);
+                        user.profileImage = updated.profileImage;
+                        localStorage.setItem('travelhub_user', JSON.stringify(user));
+                    } catch (e) {
+                        console.error("Failed to update user in localStorage:", e);
+                    }
+                }
+                
+                mutate(`/api/tourist/profile?userId=${userId}`);
+
+                toast({
+                    title: "Success",
+                    description: "Profile picture updated successfully.",
+                });
+            }
+            setTempImageFile(null);
+            setTempPreviewUrl(null);
+        } catch (error: any) {
+            console.error("Failed to upload profile image:", error);
+            toast({
+                title: "Upload Failed",
+                description: error.message || "Failed to upload image. Please try again.",
+                variant: "destructive",
+            });
+        } finally {
+            setUploading(false);
+        }
+    };
+
+    const handleUploadCancel = () => {
+        setTempImageFile(null);
+        setTempPreviewUrl(null);
+        if (fileInputRef.current) fileInputRef.current.value = "";
     };
 
     if (loadingProfile) {
@@ -218,9 +315,9 @@ const SettingsPage = () => {
                 <Card className="border-border shadow-soft overflow-hidden">
                     <CardHeader className="bg-muted/30 pb-10 border-b">
                         <div className="flex flex-col md:flex-row md:items-end gap-6 relative">
-                            <div className="relative group">
+                            <div className="relative group flex flex-col items-center">
                                 <Avatar className="h-32 w-32 border-4 border-background shadow-elevated">
-                                    <AvatarImage src={editForm.profileImage || undefined} alt={editForm.name} />
+                                    <AvatarImage src={tempPreviewUrl || editForm.profileImage || undefined} alt={editForm.name} />
                                     <AvatarFallback className="text-3xl gradient-ocean text-white">
                                         {editForm.name
                                             ? editForm.name.split(" ").map((n) => n[0]).join("")
@@ -229,11 +326,39 @@ const SettingsPage = () => {
                                 </Avatar>
                                 {isEditing && (
                                     <button
-                                        onClick={handleImageChange}
-                                        className="absolute inset-0 bg-black/40 flex items-center justify-center rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                                        onClick={handleImageChangeClick}
+                                        className="absolute top-0 left-0 h-32 w-32 bg-black/40 flex items-center justify-center rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
                                     >
                                         <Camera className="h-8 w-8 text-white" />
                                     </button>
+                                )}
+                                <input
+                                    type="file"
+                                    ref={fileInputRef}
+                                    onChange={handleFileSelect}
+                                    accept="image/*"
+                                    className="hidden"
+                                />
+                                {tempPreviewUrl && (
+                                    <div className="flex gap-2 justify-center mt-2 absolute -bottom-10 z-10 bg-background/95 p-1.5 rounded-lg border shadow-sm">
+                                        <Button 
+                                            size="sm" 
+                                            onClick={handleUploadConfirm} 
+                                            disabled={uploading} 
+                                            className="h-7 px-2 text-[10px] gradient-ocean"
+                                        >
+                                            {uploading ? "..." : "Confirm"}
+                                        </Button>
+                                        <Button 
+                                            size="sm" 
+                                            variant="outline" 
+                                            onClick={handleUploadCancel} 
+                                            disabled={uploading} 
+                                            className="h-7 px-2 text-[10px]"
+                                        >
+                                            Cancel
+                                        </Button>
+                                    </div>
                                 )}
                             </div>
                             <div className="flex-1 space-y-1">
@@ -364,7 +489,7 @@ const SettingsPage = () => {
 
                 {/* Preferences */}
                 <section className="space-y-4 pt-6">
-                    <h3 className="text-xl font-bold">Preferences</h3>
+                    <h3 className="text-xl font-bold">⚙️ Preferences</h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <Card 
                             className="border-border hover:border-primary/20 transition-colors cursor-pointer group"
@@ -388,21 +513,13 @@ const SettingsPage = () => {
                             </CardContent>
                         </Card>
                     </div>
+                </section>
 
-                    {/* Currency Preference */}
+                {/* Currency Preference */}
+                <section className="space-y-4 pt-6">
+                    <h3 className="text-xl font-bold">💱 Currency Preference</h3>
                     <Card className="border-border shadow-soft overflow-hidden">
-                        <CardHeader className="border-b bg-muted/20 pb-4">
-                            <div className="flex items-center gap-3">
-                                <div className="h-9 w-9 rounded-lg bg-primary/10 flex items-center justify-center">
-                                    <DollarSign className="h-5 w-5 text-primary" />
-                                </div>
-                                <div>
-                                    <h4 className="font-semibold text-base">Currency Preference</h4>
-                                    <p className="text-sm text-muted-foreground">Choose how package prices are displayed</p>
-                                </div>
-                            </div>
-                        </CardHeader>
-                        <CardContent className="pt-5 space-y-3">
+                        <CardContent className="p-6 space-y-3">
                             {rateError && (
                                 <div className="text-xs text-amber-600 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
                                     ⚠ Live exchange rate unavailable. Prices shown using fallback rate (1 USD ≈ 300 LKR).
@@ -485,6 +602,16 @@ const SettingsPage = () => {
                 <section className="pt-8">
                     <MyReviewsSection />
                 </section>
+
+                {imageToCrop && (
+                    <ImageCropperDialog
+                        open={isCropOpen}
+                        onOpenChange={setIsCropOpen}
+                        imageSrc={imageToCrop}
+                        onCropSave={handleCropSave}
+                        fileName={originalFileName}
+                    />
+                )}
             </div>
         </DashboardLayout>
     );

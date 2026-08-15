@@ -31,7 +31,7 @@ export function DashboardLayout({ children }) {
         <div className="flex h-screen w-full bg-slate-50 dark:bg-background overflow-hidden">
             <DashboardSidebar collapsed={collapsed} setCollapsed={handleSetCollapsed} />
             <div className="flex-1 flex flex-col h-screen overflow-hidden">
-                <DashboardHeader userName={displayName} />
+                <DashboardHeader userName={displayName} userImage={userProfile?.profileImage || undefined} />
                 <main className="flex-1 p-4 lg:p-6 space-y-6 lg:space-y-10 overflow-y-auto flex flex-col">
                     <div className="flex-1">
                         {children}
