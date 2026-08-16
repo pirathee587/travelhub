@@ -16,6 +16,7 @@ import { useOwnerSession } from "@/features/hotelOwner/services/owner-session";
 import { isUsingMockAuth, MOCK_USER_ID } from "@/features/hotelOwner/services/mock-auth";
 import { NotificationBell } from "@/features/hotelOwner/components/NotificationBell";
 import "../styles.css";
+import { CurrencyProvider } from "@/features/hotelOwner/services/currency-store";
 
 const nav = [
   { label: "Dashboard", to: "/hotelowner" as const, icon: LayoutDashboard, exact: true },
@@ -26,6 +27,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   const path = location.pathname;
 
   return (
+    <CurrencyProvider>
     <div className="hotel-owner-theme min-h-screen w-full bg-background text-foreground antialiased">
       {/* Sidebar */}
       <aside className="fixed inset-y-0 left-0 z-30 hidden w-[260px] flex-col bg-sidebar text-sidebar-foreground lg:flex">
@@ -109,6 +111,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         </motion.div>
       </main>
     </div>
+    </CurrencyProvider>
   );
 }
 

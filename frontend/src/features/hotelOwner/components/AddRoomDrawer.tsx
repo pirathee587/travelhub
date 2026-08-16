@@ -20,6 +20,7 @@ import {
   DrawerTrigger,
 } from "@/components/common/ui/drawer";
 import { toast } from "sonner";
+import { useCurrency } from "@/features/hotelOwner/services/currency-store";
 
 const roomTypeOptions = ["Single", "Double", "Suite", "Penthouse", "Deluxe"];
 
@@ -39,6 +40,11 @@ export function AddRoomDrawer({ hotelId, onSuccess, children }: AddRoomDrawerPro
     description: "",
   });
   const [image, setImage] = useState<File | null>(null);
+  const { currency, formatPrice, rateLoading } = useCurrency();
+
+  // Compute the live converted preview for the hint
+  const priceNum = parseFloat(formData.price);
+  const showHint = currency === "LKR" && !rateLoading && !isNaN(priceNum) && priceNum > 0;
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -140,7 +146,7 @@ export function AddRoomDrawer({ hotelId, onSuccess, children }: AddRoomDrawerPro
 
               <div className="space-y-2">
                 <Label htmlFor="price" className="text-sm font-semibold">
-                  Price per Night ($)
+                  Price per Night (USD)
                 </Label>
                 <Input
                   id="price"
@@ -152,6 +158,15 @@ export function AddRoomDrawer({ hotelId, onSuccess, children }: AddRoomDrawerPro
                   }
                   className="rounded-xl bg-muted/50"
                 />
+                {showHint ? (
+                  <p className="text-[11px] text-muted-foreground">
+                    ≈ {formatPrice(priceNum)} at today's live rate
+                  </p>
+                ) : (
+                  <p className="text-[11px] text-muted-foreground">
+                    Always stored in USD
+                  </p>
+                )}
               </div>
             </div>
 
