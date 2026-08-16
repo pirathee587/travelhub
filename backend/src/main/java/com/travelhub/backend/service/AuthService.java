@@ -83,11 +83,7 @@ public class AuthService {
                     .destination(user.getDistrict() != null ? user.getDistrict() : "Unknown")
                     .owner(user)
                     .ownerId(user.getId())
-<<<<<<< Updated upstream
-                    .ownerName(user.getName())
-                    .ownerEmail(user.getEmail())
-=======
->>>>>>> Stashed changes
+
                     .build();
             hotel = hotelRepository.save(hotel);
             user.setHotelId(hotel.getId());
