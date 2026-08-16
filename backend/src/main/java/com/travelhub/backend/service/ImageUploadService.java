@@ -91,7 +91,7 @@ public class ImageUploadService {
     }
 
     public ImageUploadResponse uploadReportImage(MultipartFile file) {
-        return uploadToBucket(file, reportBucket);
+        return uploadToBucket(file, reviewBucket);
     }
 
     private ImageUploadResponse uploadToBucket(MultipartFile file, String bucketName) {
