@@ -48,6 +48,9 @@ public class ImageUploadService {
     @Value("${supabase.package-bucket}")
     private String packageBucket;
 
+    @Value("${supabase.report-bucket:report}")
+    private String reportBucket;
+
     @Autowired
     private RestTemplate restTemplate;
 
@@ -85,6 +88,10 @@ public class ImageUploadService {
 
     public ImageUploadResponse uploadAgentImage(MultipartFile file) {
         return uploadToBucket(file, agentBucket);
+    }
+
+    public ImageUploadResponse uploadReportImage(MultipartFile file) {
+        return uploadToBucket(file, reportBucket);
     }
 
     private ImageUploadResponse uploadToBucket(MultipartFile file, String bucketName) {
