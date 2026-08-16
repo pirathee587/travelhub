@@ -10,6 +10,7 @@ import {
   Package,
   CreditCard,
   BarChart3,
+  AlertTriangle,
   Settings,
   LogOut,
   Plane,
@@ -27,6 +28,7 @@ const navItems = [
   { icon: UserCheck,       label: 'Drivers',   path: '/admin/drivers' },
   { icon: Package,         label: 'Packages',  path: '/admin/packages' },
   { icon: CreditCard,      label: 'Payments',  path: '/admin/payments' },
+  { icon: AlertTriangle,   label: 'Reports',   path: '/admin/reports' },
   { icon: BarChart3,       label: 'Analytics', path: '/admin/analytics' },
 ]
 

@@ -16,6 +16,7 @@ const PackageApprovals = lazy(() => import('@/features/admin/pages/PackageApprov
 const PackageDetails   = lazy(() => import('@/features/admin/pages/PackageDetails'));
 const Payments         = lazy(() => import('@/features/admin/pages/Payments'));
 const Analytics        = lazy(() => import('@/features/admin/pages/Analytics'));
+const PackageReports   = lazy(() => import('@/features/admin/pages/PackageReports'));
 
 /**
  * AdminRoutes
@@ -43,6 +44,7 @@ export default function AdminRoutes() {
         <Route path="drivers"       element={<DriverApprovals />} />
         <Route path="packages"      element={<PackageApprovals />} />
         <Route path="payments"      element={<Payments />} />
+        <Route path="reports"       element={<PackageReports />} />
         <Route path="analytics"     element={<Analytics />} />
       </Route>
 
