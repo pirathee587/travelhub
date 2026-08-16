@@ -20,6 +20,8 @@ public interface BookingRepository
     Long countByUserIdAndStatus(
             Long userId, String status);
 
+    Long countByPkg_Id(Long pkgId);
+
 
 
 

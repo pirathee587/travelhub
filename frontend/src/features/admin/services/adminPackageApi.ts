@@ -24,6 +24,11 @@ const adminPackageApi = {
             `/admin/packages/${id}`);
         return res.data;
     },
+    getPackageById: async (id) => {
+        const res = await api.get(
+            `/admin/packages/${id}`);
+        return res.data;
+    },
 
     // PATCH /api/admin/packages/{id}/approve
     approvePackage: async (id) => {

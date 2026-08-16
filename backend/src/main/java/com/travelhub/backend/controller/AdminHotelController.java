@@ -61,6 +61,14 @@ public class AdminHotelController {
                         adminHotelService.rejectHotel(id, reason)));
     }
 
+    @PatchMapping("/{id}/toggle-active")
+    public ResponseEntity<?> toggleActive(
+            @PathVariable Long id) {
+        return ResponseEntity.ok(
+                new ApiResponse(true, "Hotel status updated",
+                        adminHotelService.toggleActive(id)));
+    }
+
     @DeleteMapping("/{id}")
     public ResponseEntity<?> deleteHotel(
             @PathVariable Long id) {
