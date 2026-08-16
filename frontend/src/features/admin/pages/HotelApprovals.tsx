@@ -1,7 +1,45 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import adminHotelApi from '../services/adminHotelApi'
 import { useModal } from '../components/ModalContext'
-import { Star, MapPin, Clock, Eye, Search, Building2, Bed } from 'lucide-react'
+import { Badge } from '@/components/common/ui/badge'
+import { Switch } from '@/components/common/ui/switch'
+import { 
+  Star, 
+  MapPin, 
+  Clock, 
+  Eye, 
+  Search, 
+  Building2, 
+  BedDouble, 
+  ArrowLeft, 
+  Check,
+  CheckCircle, 
+  CheckCircle2, 
+  X, 
+  Trash2, 
+  Power, 
+  AlertCircle, 
+  Sparkles, 
+  Waves, 
+  User, 
+  Wifi, 
+  Utensils, 
+  Car, 
+  Coffee, 
+  Dumbbell, 
+  Wind, 
+  Beer, 
+  Tv, 
+  Shirt, 
+  ConciergeBell, 
+  ShieldCheck, 
+  Trees, 
+  Grid, 
+  ChevronLeft, 
+  ChevronRight, 
+  FileText,
+  ImageOff
+} from 'lucide-react'
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 const STATUSES = ['All', 'Pending', 'Approved', 'Rejected']
@@ -15,228 +53,732 @@ const SRI_LANKA_DISTRICTS = [
   'Polonnaruwa', 'Puttalam', 'Ratnapura', 'Trincomalee', 'Vavuniya'
 ]
 
-const STATUS_STYLES = {
-  Pending:   'bg-orange-100 text-orange-700 border-orange-200',
-  Approved:  'bg-emerald-100 text-emerald-700 border-emerald-200',
-  Rejected:  'bg-red-100 text-red-700 border-red-200',
-  Suspended: 'bg-gray-100 text-gray-600 border-gray-200',
-}
-
-const STATUS_DOT = {
-  Pending:  'bg-orange-500',
-  Approved: 'bg-emerald-500',
-  Rejected: 'bg-red-500',
-}
-
-// ── Helpers ───────────────────────────────────────────────────────────────────
-const fmtPrice = (v) => (v != null ? `$${Number(v).toLocaleString()}` : '—')
-const fmtRating = (v) => (v != null ? Number(v).toFixed(1) : '—')
-
 // ── Skeleton ──────────────────────────────────────────────────────────────────
 const CardSkeleton = () => (
-  <div className="bg-white rounded-2xl overflow-hidden shadow-sm animate-pulse">
-    <div className="h-44 bg-gray-100" />
-    <div className="p-4 space-y-3">
-      <div className="h-4 bg-gray-100 rounded w-3/4" />
-      <div className="h-3 bg-gray-100 rounded w-1/2" />
-      <div className="h-3 bg-gray-100 rounded w-1/3" />
-      <div className="flex gap-2 mt-4">
-        <div className="h-9 bg-gray-100 rounded-xl flex-1" />
-        <div className="h-9 w-9 bg-gray-100 rounded-xl" />
-        <div className="h-9 w-9 bg-gray-100 rounded-xl" />
-      </div>
+  <div className="bg-white rounded-3xl overflow-hidden shadow-sm animate-pulse border border-gray-100 p-5 space-y-4">
+    <div className="aspect-[16/10] bg-gray-100 rounded-2xl" />
+    <div className="space-y-2">
+      <div className="h-4 bg-gray-100 rounded-lg w-3/4" />
+      <div className="h-3 bg-gray-100 rounded-lg w-1/2" />
+      <div className="h-3 bg-gray-100 rounded-lg w-1/3" />
+    </div>
+    <div className="pt-3 border-t border-gray-50 flex gap-2">
+      <div className="h-9 bg-gray-100 rounded-xl flex-1" />
     </div>
   </div>
 )
 
-// ── Hotel Detail View ───────────────────────────────────────────────────────
-const HotelDetailView = ({ hotel, onBack, onApprove, onReject, onToggle, onDelete, loading }) => {
+// ── Amenity Icon Helper ───────────────────────────────────────────────────────
+const getAmenityIcon = (amenity: string) => {
+  const lower = (amenity || '').toLowerCase()
+  if (lower.includes('wifi') || lower.includes('internet')) return <Wifi className="h-4 w-4" />
+  if (lower.includes('food') || lower.includes('dining') || lower.includes('restaurant') || lower.includes('breakfast') || lower.includes('meal')) return <Utensils className="h-4 w-4" />
+  if (lower.includes('pool') || lower.includes('swimming')) return <Waves className="h-4 w-4" />
+  if (lower.includes('spa') || lower.includes('massage') || lower.includes('wellness') || lower.includes('sauna')) return <Sparkles className="h-4 w-4" />
+  if (lower.includes('parking') || lower.includes('car') || lower.includes('valet')) return <Car className="h-4 w-4" />
+  if (lower.includes('coffee') || lower.includes('tea')) return <Coffee className="h-4 w-4" />
+  if (lower.includes('gym') || lower.includes('fitness') || lower.includes('workout')) return <Dumbbell className="h-4 w-4" />
+  if (lower.includes('ac') || lower.includes('air conditioning') || lower.includes('cooling')) return <Wind className="h-4 w-4" />
+  if (lower.includes('bar') || lower.includes('drink') || lower.includes('cocktail') || lower.includes('wine')) return <Beer className="h-4 w-4" />
+  if (lower.includes('tv') || lower.includes('television')) return <Tv className="h-4 w-4" />
+  if (lower.includes('laundry') || lower.includes('washing')) return <Shirt className="h-4 w-4" />
+  if (lower.includes('service') || lower.includes('concierge')) return <ConciergeBell className="h-4 w-4" />
+  if (lower.includes('safe') || lower.includes('security')) return <ShieldCheck className="h-4 w-4" />
+  if (lower.includes('garden') || lower.includes('nature') || lower.includes('park')) return <Trees className="h-4 w-4" />
+  return <CheckCircle2 className="h-4 w-4" />
+}
+
+// ── Hotel Detail View (Pure Real Database Data) ───────────────────────────────
+const HotelDetailView = ({ hotel, onBack, onApprove, onReject, onToggle, onDelete, loading }: any) => {
+  const [selectedImage, setSelectedImage] = useState<string | null>(null)
+  const [lightboxIndex, setLightboxIndex] = useState(0)
+  const [isLightboxOpen, setIsLightboxOpen] = useState(false)
+
   if (!hotel) return null
 
-  const { hotelName, imageUrl, district, location, rating, numberOfRooms,
-    ownerName, ownerEmail, ownerNic, nicImageUrl, businessRegistrationImageUrl, rejectionReason, phoneNumber, hotlineNumber,
-    amenities, roomTypes, applicationStatus, isActive, id } = hotel
+  const {
+    id,
+    hotelName,
+    imageUrl,
+    images: rawImages,
+    district,
+    destination,
+    location,
+    description,
+    rating,
+    reviewCount,
+    priceFrom,
+    priceTo,
+    numberOfRooms,
+    ownerName,
+    ownerEmail,
+    ownerNic,
+    nicImageUrl,
+    nicRearImageUrl,
+    businessRegistrationImageUrl,
+    rejectionReason,
+    phoneNumber,
+    hotlineNumber,
+    hotelEmail,
+    hotelContactNumber,
+    amenities: rawAmenities,
+    rooms: rawRooms,
+    roomTypes,
+    applicationStatus,
+    isActive
+  } = hotel
+
+  const isApproved = String(applicationStatus || '').trim().toLowerCase() === 'approved'
+  const isPending = String(applicationStatus || '').trim().toLowerCase() === 'pending'
+  const isRejected = String(applicationStatus || '').trim().toLowerCase() === 'rejected'
+
+  // Build images list from database
+  const allImages: string[] = []
+  if (Array.isArray(rawImages) && rawImages.length > 0) {
+    rawImages.forEach((img: any) => {
+      if (typeof img === 'string' && img.trim() && !allImages.includes(img.trim())) {
+        allImages.push(img.trim())
+      } else if (img?.imageUrl && !allImages.includes(img.imageUrl)) {
+        allImages.push(img.imageUrl)
+      }
+    })
+  }
+  if (imageUrl && !allImages.includes(imageUrl)) {
+    allImages.unshift(imageUrl)
+  }
+
+  // Normalized rooms list from database
+  const normalizedRooms = Array.isArray(rawRooms) && rawRooms.length > 0
+    ? rawRooms 
+    : (Array.isArray(roomTypes) ? roomTypes.map((rt: any, idx: number) => ({
+        id: `R-${idx}`,
+        name: rt.name,
+        type: rt.name,
+        price: null,
+        description: rt.description,
+        imageUrl: allImages[idx + 1] || null
+      })) : [])
+
+  normalizedRooms.forEach((r: any) => {
+    if (r.imageUrl && !allImages.includes(r.imageUrl)) {
+      allImages.push(r.imageUrl)
+    }
+  })
+
+  // Amenities list from database
+  const amenities = Array.isArray(rawAmenities) ? rawAmenities : []
+
+  // Lightbox handlers
+  const openLightbox = (index = 0) => {
+    if (allImages.length === 0) return
+    setLightboxIndex(index)
+    setIsLightboxOpen(true)
+  }
+  const closeLightbox = () => setIsLightboxOpen(false)
+  const goLightboxPrev = (e: any) => {
+    if (e) e.stopPropagation()
+    setLightboxIndex((i) => (i - 1 + (allImages.length || 1)) % (allImages.length || 1))
+  }
+  const goLightboxNext = (e: any) => {
+    if (e) e.stopPropagation()
+    setLightboxIndex((i) => (i + 1) % (allImages.length || 1))
+  }
+
+  // ── Dynamic Price Calculation ───────────────────────────────────────────────
+  const validRoomPrices = normalizedRooms
+    .map((r: any) => Number(r.price))
+    .filter((p: any) => !isNaN(p) && p > 0)
+
+  const minRoomPrice = validRoomPrices.length > 0 ? Math.min(...validRoomPrices) : null
+  const maxRoomPrice = validRoomPrices.length > 0 ? Math.max(...validRoomPrices) : null
+
+  const effectivePriceFrom = (priceFrom != null && Number(priceFrom) > 0)
+    ? Number(priceFrom)
+    : (minRoomPrice != null ? minRoomPrice : (hotel.price ? Number(hotel.price) : null))
+
+  const effectivePriceTo = (priceTo != null && Number(priceTo) > 0)
+    ? Number(priceTo)
+    : (maxRoomPrice != null ? maxRoomPrice : effectivePriceFrom)
+
+  const startingPriceText = effectivePriceFrom != null 
+    ? `$${Number(effectivePriceFrom).toFixed(0)}` 
+    : 'Not Available'
+
+  const formattedAddress = [location, district, destination].filter(Boolean).join(', ')
 
   return (
-    <div className="animate-fade-in max-w-5xl mx-auto">
-      <button onClick={onBack} className="px-4 py-2 bg-white rounded-lg shadow-sm text-sm font-semibold text-gray-700 hover:bg-gray-50 transition mb-6 border border-gray-100 flex items-center gap-2">
-        &lt; Back to Hotels
-      </button>
+    <div className="p-4 sm:p-8 bg-[#F8FAFC] min-h-screen animate-fade-in font-sans">
+      <div className="max-w-6xl mx-auto space-y-8 pb-12">
 
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-8 space-y-8">
-        
-        {/* Header Title & Rating */}
-        <div>
-          <h2 className="text-3xl font-bold text-gray-900">{hotelName}</h2>
-          <div className="flex items-center gap-2 text-sm text-gray-500 mt-2 font-medium">
-            <span className="text-yellow-500">⭐</span>
-            <span>{rating != null ? `${Number(rating).toFixed(1)} / 5.0` : 'No rating yet'}</span>
+        {/* ── Top Navigation ────────────────────────────────────────────────── */}
+        <div className="flex items-center justify-between">
+          <button 
+            onClick={onBack} 
+            className="inline-flex items-center gap-2 text-sm font-semibold text-gray-700 hover:text-[#0ea5e9] bg-white px-4 py-2 rounded-xl border border-gray-200 shadow-sm transition active:scale-95"
+          >
+            <ArrowLeft className="w-4 h-4" /> Back to Hotels
+          </button>
+
+          {/* Status Badges */}
+          <div className="flex items-center gap-2">
+            <span className={`px-3.5 py-1 rounded-full text-xs font-semibold tracking-wide shadow-sm border ${
+              isActive 
+                ? 'bg-[#0ea5e9] text-white border-[#0ea5e9]' 
+                : 'bg-red-500 text-white border-red-500'
+            }`}>
+              {isActive ? 'Active' : 'Inactive'}
+            </span>
+
+            <span className={`px-3.5 py-1 rounded-full text-xs font-semibold tracking-wide shadow-sm flex items-center gap-1.5 border ${
+              isApproved 
+                ? 'bg-emerald-50 text-emerald-700 border-emerald-200' 
+                : isPending 
+                ? 'bg-amber-50 text-amber-700 border-amber-200' 
+                : 'bg-rose-50 text-rose-700 border-rose-200'
+            }`}>
+              {isApproved && <CheckCircle className="w-3.5 h-3.5 text-emerald-600" />}
+              {isPending && <Clock className="w-3.5 h-3.5 text-amber-600" />}
+              {isRejected && <X className="w-3.5 h-3.5 text-rose-600" />}
+              {isApproved ? 'Approved' : (isPending ? 'Pending Approval' : 'Rejected')}
+            </span>
           </div>
         </div>
 
-        {/* Cover Image */}
-        <div className="rounded-2xl overflow-hidden shadow-sm h-[300px] w-full">
-          {imageUrl ? (
-            <img src={imageUrl} alt={hotelName} className="w-full h-full object-cover" />
-          ) : (
-            <div className="w-full h-full bg-gradient-to-br from-teal-400 to-teal-600 flex items-center justify-center text-6xl">🏨</div>
-          )}
-        </div>
-
-        {/* Location Details block */}
-        <div className="bg-[#f0fdfa] rounded-xl p-6 border border-teal-50">
-          <h3 className="text-lg font-bold text-gray-900 mb-6">Location Details</h3>
-          
-          <div className="grid grid-cols-2 gap-6 mb-6">
-            <div>
-              <div className="text-xs text-gray-500 font-medium mb-1">Place / District</div>
-              <div className="font-semibold text-gray-900">📍 {[location, district].filter(Boolean).join(', ') || '—'}</div>
-            </div>
-            <div>
-              <div className="text-xs text-gray-500 font-medium mb-1">Number of Rooms</div>
-              <div className="font-semibold text-gray-900">🛏️ {numberOfRooms || 0} rooms</div>
-            </div>
-          </div>
-
-          {roomTypes && roomTypes.length > 0 && (
-            <div>
-              <div className="text-xs text-gray-500 font-medium mb-3">Room Types</div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {roomTypes.map((rt, i) => (
-                  <div key={i} className="bg-white rounded-lg p-4 shadow-sm border border-teal-50">
-                    <div className="font-bold text-gray-900 text-sm mb-1">{rt.name}</div>
-                    <div className="text-xs text-gray-500">{rt.description}</div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Owner Information */}
-        <div className="bg-[#eff6ff] rounded-xl p-6 border border-blue-50">
-          <h3 className="text-lg font-bold text-gray-900 mb-6">Owner Information</h3>
-          <div className="grid grid-cols-2 gap-6">
-            <div>
-              <div className="text-xs text-gray-500 font-medium mb-1">Owner Name</div>
-              <div className="font-semibold text-gray-900">{ownerName || '—'}</div>
-            </div>
-            <div>
-              <div className="text-xs text-gray-500 font-medium mb-1">Owner Email</div>
-              <div className="font-semibold text-gray-900">{ownerEmail || '—'}</div>
-            </div>
-            <div>
-              <div className="text-xs text-gray-500 font-medium mb-1">NIC Number</div>
-              <div className="font-bold text-blue-600">{ownerNic || '—'}</div>
-            </div>
-            <div>
-              <div className="text-xs text-gray-500 font-medium mb-1">Phone Number</div>
-              <div className="font-bold text-blue-600">{phoneNumber || '—'}</div>
-            </div>
-          </div>
-        </div>
-
-        {/* Amenities & Facilities */}
-        {amenities && amenities.length > 0 && (
-          <div className="bg-[#faf5ff] rounded-xl p-6 border border-purple-50">
-            <h3 className="text-lg font-bold text-gray-900 mb-4">Amenities & Facilities</h3>
-            <div className="flex flex-wrap gap-3">
-              {amenities.map((a, i) => (
-                <span key={i} className="px-3 py-1.5 bg-[#f3e8ff] text-purple-700 rounded-full text-xs font-bold">
-                  ✓ {a}
-                </span>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Application Status & Actions */}
-        <div className="bg-[#fff7ed] rounded-xl p-6 border border-orange-50">
-          <div className="flex justify-between items-start">
-            <div>
-              <h3 className="text-lg font-bold text-gray-900 mb-4">Application Status</h3>
-              {isActive === false && applicationStatus === 'Approved' ? (
-                <span className="px-4 py-1.5 rounded-full text-xs font-bold bg-gray-100 text-gray-600">
-                  Suspended
-                </span>
-              ) : (
-                <span className={`px-4 py-1.5 rounded-full text-xs font-bold ${
-                  String(applicationStatus).trim().toLowerCase() === 'approved' ? 'bg-[#e6f4ea] text-[#1e8e3e]' :
-                  String(applicationStatus).trim().toLowerCase() === 'pending' ? 'bg-[#ffedd5] text-[#ea580c]' :
-                  'bg-red-100 text-red-600'
-                }`}>
-                  {String(applicationStatus || 'Pending').trim()}
-                </span>
+        {/* ── Header Section ────────────────────────────────────────────────── */}
+        <div className="flex flex-col md:flex-row justify-between items-start gap-4">
+          <div className="space-y-2">
+            <div className="flex items-center gap-2 flex-wrap">
+              {(district || destination) && (
+                <Badge variant="outline" className="border-sky-200 text-[#0ea5e9] bg-sky-50 font-semibold text-xs px-2.5 py-0.5 rounded-full">
+                  {district || destination}
+                </Badge>
               )}
+              {rating != null && Number(rating) > 0 ? (
+                <div className="flex items-center text-sm font-semibold text-gray-700">
+                  <Star className="h-4 w-4 fill-amber-400 text-amber-400 mr-1" />
+                  <span>{Number(rating).toFixed(1)}</span>
+                  <span className="text-gray-400 font-normal text-xs ml-1">
+                    ({reviewCount || 0} {reviewCount === 1 ? 'review' : 'reviews'})
+                  </span>
+                </div>
+              ) : (
+                <div className="flex items-center text-sm font-medium text-gray-400">
+                  <Star className="h-3.5 w-3.5 text-gray-300 mr-1" />
+                  <span>No reviews yet</span>
+                </div>
+              )}
+            </div>
+
+            <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 tracking-tight">
+              {hotelName}
+            </h1>
+
+            {formattedAddress && (
+              <div className="flex items-center text-gray-500 text-sm font-medium">
+                <MapPin className="h-4 w-4 mr-1 text-[#0ea5e9] shrink-0" />
+                <span>{formattedAddress}</span>
+              </div>
+            )}
+          </div>
+
+          {/* Pricing & Quick Action */}
+          <div className="text-left md:text-right w-full md:w-auto bg-white md:bg-transparent p-4 md:p-0 rounded-2xl border md:border-none shadow-sm md:shadow-none">
+            <span className="text-xs text-gray-400 font-medium block mb-0.5">Starting from</span>
+            <div className="flex items-baseline md:justify-end gap-1 mb-3">
+              <span className="text-3xl font-bold text-[#0ea5e9]">{startingPriceText}</span>
+              {effectivePriceFrom != null && <span className="text-xs text-gray-500 font-medium">/ night</span>}
             </div>
             
-            {/* Admin Actions */}
-            <div className="flex gap-3">
-              {String(applicationStatus).trim().toLowerCase() !== 'approved' && (
-                <button onClick={() => onApprove(hotel)} disabled={loading} className="px-5 py-2 rounded-lg font-semibold text-sm bg-emerald-500 text-white hover:bg-emerald-600 transition shadow-sm disabled:opacity-60">
-                  Approve Hotel
-                </button>
-              )}
-              {String(applicationStatus).trim().toLowerCase() !== 'rejected' && (
-                <button onClick={() => onReject(hotel)} disabled={loading} className="px-5 py-2 rounded-lg font-semibold text-sm bg-orange-100 text-orange-700 hover:bg-orange-200 transition shadow-sm disabled:opacity-60">
-                  Reject Hotel
-                </button>
-              )}
-              {String(applicationStatus).trim().toLowerCase() === 'approved' && (
-                isActive === false ? (
-                  <button onClick={() => onToggle(hotel)} disabled={loading} className="px-5 py-2 rounded-lg font-semibold text-sm bg-emerald-500 text-white hover:bg-emerald-600 transition shadow-sm disabled:opacity-60">
-                    Activate Hotel
-                  </button>
-                ) : (
-                  <button onClick={() => onToggle(hotel)} disabled={loading} className="px-5 py-2 rounded-lg font-semibold text-sm bg-red-500 text-white hover:bg-red-600 transition shadow-sm disabled:opacity-60">
-                    Suspend Hotel
-                  </button>
-                )
-              )}
-              <button onClick={() => onDelete(hotel)} disabled={loading} className="px-5 py-2 rounded-lg font-semibold text-sm bg-gray-100 text-gray-600 hover:bg-red-50 hover:text-red-600 transition shadow-sm disabled:opacity-60">
-                Delete Hotel
-              </button>
-            </div>
+            <button
+              onClick={() => document.getElementById('available-rooms')?.scrollIntoView({ behavior: 'smooth' })}
+              className="w-full md:w-auto py-2.5 px-6 bg-[#0ea5e9] hover:bg-[#0284c7] active:scale-95 text-white rounded-xl text-xs sm:text-sm font-semibold shadow-sm transition"
+            >
+              View Rooms
+            </button>
           </div>
         </div>
 
-        {/* Verification Documents */}
-        <div className="space-y-4">
-          <h3 className="text-lg font-bold text-gray-900 mb-4">Verification Documents</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {nicImageUrl ? (
-              <button onClick={() => window.open(nicImageUrl, '_blank')} className="w-full py-4 bg-[#2563eb] hover:bg-blue-700 text-white font-bold rounded-lg shadow-sm transition flex items-center justify-center gap-2">
-                📄 NIC Image
-              </button>
-            ) : (
-              <button disabled className="w-full py-4 bg-gray-200 text-gray-500 font-bold rounded-lg shadow-sm transition flex items-center justify-center gap-2 cursor-not-allowed">
-                No NIC Image
-              </button>
-            )}
+        {/* ── Photo Gallery Grid (1 Large Left + 2 Stacked Right) ───────────── */}
+        <div className="relative">
+          {allImages.length > 0 ? (
+            <div className="grid grid-cols-1 lg:grid-cols-[2fr_1fr] gap-4 lg:h-[440px] items-stretch">
+              {/* Main Large Photo */}
+              <div
+                className="relative group rounded-2xl md:rounded-3xl overflow-hidden shadow-sm h-[320px] lg:h-full cursor-pointer bg-slate-900 border border-gray-200"
+                onClick={() => openLightbox(0)}
+              >
+                <img
+                  src={allImages[0]}
+                  alt={`${hotelName} main`}
+                  className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent pointer-events-none" />
+              </div>
 
-            {businessRegistrationImageUrl ? (
-              <button onClick={() => window.open(businessRegistrationImageUrl, '_blank')} className="w-full py-4 bg-[#2563eb] hover:bg-blue-700 text-white font-bold rounded-lg shadow-sm transition flex items-center justify-center gap-2">
-                📄 Business Registration
-              </button>
-            ) : (
-              <button disabled className="w-full py-4 bg-gray-200 text-gray-500 font-bold rounded-lg shadow-sm transition flex items-center justify-center gap-2 cursor-not-allowed">
-                No Business Registration
-              </button>
-            )}
-          </div>
-          {rejectionReason && (
-            <div className="bg-red-50 text-red-700 p-4 rounded-lg mt-4 border border-red-200">
-              <span className="font-bold">Rejection Reason:</span> {rejectionReason}
+              {/* 2 Stacked Smaller Photos */}
+              <div className="grid grid-cols-2 lg:grid-cols-1 lg:grid-rows-2 gap-4 lg:h-full min-h-0">
+                {[1, 2].map((idx) => {
+                  const img = allImages[idx]
+                  return (
+                    <div
+                      key={idx}
+                      className={`relative group rounded-2xl md:rounded-3xl overflow-hidden shadow-sm h-[150px] lg:h-full min-h-0 border border-gray-200 ${
+                        img ? 'cursor-pointer bg-slate-900' : 'bg-gray-100 flex items-center justify-center'
+                      }`}
+                      onClick={() => img && openLightbox(idx)}
+                    >
+                      {img ? (
+                        <>
+                          <img
+                            src={img}
+                            alt={`${hotelName} view ${idx + 1}`}
+                            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                          />
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
+                        </>
+                      ) : (
+                        <div className="flex flex-col items-center justify-center text-gray-300 gap-1">
+                          <Building2 className="w-8 h-8" />
+                          <span className="text-[11px] text-gray-400">Photo slot</span>
+                        </div>
+                      )}
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          ) : (
+            <div className="h-64 rounded-3xl bg-slate-100 border border-dashed border-gray-200 flex flex-col items-center justify-center text-gray-400 gap-2">
+              <ImageOff className="w-10 h-10 text-gray-300" />
+              <span className="text-sm font-medium">No photos uploaded for this hotel yet</span>
             </div>
           )}
+
+          {/* See All Photos Button */}
+          {allImages.length > 0 && (
+            <button
+              onClick={() => openLightbox(0)}
+              className="absolute bottom-4 right-4 z-10 inline-flex items-center gap-2 bg-white/95 hover:bg-white text-gray-800 text-xs font-semibold px-4 py-2 rounded-xl shadow-md border border-gray-200/80 backdrop-blur-md transition active:scale-95"
+            >
+              <Grid className="w-4 h-4 text-[#0ea5e9]" /> See all {allImages.length} photos
+            </button>
+          )}
         </div>
+
+        {/* ── Section 1: Hotel Overview ─────────────────────────────────────── */}
+        <section className="bg-white rounded-2xl p-6 sm:p-7 border border-gray-200/80 shadow-sm space-y-4">
+          <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2">
+            <Clock className="h-5 w-5 text-[#0ea5e9]" /> Hotel Overview
+          </h3>
+
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-6 text-sm">
+            <div>
+              <span className="text-xs text-gray-400 font-medium block mb-1">Rating</span>
+              <p className="font-bold text-gray-900 flex items-center gap-1">
+                {rating != null && Number(rating) > 0 ? (
+                  <>
+                    <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400" />
+                    <span>{Number(rating).toFixed(1)}</span>
+                    <span className="text-gray-400 font-normal text-xs">({reviewCount || 0} reviews)</span>
+                  </>
+                ) : (
+                  <span className="text-gray-500 font-medium text-xs">No reviews yet</span>
+                )}
+              </p>
+            </div>
+
+            <div>
+              <span className="text-xs text-gray-400 font-medium block mb-1">Price From</span>
+              <p className="font-bold text-gray-900">
+                {effectivePriceFrom != null ? `$${Number(effectivePriceFrom).toFixed(0)}` : 'Not Available'}
+              </p>
+            </div>
+
+            <div>
+              <span className="text-xs text-gray-400 font-medium block mb-1">Price To</span>
+              <p className="font-bold text-gray-900">
+                {effectivePriceTo != null ? `$${Number(effectivePriceTo).toFixed(0)}` : 'Not Available'}
+              </p>
+            </div>
+
+            <div className="col-span-2 sm:col-span-1">
+              <span className="text-xs text-gray-400 font-medium block mb-1">Address</span>
+              <p className="font-bold text-gray-900 truncate" title={location || formattedAddress}>
+                {location || formattedAddress || 'Not specified'}
+              </p>
+            </div>
+
+            <div>
+              <span className="text-xs text-gray-400 font-medium block mb-1">Destination</span>
+              <p className="font-bold text-gray-900">{destination || district || 'Not specified'}</p>
+            </div>
+
+            <div>
+              <span className="text-xs text-gray-400 font-medium block mb-1">District</span>
+              <p className="font-bold text-gray-900">{district || destination || 'Not specified'}</p>
+            </div>
+          </div>
+        </section>
+
+        {/* ── Section 2: Hotel Owner & Verification Information ─────────────── */}
+        <section className="bg-white rounded-2xl p-6 sm:p-7 border border-gray-200/80 shadow-sm space-y-6">
+          <div className="flex items-center justify-between border-b border-gray-100 pb-3">
+            <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2">
+              <User className="h-5 w-5 text-[#0ea5e9]" /> Hotel Owner & Verification Details
+            </h3>
+            <span className="text-xs bg-sky-50 text-sky-700 border border-sky-200 font-semibold px-2.5 py-0.5 rounded-full">
+              Admin Verification
+            </span>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 text-sm">
+            <div className="bg-slate-50/80 p-4 rounded-xl border border-slate-100">
+              <span className="text-xs text-gray-400 font-medium block mb-1">Owner Name</span>
+              <p className="font-bold text-gray-900">{ownerName || '—'}</p>
+            </div>
+
+            <div className="bg-slate-50/80 p-4 rounded-xl border border-slate-100">
+              <span className="text-xs text-gray-400 font-medium block mb-1">Owner Email</span>
+              <p className="font-bold text-gray-900 truncate" title={ownerEmail}>{ownerEmail || '—'}</p>
+            </div>
+
+            <div className="bg-sky-50/70 p-4 rounded-xl border border-sky-100">
+              <span className="text-xs text-sky-600 font-semibold block mb-1">NIC Number</span>
+              <p className="font-mono font-bold text-sky-900 text-base">{ownerNic || '—'}</p>
+            </div>
+
+            <div className="bg-slate-50/80 p-4 rounded-xl border border-slate-100">
+              <span className="text-xs text-gray-400 font-medium block mb-1">Owner Phone</span>
+              <p className="font-bold text-gray-900">{phoneNumber || hotelContactNumber || '—'}</p>
+            </div>
+
+            <div className="bg-slate-50/80 p-4 rounded-xl border border-slate-100">
+              <span className="text-xs text-gray-400 font-medium block mb-1">Hotline / Contact Number</span>
+              <p className="font-bold text-gray-900">{hotlineNumber || hotelContactNumber || '—'}</p>
+            </div>
+
+            <div className="bg-slate-50/80 p-4 rounded-xl border border-slate-100">
+              <span className="text-xs text-gray-400 font-medium block mb-1">Hotel Email</span>
+              <p className="font-bold text-gray-900 truncate" title={hotelEmail}>{hotelEmail || ownerEmail || '—'}</p>
+            </div>
+          </div>
+
+          {/* Document Previews & Buttons */}
+          <div className="pt-2">
+            <span className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-3">
+              Submitted Verification Documents
+            </span>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+              {/* NIC Front */}
+              <div className="border border-gray-200 rounded-xl p-4 bg-white shadow-sm flex flex-col justify-between space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="font-semibold text-xs text-gray-700 flex items-center gap-1.5">
+                    <FileText className="w-4 h-4 text-[#0ea5e9]" /> NIC Front Photo
+                  </span>
+                  {nicImageUrl ? (
+                    <span className="text-[10px] bg-emerald-100 text-emerald-700 font-bold px-2 py-0.5 rounded-full">Attached</span>
+                  ) : (
+                    <span className="text-[10px] bg-gray-100 text-gray-500 font-medium px-2 py-0.5 rounded-full">Missing</span>
+                  )}
+                </div>
+
+                {nicImageUrl ? (
+                  <button
+                    onClick={() => setSelectedImage(nicImageUrl)}
+                    className="w-full py-2 bg-[#0ea5e9] hover:bg-[#0284c7] text-white text-xs font-semibold rounded-lg shadow-sm transition flex items-center justify-center gap-1.5"
+                  >
+                    <Eye className="w-3.5 h-3.5" /> View NIC Front
+                  </button>
+                ) : (
+                  <button disabled className="w-full py-2 bg-gray-100 text-gray-400 text-xs font-medium rounded-lg cursor-not-allowed">
+                    No NIC Front Uploaded
+                  </button>
+                )}
+              </div>
+
+              {/* NIC Rear */}
+              <div className="border border-gray-200 rounded-xl p-4 bg-white shadow-sm flex flex-col justify-between space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="font-semibold text-xs text-gray-700 flex items-center gap-1.5">
+                    <FileText className="w-4 h-4 text-[#0ea5e9]" /> NIC Rear Photo
+                  </span>
+                  {nicRearImageUrl ? (
+                    <span className="text-[10px] bg-emerald-100 text-emerald-700 font-bold px-2 py-0.5 rounded-full">Attached</span>
+                  ) : (
+                    <span className="text-[10px] bg-gray-100 text-gray-500 font-medium px-2 py-0.5 rounded-full">Optional</span>
+                  )}
+                </div>
+
+                {nicRearImageUrl ? (
+                  <button
+                    onClick={() => setSelectedImage(nicRearImageUrl)}
+                    className="w-full py-2 bg-[#0ea5e9] hover:bg-[#0284c7] text-white text-xs font-semibold rounded-lg shadow-sm transition flex items-center justify-center gap-1.5"
+                  >
+                    <Eye className="w-3.5 h-3.5" /> View NIC Rear
+                  </button>
+                ) : (
+                  <button disabled className="w-full py-2 bg-gray-100 text-gray-400 text-xs font-medium rounded-lg cursor-not-allowed">
+                    No NIC Rear Uploaded
+                  </button>
+                )}
+              </div>
+
+              {/* Business Registration */}
+              <div className="border border-gray-200 rounded-xl p-4 bg-white shadow-sm flex flex-col justify-between space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="font-semibold text-xs text-gray-700 flex items-center gap-1.5">
+                    <Building2 className="w-4 h-4 text-[#0ea5e9]" /> Business Registration
+                  </span>
+                  {businessRegistrationImageUrl ? (
+                    <span className="text-[10px] bg-emerald-100 text-emerald-700 font-bold px-2 py-0.5 rounded-full">Attached</span>
+                  ) : (
+                    <span className="text-[10px] bg-gray-100 text-gray-500 font-medium px-2 py-0.5 rounded-full">Missing</span>
+                  )}
+                </div>
+
+                {businessRegistrationImageUrl ? (
+                  <button
+                    onClick={() => setSelectedImage(businessRegistrationImageUrl)}
+                    className="w-full py-2 bg-[#0ea5e9] hover:bg-[#0284c7] text-white text-xs font-semibold rounded-lg shadow-sm transition flex items-center justify-center gap-1.5"
+                  >
+                    <Eye className="w-3.5 h-3.5" /> View Registration
+                  </button>
+                ) : (
+                  <button disabled className="w-full py-2 bg-gray-100 text-gray-400 text-xs font-medium rounded-lg cursor-not-allowed">
+                    No Registration Doc
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {rejectionReason && (
+              <div className="bg-rose-50 border border-rose-200 text-rose-800 rounded-xl p-4 mt-4 text-xs">
+                <span className="font-bold">Prior Rejection Reason:</span> {rejectionReason}
+              </div>
+            )}
+          </div>
+        </section>
+
+        {/* ── Section 3: About this Hotel ───────────────────────────────────── */}
+        <section className="space-y-3">
+          <h3 className="text-xl font-bold text-gray-900 flex items-center gap-2">
+            <Sparkles className="h-5 w-5 text-[#0ea5e9]" /> About this Hotel
+          </h3>
+          <div className="bg-white rounded-2xl p-6 border border-gray-200/80 shadow-sm">
+            {description ? (
+              <p className="text-gray-600 text-sm leading-relaxed whitespace-pre-line">
+                {description}
+              </p>
+            ) : (
+              <p className="text-gray-400 italic text-sm">No description provided for this hotel.</p>
+            )}
+          </div>
+        </section>
+
+        {/* ── Section 4: Popular Amenities ──────────────────────────────────── */}
+        <section className="space-y-3">
+          <h3 className="text-xl font-bold text-gray-900 flex items-center gap-2">
+            <Waves className="h-5 w-5 text-[#0ea5e9]" /> Popular Amenities
+          </h3>
+          {amenities.length > 0 ? (
+            <div className="flex flex-wrap gap-3">
+              {amenities.map((amenity: string, idx: number) => (
+                <div 
+                  key={idx} 
+                  className="flex items-center gap-2.5 bg-white px-4 py-3 rounded-xl border border-gray-200/80 shadow-sm"
+                >
+                  <div className="h-7 w-7 rounded-full bg-orange-100 text-orange-600 flex items-center justify-center shrink-0">
+                    {getAmenityIcon(amenity)}
+                  </div>
+                  <span className="text-sm font-semibold text-gray-800 capitalize">{amenity}</span>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="bg-white rounded-2xl p-6 border border-gray-200/80 shadow-sm">
+              <p className="text-gray-400 italic text-sm">No amenities listed for this hotel.</p>
+            </div>
+          )}
+        </section>
+
+        {/* ── Section 5: Available Rooms ────────────────────────────────────── */}
+        <section id="available-rooms" className="space-y-4">
+          <h3 className="text-xl font-bold text-gray-900 flex items-center gap-2">
+            <BedDouble className="h-5 w-5 text-[#0ea5e9]" /> Available Rooms
+          </h3>
+
+          {normalizedRooms.length > 0 ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+              {normalizedRooms.map((room: any, idx: number) => (
+                <div
+                  key={room.id || idx}
+                  className="group rounded-2xl border border-gray-200/90 bg-white overflow-hidden shadow-sm hover:shadow-md transition-all flex flex-col"
+                >
+                  <div className="relative aspect-[16/10] overflow-hidden bg-slate-100 flex items-center justify-center">
+                    {room.imageUrl ? (
+                      <img
+                        src={room.imageUrl}
+                        alt={room.name || 'Room'}
+                        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105 cursor-pointer"
+                        onClick={() => setSelectedImage(room.imageUrl)}
+                      />
+                    ) : (
+                      <div className="flex flex-col items-center justify-center text-gray-300 gap-1">
+                        <BedDouble className="w-10 h-10" />
+                        <span className="text-xs text-gray-400">No Image</span>
+                      </div>
+                    )}
+                    
+                    {room.type && (
+                      <div className="absolute top-3 left-3">
+                        <span className="bg-[#0ea5e9] text-white text-[11px] font-bold px-2.5 py-0.5 rounded-md shadow-sm capitalize">
+                          {room.type}
+                        </span>
+                      </div>
+                    )}
+                    
+                    {room.price != null && Number(room.price) > 0 && (
+                      <div className="absolute bottom-3 right-3 bg-white/95 backdrop-blur-md px-3 py-1 rounded-lg font-bold text-[#0ea5e9] shadow-sm text-xs border border-white/40">
+                        ${Number(room.price).toFixed(0)} <span className="text-[10px] font-normal text-gray-400 uppercase">/ NIGHT</span>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="p-4 flex-1 flex flex-col justify-between">
+                    <div>
+                      <h4 className="font-bold text-gray-900 text-base mb-1 group-hover:text-[#0ea5e9] transition-colors">
+                        {room.name || `Room ${idx + 1}`}
+                      </h4>
+                      <p className="text-xs text-gray-500 line-clamp-2 leading-relaxed">
+                        {room.description || 'Spacious and comfortable room.'}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="bg-white rounded-2xl p-8 border border-dashed border-gray-200 text-center">
+              <p className="text-gray-400 text-sm">No specific rooms listed for this hotel yet.</p>
+            </div>
+          )}
+        </section>
+
+        {/* ── Section 6: Admin Decision & Actions Panel ──────────────────────── */}
+        <section className="bg-white rounded-2xl p-6 sm:p-7 border border-gray-200/80 shadow-sm space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-gray-100 pb-4">
+            <div>
+              <h3 className="text-base font-bold text-gray-900">Admin Approval Decision</h3>
+              <p className="text-xs text-gray-500 mt-0.5">Review credentials, verify NIC & registration documents, and set status.</p>
+            </div>
+
+            <div className="flex items-center gap-3">
+              <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">HOTEL ACTIVE</span>
+              <Switch
+                checked={Boolean(isActive)}
+                onCheckedChange={() => onToggle(hotel)}
+                disabled={loading}
+              />
+            </div>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-3 pt-2">
+            {!isApproved && (
+              <button 
+                onClick={() => onApprove(hotel)} 
+                disabled={loading} 
+                className="py-2.5 px-6 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs sm:text-sm font-semibold shadow-sm transition disabled:opacity-60 flex items-center gap-2"
+              >
+                <Check className="w-4 h-4" /> Approve Hotel
+              </button>
+            )}
+
+            {!isRejected && (
+              <button 
+                onClick={() => onReject(hotel)} 
+                disabled={loading} 
+                className="py-2.5 px-6 bg-white hover:bg-rose-50 text-rose-600 border border-rose-200 rounded-xl text-xs sm:text-sm font-semibold shadow-sm transition disabled:opacity-60 flex items-center gap-2"
+              >
+                <X className="w-4 h-4" /> Reject Hotel
+              </button>
+            )}
+
+            {isApproved && (
+              <button 
+                onClick={() => onToggle(hotel)} 
+                disabled={loading} 
+                className={`py-2.5 px-6 rounded-xl text-xs sm:text-sm font-semibold border shadow-sm transition disabled:opacity-60 flex items-center gap-2 ${
+                  isActive 
+                    ? 'bg-white hover:bg-amber-50 text-amber-700 border-amber-200' 
+                    : 'bg-emerald-600 hover:bg-emerald-700 text-white border-emerald-600'
+                }`}
+              >
+                <Power className="w-4 h-4" /> {isActive ? 'Suspend Hotel' : 'Activate Hotel'}
+              </button>
+            )}
+
+            <button 
+              onClick={() => onDelete(hotel)} 
+              disabled={loading} 
+              className="py-2.5 px-6 bg-white hover:bg-gray-100 text-gray-600 border border-gray-200 rounded-xl text-xs sm:text-sm font-semibold transition disabled:opacity-60 flex items-center gap-2"
+            >
+              <Trash2 className="w-4 h-4 text-gray-500" /> Delete Hotel
+            </button>
+          </div>
+        </section>
+
       </div>
+
+      {/* ── Fullscreen Lightbox Modal ───────────────────────────────────────── */}
+      {(isLightboxOpen || selectedImage) && (
+        <div 
+          className="fixed inset-0 z-[100] flex items-center justify-center bg-black/90 backdrop-blur-md p-4 animate-fade-in"
+          onClick={() => { setIsLightboxOpen(false); setSelectedImage(null); }}
+        >
+          <div className="relative max-w-5xl w-full max-h-[90vh] flex flex-col items-center justify-center">
+            {/* Close button */}
+            <button 
+              className="absolute -top-12 right-0 text-white hover:text-gray-300 bg-black/60 hover:bg-black/90 rounded-full p-2.5 transition border border-white/20"
+              onClick={(e) => { e.stopPropagation(); setIsLightboxOpen(false); setSelectedImage(null); }}
+            >
+              <X className="h-5 w-5" />
+            </button>
+
+            {/* Main Image */}
+            <img 
+              src={selectedImage || allImages[lightboxIndex]} 
+              alt="Enlarged preview" 
+              className="max-w-full max-h-[82vh] object-contain rounded-2xl shadow-2xl border border-white/10"
+              onClick={(e) => e.stopPropagation()}
+            />
+
+            {/* Navigation Arrows for gallery mode */}
+            {isLightboxOpen && allImages.length > 1 && (
+              <>
+                <button
+                  onClick={goLightboxPrev}
+                  className="absolute left-2 top-1/2 -translate-y-1/2 bg-black/60 hover:bg-black/90 text-white p-3 rounded-full border border-white/20 transition"
+                >
+                  <ChevronLeft className="w-6 h-6" />
+                </button>
+                <button
+                  onClick={goLightboxNext}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 bg-black/60 hover:bg-black/90 text-white p-3 rounded-full border border-white/20 transition"
+                >
+                  <ChevronRight className="w-6 h-6" />
+                </button>
+              </>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   )
 }
 
-// ── Hotel Card ────────────────────────────────────────────────────────────────
-const HotelCard = ({ hotel, onView }) => {
+// ── Hotel Card (Approvals Grid View) ──────────────────────────────────────────
+const HotelCard = ({ hotel, onView }: any) => {
   const { hotelName, imageUrl, district, location, destination, rating, reviewCount,
     priceFrom, numberOfRooms, applicationStatus, isActive } = hotel
 
@@ -263,7 +805,7 @@ const HotelCard = ({ hotel, onView }) => {
             </div>
           )}
 
-          {/* Top-left Translucent Glass Status Pill */}
+          {/* Top-left Glass Status Pill */}
           <div className="absolute top-3.5 left-3.5">
             <span className={`backdrop-blur-md px-3.5 py-1 rounded-full text-xs font-semibold tracking-wide border shadow-sm ${
               isApproved 
@@ -336,14 +878,14 @@ const HotelCard = ({ hotel, onView }) => {
             <div className="text-right">
               <span className="block text-[11px] text-gray-400 font-medium leading-none mb-0.5">Starts from</span>
               <span className="block text-base sm:text-lg font-bold text-gray-900 tracking-tight">
-                ${Number(priceFrom || 180).toFixed(2)}
+                {priceFrom != null && Number(priceFrom) > 0 ? `$${Number(priceFrom).toFixed(2)}` : '—'}
               </span>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Card Actions - Sky Blue View Details Button */}
+      {/* Card Actions */}
       <div className="p-5 pt-0">
         <button
           onClick={(e) => { e.stopPropagation(); onView(hotel); }}
@@ -361,20 +903,19 @@ const HotelCard = ({ hotel, onView }) => {
 export default function HotelApprovals() {
   const modal = useModal()
 
-  const [hotels, setHotels]             = useState([])
+  const [hotels, setHotels]             = useState<any[]>([])
   const [loading, setLoading]           = useState(true)
   const [actionLoading, setActionLoading] = useState(false)
-  const [error, setError]               = useState(null)
+  const [error, setError]               = useState<string | null>(null)
   const [statusFilter, setStatusFilter] = useState('All')
   const [districtFilter, setDistrictFilter] = useState('All')
   const [search, setSearch]             = useState('')
-  const [selectedHotel, setSelectedHotel] = useState(null)
-  const [drawerDetail, setDrawerDetail] = useState(null)
+  const [selectedHotel, setSelectedHotel] = useState<any>(null)
+  const [drawerDetail, setDrawerDetail] = useState<any>(null)
   const [detailLoading, setDetailLoading] = useState(false)
   const [isRejectModalOpen, setIsRejectModalOpen] = useState(false)
   const [rejectReason, setRejectReason] = useState('')
-  const [rejectingHotel, setRejectingHotel] = useState(null)
-  const searchTimer = useRef(null)
+  const [rejectingHotel, setRejectingHotel] = useState<any>(null)
 
   // ── Fetch ─────────────────────────────────────────────────────────────────
   const fetchHotels = useCallback(async (status = 'All') => {
@@ -385,7 +926,7 @@ export default function HotelApprovals() {
         ? await adminHotelApi.getAllHotels()
         : await adminHotelApi.getHotelsByStatus(status)
       setHotels(res?.data ?? res ?? [])
-    } catch (err) {
+    } catch (err: any) {
       setError(err?.response?.data?.message || 'Failed to load hotels.')
       setHotels([])
     } finally {
@@ -395,8 +936,8 @@ export default function HotelApprovals() {
 
   useEffect(() => { fetchHotels(statusFilter) }, [statusFilter, fetchHotels])
 
-  // ── Open detail drawer ───────────────────────────────────────────────────
-  const openDrawer = async (hotel) => {
+  // ── Open detail view ─────────────────────────────────────────────────────
+  const openDrawer = async (hotel: any) => {
     setSelectedHotel(hotel)
     setDrawerDetail(null)
     setDetailLoading(true)
@@ -416,7 +957,7 @@ export default function HotelApprovals() {
   }
 
   // ── Actions ──────────────────────────────────────────────────────────────
-  const handleApprove = async (hotel) => {
+  const handleApprove = async (hotel: any) => {
     const ok = await modal.showConfirm({
       title:   'Approve Hotel',
       message: `Approve "${hotel.hotelName}" and notify the owner?`,
@@ -427,18 +968,18 @@ export default function HotelApprovals() {
       await adminHotelApi.approveHotel(hotel.id)
       modal.addToast(`✅ "${hotel.hotelName}" approved`)
       setHotels(prev => prev.map(h =>
-        h.id === hotel.id ? { ...h, applicationStatus: 'Approved' } : h
+        h.id === hotel.id ? { ...h, applicationStatus: 'Approved', isActive: true } : h
       ))
       if (drawerDetail?.id === hotel.id)
-        setDrawerDetail(d => ({ ...d, applicationStatus: 'Approved' }))
-    } catch (err) {
+        setDrawerDetail((d: any) => ({ ...d, applicationStatus: 'Approved', isActive: true }))
+    } catch (err: any) {
       modal.addToast(`❌ ${err?.response?.data?.message || 'Approval failed'}`)
     } finally {
       setActionLoading(false)
     }
   }
 
-  const handleReject = (hotel) => {
+  const handleReject = (hotel: any) => {
     setRejectingHotel(hotel)
     setRejectReason('')
     setIsRejectModalOpen(true)
@@ -461,8 +1002,8 @@ export default function HotelApprovals() {
         h.id === hotel.id ? { ...h, applicationStatus: 'Rejected' } : h
       ))
       if (drawerDetail?.id === hotel.id)
-        setDrawerDetail(d => ({ ...d, applicationStatus: 'Rejected', rejectionReason: rejectReason }))
-    } catch (err) {
+        setDrawerDetail((d: any) => ({ ...d, applicationStatus: 'Rejected', rejectionReason: rejectReason }))
+    } catch (err: any) {
       modal.addToast(`❌ ${err?.response?.data?.message || 'Rejection failed'}`)
     } finally {
       setActionLoading(false)
@@ -470,7 +1011,7 @@ export default function HotelApprovals() {
     }
   }
 
-  const handleDelete = async (hotel) => {
+  const handleDelete = async (hotel: any) => {
     const ok = await modal.showConfirm({
       title:   'Delete Hotel',
       message: `Permanently delete "${hotel.hotelName}"? This cannot be undone.`,
@@ -482,14 +1023,14 @@ export default function HotelApprovals() {
       modal.addToast(`🗑 "${hotel.hotelName}" deleted`)
       setHotels(prev => prev.filter(h => h.id !== hotel.id))
       closeDrawer()
-    } catch (err) {
+    } catch (err: any) {
       modal.addToast(`❌ ${err?.response?.data?.message || 'Delete failed'}`)
     } finally {
       setActionLoading(false)
     }
   }
 
-  const handleToggle = async (hotel) => {
+  const handleToggle = async (hotel: any) => {
     const isSuspending = hotel.isActive !== false
     const action = isSuspending ? 'Suspend' : 'Activate'
     const ok = await modal.showConfirm({
@@ -504,8 +1045,8 @@ export default function HotelApprovals() {
       modal.addToast(`✅ "${hotel.hotelName}" ${isSuspending ? 'suspended' : 'activated'}`)
       setHotels(prev => prev.map(h => h.id === hotel.id ? { ...h, isActive: updatedIsActive, applicationStatus: updatedIsActive ? 'Approved' : 'Suspended' } : h))
       if (drawerDetail?.id === hotel.id)
-        setDrawerDetail(d => ({ ...d, isActive: updatedIsActive, applicationStatus: updatedIsActive ? 'Approved' : 'Suspended' }))
-    } catch (err) {
+        setDrawerDetail((d: any) => ({ ...d, isActive: updatedIsActive, applicationStatus: updatedIsActive ? 'Approved' : 'Suspended' }))
+    } catch (err: any) {
       modal.addToast(`❌ ${err?.response?.data?.message || 'Toggle failed'}`)
     } finally {
       setActionLoading(false)
@@ -532,22 +1073,14 @@ export default function HotelApprovals() {
     return matchesSearch && matchesDistrict
   })
 
-  // ── Counts ───────────────────────────────────────────────────────────────
-  const counts = {
-    total:    hotels.length,
-    pending:  hotels.filter(h => String(h.applicationStatus).trim().toLowerCase() === 'pending').length,
-    approved: hotels.filter(h => String(h.applicationStatus).trim().toLowerCase() === 'approved').length,
-    rejected: hotels.filter(h => String(h.applicationStatus).trim().toLowerCase() === 'rejected').length,
-  }
-
   return (
-    <div className="p-8 bg-gray-50 min-h-screen">
+    <div className="p-6 sm:p-8 bg-[#F8FAFC] min-h-screen animate-fade-in font-sans">
       {selectedHotel ? (
         detailLoading ? (
           <div className="flex items-center justify-center h-[50vh]">
             <div className="text-center space-y-4">
-              <div className="w-12 h-12 border-4 border-teal-500 border-t-transparent rounded-full animate-spin mx-auto" />
-              <div className="text-gray-500 text-sm">Loading hotel details…</div>
+              <div className="w-12 h-12 border-4 border-[#0ea5e9] border-t-transparent rounded-full animate-spin mx-auto" />
+              <div className="text-gray-500 text-sm font-semibold">Loading hotel details…</div>
             </div>
           </div>
         ) : (
@@ -564,7 +1097,14 @@ export default function HotelApprovals() {
       ) : (
         <>
           {/* ── Header ──────────────────────────────────────────────────────── */}
-          <h1 className="text-3xl font-bold text-slate-800 mb-8">Hotel Approvals</h1>
+          <div className="mb-6 sm:mb-8">
+            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 tracking-tight">
+              Hotel Approvals
+            </h1>
+            <p className="text-gray-500 text-sm mt-1">
+              Review, approve, suspend and manage all partner hotel listings and owner verifications
+            </p>
+          </div>
 
           {/* ── Toolbar ─────────────────────────────────────────────────────── */}
           <div className="flex flex-col md:flex-row items-stretch md:items-center gap-3.5 mb-8">
@@ -616,7 +1156,7 @@ export default function HotelApprovals() {
           {error && (
             <div className="bg-red-50 border border-red-200 rounded-2xl p-4 flex items-center justify-between mb-8 shadow-sm">
               <div className="flex items-center gap-3">
-                <span className="text-2xl">⚠️</span>
+                <AlertCircle className="w-6 h-6 text-red-500 flex-shrink-0" />
                 <div>
                   <div className="font-bold text-red-800 text-sm">Failed to load hotels</div>
                   <div className="text-xs text-red-600">{error}</div>
@@ -625,7 +1165,9 @@ export default function HotelApprovals() {
               <button
                 onClick={() => fetchHotels(statusFilter)}
                 className="px-4 py-2 bg-red-600 text-white text-xs font-semibold rounded-xl hover:bg-red-700 transition"
-              >Retry</button>
+              >
+                Retry
+              </button>
             </div>
           )}
 
@@ -636,9 +1178,9 @@ export default function HotelApprovals() {
             </div>
           ) : displayed.length === 0 ? (
             <div className="text-center py-16 bg-white rounded-3xl border border-gray-100 shadow-sm mt-6">
-              <div className="text-5xl mb-3">🏨</div>
+              <Building2 className="w-12 h-12 text-gray-300 mx-auto mb-3" />
               <h3 className="text-gray-700 font-bold text-base">No hotels found</h3>
-              <p className="text-gray-400 text-sm mt-1">Try a different filter or search term</p>
+              <p className="text-gray-400 text-sm mt-1">Try a different filter or search term.</p>
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -654,29 +1196,30 @@ export default function HotelApprovals() {
         </>
       )}
 
+      {/* ── Rejection Reason Modal ──────────────────────────────────────────── */}
       {isRejectModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 animate-fade-in">
-          <div className="bg-white w-full max-w-md rounded-2xl p-6 shadow-xl space-y-4 border animate-scale-in">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-fade-in">
+          <div className="bg-white w-full max-w-md rounded-2xl p-6 shadow-xl space-y-4 border border-gray-200">
             <h3 className="text-xl font-bold text-gray-900">Provide Rejection Reason</h3>
             <p className="text-sm text-gray-500">
-              Please enter the reason for rejecting this hotel.
+              Please enter the reason for rejecting this hotel application.
             </p>
             <textarea
-              className="w-full min-h-[100px] p-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-1 focus:ring-teal-600 focus:border-transparent resize-none"
-              placeholder="e.g. Incomplete business registration details."
+              className="w-full min-h-[110px] p-3.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#0ea5e9]/20 focus:border-[#0ea5e9] resize-none"
+              placeholder="e.g. Invalid or expired business registration document, or unclear NIC copy."
               value={rejectReason}
               onChange={(e) => setRejectReason(e.target.value)}
             />
-            <div className="flex gap-3 justify-end">
+            <div className="flex gap-3 justify-end pt-2">
               <button
-                className="px-4 py-2 border border-gray-200 text-gray-700 font-semibold text-sm rounded-lg hover:bg-gray-50 transition"
+                className="px-4 py-2 border border-gray-200 text-gray-700 font-semibold text-sm rounded-xl hover:bg-gray-50 transition"
                 onClick={() => setIsRejectModalOpen(false)}
                 disabled={actionLoading}
               >
                 Cancel
               </button>
               <button
-                className="px-4 py-2 bg-red-600 text-white font-semibold text-sm rounded-lg hover:bg-red-700 active:bg-red-800 transition disabled:opacity-50"
+                className="px-5 py-2 bg-rose-600 text-white font-semibold text-sm rounded-xl hover:bg-rose-700 active:bg-rose-800 transition disabled:opacity-50"
                 onClick={submitRejection}
                 disabled={actionLoading}
               >

@@ -13,10 +13,10 @@ import com.travelhub.backend.entity.Room;
 public interface RoomRepository
         extends JpaRepository<Room, String> {
 
-    // Hotel-இன் எல்லா rooms
-    // Hotel-இன் எல்லா rooms
-    @Query("SELECT r FROM Room r JOIN FETCH r.hotel h WHERE h.id = :hotelId")
+    @Query("SELECT r FROM Room r WHERE r.hotel.id = :hotelId")
     List<Room> findByHotelId(@Param("hotelId") Long hotelId);
+
+    List<Room> findByHotel_Id(Long hotelId);
 
     @Query("""
         SELECT r.hotel.id,

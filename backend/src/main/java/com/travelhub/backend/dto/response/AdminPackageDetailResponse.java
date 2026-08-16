@@ -6,38 +6,34 @@ public record AdminPackageDetailResponse(
 
         // ── Basic Info ─────────────────────────────────
         Long   id,
+        String packageId,
         String packageName,
         String destination,
         String district,
+        String startPlace,
+        String endPlace,
+        String packageType,
 
         // ── Price ──────────────────────────────────────
-        // Frontend-ல் $450 per person
         Double priceFrom,
         Double priceTo,
         Double basePriceAdult,
         Double basePriceChild,
 
         // ── Gallery ────────────────────────────────────
-        // Multiple images — 1/3, 2/3, 3/3
         List<String> images,
         String imageUrl,
 
         // ── Info Cards ─────────────────────────────────
-        // Duration card — "3 Days / 2 Nights"
         String duration,
-
-        // Provider card — "Pinnacle Tours"
         String providerName,
-
-        // Status card — "Pending"
         String applicationStatus,
 
-        // ── Description ────────────────────────────────
+        // ── Description & Details ──────────────────────
         String description,
+        String festivalDetails,
 
         // ── What's Included ────────────────────────────
-        // [Accommodation, Meals, Transportation,
-        //  Guide, Entry fees]
         List<String> inclusions,
 
         // ── Itinerary — Day by Day ─────────────────────
@@ -48,14 +44,26 @@ public record AdminPackageDetailResponse(
         Integer reviewCount,
         String  category,
         Boolean trending,
-        Boolean isActive
+        Boolean isActive,
+        Long    bookings
 
 ) {
+    // Activity detail record
+    public record ActivityDetail(
+            String description,
+            String imageUrl
+    ) {}
+
     // Itinerary Day inner record
     public record ItineraryDayDetail(
+            Long    dayId,
             Integer dayNumber,
             String  title,
             String  description,
-            List<String> activities
+            List<ActivityDetail> activities,
+            String  district,
+            Long    hotelId,
+            String  hotelName,
+            String  hotelImageUrl
     ) {}
 }

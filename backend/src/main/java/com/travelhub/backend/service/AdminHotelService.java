@@ -1,5 +1,6 @@
 package com.travelhub.backend.service;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -35,7 +36,7 @@ public class AdminHotelService {
     private final ReviewRepository           reviewRepository;
     private final HotelPricingService        hotelPricingService;
     private final UserRepository             userRepository;
-    private final ApplicationEventPublisher  eventPublisher; // ← சேர்க்கணும்
+    private final ApplicationEventPublisher  eventPublisher;
 
     // ── Get All Hotels ────────────────────────────────
     public List<AdminHotelResponse> getAllHotels() {
@@ -62,10 +63,10 @@ public class AdminHotelService {
         return hotels.stream()
                 .map(h -> mapToResponse(h, 
                     avgRatings.getOrDefault(h.getId(), 0.0), 
-                                        reviewCounts.getOrDefault(h.getId(), 0L).intValue(),
-                                        priceRanges.get(h.getId()),
-                                        roomCounts.getOrDefault(h.getId(), 0),
-                                        roomImages.get(h.getId())))
+                    reviewCounts.getOrDefault(h.getId(), 0L).intValue(),
+                    priceRanges.get(h.getId()),
+                    roomCounts.getOrDefault(h.getId(), 0),
+                    roomImages.get(h.getId())))
                 .toList();
     }
 
@@ -102,51 +103,97 @@ public class AdminHotelService {
     }
 
     // ── Get Hotel Detail ──────────────────────────────
-    public AdminHotelDetailResponse getHotelDetail(
-            Long id) {
+    public AdminHotelDetailResponse getHotelDetail(Long id) {
         Hotel hotel = hotelRepository.findById(id)
-                .orElseThrow(() ->
-                        new ResourceNotFoundException(
-                                "Hotel", "id", id));
+                .orElseThrow(() -> new ResourceNotFoundException("Hotel", "id", id));
 
         List<Room> rooms = roomRepository.findByHotelId(id);
-        List<AdminHotelDetailResponse.RoomTypeResponse>
-                roomTypes = rooms.stream()
-                .map(r -> new AdminHotelDetailResponse
-                        .RoomTypeResponse(
+        List<AdminHotelDetailResponse.RoomDetailResponse> roomDetails = rooms.stream()
+                .map(r -> new AdminHotelDetailResponse.RoomDetailResponse(
+                        r.getId(),
                         r.getName(),
-                        r.getDescription()))
+                        r.getType(),
+                        r.getPrice(),
+                        r.getDescription(),
+                        r.getImageUrl(),
+                        r.getAvailability()
+                ))
                 .toList();
 
-        List<Amenity> amenityEntities =
-                amenityRepository.findByHotelId(id);
+        List<Amenity> amenityEntities = amenityRepository.findByHotelId(id);
         List<String> amenities;
         if (!amenityEntities.isEmpty()) {
-            amenities = amenityEntities.stream()
-                    .map(Amenity::getName).toList();
-        } else if (hotel.getAmenityList() != null
-                && !hotel.getAmenityList().isEmpty()) {
-            amenities = hotel.getAmenityList().stream()
-                    .map(Amenity::getName).toList();
+            amenities = amenityEntities.stream().map(Amenity::getName).toList();
+        } else if (hotel.getAmenityList() != null && !hotel.getAmenityList().isEmpty()) {
+            amenities = hotel.getAmenityList().stream().map(Amenity::getName).toList();
         } else {
             amenities = List.of();
         }
 
         Double avgRating = reviewRepository.getAverageRatingByHotelId(id);
-        
+        Long reviewCount = reviewRepository.getReviewCountByHotelId(id);
+
+        PriceRange priceRange = hotelPricingService.getPriceRangeByHotelId(id);
+        Double pFrom = (priceRange != null && priceRange.priceFrom() != null) ? priceRange.priceFrom() : hotel.getPriceFrom();
+        Double pTo = (priceRange != null && priceRange.priceTo() != null) ? priceRange.priceTo() : hotel.getPriceTo();
+
+        if ((pFrom == null || pFrom <= 0) && !rooms.isEmpty()) {
+            pFrom = rooms.stream()
+                         .filter(r -> r.getPrice() != null && r.getPrice() > 0)
+                         .mapToDouble(Room::getPrice)
+                         .min()
+                         .orElse(0.0);
+            if (pFrom == 0.0) pFrom = null;
+        }
+        if ((pTo == null || pTo <= 0) && !rooms.isEmpty()) {
+            pTo = rooms.stream()
+                       .filter(r -> r.getPrice() != null && r.getPrice() > 0)
+                       .mapToDouble(Room::getPrice)
+                       .max()
+                       .orElse(0.0);
+            if (pTo == 0.0) pTo = null;
+        }
+
+        List<String> dbImages = hotelRepository.findImageUrlsByHotelId(id);
+        List<String> images = new ArrayList<>();
+        if (dbImages != null && !dbImages.isEmpty()) {
+            images.addAll(dbImages);
+        }
+        if (hotel.getImageUrl() != null && !hotel.getImageUrl().trim().isEmpty() && !images.contains(hotel.getImageUrl())) {
+            images.add(0, hotel.getImageUrl());
+        }
+        for (Room r : rooms) {
+            if (r.getImageUrl() != null && !r.getImageUrl().trim().isEmpty() && !images.contains(r.getImageUrl())) {
+                images.add(r.getImageUrl());
+            }
+        }
+
+        User owner = hotel.getOwner();
+        String ownerName = owner != null ? owner.getName() : hotel.getOwnerName();
+        String ownerEmail = owner != null ? owner.getEmail() : hotel.getOwnerEmail();
+        String ownerNic = owner != null ? owner.getNicNumber() : hotel.getOwnerNic();
+        String nicImage = owner != null ? owner.getNicImage() : hotel.getNicImageUrl();
+
         return new AdminHotelDetailResponse(
                 hotel.getId(),
                 hotel.getHotelName(),
                 avgRating != null ? Math.round(avgRating * 10.0) / 10.0 : 0.0,
+                reviewCount != null ? reviewCount.intValue() : 0,
                 getEffectiveImageUrl(hotel, rooms),
+                images,
+                pFrom,
+                pTo,
                 hotel.getDistrict(),
+                hotel.getDestination(),
                 hotel.getLocation(),
+                hotel.getDescription(),
                 rooms.size(),
-                roomTypes,
-                hotel.getOwner() != null ? hotel.getOwner().getName() : null,
-                hotel.getOwner() != null ? hotel.getOwner().getEmail() : null,
-                hotel.getOwner() != null ? hotel.getOwner().getNicNumber() : null,
-                hotel.getOwner() != null ? hotel.getOwner().getNicImage() : null,
+                roomDetails,
+                ownerName,
+                ownerEmail,
+                ownerNic,
+                nicImage,
+                hotel.getNicRearImageUrl(),
                 hotel.getBusinessRegistrationImageUrl(),
                 hotel.getOwnerId(),
                 hotel.getPhoneNumber(),
@@ -155,7 +202,8 @@ public class AdminHotelService {
                 hotel.getHotelContactNumber(),
                 amenities,
                 hotel.getApplicationStatus(),
-                hotel.getRejectionReason()
+                hotel.getRejectionReason(),
+                hotel.getIsActive()
         );
     }
 
@@ -163,10 +211,9 @@ public class AdminHotelService {
     @Transactional
     public AdminHotelDetailResponse approveHotel(Long id) {
         Hotel hotel = hotelRepository.findById(id)
-                .orElseThrow(() ->
-                        new ResourceNotFoundException(
-                                "Hotel", "id", id));
+                .orElseThrow(() -> new ResourceNotFoundException("Hotel", "id", id));
         hotel.setApplicationStatus("Approved");
+        hotel.setIsActive(true);
         hotelRepository.save(hotel);
 
         User owner = hotel.getOwner();
@@ -176,29 +223,33 @@ public class AdminHotelService {
             userRepository.save(owner);
         }
 
-        eventPublisher.publishEvent(
-                new HotelEvent(this, hotel, "APPROVED"));
+        eventPublisher.publishEvent(new HotelEvent(this, hotel, "APPROVED"));
 
         return getHotelDetail(id);
     }
 
     // ── Reject Hotel ──────────────────────────────────
     @Transactional
-    public AdminHotelDetailResponse rejectHotel(
-            Long id, String reason) {
+    public AdminHotelDetailResponse rejectHotel(Long id, String reason) {
         Hotel hotel = hotelRepository.findById(id)
-                .orElseThrow(() ->
-                        new ResourceNotFoundException(
-                                "Hotel", "id", id));
+                .orElseThrow(() -> new ResourceNotFoundException("Hotel", "id", id));
         hotel.setApplicationStatus("Rejected");
         hotel.setRejectionReason(reason);
         hotelRepository.save(hotel);
 
+        eventPublisher.publishEvent(new HotelEvent(this, hotel, "REJECTED", reason));
 
-        eventPublisher.publishEvent(
-                new HotelEvent(
-                        this, hotel, "REJECTED", reason));
+        return getHotelDetail(id);
+    }
 
+    // ── Toggle Active ─────────────────────────────────
+    @Transactional
+    public AdminHotelDetailResponse toggleActive(Long id) {
+        Hotel hotel = hotelRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Hotel", "id", id));
+        boolean newActive = !Boolean.TRUE.equals(hotel.getIsActive());
+        hotel.setIsActive(newActive);
+        hotelRepository.save(hotel);
         return getHotelDetail(id);
     }
 
@@ -206,15 +257,9 @@ public class AdminHotelService {
     @Transactional
     public void deleteHotel(Long id) {
         Hotel hotel = hotelRepository.findById(id)
-                .orElseThrow(() ->
-                        new ResourceNotFoundException(
-                                "Hotel", "id", id));
+                .orElseThrow(() -> new ResourceNotFoundException("Hotel", "id", id));
 
-
-        eventPublisher.publishEvent(
-                new HotelEvent(
-                        this, hotel, "DELETED",
-                        "Removed by admin"));
+        eventPublisher.publishEvent(new HotelEvent(this, hotel, "DELETED", "Removed by admin"));
 
         hotelRepository.deleteById(id);
     }
