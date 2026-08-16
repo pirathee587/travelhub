@@ -326,4 +326,16 @@ public class PackageService {
                 })
                 .collect(Collectors.toList());
     }
+
+    // ── Dynamic District Map services ──────────────────────────────────────
+    @Cacheable(value = "touristPackages", key = "'active_districts'")
+    public List<String> getActiveDistricts() {
+        return packageRepository.findDistinctDistricts();
+    }
+
+    @Cacheable(value = "touristPackages", key = "'dist_' + #district")
+    public List<PackageResponse> getPackagesByDistrict(String district) {
+        List<Package> packages = packageRepository.findActivePackagesByDistrict(district);
+        return toPackageResponses(packages);
+    }
 }

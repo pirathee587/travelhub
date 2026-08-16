@@ -17,6 +17,5 @@ import java.util.List;
 public class TouristOverviewResponse {
     private StatsResponse stats;
     private List<TripResponse> trips;
-    private List<DocumentResponse> documents;
     private List<PackageResponse> recommendations;
 }

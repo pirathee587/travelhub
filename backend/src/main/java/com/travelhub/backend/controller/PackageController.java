@@ -19,11 +19,20 @@ public class PackageController {
 
     @GetMapping
     public ResponseEntity<List<PackageResponse>> getAllPackages(
-            @RequestParam(required = false) String category) {
+            @RequestParam(required = false) String category,
+            @RequestParam(required = false) String district) {
+        if (district != null && !district.trim().isEmpty()) {
+            return ResponseEntity.ok(packageService.getPackagesByDistrict(district));
+        }
         if (category != null && !category.equals("all")) {
             return ResponseEntity.ok(packageService.getPackagesByCategory(category));
         }
         return ResponseEntity.ok(packageService.getAllPackages());
+    }
+
+    @GetMapping("/districts")
+    public ResponseEntity<List<String>> getActiveDistricts() {
+        return ResponseEntity.ok(packageService.getActiveDistricts());
     }
 
     @GetMapping("/trending")

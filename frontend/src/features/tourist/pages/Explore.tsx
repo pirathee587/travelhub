@@ -114,6 +114,7 @@ const Explore = () => {
         [allPackages]
     );
 
+
     // Memoize filtered + sorted packages — avoids recalculation on unrelated state changes
     const filteredPackages = useMemo(() => {
         const query = submittedQuery.toLowerCase();
@@ -283,6 +284,7 @@ const Explore = () => {
                     </div>
                 </section>
             )}
+
 
             {/* Filters & Sorting */}
             <section className="animate-slide-up py-8" style={{ animationDelay: "0.15s" }}>

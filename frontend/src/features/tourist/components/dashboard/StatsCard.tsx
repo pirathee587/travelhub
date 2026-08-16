@@ -4,22 +4,22 @@ const variantStyles = {
     default: "bg-card border border-border",
     primary: "gradient-ocean text-primary-foreground border-none",
     accent: "gradient-sunset text-accent-foreground border-none",
-    success: "bg-emerald-50 border-emerald-100 text-emerald-900",
-    blue: "bg-blue-50 border-blue-100 text-blue-900",
-    green: "bg-emerald-50 border-emerald-100 text-emerald-900",
-    orange: "bg-orange-50 border-orange-100 text-orange-900",
-    purple: "bg-purple-50 border-purple-100 text-purple-900",
+    success: "bg-emerald-100 border-emerald-200 text-emerald-950",
+    blue: "bg-blue-100 border-blue-200 text-blue-950",
+    green: "bg-emerald-100 border-emerald-200 text-emerald-950",
+    orange: "bg-orange-100 border-orange-200 text-orange-950",
+    purple: "bg-purple-100 border-purple-200 text-purple-950",
 };
 
 const iconVariantStyles = {
     default: "bg-primary/10 text-primary",
     primary: "bg-primary-foreground/20 text-primary-foreground",
     accent: "bg-accent-foreground/20 text-accent-foreground",
-    success: "bg-emerald-500/50 text-emerald-600",
-    blue: "bg-blue-500/20 text-blue-600",
-    green: "bg-emerald-500/20 text-emerald-600",
-    orange: "bg-orange-500/20 text-orange-600",
-    purple: "bg-purple-500/20 text-purple-600",
+    success: "bg-emerald-500/30 text-emerald-800",
+    blue: "bg-blue-500/30 text-blue-800",
+    green: "bg-emerald-500/30 text-emerald-800",
+    orange: "bg-orange-500/30 text-orange-800",
+    purple: "bg-purple-500/30 text-purple-800",
 };
 
 export function StatsCard({

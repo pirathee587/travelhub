@@ -115,25 +115,53 @@ export function TripDetailsSheet({ trip, open, onOpenChange }: { trip: any, open
         <Sheet open={open} onOpenChange={onOpenChange}>
             <SheetContent className="w-full sm:max-w-xl overflow-y-auto">
                 <SheetHeader className="space-y-1">
-                    <div className="flex items-center gap-2">
-                        <SheetTitle className="text-xl">{trip.destination}</SheetTitle>         {/*Destination*/}
-                        <Badge variant="outline" className={cn("border", status.className)}>
-                            {status.label}                                                      {/*Booking Status*/}
-                        </Badge>
-                    </div>
-                    <p className="text-muted-foreground">{trip.packageName}</p>                 {/*Package Name*/}
+                    <SheetTitle className="text-2xl font-bold">{trip.destination || trip.packageName}</SheetTitle>
+                    <p className="text-muted-foreground text-sm">{trip.packageName}</p>
                 </SheetHeader>
 
                 <div className="mt-6 space-y-6">
                     {/* Trip Image */}
-                    <div className="relative h-48 rounded-xl overflow-hidden">                  {/*Package Image*/}
+                    <div className="relative h-56 rounded-xl overflow-hidden shadow-sm border border-border/50">
                         <img                                                                    
                             src={trip.imageUrl}
                             alt={trip.destination}
                             className="w-full h-full object-cover"
                         />
-                        <div className="absolute inset-0 bg-gradient-to-t from-foreground/60 to-transparent" />
-                        <div className="absolute bottom-4 left-4 text-primary-foreground">
+                        <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-transparent to-black/80" />
+                        
+                        {/* Top Overlay: Badges and Agent */}
+                        <div className="absolute top-4 left-4 right-4 flex justify-between items-start gap-2">
+                            <div className="flex flex-wrap gap-2">
+                                <Badge className="bg-white/20 hover:bg-white/30 text-white border-none backdrop-blur-md text-[10px] uppercase tracking-wider font-semibold shadow-sm">
+                                    {trip.packageType === 'MULTI_DISTRICT' ? 'Multi District' : 'Single District'}
+                                </Badge>
+                                <Badge className={cn(
+                                    "bg-white/20 hover:bg-white/30 text-white border-none backdrop-blur-md text-[10px] uppercase tracking-wider font-semibold shadow-sm",
+                                    trip.status === 'confirmed' ? "text-green-300" : ""
+                                )}>
+                                    {status.label}
+                                </Badge>
+                            </div>
+                            
+                            {trip.agencyName && (
+                                <div 
+                                    className="bg-black/40 backdrop-blur-md border border-white/10 rounded-full pl-2.5 pr-3 py-1.5 flex items-center gap-1.5 cursor-pointer hover:bg-black/60 transition-all shadow-sm"
+                                    onClick={() => {
+                                        if (trip.agentId) {
+                                            navigate(`/tourist/agents/${trip.agentId}`);
+                                            onOpenChange(false);
+                                        }
+                                    }}
+                                    title="View Agency Profile"
+                                >
+                                    <Building2 className="h-3.5 w-3.5 text-white/70" />
+                                    <span className="text-white text-xs font-medium hover:underline">{trip.agencyName}</span>
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Bottom Overlay: Dates */}
+                        <div className="absolute bottom-4 left-4 text-white">
                             <div className="flex items-center gap-2">
                                 <Calendar className="h-4 w-4" />
                                 <span className="text-sm">{trip.startDate} - {trip.endDate}</span>          {/*Start Date and End Date*/}
@@ -238,7 +266,43 @@ export function TripDetailsSheet({ trip, open, onOpenChange }: { trip: any, open
                     )}
 
                     {/* Driver Details */}
-                    {trip.driverName && (
+                    {trip.status?.toLowerCase() === "confirmed" || trip.status?.toLowerCase() === "paid" || trip.status?.toLowerCase() === "in_progress" ? (
+                        <>
+                            <div className="space-y-3">
+                                <h3 className="font-semibold flex items-center gap-2">
+                                    <User className="h-5 w-5 text-primary" />
+                                    Driver Details
+                                </h3>
+                                {trip.driverName ? (
+                                    <div className="flex items-center gap-4 p-3 rounded-lg bg-secondary/50">
+                                        <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center">
+                                            <User className="h-6 w-6 text-primary" />
+                                        </div>
+                                        <div className="flex-1">
+                                            <p className="font-medium">{trip.driverName}</p>
+                                            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                                <Star className="h-4 w-4 fill-warning text-warning" />
+                                                <span>{trip.driverRating || "New"}</span>
+                                                <span>•</span>
+                                                <span>{trip.driverTrips || 0} trips</span>
+                                            </div>
+                                            {trip.driverPhone && (
+                                                <div className="flex items-center gap-1 text-sm text-muted-foreground mt-1">
+                                                    <Phone className="h-3 w-3" />
+                                                    <span>{trip.driverPhone}</span>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <div className="p-3 rounded-lg bg-secondary/50 text-center text-sm text-muted-foreground">
+                                        Driver information not available
+                                    </div>
+                                )}
+                            </div>
+                            <Separator />
+                        </>
+                    ) : trip.driverName && (
                         <>
                             <div className="space-y-3">
                                 <h3 className="font-semibold flex items-center gap-2">
@@ -253,9 +317,9 @@ export function TripDetailsSheet({ trip, open, onOpenChange }: { trip: any, open
                                         <p className="font-medium">{trip.driverName}</p>
                                         <div className="flex items-center gap-2 text-sm text-muted-foreground">
                                             <Star className="h-4 w-4 fill-warning text-warning" />
-                                            <span>{trip.driverRating}</span>
+                                            <span>{trip.driverRating || "New"}</span>
                                             <span>•</span>
-                                            <span>{trip.driverTrips} trips</span>
+                                            <span>{trip.driverTrips || 0} trips</span>
                                         </div>
                                         {trip.driverPhone && (
                                             <div className="flex items-center gap-1 text-sm text-muted-foreground mt-1">
@@ -271,22 +335,35 @@ export function TripDetailsSheet({ trip, open, onOpenChange }: { trip: any, open
                     )}
 
                     {/* Hotel Information */}
-                    {trip.hotelName && (
+                    {trip.packageType !== "MULTI_DISTRICT" && (
                         <>
                             <div className="space-y-3">
                                 <h3 className="font-semibold flex items-center gap-2">
                                     <Building2 className="h-5 w-5 text-primary" />
                                     Hotel Information
                                 </h3>
-                                <div className="p-3 rounded-lg bg-secondary/50 space-y-2">
-                                    <p className="font-medium">{trip.hotelName}</p>
-                                    {trip.hotelLocation && (
-                                        <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                                            <MapPin className="h-3 w-3" />
-                                            <span>{trip.hotelLocation}</span>
-                                        </div>
-                                    )}
-                                </div>
+                                {trip.hotelName ? (
+                                    <div className="p-3 rounded-lg bg-secondary/50 space-y-2 hover:bg-secondary/70 transition-colors">
+                                        <p className="font-medium text-primary hover:underline cursor-pointer" onClick={() => {
+                                            if (trip.hotelId) {
+                                                navigate(`/tourist/hotels/${trip.hotelId}`);
+                                                onOpenChange(false);
+                                            }
+                                        }}>
+                                            {trip.hotelName}
+                                        </p>
+                                        {trip.hotelLocation && (
+                                            <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                                                <MapPin className="h-3 w-3" />
+                                                <span>{trip.hotelLocation}</span>
+                                            </div>
+                                        )}
+                                    </div>
+                                ) : (
+                                    <div className="p-3 rounded-lg bg-secondary/50 text-center text-sm text-muted-foreground">
+                                        Hotel not selected yet
+                                    </div>
+                                )}
                             </div>
                             <Separator />
                         </>
@@ -380,21 +457,7 @@ export function TripDetailsSheet({ trip, open, onOpenChange }: { trip: any, open
                         </div>
                     </div>
 
-                    {/* Documents */}
-                    <div className="space-y-3">
-                        <h3 className="font-semibold flex items-center gap-2">
-                            <FileText className="h-5 w-5 text-primary" />
-                            Documents
-                        </h3>
-                        <div className="grid grid-cols-2 gap-2">
-                            {["Invoice", "Receipt", "Itinerary", "Confirmation"].map((doc) => (
-                                <Button key={doc} variant="outline" size="sm" className="justify-start">
-                                    <Download className="h-4 w-4 mr-2" />
-                                    {doc}
-                                </Button>
-                            ))}
-                        </div>
-                    </div>
+
                 </div>
             </SheetContent>
 

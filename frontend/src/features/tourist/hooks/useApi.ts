@@ -29,6 +29,18 @@ export function useAllPackages() {
     });
 }
 
+export function useActiveDistricts() {
+    return useSWR("active-districts", () => api.getDistrictsWithPackages(), defaultOptions);
+}
+
+export function usePackagesByDistrict(district: string | null) {
+    return useSWR(
+        district && district !== "all" ? `packages-district-${district}` : null,
+        () => api.getPackagesByDistrict(district!),
+        defaultOptions
+    );
+}
+
 export function usePackageById(id) {
     return useSWR(id ? `package-${id}` : null, () => api.getPackageById(id), defaultOptions);
 }

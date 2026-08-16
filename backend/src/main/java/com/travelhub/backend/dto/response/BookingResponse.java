@@ -40,7 +40,12 @@ public class BookingResponse {
     private String packageType;
     private String accommodationOption;
 
+    // Agent info
+    private Long agentId;
+    private String agencyName;
+
     // Hotel info
+    private Long hotelId;
     private String hotelName;
     private String hotelLocation;
 

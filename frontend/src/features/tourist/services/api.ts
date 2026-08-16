@@ -48,6 +48,12 @@ export const api = {
     getPackageById: (id: string | number) =>
         fetch(`${BASE_URL}/packages/${id}`).then(handleResponse).then(mapPackagePrices).catch(() => null),
 
+    getDistrictsWithPackages: () =>
+        fetch(`${BASE_URL}/packages/districts`).then(handleResponse).catch(() => []),
+
+    getPackagesByDistrict: (district: string) =>
+        fetch(`${BASE_URL}/packages?district=${encodeURIComponent(district)}`).then(handleResponse).then(mapPackagesPrices).catch(() => []),
+
     // Hotels
     getAllHotels: (district: string | null = null) => {
         const url = district && district !== "all" 
@@ -167,13 +173,6 @@ export const api = {
             console.error("[API] Cancel booking failed:", err);
             throw err;
         }),
-
-    // Tourist — Documents
-    getDocuments: (userId: string | number) =>
-        fetch(`${BASE_URL}/tourist/documents?userId=${userId}`).then(handleResponse).catch(() => []),
-
-    getDocumentsByType: (userId: string | number, type: string) =>
-        fetch(`${BASE_URL}/tourist/documents?userId=${userId}&type=${type}`).then(handleResponse).catch(() => []),
 
     //package reviews
     getPackageReviews: (packageId: string | number) =>
