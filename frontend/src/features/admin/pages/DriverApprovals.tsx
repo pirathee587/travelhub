@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react'
 import adminDriverApi from '../services/adminDriverApi'
 import { useModal } from '../components/ModalContext'
-import { User, Clock, CheckCircle, AlertTriangle, ShieldAlert, FileText, Star, Car } from 'lucide-react'
+import { User, Clock, CheckCircle, AlertTriangle, ShieldAlert, FileText, Star, Car, Search, Eye } from 'lucide-react'
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 const STATUSES = ['All', 'Pending', 'Approved', 'Rejected']
@@ -14,8 +14,9 @@ const STATUS_STYLES: Record<string, string> = {
 }
 
 const STATUS_LABELS: Record<string, string> = {
-  pending:   'Pending Approval',
-  active:    'Approved / Active',
+  pending:   'Pending',
+  active:    'Active',
+  approved:  'Active',
   rejected:  'Rejected',
   suspended: 'Suspended',
 }
@@ -259,7 +260,7 @@ export default function DriverApprovals() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [search, setSearch] = useState('')
-  const [statusFilter, setStatusFilter] = useState('Pending')
+  const [statusFilter, setStatusFilter] = useState('All')
   const [selectedDriver, setSelectedDriver] = useState<any | null>(null)
   const [actionLoading, setActionLoading] = useState(false)
   const [rejectingDriver, setRejectingDriver] = useState<any | null>(null)
@@ -373,41 +374,47 @@ export default function DriverApprovals() {
         <>
           <h1 className="text-3xl font-bold text-slate-800 mb-8">Driver Approvals</h1>
 
-          {/* ── Filter Toolbar ───────────────────────────────────────────────── */}
-          <div className="bg-white rounded-xl shadow-sm p-6 mb-8 flex justify-between items-center gap-4">
-            <div className="relative flex-1">
+          {/* ── Toolbar ─────────────────────────────────────────────────────── */}
+          <div className="flex flex-col md:flex-row items-stretch md:items-center gap-3.5 mb-8">
+            {/* Search Input */}
+            <div className="relative flex-1 max-w-lg">
               <input
                 type="text"
-                placeholder="Search by name, NIC, license or contact..."
+                placeholder="Search drivers by name, license, NIC or mobile..."
                 value={search}
                 onChange={e => setSearch(e.target.value)}
-                className="w-full pl-4 pr-4 py-2 border border-gray-100 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-gray-200"
+                className="w-full pl-4 pr-11 py-2.5 bg-white border border-gray-200 rounded-2xl text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#0ea5e9]/20 focus:border-[#0ea5e9] shadow-sm transition"
               />
+              <Search className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
             </div>
-            <div className="w-36">
-              <select
-                value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value)}
-                className="w-full px-4 py-2 border border-gray-100 rounded-lg text-sm text-gray-700 bg-white focus:outline-none"
-              >
-                {STATUSES.map(s => <option key={s} value={s}>{s}</option>)}
-              </select>
+
+            {/* Status Filter */}
+            <div className="relative">
+              <div className="flex items-center gap-2 bg-white border border-gray-200 rounded-2xl px-4 py-2.5 shadow-sm text-sm text-gray-700 font-medium">
+                <select
+                  value={statusFilter}
+                  onChange={(e) => setStatusFilter(e.target.value)}
+                  className="bg-transparent text-sm text-gray-700 font-medium focus:outline-none cursor-pointer pr-2"
+                >
+                  {STATUSES.map(s => <option key={s} value={s}>{s}</option>)}
+                </select>
+              </div>
             </div>
           </div>
 
           {/* ── Error message ────────────────────────────────────────────────── */}
           {error && (
-            <div className="bg-red-50 border border-red-200 rounded-xl p-4 flex items-center justify-between mb-8">
+            <div className="bg-red-50 border border-red-200 rounded-2xl p-4 flex items-center justify-between mb-8 shadow-sm">
               <div className="flex items-center gap-3">
                 <span className="text-2xl">⚠️</span>
                 <div>
-                  <div className="font-semibold text-red-700">Failed to load drivers</div>
-                  <div className="text-sm text-red-600">{error}</div>
+                  <div className="font-bold text-red-800 text-sm">Failed to load drivers</div>
+                  <div className="text-xs text-red-600">{error}</div>
                 </div>
               </div>
               <button
                 onClick={() => fetchDriversList(statusFilter)}
-                className="px-4 py-2 bg-red-600 text-white text-sm font-semibold rounded-lg hover:bg-red-700 transition"
+                className="px-4 py-2 bg-red-600 text-white text-xs font-semibold rounded-xl hover:bg-red-700 transition"
               >Retry</button>
             </div>
           )}
@@ -418,48 +425,101 @@ export default function DriverApprovals() {
               {Array.from({ length: 6 }).map((_, i) => <CardSkeleton key={i} />)}
             </div>
           ) : displayed.length === 0 ? (
-            <div className="bg-white rounded-xl p-16 text-center shadow-sm border border-gray-100">
-              <User className="h-16 w-16 text-gray-300 mx-auto mb-4" />
-              <div className="text-gray-600 font-semibold text-lg">No drivers found</div>
-              <div className="text-gray-400 text-sm mt-1">Try a different status filter or search term</div>
+            <div className="text-center py-16 bg-white rounded-3xl border border-gray-100 shadow-sm mt-6">
+              <User className="h-14 w-14 text-gray-300 mx-auto mb-3" />
+              <h3 className="text-gray-700 font-bold text-base">No drivers found</h3>
+              <p className="text-gray-400 text-sm mt-1">Try a different status filter or search term</p>
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {displayed.map(driver => {
                 const name = `${driver.firstName} ${driver.lastName}`
+                const statusKey = String(driver.lifecycleStatus || driver.status || 'active').trim().toLowerCase()
+                const isApproved = statusKey === 'active' || statusKey === 'approved'
+                const isPending = statusKey === 'pending'
+                const isSuspended = statusKey === 'suspended'
+
                 return (
-                  <div key={driver.id} className="bg-white rounded-2xl overflow-hidden shadow-sm border border-gray-100 flex flex-col justify-between hover:shadow-md transition">
+                  <div key={driver.id} className="bg-white rounded-2xl md:rounded-3xl border border-gray-200/90 shadow-sm overflow-hidden flex flex-col justify-between hover:shadow-md transition-all duration-200 group">
                     <div>
                       {/* Card Cover */}
-                      <div className="h-44 bg-gray-50 overflow-hidden relative flex items-center justify-center border-b">
+                      <div className="aspect-[16/10] bg-gray-100 overflow-hidden relative flex items-center justify-center">
                         {driver.profileImage ? (
-                          <img src={driver.profileImage} alt={name} className="w-full h-full object-cover" />
+                          <img src={driver.profileImage} alt={name} className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105" />
                         ) : (
-                          <User className="h-12 w-12 text-gray-300" />
+                          <User className="h-16 w-16 text-gray-300" />
                         )}
-                        <span className={`absolute top-3 right-3 px-2 py-0.5 rounded-full text-[10px] font-semibold border ${STATUS_STYLES[driver.lifecycleStatus] || 'bg-gray-100 text-gray-700'}`}>
-                          {STATUS_LABELS[driver.lifecycleStatus] || driver.lifecycleStatus}
-                        </span>
+
+                        {/* Top-left Translucent Glass Status Pill */}
+                        <div className="absolute top-3.5 left-3.5">
+                          <span className={`backdrop-blur-md px-3.5 py-1 rounded-full text-xs font-semibold tracking-wide border shadow-sm ${
+                            isApproved 
+                              ? 'bg-[#0b2838]/85 text-[#38bdf8] border-[#38bdf8]/25' 
+                              : isPending 
+                              ? 'bg-[#2d1b06]/85 text-[#fbbf24] border-[#fbbf24]/25' 
+                              : isSuspended 
+                              ? 'bg-[#2b1111]/85 text-[#f87171] border-[#f87171]/25' 
+                              : 'bg-[#2b1111]/85 text-[#f87171] border-[#f87171]/25'
+                          }`}>
+                            {isApproved ? 'Active' : (isPending ? 'Pending' : (isSuspended ? 'Suspended' : 'Rejected'))}
+                          </span>
+                        </div>
                       </div>
 
                       {/* Card Content */}
-                      <div className="p-5 space-y-2">
-                        <h4 className="font-bold text-gray-900 text-lg truncate">{name}</h4>
-                        <div className="text-xs text-gray-500 space-y-1">
-                          <p><strong>NIC:</strong> {driver.nic}</p>
-                          <p><strong>License:</strong> {driver.licenseNumber}</p>
-                          <p><strong>Mobile:</strong> {driver.mobileNumber}</p>
+                      <div className="p-5">
+                        <div className="flex items-start justify-between gap-3">
+                          <h4 
+                            onClick={() => setSelectedDriver(driver)}
+                            className="font-bold text-gray-900 text-base sm:text-lg tracking-tight truncate flex-1 cursor-pointer hover:text-[#0ea5e9] transition"
+                          >
+                            {name}
+                          </h4>
+                          {driver.assignedVehicle && (
+                            <span className="text-xs bg-sky-50 text-[#0ea5e9] px-2.5 py-0.5 rounded-full font-semibold shrink-0">
+                              Assigned
+                            </span>
+                          )}
+                        </div>
+
+                        {/* Vehicle Types Pills */}
+                        <div className="flex flex-wrap gap-1.5 mt-2.5">
+                          {driver.vehicleTypes ? driver.vehicleTypes.split(',').map((t, idx) => (
+                            <span key={idx} className="px-2.5 py-0.5 text-xs font-medium bg-gray-100 text-gray-600 rounded-full">
+                              {t.trim()}
+                            </span>
+                          )) : (
+                            <span className="px-2.5 py-0.5 text-xs font-medium bg-gray-100 text-gray-600 rounded-full">
+                              Driver
+                            </span>
+                          )}
+                        </div>
+
+                        {/* Divider */}
+                        <div className="border-t border-gray-100 my-3.5" />
+
+                        {/* Details */}
+                        <div className="grid grid-cols-2 gap-2 text-xs text-gray-500">
+                          <div>
+                            <span className="block text-[10px] uppercase font-bold text-gray-400">License</span>
+                            <span className="font-semibold text-gray-800 truncate block mt-0.5">{driver.licenseNumber || '—'}</span>
+                          </div>
+                          <div>
+                            <span className="block text-[10px] uppercase font-bold text-gray-400">NIC</span>
+                            <span className="font-semibold text-gray-800 truncate block mt-0.5">{driver.nic || '—'}</span>
+                          </div>
                         </div>
                       </div>
                     </div>
 
-                    {/* Card Actions */}
+                    {/* Card Actions - Sky Blue View Details Button */}
                     <div className="p-5 pt-0">
                       <button
                         onClick={() => setSelectedDriver(driver)}
-                        className="w-full py-2 bg-teal-600 hover:bg-teal-700 active:bg-teal-800 text-white rounded-xl text-xs font-semibold shadow-sm transition flex items-center justify-center gap-1"
+                        className="w-full py-2.5 px-4 bg-[#0ea5e9] hover:bg-[#0284c7] active:scale-[0.99] text-white rounded-xl text-xs sm:text-sm font-semibold shadow-sm transition duration-200 flex items-center justify-center gap-1.5"
                       >
-                        Review Details
+                        <Eye className="h-4 w-4" />
+                        View Details
                       </button>
                     </div>
                   </div>
