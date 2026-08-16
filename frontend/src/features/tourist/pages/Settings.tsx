@@ -7,13 +7,15 @@ import { Label } from "@/components/common/ui/label";
 import { Card, CardContent, CardHeader, CardFooter } from "@/components/common/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/common/ui/avatar";
 import { toast } from "@/components/common/ui/use-toast";
-import { User, Mail, Camera, Save, X, Edit2, Phone, Globe } from "lucide-react";
+import { User, Mail, Camera, Save, X, Edit2, Phone, Globe, AlertTriangle, ShieldAlert } from "lucide-react";
 import { MyReviewsSection } from "@/features/tourist/components/dashboard/MyReviewsSection";
 import { ChevronRight } from "lucide-react";
 import { cn } from "@/features/tourist/services/utils";
 import { api } from "@/features/tourist/services/api";
 import { useTouristCurrency } from "@/features/tourist/hooks/TouristCurrencyContext";
 import { ImageCropperDialog } from "@/features/tourist/components/dashboard/ImageCropperDialog";
+import { Badge } from "@/components/common/ui/badge";
+import packageReportService from "@/services/packageReportService";
 import {
     Select,
     SelectContent,
@@ -64,6 +66,13 @@ const SettingsPage = () => {
     // Currency preference from the Tourist currency context
     const { currency, setCurrency, rateError } = useTouristCurrency();
     const [savingCurrency, setSavingCurrency] = useState(false);
+    const [reportsCount, setReportsCount] = useState(0);
+
+    useEffect(() => {
+        packageReportService.getTouristReports()
+            .then((data) => setReportsCount(data.length))
+            .catch(() => setReportsCount(0));
+    }, []);
 
     // Profile state populated from the backend
     const [profile, setProfile] = useState({
@@ -509,6 +518,43 @@ const SettingsPage = () => {
                                     <p className="text-sm text-muted-foreground">Manage how you receive alerts</p>
                                 </div>
                                 <ChevronRight className="h-5 w-5 text-muted-foreground group-hover:text-primary transition-all" />
+                            </CardContent>
+                        </Card>
+
+                        {/* My Reports & Disputes Card */}
+                        <Card 
+                            className="border-border hover:border-destructive/30 hover:bg-destructive/5 transition-all cursor-pointer group"
+                            onClick={() => navigate('/tourist/reports')}
+                        >
+                            <CardContent className="p-6 flex items-center justify-between">
+                                <div className="space-y-1">
+                                    <div className="flex items-center gap-2">
+                                        <ShieldAlert className="h-4 w-4 text-destructive" />
+                                        <p className="font-semibold text-foreground group-hover:text-destructive transition-colors">
+                                            My Reports & Disputes
+                                        </p>
+                                        {reportsCount > 0 && (
+                                            <Badge variant="outline" className="text-xs bg-destructive/10 text-destructive border-destructive/20 font-bold">
+                                                {reportsCount} Active
+                                            </Badge>
+                                        )}
+                                    </div>
+                                    <p className="text-sm text-muted-foreground">
+                                        View package claims, evidence & admin resolution status
+                                    </p>
+                                </div>
+                                <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    className="text-xs font-bold text-destructive hover:text-destructive hover:bg-destructive/10 gap-1"
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        navigate('/tourist/reports');
+                                    }}
+                                >
+                                    See More
+                                    <ChevronRight className="h-4 w-4" />
+                                </Button>
                             </CardContent>
                         </Card>
                     </div>
