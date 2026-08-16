@@ -172,12 +172,12 @@ export const api = {
     getBookingById: (bookingId) =>
         fetch(`${BASE_URL}/agent/${AGENT_ID}/bookings/${bookingId}`).then(r => r.json()),
 
-    // pending → confirmed (agent accepts, assigns vehicle)
-    acceptBooking: (bookingId, vehicleId, hotelId) =>
+    // pending → confirmed (agent accepts, assigns vehicle, driver, and hotel)
+    acceptBooking: (bookingId, vehicleId, driverId, hotelId) =>
         fetch(`${BASE_URL}/agent/${AGENT_ID}/bookings/${bookingId}/accept`, {
             method: "PATCH",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ vehicleId, hotelId })
+            body: JSON.stringify({ vehicleId, driverId, hotelId })
         }).then(r => r.json()),
 
     assignVehicle: (bookingId, vehicleId) =>

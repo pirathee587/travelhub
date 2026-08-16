@@ -5,7 +5,7 @@ import {
 import { DashboardLayout } from '@/features/agency/components/dashboard/DashboardLayout';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/common/ui/select';
 import { useState, useEffect } from 'react';
-import { TrendingUp, TrendingDown, DollarSign, Users, MapPin, Star, Download } from 'lucide-react';
+import { TrendingUp, TrendingDown, DollarSign, Users, MapPin, Star, Download, Calendar } from 'lucide-react';
 import { Button } from '@/components/common/ui/button';
 import { api } from '@/features/agency/services/api';
 import { Skeleton } from '@/components/common/ui/skeleton';
@@ -281,77 +281,72 @@ const Analytics = () => {
         {/* 1. TOP SECTION: Key Performance Indicators (KPIs) Summary Cards */}
         {/* Quick Stats */}
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <div className="rounded-xl border border-border bg-card p-5">
+          <div className="rounded-xl border border-primary/30 bg-primary/5 p-4">
             <div className="flex items-center justify-between">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10">
-                <DollarSign className="h-5 w-5 text-primary" />
-              </div>
-              <div className="flex items-center gap-1 text-sm font-medium text-success">
-                <TrendingUp className="h-4 w-4" />
+              <p className="text-sm font-medium text-primary">Total Revenue</p>
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10">
+                <DollarSign className="h-4 w-4 text-primary" />
               </div>
             </div>
-            <p className="mt-4 text-2xl font-bold text-foreground">
+            <p className="mt-1 text-2xl font-bold text-foreground">
               {formatPrice(totalRevenue)}
             </p>
-            <p className="text-sm text-muted-foreground">Total Revenue</p>
           </div>
 
-          <div className="rounded-xl border border-border bg-card p-5">
+          <div className="rounded-xl border border-success/30 bg-success/5 p-4">
             <div className="flex items-center justify-between">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-success/10">
-                <Users className="h-5 w-5 text-success" />
-              </div>
-              <div className="flex items-center gap-1 text-sm font-medium text-success">
-                <TrendingUp className="h-4 w-4" />
+              <p className="text-sm font-medium text-success">Total Trips</p>
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-success/10">
+                <Users className="h-4 w-4 text-success" />
               </div>
             </div>
-            <p className="mt-4 text-2xl font-bold text-foreground">{totalTrips}</p>
-            <p className="text-sm text-muted-foreground">Total Trips</p>
+            <p className="mt-1 text-2xl font-bold text-foreground">{totalTrips}</p>
           </div>
 
-          <div className="rounded-xl border border-border bg-card p-5">
+          <div className="rounded-xl border border-warning/30 bg-warning/5 p-4">
             <div className="flex items-center justify-between">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-warning/10">
-                <Star className="h-5 w-5 text-warning" />
-              </div>
-              <div className="flex items-center gap-1 text-sm font-medium text-success">
-                <TrendingUp className="h-4 w-4" />
+              <p className="text-sm font-medium text-warning">Average Rating</p>
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-warning/10">
+                <Star className="h-4 w-4 text-warning" />
               </div>
             </div>
-            <p className="mt-4 text-2xl font-bold text-foreground">
+            <p className="mt-1 text-2xl font-bold text-foreground">
               {avgRating ? avgRating.toFixed(1) : '0.0'}
             </p>
-            <p className="text-sm text-muted-foreground">Average Rating</p>
           </div>
 
-          <div className="rounded-xl border border-border bg-card p-5">
+          <div className="rounded-xl border border-destructive/30 bg-destructive/5 p-4">
             <div className="flex items-center justify-between">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-destructive/10">
-                <MapPin className="h-5 w-5 text-destructive" />
-              </div>
-              <div className="flex items-center gap-1 text-sm font-medium text-destructive">
-                <TrendingDown className="h-4 w-4" />
+              <p className="text-sm font-medium text-destructive">Cancellation Rate</p>
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-destructive/10">
+                <MapPin className="h-4 w-4 text-destructive" />
               </div>
             </div>
-            <p className="mt-4 text-2xl font-bold text-foreground">{cancelRate}%</p>
-            <p className="text-sm text-muted-foreground">Cancellation Rate</p>
+            <p className="mt-1 text-2xl font-bold text-foreground">{cancelRate}%</p>
           </div>
         </div>
 
         {/* 2. CONTROL BAR: Period Switcher and Report Export */}
         {/* Period Filter & Download */}
-        <div className="flex justify-end gap-3">
+        <div className="flex items-center justify-end gap-3 bg-card/60 backdrop-blur-sm p-3 rounded-2xl border border-border/80 shadow-sm">
           <Select value={viewMode} onValueChange={setViewMode}>
-            <SelectTrigger className="w-40">
-              <SelectValue placeholder="Select period" />
+            <SelectTrigger className="w-44 border-primary/30 bg-background shadow-xs hover:border-primary/50 transition-colors focus:ring-primary/20 font-medium text-foreground">
+              <div className="flex items-center gap-2">
+                <Calendar className="h-4 w-4 text-primary shrink-0" />
+                <SelectValue placeholder="Select period" />
+              </div>
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="monthly">Monthly</SelectItem>
-              <SelectItem value="quarterly">Quarterly</SelectItem>
-              <SelectItem value="yearly">Yearly</SelectItem>
+              <SelectItem value="monthly">Monthly View</SelectItem>
+              <SelectItem value="quarterly">Quarterly View</SelectItem>
+              <SelectItem value="yearly">Yearly View</SelectItem>
             </SelectContent>
           </Select>
-          <Button onClick={handleDownload} variant="outline" className="gap-2">
+
+          <Button
+            onClick={handleDownload}
+            className="gap-2 bg-primary text-primary-foreground hover:bg-primary/90 shadow-md shadow-primary/20 font-semibold transition-all hover:scale-[1.02] active:scale-[0.98]"
+          >
             <Download className="h-4 w-4" />Download Report
           </Button>
         </div>

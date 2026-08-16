@@ -274,8 +274,20 @@ public class AgentPackageService {
      */
     private Package findAndValidateOwnership(Long agentId, String packageId) {
         Package pkg = packageRepository.findByPackageIdAndDeletedAtIsNull(packageId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
-                        "Package not found: " + packageId));
+                .orElseGet(() -> {
+                    try {
+                        Long numId = Long.parseLong(packageId);
+                        return packageRepository.findById(numId)
+                                .filter(p -> p.getDeletedAt() == null)
+                                .orElse(null);
+                    } catch (NumberFormatException e) {
+                        return null;
+                    }
+                });
+        if (pkg == null) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND,
+                    "Package not found: " + packageId);
+        }
         Agent agent = agentRepository.findByOwnerId(agentId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
                         "Agent profile not found for user ID: " + agentId));
@@ -351,8 +363,12 @@ public class AgentPackageService {
                 ? pkg.getImages().get(0).getImageUrl()
                 : pkg.getImageUrl();
 
+        String resolvedPackageId = (pkg.getPackageId() != null && !pkg.getPackageId().isBlank())
+                ? pkg.getPackageId()
+                : String.valueOf(pkg.getId());
+
         return PackageSummaryResponse.builder()
-                .packageId(pkg.getPackageId())
+                .packageId(resolvedPackageId)
                 .name(pkg.getPackageName())
                 .category(pkg.getCategory())
                 .district(pkg.getDistrict())
@@ -442,8 +458,12 @@ public class AgentPackageService {
                     .collect(Collectors.toList());
         }
 
+        String detailPackageId = (pkg.getPackageId() != null && !pkg.getPackageId().isBlank())
+                ? pkg.getPackageId()
+                : String.valueOf(pkg.getId());
+
         return AgentPackageDetailResponse.builder()
-                .packageId(pkg.getPackageId())
+                .packageId(detailPackageId)
                 .name(pkg.getPackageName())
                 .category(pkg.getCategory())
                 .district(pkg.getDistrict())

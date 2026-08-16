@@ -103,10 +103,32 @@ public class AgentBookingService {
         if (request != null && request.getVehicleId() != null) {
             Vehicle vehicle = vehicleRepository.findById(request.getVehicleId())
                     .orElseThrow(() -> new ResourceNotFoundException("Vehicle", "id", request.getVehicleId()));
+            if (!"active".equals(vehicle.getLifecycleStatus())) {
+                throw new IllegalStateException("Only active and approved vehicles can be assigned to bookings.");
+            }
             booking.setVehicle(vehicle);
-            // Mark assigned vehicle as unavailable for new trips.
             vehicle.setStatus("booked");
             vehicleRepository.save(vehicle);
+        }
+
+        // Assign a specific driver if provided by the request.
+        if (request != null && request.getDriverId() != null) {
+            Driver driver = driverRepository.findById(request.getDriverId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Driver", "id", request.getDriverId()));
+            if (!"active".equals(driver.getLifecycleStatus())) {
+                throw new IllegalStateException("Only active and approved drivers can be assigned to bookings.");
+            }
+            booking.setDriver(driver);
+            driver.setStatus("on-trip");
+            driverRepository.save(driver);
+        }
+
+        // Enforce mandatory resource allocation (Vehicle AND Driver required)
+        if (booking.getVehicle() == null) {
+            throw new BadRequestException("Please assign a vehicle before accepting the booking.");
+        }
+        if (booking.getDriver() == null) {
+            throw new BadRequestException("Please assign a driver before accepting the booking.");
         }
 
         // For Single District packages, assign the selected hotel preference or clear it if null/none
@@ -321,12 +343,26 @@ public class AgentBookingService {
         try {
             if (booking.getVehicle() != null) {
                 vehicleType = booking.getVehicle().getVehicleType();
-                vehicleModel = booking.getVehicle().getModel();
+                vehicleModel = (booking.getVehicle().getBrand() != null ? booking.getVehicle().getBrand() + " " : "") + booking.getVehicle().getModel();
                 vehicleRegistration = booking.getVehicle().getRegistration();
             }
         } catch (Exception e) {
             // Relation access failed; keep vehicle fields as null.
         }
+
+        String driverName = null;
+        String driverPhone = null;
+        Double driverRating = null;
+        try {
+            if (booking.getDriver() != null) {
+                driverName = (booking.getDriver().getFirstName() + " " + (booking.getDriver().getLastName() != null ? booking.getDriver().getLastName() : "")).trim();
+                driverPhone = booking.getDriver().getMobileNumber();
+                driverRating = booking.getDriver().getRating();
+            }
+        } catch (Exception e) {
+            // Relation access failed; keep driver fields as null.
+        }
+
         String touristName = null;
         String touristEmail = null;
         String touristPhone = null;
@@ -404,6 +440,9 @@ public class AgentBookingService {
                 .paymentStatus(booking.getPaymentStatus() != null ? booking.getPaymentStatus() : "UNPAID")
                 .totalPrice(booking.getTotalPrice())
                 .progress(booking.getProgress())
+                .driverName(driverName)
+                .driverPhone(driverPhone)
+                .driverRating(driverRating)
                 .vehicleType(vehicleType)
                 .vehicleModel(vehicleModel)
                 .vehicleRegistration(vehicleRegistration)

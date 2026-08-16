@@ -249,6 +249,7 @@ const BookingDetails = () => {
         } else {
           setBooking(data);
           setTempHotelId(data.hotelId || null);
+          loadResources(data.startDate, data.endDate);
           if (data.packageType === 'MULTI_DISTRICT' && data.packageId) {
             try {
               const pkgData = await api.getAgentPackage(data.packageId);
@@ -267,15 +268,14 @@ const BookingDetails = () => {
     fetchBooking();
   }, [id]);
 
-
-
-  // Load vehicles + drivers once (lazy, on first need)
-  const loadResources = async () => {
-    if (resourcesLoaded) return;
+  // Load vehicles + drivers
+  const loadResources = async (startDateOverride?: string, endDateOverride?: string) => {
     try {
+      const start = startDateOverride || booking?.startDate;
+      const end = endDateOverride || booking?.endDate;
       const [vehicles, drivers] = await Promise.all([
-        api.getActiveVehicles(booking?.startDate, booking?.endDate),
-        api.getDrivers(booking?.startDate, booking?.endDate),
+        api.getActiveVehicles(start, end),
+        api.getDrivers(start, end),
       ]);
       setAvailableVehicles(Array.isArray(vehicles) ? vehicles : []);
       setAvailableDrivers(Array.isArray(drivers) ? drivers : []);
@@ -285,41 +285,43 @@ const BookingDetails = () => {
     }
   };
 
-  // ── Simple Accept: just confirms the booking ───────────────────
+  // ── Simple Accept: confirms booking with assigned vehicle and driver ───────────────────
   const handleAccept = async () => {
-    const hasVehicle = tempVehicle;
-    const hasDriver = tempDriver;
+    const vehicleObj = tempVehicle || availableVehicles.find(v => String(v.id) === selectedVehicleId) || booking.vehicle;
+    const vehicleIdToAssign = vehicleObj?.id;
 
-    if (!hasVehicle && !hasDriver) {
-      toast.error('Please assign both a vehicle and a driver before accepting the booking.');
+    const driverObj = tempDriver || availableDrivers.find(d => String(d.id) === selectedDriverId) || booking.driver;
+    const driverIdToAssign = driverObj?.id;
+
+    if (!vehicleIdToAssign && !driverIdToAssign) {
+      toast.error('Both a vehicle and a driver must be assigned before accepting the booking.');
       return;
     }
-    if (!hasVehicle) {
+    if (!vehicleIdToAssign) {
       toast.error('Please assign a vehicle before accepting the booking.');
       return;
     }
-    if (!hasDriver) {
+    if (!driverIdToAssign) {
       toast.error('Please assign a driver before accepting the booking.');
       return;
     }
 
     try {
-      if (tempVehicle) {
-        await api.assignVehicle(booking.id, tempVehicle.id);
+      const updated = await api.acceptBooking(booking.id, Number(vehicleIdToAssign), Number(driverIdToAssign), tempHotelId);
+      if (updated.success === false || updated.error || (typeof updated.status === 'number' && updated.status >= 400)) {
+        throw new Error(updated.message || updated.error || 'Failed to accept booking');
       }
-      if (tempDriver) {
-        await api.assignDriver(booking.id, tempDriver.id);
-      }
-      const updated = await api.acceptBooking(booking.id, tempVehicle?.id || null, tempHotelId);
       setBooking(updated);
       setTempVehicle(null);
       setTempDriver(null);
+      setSelectedVehicleId('');
+      setSelectedDriverId('');
       setTempHotelId(updated.hotelId || null);
       setIsEditingVehicle(false);
       setIsEditingDriver(false);
-      toast.success('Booking accepted! Status is now Confirmed.');
-    } catch {
-      toast.error('Failed to accept booking or assign resources');
+      toast.success('Booking accepted! Status is now Confirmed with assigned vehicle and driver.');
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to accept booking or assign resources');
     }
   };
 
@@ -443,32 +445,32 @@ const BookingDetails = () => {
   })();
 
   const hasVehicleAssigned = booking.status === 'pending'
-    ? (tempVehicle !== null)
+    ? (tempVehicle !== null || !!booking.vehicle?.id || !!vehicleLabel)
     : (!!vehicleLabel || !!booking.vehicle?.type || !!booking.vehicleType);
 
   const hasDriverAssigned = booking.status === 'pending'
-    ? (tempDriver !== null)
-    : (!!booking.driverName);
+    ? (tempDriver !== null || !!booking.driver?.id || !!booking.driverName)
+    : (!!booking.driverName || !!booking.driver?.id || !!booking.driver?.firstName);
 
   const displayedVehicleLabel = booking.status === 'pending'
-    ? (tempVehicle ? `${tempVehicle.brand || ''} ${tempVehicle.model || ''} · ${tempVehicle.registrationNumber || tempVehicle.registration || ''}` : null)
+    ? (tempVehicle ? `${tempVehicle.brand || ''} ${tempVehicle.model || ''} · ${tempVehicle.registrationNumber || tempVehicle.registration || ''}` : vehicleLabel)
     : vehicleLabel;
 
   const displayedVehicleType = booking.status === 'pending'
-    ? (tempVehicle ? tempVehicle.vehicleType : null)
+    ? (tempVehicle ? tempVehicle.vehicleType : (booking.vehicle?.type || booking.vehicleType))
     : (booking.vehicle?.type || booking.vehicleType);
 
   const displayedDriverName = booking.status === 'pending'
-    ? (tempDriver ? `${tempDriver.firstName} ${tempDriver.lastName || ''}` : null)
-    : booking.driverName;
+    ? (tempDriver ? `${tempDriver.firstName} ${tempDriver.lastName || ''}` : (booking.driverName || (booking.driver ? `${booking.driver.firstName || ''} ${booking.driver.lastName || ''}` : null)))
+    : (booking.driverName || (booking.driver ? `${booking.driver.firstName || ''} ${booking.driver.lastName || ''}` : null));
 
   const displayedDriverPhone = booking.status === 'pending'
-    ? (tempDriver ? tempDriver.mobileNumber : null)
-    : booking.driverPhone;
+    ? (tempDriver ? tempDriver.mobileNumber : (booking.driverPhone || booking.driver?.mobileNumber || booking.driver?.contact || null))
+    : (booking.driverPhone || booking.driver?.mobileNumber || booking.driver?.contact || null);
 
   const displayedDriverRating = booking.status === 'pending'
-    ? (tempDriver ? tempDriver.rating : null)
-    : booking.driverRating;
+    ? (tempDriver ? tempDriver.rating : (booking.driverRating ?? booking.driver?.rating ?? null))
+    : (booking.driverRating ?? booking.driver?.rating ?? null);
 
   return (
     <DashboardLayout
@@ -891,7 +893,27 @@ const BookingDetails = () => {
                         <div className="flex gap-2 items-center">
                           <Select
                             value={selectedVehicleId}
-                            onValueChange={setSelectedVehicleId}
+                            onValueChange={async (val) => {
+                              setSelectedVehicleId(val);
+                              const vObj = availableVehicles.find(v => String(v.id) === val);
+                              if (vObj) {
+                                if (booking.status === 'pending') {
+                                  setTempVehicle(vObj);
+                                } else {
+                                  setAssigningVehicle(true);
+                                  try {
+                                    const updated = await api.assignVehicle(booking.id, Number(val));
+                                    setBooking(updated);
+                                    setIsEditingVehicle(false);
+                                    toast.success('Vehicle assigned successfully!');
+                                  } catch {
+                                    toast.error('Failed to assign vehicle');
+                                  } finally {
+                                    setAssigningVehicle(false);
+                                  }
+                                }
+                              }
+                            }}
                             onOpenChange={(open) => { if (open) loadResources(); }}>
                             <SelectTrigger className="flex-1">
                               <SelectValue placeholder="Select a vehicle…" />
@@ -991,7 +1013,27 @@ const BookingDetails = () => {
                         <div className="flex gap-2 items-center">
                           <Select
                             value={selectedDriverId}
-                            onValueChange={setSelectedDriverId}
+                            onValueChange={async (val) => {
+                              setSelectedDriverId(val);
+                              const dObj = availableDrivers.find(d => String(d.id) === val);
+                              if (dObj) {
+                                if (booking.status === 'pending') {
+                                  setTempDriver(dObj);
+                                } else {
+                                  setAssigningDriver(true);
+                                  try {
+                                    const updated = await api.assignDriver(booking.id, Number(val));
+                                    setBooking(updated);
+                                    setIsEditingDriver(false);
+                                    toast.success('Driver assigned successfully!');
+                                  } catch {
+                                    toast.error('Failed to assign driver');
+                                  } finally {
+                                    setAssigningDriver(false);
+                                  }
+                                }
+                              }
+                            }}
                             onOpenChange={(open) => { if (open) loadResources(); }}>
                             <SelectTrigger className="flex-1">
                               <SelectValue placeholder="Select a driver…" />

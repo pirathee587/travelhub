@@ -108,6 +108,31 @@ export function DashboardLayout({ children, title, subtitle, showSearch = true }
     }
   };
 
+  const [popoverOpen, setPopoverOpen] = useState(false);
+
+  const handleNotificationClick = (notification: any) => {
+    markAsRead(notification.id);
+    setPopoverOpen(false);
+
+    const type = (notification.type || '').toLowerCase();
+    const title = (notification.title || '').toLowerCase();
+    const message = (notification.message || notification.content || '').toLowerCase();
+
+    if (type.includes('driver') || title.includes('driver') || message.includes('driver')) {
+      navigate('/agency/vehicles?tab=drivers&filter=active');
+    } else if (type.includes('vehicle') || title.includes('vehicle') || message.includes('vehicle')) {
+      navigate('/agency/vehicles?tab=vehicles&filter=active');
+    } else if (type.includes('booking') || title.includes('booking') || message.includes('booking')) {
+      if (notification.bookingId || notification.relatedEntityId) {
+        navigate(`/agency/bookings/${notification.bookingId || notification.relatedEntityId}`);
+      } else {
+        navigate('/agency/bookings');
+      }
+    } else if (notification.link) {
+      navigate(notification.link);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background">
       {/* Mobile sidebar overlay */}
@@ -165,7 +190,7 @@ export function DashboardLayout({ children, title, subtitle, showSearch = true }
             )}
 
             {/* Notification Bell */}
-            <Popover>
+            <Popover open={popoverOpen} onOpenChange={setPopoverOpen}>
               <PopoverTrigger asChild>
                 <Button variant="ghost" size="icon" className="relative">
                   <Bell className="h-5 w-5" />
@@ -218,7 +243,7 @@ export function DashboardLayout({ children, title, subtitle, showSearch = true }
                             'group flex items-start gap-3 px-4 py-3 transition-colors hover:bg-muted/50 cursor-pointer border-b border-border/50 last:border-b-0',
                             !notification.read && 'bg-primary/[0.03]'
                           )}
-                          onClick={() => markAsRead(notification.id)}
+                          onClick={() => handleNotificationClick(notification)}
                         >
                           <div className={cn(
                             'flex h-9 w-9 shrink-0 items-center justify-center rounded-lg mt-0.5',

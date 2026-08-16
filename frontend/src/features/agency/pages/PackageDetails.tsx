@@ -172,10 +172,10 @@ const PackageDetails = () => {
     try {
       setLoading(true);
       const data = await api.getAgentPackage(id);
-      if (data && !data.error && data.packageId) {
+      if (data && !data.error && (data.packageId || data.id)) {
         const normalized = {
           ...data,
-          id: data.packageId,
+          id: data.packageId || data.id || id,
           _isFromDb: true,
           description: data.description || '',
 

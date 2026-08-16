@@ -4,8 +4,9 @@ import {
   Bell, Lock, Eye, EyeOff, DollarSign, Save,
   ShieldCheck, BellRing, BellOff, CreditCard,
   PackageCheck, MessageSquare, Megaphone,
-  Camera, IdCard, Phone
+  Camera, IdCard, Phone, Trash2
 } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/common/ui/dialog';
 import { DashboardLayout } from '@/features/agency/components/dashboard/DashboardLayout';
 import { Button } from '@/components/common/ui/button';
 import { Input } from '@/components/common/ui/input';
@@ -92,7 +93,9 @@ const Settings = () => {
   /* --- SECURITY / PASSWORD STATE --- */
   const [passwords, setPasswords] = useState({ current: '', new: '', confirm: '' });
   const [showPasswords, setShowPasswords] = useState({ current: false, new: false, confirm: false });
-  const [passwordErrors, setPasswordErrors] = useState({});
+  const [passwordErrors, setPasswordErrors] = useState<Record<string, string>>({});
+  const [submittingPassword, setSubmittingPassword] = useState(false);
+  const [passwordStatusMsg, setPasswordStatusMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
   /* --- CONTACT DETAILS STATE (personal agent info) --- */
   const [contactDetails, setContactDetails] = useState({ phone: '', secondaryPhone: '' });
@@ -100,10 +103,14 @@ const Settings = () => {
 
   /* --- IDENTITY VERIFICATION STATE --- */
   const [fullProfile, setFullProfile] = useState<any>(null);
-  const [uploadingNic, setUploadingNic] = useState(false);
-  const [tempNicImage, setTempNicImage] = useState<string | null>(null);
+  const [uploadingNicFront, setUploadingNicFront] = useState(false);
+  const [uploadingNicRear, setUploadingNicRear] = useState(false);
+  const [tempNicFront, setTempNicFront] = useState<string | null>(null);
+  const [tempNicRear, setTempNicRear] = useState<string | null>(null);
   const [savingNic, setSavingNic] = useState(false);
-  const nicInputRef = useRef<HTMLInputElement>(null);
+  const [previewImage, setPreviewImage] = useState<string | null>(null);
+  const nicInputFrontRef = useRef<HTMLInputElement>(null);
+  const nicInputRearRef = useRef<HTMLInputElement>(null);
 
   /* DATA FETCHING: Load user preferences from server */
   useEffect(() => {
@@ -128,7 +135,8 @@ const Settings = () => {
         }
         if (profileData) {
           setFullProfile(profileData);
-          setTempNicImage(profileData.nicImage || null);
+          setTempNicFront(profileData.nicFrontImage || profileData.nicImage || null);
+          setTempNicRear(profileData.nicRearImage || null);
           setContactDetails({
             phone: profileData.phone || '',
             secondaryPhone: profileData.secondaryPhone || '',
@@ -193,6 +201,7 @@ const Settings = () => {
 
   // ── Password change connected to backend ─────
   const handlePasswordSubmit = async () => {
+    setPasswordStatusMsg(null);
     const errors: Record<string, string> = {};
     if (!passwords.current) errors.current = 'Current password is required';
     if (!passwords.new) errors.new = 'New password is required';
@@ -206,16 +215,23 @@ const Settings = () => {
       return;
     }
 
+    setSubmittingPassword(true);
     try {
       const res = await userApi.changePassword({
         currentPassword: passwords.current,
         newPassword: passwords.new,
       });
-      toast.success(res.message || 'Password changed successfully');
+      const msg = res?.message || 'Password changed successfully!';
+      toast.success(msg);
+      setPasswordStatusMsg({ type: 'success', text: msg });
       setPasswords({ current: '', new: '', confirm: '' });
       setPasswordErrors({});
     } catch (err: any) {
-      toast.error(err?.message || 'Failed to change password. Please check your current password.');
+      const errMsg = err?.message || 'Failed to change password. Please check your current password.';
+      toast.error(errMsg);
+      setPasswordStatusMsg({ type: 'error', text: errMsg });
+    } finally {
+      setSubmittingPassword(false);
     }
   };
 
@@ -239,40 +255,70 @@ const Settings = () => {
     }
   };
 
-  const handleNicUpload = async (e) => {
+  const handleNicUploadFront = async (e: any) => {
     const file = e.target.files?.[0];
     if (!file || !fullProfile) return;
 
-    // Validate file size limit (10MB)
     const MAX_SIZE = 10 * 1024 * 1024;
     if (file.size > MAX_SIZE) {
       toast.error('File size exceeds the 10MB limit. Please upload a smaller image.');
-      if (nicInputRef.current) nicInputRef.current.value = '';
+      if (nicInputFrontRef.current) nicInputFrontRef.current.value = '';
       return;
     }
 
-    setUploadingNic(true);
+    setUploadingNicFront(true);
     try {
       const url = await uploadImage(file);
-      setTempNicImage(url);
-      toast.info('NIC Image uploaded. Click "Submit Verification" below to save.');
+      setTempNicFront(url);
+      toast.info('NIC Front image uploaded. Click "Submit Verification" below to save.');
     } catch (error: any) {
-      console.error('Failed to upload NIC Image:', error);
-      toast.error(`Failed to upload NIC Image: ${error.message || error}`);
+      console.error('Failed to upload NIC Front Image:', error);
+      toast.error(`Failed to upload NIC Front Image: ${error.message || error}`);
     } finally {
-      setUploadingNic(false);
-      if (nicInputRef.current) nicInputRef.current.value = '';
+      setUploadingNicFront(false);
+      if (nicInputFrontRef.current) nicInputFrontRef.current.value = '';
+    }
+  };
+
+  const handleNicUploadRear = async (e: any) => {
+    const file = e.target.files?.[0];
+    if (!file || !fullProfile) return;
+
+    const MAX_SIZE = 10 * 1024 * 1024;
+    if (file.size > MAX_SIZE) {
+      toast.error('File size exceeds the 10MB limit. Please upload a smaller image.');
+      if (nicInputRearRef.current) nicInputRearRef.current.value = '';
+      return;
+    }
+
+    setUploadingNicRear(true);
+    try {
+      const url = await uploadImage(file);
+      setTempNicRear(url);
+      toast.info('NIC Rear image uploaded. Click "Submit Verification" below to save.');
+    } catch (error: any) {
+      console.error('Failed to upload NIC Rear Image:', error);
+      toast.error(`Failed to upload NIC Rear Image: ${error.message || error}`);
+    } finally {
+      setUploadingNicRear(false);
+      if (nicInputRearRef.current) nicInputRearRef.current.value = '';
     }
   };
 
   const handleNicSubmit = async () => {
-    if (!fullProfile || !tempNicImage) return;
+    if (!fullProfile) return;
     setSavingNic(true);
     try {
-      const updatedProfile = { ...fullProfile, nicImage: tempNicImage };
+      const updatedProfile = {
+        ...fullProfile,
+        nicImage: tempNicFront || tempNicRear || '',
+        nicFrontImage: tempNicFront,
+        nicRearImage: tempNicRear,
+        nicStatus: 'PENDING',
+      };
       await api.updateProfile(updatedProfile);
       setFullProfile(updatedProfile);
-      toast.success('Identity verification submitted successfully!');
+      toast.success('Identity verification submitted successfully! Awaiting admin review.');
     } catch (error) {
       toast.error('Failed to save identity verification');
     } finally {
@@ -282,25 +328,25 @@ const Settings = () => {
 
   const removeNicImage = async () => {
     if (!fullProfile) return;
-    
-    if (fullProfile.nicImage) {
-      setSavingNic(true);
-      try {
-        const updatedProfile = { ...fullProfile, nicImage: '' };
-        await api.updateProfile(updatedProfile);
-        setFullProfile(updatedProfile);
-        setTempNicImage(null);
-        toast.success('NIC Image removed successfully');
-      } catch (error) {
-        toast.error('Failed to remove NIC Image');
-      } finally {
-        setSavingNic(false);
-      }
-    } else {
-      setTempNicImage(null);
-      toast.success('Upload cancelled');
+    setSavingNic(true);
+    try {
+      const updatedProfile = {
+        ...fullProfile,
+        nicImage: '',
+        nicFrontImage: null,
+        nicRearImage: null,
+        nicStatus: 'NOT_SUBMITTED',
+      };
+      await api.updateProfile(updatedProfile);
+      setFullProfile(updatedProfile);
+      setTempNicFront(null);
+      setTempNicRear(null);
+      toast.success('NIC Documents removed successfully');
+    } catch (error) {
+      toast.error('Failed to remove NIC Documents');
+    } finally {
+      setSavingNic(false);
     }
-    if (nicInputRef.current) nicInputRef.current.value = '';
   };
 
   // ── Render ─────────────────────────────────────────────────
@@ -527,6 +573,7 @@ const Settings = () => {
                       onChange={(e) => {
                         setPasswords(prev => ({ ...prev, [key]: e.target.value }));
                         if (passwordErrors[key]) setPasswordErrors(prev => ({ ...prev, [key]: '' }));
+                        if (passwordStatusMsg) setPasswordStatusMsg(null);
                       }}
                       placeholder={placeholder}
                       className={passwordErrors[key] ? 'border-destructive' : ''}
@@ -593,11 +640,23 @@ const Settings = () => {
             })}
           </div>
 
+          {passwordStatusMsg && (
+            <div className={`mt-4 max-w-md p-3.5 rounded-xl border text-sm font-medium flex items-center gap-2 animate-scale-in ${
+              passwordStatusMsg.type === 'success'
+                ? 'bg-emerald-50 text-emerald-800 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800'
+                : 'bg-red-50 text-red-800 border-red-200 dark:bg-red-950/40 dark:text-red-300 dark:border-red-800'
+            }`}>
+              <span>{passwordStatusMsg.type === 'success' ? '✅' : '❌'}</span>
+              <span>{passwordStatusMsg.text}</span>
+            </div>
+          )}
+
           <div className="mt-6 flex justify-end border-t border-border pt-4">
             <Button
               onClick={handlePasswordSubmit}
               className="gap-2 font-semibold"
               disabled={
+                submittingPassword ||
                 !passwords.current ||
                 !passwords.new ||
                 !passwords.confirm ||
@@ -605,7 +664,17 @@ const Settings = () => {
                 passwords.new !== passwords.confirm
               }
             >
-              <ShieldCheck className="h-4 w-4" />Update Password
+              {submittingPassword ? (
+                <>
+                  <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                  Updating Password...
+                </>
+              ) : (
+                <>
+                  <ShieldCheck className="h-4 w-4" />
+                  Update Password
+                </>
+              )}
             </Button>
           </div>
         </div>
@@ -675,73 +744,174 @@ const Settings = () => {
 
         {/* 4. IDENTITY VERIFICATION SECTION: Upload NIC */}
         <div className="rounded-xl border border-border bg-card p-6">
-          <div className="flex items-center justify-between gap-3 mb-1">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
             <div className="flex items-center gap-3">
               <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
                 <IdCard className="h-5 w-5 text-primary" />
               </div>
               <div>
                 <h3 className="text-lg font-semibold text-foreground">Identity Verification</h3>
-                <p className="text-sm text-muted-foreground">Upload your National Identity Card (NIC) for verification</p>
+                <p className="text-sm text-muted-foreground">Upload National Identity Card (NIC Front & Rear) for admin verification</p>
               </div>
             </div>
-            {fullProfile?.nicImage && (
-              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
-                ✓ Submitted
-              </span>
-            )}
+
+            {/* 4-State Verification Badge */}
+            <div>
+              {fullProfile?.agentApproved || fullProfile?.nicStatus === 'APPROVED' ? (
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-50/95 text-emerald-700 border border-emerald-300/90 backdrop-blur-md shadow-sm">
+                  Verified & Approved
+                </span>
+              ) : fullProfile?.nicStatus === 'REJECTED' || fullProfile?.nicVerificationStatus === 'rejected' ? (
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-rose-50/95 text-rose-700 border border-rose-300/90 backdrop-blur-md shadow-sm">
+                  Action Required
+                </span>
+              ) : (tempNicFront || tempNicRear || fullProfile?.nicImage) ? (
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-amber-50/95 text-amber-800 border border-amber-300/90 backdrop-blur-md shadow-sm">
+                  Pending Verification
+                </span>
+              ) : (
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-700 border border-slate-300">
+                  Not Submitted
+                </span>
+              )}
+            </div>
           </div>
 
-          <div className="mt-6 flex flex-col items-start gap-4 max-w-md">
-            <div
-              className="relative h-32 w-full rounded-lg border-2 border-dashed border-input flex items-center justify-center overflow-hidden hover:bg-muted/50 transition-colors cursor-pointer group"
-              onClick={() => !uploadingNic && nicInputRef.current?.click()}
-            >
-              {uploadingNic ? (
-                <div className="flex flex-col items-center gap-2">
-                  <div className="h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-                  <span className="text-xs text-muted-foreground">Uploading...</span>
-                </div>
-              ) : tempNicImage ? (
-                <>
-                  <img src={tempNicImage} alt="NIC Preview" className="h-full w-full object-cover opacity-80 group-hover:opacity-60 transition-opacity" />
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <Camera className="h-8 w-8 text-white opacity-0 group-hover:opacity-100 transition-opacity drop-shadow-md" />
-                  </div>
-                </>
-              ) : (
-                <div className="text-center p-4">
-                  <Camera className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
-                  <span className="text-sm text-muted-foreground">Click to upload NIC Document</span>
-                </div>
-              )}
-              <input type="file" ref={nicInputRef} className="hidden" accept="image/*" onChange={handleNicUpload} />
-            </div>
-            {tempNicImage && (
-              <div className="flex flex-col sm:flex-row gap-2 w-full">
-                {tempNicImage !== fullProfile?.nicImage && (
-                  <Button
-                    onClick={handleNicSubmit}
-                    disabled={savingNic}
-                    className="flex-1 gap-2"
-                  >
-                    <Save className="h-4 w-4" />
-                    {savingNic ? 'Submitting...' : 'Submit Verification'}
-                  </Button>
-                )}
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={removeNicImage}
-                  disabled={savingNic}
-                  className={`text-destructive hover:text-destructive shrink-0 ${tempNicImage === fullProfile?.nicImage ? 'w-full' : 'flex-1'}`}
-                >
-                  Remove NIC Document
-                </Button>
+          {/* Inline Rejection Reason Notice Box */}
+          {(fullProfile?.nicStatus === 'REJECTED' || fullProfile?.nicVerificationStatus === 'rejected') && (
+            <div className="mb-6 p-4 rounded-xl bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800 text-sm text-destructive space-y-1">
+              <div className="font-semibold flex items-center gap-2">
+                ⚠️ Verification Rejected
               </div>
+              <p className="text-xs text-red-700 dark:text-red-300">
+                {fullProfile?.nicRejectionReason || fullProfile?.rejectionReason || 'Your submitted NIC document was rejected. Please re-upload clear photos of both sides.'}
+              </p>
+            </div>
+          )}
+
+          {/* Dual-Side Upload Slots */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Slot 1: NIC Front Side */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between text-sm font-medium">
+                <span>1. NIC Front Side <span className="text-destructive">*</span></span>
+                {tempNicFront && (
+                  <button
+                    type="button"
+                    onClick={() => setPreviewImage(tempNicFront)}
+                    className="text-xs text-primary hover:underline flex items-center gap-1 font-normal"
+                  >
+                    <Eye className="h-3.5 w-3.5" /> View Full
+                  </button>
+                )}
+              </div>
+              <div
+                className="relative h-36 w-full rounded-xl border-2 border-dashed border-input flex items-center justify-center overflow-hidden hover:bg-muted/50 transition-colors cursor-pointer group bg-muted/20"
+                onClick={() => !uploadingNicFront && nicInputFrontRef.current?.click()}
+              >
+                {uploadingNicFront ? (
+                  <div className="flex flex-col items-center gap-2">
+                    <div className="h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+                    <span className="text-xs text-muted-foreground">Uploading Front...</span>
+                  </div>
+                ) : tempNicFront ? (
+                  <>
+                    <img src={tempNicFront} alt="NIC Front" className="h-full w-full object-cover group-hover:opacity-75 transition-opacity" />
+                    <div className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity gap-2">
+                      <Camera className="h-6 w-6 text-white" />
+                      <span className="text-xs text-white font-medium">Replace Front</span>
+                    </div>
+                  </>
+                ) : (
+                  <div className="text-center p-4">
+                    <Camera className="h-7 w-7 mx-auto text-muted-foreground mb-1.5" />
+                    <span className="text-xs font-medium text-foreground block">Upload NIC Front</span>
+                    <span className="text-[11px] text-muted-foreground">PNG, JPG up to 10MB</span>
+                  </div>
+                )}
+                <input type="file" ref={nicInputFrontRef} className="hidden" accept="image/*" onChange={handleNicUploadFront} />
+              </div>
+            </div>
+
+            {/* Slot 2: NIC Rear Side */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between text-sm font-medium">
+                <span>2. NIC Rear Side (Optional)</span>
+                {tempNicRear && (
+                  <button
+                    type="button"
+                    onClick={() => setPreviewImage(tempNicRear)}
+                    className="text-xs text-primary hover:underline flex items-center gap-1 font-normal"
+                  >
+                    <Eye className="h-3.5 w-3.5" /> View Full
+                  </button>
+                )}
+              </div>
+              <div
+                className="relative h-36 w-full rounded-xl border-2 border-dashed border-input flex items-center justify-center overflow-hidden hover:bg-muted/50 transition-colors cursor-pointer group bg-muted/20"
+                onClick={() => !uploadingNicRear && nicInputRearRef.current?.click()}
+              >
+                {uploadingNicRear ? (
+                  <div className="flex flex-col items-center gap-2">
+                    <div className="h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+                    <span className="text-xs text-muted-foreground">Uploading Rear...</span>
+                  </div>
+                ) : tempNicRear ? (
+                  <>
+                    <img src={tempNicRear} alt="NIC Rear" className="h-full w-full object-cover group-hover:opacity-75 transition-opacity" />
+                    <div className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity gap-2">
+                      <Camera className="h-6 w-6 text-white" />
+                      <span className="text-xs text-white font-medium">Replace Rear</span>
+                    </div>
+                  </>
+                ) : (
+                  <div className="text-center p-4">
+                    <Camera className="h-7 w-7 mx-auto text-muted-foreground mb-1.5" />
+                    <span className="text-xs font-medium text-foreground block">Upload NIC Rear</span>
+                    <span className="text-[11px] text-muted-foreground">PNG, JPG up to 10MB</span>
+                  </div>
+                )}
+                <input type="file" ref={nicInputRearRef} className="hidden" accept="image/*" onChange={handleNicUploadRear} />
+              </div>
+            </div>
+          </div>
+
+          {/* Action Toolbar */}
+          <div className="mt-6 flex flex-wrap items-center gap-3 pt-4 border-t border-border">
+            {(tempNicFront !== (fullProfile?.nicFrontImage || fullProfile?.nicImage) || tempNicRear !== fullProfile?.nicRearImage) && (tempNicFront || tempNicRear) && (
+              <Button onClick={handleNicSubmit} disabled={savingNic} className="gap-2">
+                <Save className="h-4 w-4" />
+                {savingNic ? 'Submitting...' : 'Submit Verification'}
+              </Button>
+            )}
+            {(tempNicFront || tempNicRear) && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={removeNicImage}
+                disabled={savingNic}
+                className="text-destructive hover:text-destructive gap-1.5"
+              >
+                <Trash2 className="h-4 w-4" />
+                Remove Document
+              </Button>
             )}
           </div>
         </div>
+
+        {/* Full Image Preview Lightbox Modal */}
+        {previewImage && (
+          <Dialog open={!!previewImage} onOpenChange={(open) => !open && setPreviewImage(null)}>
+            <DialogContent className="sm:max-w-[700px] p-2 bg-black/90 border-none overflow-hidden">
+              <DialogHeader className="p-2 flex flex-row items-center justify-between text-white border-b border-white/10">
+                <DialogTitle className="text-sm font-medium text-white">NIC Document Lightbox Preview</DialogTitle>
+              </DialogHeader>
+              <div className="relative max-h-[75vh] w-full flex items-center justify-center overflow-auto p-2">
+                <img src={previewImage} alt="Full NIC Document" className="max-h-[70vh] w-auto object-contain rounded" />
+              </div>
+            </DialogContent>
+          </Dialog>
+        )}
           </div>
         ) : (
           <Refunds embedded={true} />

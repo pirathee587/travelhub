@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { createWorker } from 'tesseract.js';
 import {
   Car, Plus, Search, Edit, Trash2, User,
@@ -160,6 +161,10 @@ const LockedField = ({ label, value, isImage }) => (
 
 /* --- MAIN PAGE COMPONENT: FLEET & DRIVER MANAGEMENT --- */
 const Vehicles = () => {
+  const [searchParams] = useSearchParams();
+  const tabParam = searchParams.get('tab');
+  const filterParam = searchParams.get('filter');
+
   const [vehicles, setVehicles] = useState([]);
   const [drivers, setDrivers] = useState([]);
   const [owners, setOwners] = useState([]);
@@ -167,9 +172,9 @@ const Vehicles = () => {
   const [loading, setLoading] = useState(true);
   const [searchVehicle, setSearchVehicle] = useState('');
   const [searchDriver, setSearchDriver] = useState('');
-  const [activeTab, setActiveTab] = useState('vehicles');
-  const [vehicleFilter, setVehicleFilter] = useState('active');
-  const [driverFilter, setDriverFilter] = useState('active');
+  const [activeTab, setActiveTab] = useState(tabParam === 'drivers' ? 'drivers' : 'vehicles');
+  const [vehicleFilter, setVehicleFilter] = useState(tabParam === 'vehicles' && filterParam ? filterParam : 'active');
+  const [driverFilter, setDriverFilter] = useState(tabParam === 'drivers' && filterParam ? filterParam : 'active');
   const [deleteActionDriver, setDeleteActionDriver] = useState(null);
   const [deleteActionVehicle, setDeleteActionVehicle] = useState(null);
   const [isAddDriverOpen, setIsAddDriverOpen] = useState(false);
@@ -183,6 +188,16 @@ const Vehicles = () => {
   const [changeRequestData, setChangeRequestData] = useState({ fieldName: '', currentValue: '', newValue: '', reason: '' });
   const [driverPhotoUploading, setDriverPhotoUploading] = useState(false);
   const fileInputRef = useRef(null);
+
+  useEffect(() => {
+    if (tabParam === 'drivers') {
+      setActiveTab('drivers');
+      if (filterParam) setDriverFilter(filterParam);
+    } else if (tabParam === 'vehicles') {
+      setActiveTab('vehicles');
+      if (filterParam) setVehicleFilter(filterParam);
+    }
+  }, [tabParam, filterParam]);
 
   /* --- DATA FETCHING: Load Fleet and Drivers from API --- */
   useEffect(() => {
@@ -636,12 +651,18 @@ const Vehicles = () => {
         const updated = await api.updateVehicle(editingVehicle.id, payload);
         if (updated.success === false || updated.error || (typeof updated.status === 'number' && updated.status >= 400)) throw new Error(updated.message || updated.error || 'Update failed');
         setVehicles(prev => prev.map(v => v.id === editingVehicle.id ? updated : v));
-        toast.success('Vehicle updated successfully');
+        if (updated.lifecycleStatus === 'pending' && editingVehicle.lifecycleStatus === 'active') {
+          toast.success('Vehicle updated! Document changes sent to admin for re-verification.');
+        } else {
+          toast.success('Vehicle updated successfully');
+        }
       } else {
         const created = await api.createVehicle(payload);
         if (created.success === false || created.error || (typeof created.status === 'number' && created.status >= 400)) throw new Error(created.message || created.error || 'Create failed');
         setVehicles(prev => [...prev, created]);
-        toast.success('Vehicle registered successfully');
+        setActiveTab('vehicles');
+        setVehicleFilter('pending');
+        toast.success('Vehicle registered successfully! Sent to admin for verification.');
       }
       fetchOwners(); // Refresh inline owner listing options
       setIsAddVehicleOpen(false);
@@ -757,12 +778,18 @@ const Vehicles = () => {
         const updated = await api.updateDriver(editingDriver.id, payload);
         if (updated.success === false || updated.error || (typeof updated.status === 'number' && updated.status >= 400)) throw new Error(updated.message || updated.error || 'Update failed');
         setDrivers(prev => prev.map(d => d.id === editingDriver.id ? updated : d));
-        toast.success('Driver updated successfully');
+        if (updated.lifecycleStatus === 'pending' && editingDriver.lifecycleStatus === 'active') {
+          toast.success('Driver updated! Document changes sent to admin for re-verification.');
+        } else {
+          toast.success('Driver updated successfully');
+        }
       } else {
         const created = await api.createDriver(payload);
         if (created.success === false || created.error || (typeof created.status === 'number' && created.status >= 400)) throw new Error(created.message || created.error || 'Create failed');
         setDrivers(prev => [...prev, created]);
-        toast.success('Driver added successfully');
+        setActiveTab('drivers');
+        setDriverFilter('pending');
+        toast.success('Driver registered successfully! Sent to admin for verification.');
       }
       setIsAddDriverOpen(false);
       setNewDriver(defaultNewDriver);
@@ -1010,26 +1037,20 @@ const Vehicles = () => {
                               {errors.ownerLastName && <span className="text-xs font-medium text-destructive mt-1 block">{errors.ownerLastName}</span>}
                             </div>
                           </div>
-                          {editingVehicle
-                            ? <LockedField label="NIC Number" value={newVehicle.nicNumber} />
-                            : <div className="space-y-2">
-                                <Label>NIC Number</Label>
-                                <Input value={newVehicle.nicNumber} onChange={(e) => updateVehicleField('nicNumber', e.target.value)} />
-                                {errors.nicNumber && <span className="text-xs font-medium text-destructive mt-1 block">{errors.nicNumber}</span>}
-                              </div>}
+                          <div className="space-y-2">
+                            <Label>NIC Number</Label>
+                            <Input value={newVehicle.nicNumber} onChange={(e) => updateVehicleField('nicNumber', e.target.value)} />
+                            {errors.nicNumber && <span className="text-xs font-medium text-destructive mt-1 block">{errors.nicNumber}</span>}
+                          </div>
                           <div className="grid grid-cols-2 gap-4">
-                            {editingVehicle
-                              ? <LockedField label="NIC Front Image" value={newVehicle.nicFrontImage} isImage />
-                              : <div className="space-y-2">
-                                  <ImageUploadField label="NIC Front Image" folder="vehicles/documents" value={newVehicle.nicFrontImage} onChange={(val) => updateVehicleField('nicFrontImage', val)} onRemove={() => updateVehicleField('nicFrontImage', null)} onFileSelect={handleNicFrontOcrScan} />
-                                  {errors.nicFrontImage && <span className="text-xs font-medium text-destructive mt-1 block">{errors.nicFrontImage}</span>}
-                                </div>}
-                            {editingVehicle
-                              ? <LockedField label="NIC Rear Image" value={newVehicle.nicRearImage} isImage />
-                              : <div className="space-y-2">
-                                  <ImageUploadField label="NIC Rear Image" folder="vehicles/documents" value={newVehicle.nicRearImage} onChange={(val) => updateVehicleField('nicRearImage', val)} onRemove={() => updateVehicleField('nicRearImage', null)} />
-                                  {errors.nicRearImage && <span className="text-xs font-medium text-destructive mt-1 block">{errors.nicRearImage}</span>}
-                                </div>}
+                            <div className="space-y-2">
+                              <ImageUploadField label="NIC Front Image" folder="vehicles/documents" value={newVehicle.nicFrontImage} onChange={(val) => updateVehicleField('nicFrontImage', val)} onRemove={() => updateVehicleField('nicFrontImage', null)} onFileSelect={handleNicFrontOcrScan} />
+                              {errors.nicFrontImage && <span className="text-xs font-medium text-destructive mt-1 block">{errors.nicFrontImage}</span>}
+                            </div>
+                            <div className="space-y-2">
+                              <ImageUploadField label="NIC Rear Image" folder="vehicles/documents" value={newVehicle.nicRearImage} onChange={(val) => updateVehicleField('nicRearImage', val)} onRemove={() => updateVehicleField('nicRearImage', null)} />
+                              {errors.nicRearImage && <span className="text-xs font-medium text-destructive mt-1 block">{errors.nicRearImage}</span>}
+                            </div>
                           </div>
                           <div className="space-y-2">
                             <Label>Address Line 1</Label>
@@ -1102,21 +1123,17 @@ const Vehicles = () => {
                           <Input type="number" value={newVehicle.capacity} onChange={(e) => updateVehicleField('capacity', e.target.value)} />
                           {errors.capacity && <span className="text-xs font-medium text-destructive mt-1 block">{errors.capacity}</span>}
                         </div>
-                        {editingVehicle
-                          ? <LockedField label="Year of Manufacture" value={newVehicle.yearOfManufacture} />
-                          : <div className="space-y-2">
-                              <Label>Year of Manufacture</Label>
-                              <Input type="number" value={newVehicle.yearOfManufacture} onChange={(e) => updateVehicleField('yearOfManufacture', e.target.value)} />
-                              {errors.yearOfManufacture && <span className="text-xs font-medium text-destructive mt-1 block">{errors.yearOfManufacture}</span>}
-                            </div>}
+                        <div className="space-y-2">
+                          <Label>Year of Manufacture</Label>
+                          <Input type="number" value={newVehicle.yearOfManufacture} onChange={(e) => updateVehicleField('yearOfManufacture', e.target.value)} />
+                          {errors.yearOfManufacture && <span className="text-xs font-medium text-destructive mt-1 block">{errors.yearOfManufacture}</span>}
+                        </div>
                       </div>
-                      {editingVehicle
-                        ? <LockedField label="Registration Number" value={newVehicle.registration} />
-                        : <div className="space-y-2">
-                            <Label>License Plate Number</Label>
-                            <Input placeholder="e.g., KA-01-AB-1234" value={newVehicle.registration} onChange={(e) => updateVehicleField('registration', e.target.value)} />
-                            {errors.registration && <span className="text-xs font-medium text-destructive mt-1 block">{errors.registration}</span>}
-                          </div>}
+                      <div className="space-y-2">
+                        <Label>License Plate Number</Label>
+                        <Input placeholder="e.g., KA-01-AB-1234" value={newVehicle.registration} onChange={(e) => updateVehicleField('registration', e.target.value)} />
+                        {errors.registration && <span className="text-xs font-medium text-destructive mt-1 block">{errors.registration}</span>}
+                      </div>
                     </div>
 
                     {/* Section 3: Documents and Photos */}
@@ -1194,18 +1211,18 @@ const Vehicles = () => {
                         )}
                         <div className="absolute top-3 right-3">
                           {vehicle.lifecycleStatus === 'pending' ? (
-                            <span className="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium shadow-sm backdrop-blur-md bg-background/80 text-yellow-600 border border-yellow-300 transition-colors select-none">
-                              <Clock className="h-3 w-3 animate-pulse" />Pending Verification
+                            <span className="inline-flex items-center justify-center rounded-full px-3 py-0.5 text-xs font-semibold bg-amber-50/95 text-amber-800 border border-amber-300/90 backdrop-blur-md shadow-sm select-none">
+                              Pending Verification
                             </span>
                           ) : vehicle.lifecycleStatus === 'rejected' ? (
-                            <span className="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium shadow-sm backdrop-blur-md bg-background/80 text-red-600 border border-red-300 transition-colors select-none">
-                              <AlertTriangle className="h-3 w-3" />Verification Rejected
+                            <span className="inline-flex items-center justify-center rounded-full px-3 py-0.5 text-xs font-semibold bg-rose-50/95 text-rose-700 border border-rose-300/90 backdrop-blur-md shadow-sm select-none">
+                              Verification Rejected
                             </span>
                           ) : (
                             <DropdownMenu>
                               <DropdownMenuTrigger className="focus:outline-none">
-                                <span className={cn('inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium shadow-sm backdrop-blur-md bg-background/80 hover:bg-background/90 transition-colors cursor-pointer', status.class)}>
-                                  <StatusIcon className="h-3 w-3" />{status.label}
+                                <span className={cn('inline-flex items-center justify-center rounded-full px-3 py-0.5 text-xs font-semibold cursor-pointer hover:opacity-90 shadow-sm backdrop-blur-md', status.class)}>
+                                  {status.label}
                                 </span>
                               </DropdownMenuTrigger>
                               <DropdownMenuContent align="end">
@@ -1345,13 +1362,11 @@ const Vehicles = () => {
                         </div>
                       </div>
                       <div className="grid grid-cols-2 gap-4">
-                        {editingDriver
-                          ? <LockedField label="NIC Number" value={newDriver.nic} />
-                          : <div className="space-y-2">
-                              <Label>NIC Number <span className="text-destructive">*</span></Label>
-                              <Input value={newDriver.nic} onChange={(e) => updateDriverField('nic', e.target.value)} />
-                              {errors.nic && <span className="text-xs font-medium text-destructive mt-1 block">{errors.nic}</span>}
-                            </div>}
+                        <div className="space-y-2">
+                          <Label>NIC Number <span className="text-destructive">*</span></Label>
+                          <Input value={newDriver.nic} onChange={(e) => updateDriverField('nic', e.target.value)} />
+                          {errors.nic && <span className="text-xs font-medium text-destructive mt-1 block">{errors.nic}</span>}
+                        </div>
                         <div className="space-y-2"><Label>Blood Group</Label>
                           <Select value={newDriver.bloodGroup} onValueChange={(val) => updateDriverField('bloodGroup', val)}>
                             <SelectTrigger><SelectValue placeholder="Select Blood Group" /></SelectTrigger>
@@ -1360,18 +1375,14 @@ const Vehicles = () => {
                         </div>
                       </div>
                       <div className="grid grid-cols-2 gap-4">
-                        {editingDriver
-                          ? <LockedField label="NIC Front Image" value={newDriver.nicFront} isImage />
-                          : <div className="space-y-2">
-                              <ImageUploadField label="NIC Front Image" folder="drivers/nic" value={newDriver.nicFront} onChange={(v) => updateDriverField('nicFront', v)} onRemove={() => updateDriverField('nicFront', null)} onFileSelect={handleDriverNicOcrScan} />
-                              {errors.nicFront && <span className="text-xs font-medium text-destructive mt-1 block">{errors.nicFront}</span>}
-                            </div>}
-                        {editingDriver
-                          ? <LockedField label="NIC Rear Image" value={newDriver.nicRear} isImage />
-                          : <div className="space-y-2">
-                              <ImageUploadField label="NIC Rear Image" folder="drivers/nic" value={newDriver.nicRear} onChange={(v) => updateDriverField('nicRear', v)} onRemove={() => updateDriverField('nicRear', null)} />
-                              {errors.nicRear && <span className="text-xs font-medium text-destructive mt-1 block">{errors.nicRear}</span>}
-                            </div>}
+                        <div className="space-y-2">
+                          <ImageUploadField label="NIC Front Image" folder="drivers/nic" value={newDriver.nicFront} onChange={(v) => updateDriverField('nicFront', v)} onRemove={() => updateDriverField('nicFront', null)} onFileSelect={handleDriverNicOcrScan} />
+                          {errors.nicFront && <span className="text-xs font-medium text-destructive mt-1 block">{errors.nicFront}</span>}
+                        </div>
+                        <div className="space-y-2">
+                          <ImageUploadField label="NIC Rear Image" folder="drivers/nic" value={newDriver.nicRear} onChange={(v) => updateDriverField('nicRear', v)} onRemove={() => updateDriverField('nicRear', null)} />
+                          {errors.nicRear && <span className="text-xs font-medium text-destructive mt-1 block">{errors.nicRear}</span>}
+                        </div>
                       </div>
                     </div>
 
@@ -1422,13 +1433,11 @@ const Vehicles = () => {
                         {errors.vehicleTypes && <span className="text-xs font-medium text-destructive mt-1 block">{errors.vehicleTypes}</span>}
                       </div>
                       <div className="grid grid-cols-2 gap-4">
-                        {editingDriver
-                          ? <LockedField label="License Number" value={newDriver.license} />
-                          : <div className="space-y-2">
-                              <Label>License Number <span className="text-destructive">*</span></Label>
-                              <Input value={newDriver.license} onChange={(e) => updateDriverField('license', e.target.value)} />
-                              {errors.license && <span className="text-xs font-medium text-destructive mt-1 block">{errors.license}</span>}
-                            </div>}
+                        <div className="space-y-2">
+                          <Label>License Number <span className="text-destructive">*</span></Label>
+                          <Input value={newDriver.license} onChange={(e) => updateDriverField('license', e.target.value)} />
+                          {errors.license && <span className="text-xs font-medium text-destructive mt-1 block">{errors.license}</span>}
+                        </div>
                         <div className="space-y-2">
                           <Label>License Expiry Date <span className="text-destructive">*</span></Label>
                           <Input type="date" value={newDriver.licenseExpiryDate} onChange={(e) => updateDriverField('licenseExpiryDate', e.target.value)} />
@@ -1436,18 +1445,14 @@ const Vehicles = () => {
                         </div>
                       </div>
                       <div className="grid grid-cols-2 gap-4">
-                        {editingDriver
-                          ? <LockedField label="License Front Image" value={newDriver.licenseFront} isImage />
-                          : <div className="space-y-2">
-                              <ImageUploadField label="License Front Image" folder="drivers/license" value={newDriver.licenseFront} onChange={(v) => updateDriverField('licenseFront', v)} onRemove={() => updateDriverField('licenseFront', null)} />
-                              {errors.licenseFront && <span className="text-xs font-medium text-destructive mt-1 block">{errors.licenseFront}</span>}
-                            </div>}
-                        {editingDriver
-                          ? <LockedField label="License Rear Image" value={newDriver.licenseRear} isImage />
-                          : <div className="space-y-2">
-                              <ImageUploadField label="License Rear Image" folder="drivers/license" value={newDriver.licenseRear} onChange={(v) => updateDriverField('licenseRear', v)} onRemove={() => updateDriverField('licenseRear', null)} />
-                              {errors.licenseRear && <span className="text-xs font-medium text-destructive mt-1 block">{errors.licenseRear}</span>}
-                            </div>}
+                        <div className="space-y-2">
+                          <ImageUploadField label="License Front Image" folder="drivers/license" value={newDriver.licenseFront} onChange={(v) => updateDriverField('licenseFront', v)} onRemove={() => updateDriverField('licenseFront', null)} />
+                          {errors.licenseFront && <span className="text-xs font-medium text-destructive mt-1 block">{errors.licenseFront}</span>}
+                        </div>
+                        <div className="space-y-2">
+                          <ImageUploadField label="License Rear Image" folder="drivers/license" value={newDriver.licenseRear} onChange={(v) => updateDriverField('licenseRear', v)} onRemove={() => updateDriverField('licenseRear', null)} />
+                          {errors.licenseRear && <span className="text-xs font-medium text-destructive mt-1 block">{errors.licenseRear}</span>}
+                        </div>
                       </div>
                     </div>
 
@@ -1457,92 +1462,61 @@ const Vehicles = () => {
               </Dialog>
             </div>
 
-            {/* Drivers Table */}
+            {/* Drivers Grid (Rectangular Cards) */}
             {loading ? (
-              <div className="space-y-3">
-                {Array.from({ length: 4 }).map((_, i) => (
-                  <div key={i} className="flex justify-between items-center p-4 border border-border rounded-xl bg-card">
-                    <div className="flex items-center gap-3">
-                      <Skeleton className="h-10 w-10 rounded-full" />
-                      <div className="space-y-2">
-                        <Skeleton className="h-4 w-28" />
-                        <Skeleton className="h-3 w-20" />
-                      </div>
+              <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                {Array.from({ length: 3 }).map((_, i) => (
+                  <div key={i} className="rounded-xl border border-border bg-card overflow-hidden p-5 space-y-4">
+                    <Skeleton className="h-48 w-full rounded-lg" />
+                    <Skeleton className="h-6 w-3/4" />
+                    <Skeleton className="h-4 w-1/2" />
+                    <div className="space-y-2 pt-2">
+                      <Skeleton className="h-4 w-full" />
+                      <Skeleton className="h-4 w-full" />
                     </div>
-                    <Skeleton className="h-4 w-20" />
-                    <Skeleton className="h-4 w-32" />
-                    <Skeleton className="h-6 w-16 rounded-full" />
                   </div>
                 ))}
               </div>
             ) : filteredDrivers.length === 0 ? (
               <p className="text-muted-foreground">No drivers found.</p>
             ) : (
-              <div className="overflow-hidden rounded-xl border border-border bg-card">
-                <table className="w-full">
-                  <thead>
-                    <tr className="border-b border-border bg-muted/30">
-                      <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">Driver</th>
-                      <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">License</th>
-                      <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">Contact</th>
-                      <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">Rating</th>
-                      <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">Vehicle</th>
-                      <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">Status</th>
-                      <th className="px-6 py-4 text-right text-xs font-semibold uppercase tracking-wider text-muted-foreground">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-border">
-                    {filteredDrivers.map((driver) => {
-                      const status = statusConfig[driver.status] || statusConfig['available'];
-                      const StatusIcon = status.icon;
-                      const fullName = driver.firstName && driver.lastName
-                        ? `${driver.firstName} ${driver.lastName}`
-                        : driver.firstName || driver.name || 'Unknown';
-                      return (
-                        <tr key={driver.id} className="table-row-hover">
-                          <td className="px-6 py-4">
-                            <div className="flex items-center gap-3">
-                              <div className="relative h-10 w-10 flex-shrink-0 rounded-full bg-gradient-to-br from-primary to-accent overflow-hidden">
-                                {driver.profileImage || driver.image ? (
-                                  <img src={driver.profileImage || driver.image} alt={fullName} className="h-full w-full object-cover" />
-                                ) : (
-                                  <div className="h-full w-full flex items-center justify-center text-sm font-semibold text-primary-foreground">
-                                    {fullName.split(' ').map(n => n[0]).join('')}
-                                  </div>
-                                )}
-                              </div>
-                              <div>
-                                <span className="font-medium text-foreground">{fullName}</span>
-                                <p className="text-xs text-muted-foreground">{driver.email}</p>
-                                {driver.lifecycleStatus === 'rejected' && driver.rejectionReason && (
-                                  <p className="text-[11px] text-destructive font-medium mt-1">⚠️ Reason: {driver.rejectionReason}</p>
-                                )}
-                              </div>
+              <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                {filteredDrivers.map((driver) => {
+                  const status = statusConfig[driver.status] || statusConfig['available'];
+                  const StatusIcon = status.icon;
+                  const fullName = driver.firstName && driver.lastName
+                    ? `${driver.firstName} ${driver.lastName}`
+                    : driver.firstName || driver.name || 'Unknown';
+                  const driverPhoto = driver.profileImage || driver.image;
+
+                  return (
+                    <div key={driver.id} className="rounded-xl border border-border bg-card overflow-hidden transition-all hover:shadow-md flex flex-col justify-between">
+                      <div>
+                        {/* Rectangular Header Image */}
+                        <div className="relative h-48 w-full bg-muted">
+                          {driverPhoto ? (
+                            <img src={driverPhoto} alt={fullName} className="h-full w-full object-cover" />
+                          ) : (
+                            <div className="h-full w-full flex items-center justify-center bg-gradient-to-br from-primary/20 via-accent/10 to-primary/10 text-muted-foreground">
+                              <User className="h-16 w-16 opacity-40 text-primary" />
                             </div>
-                          </td>
-                          <td className="px-6 py-4 text-foreground">{driver.licenseNumber || driver.license}</td>
-                          <td className="px-6 py-4 text-foreground">{driver.mobileNumber || driver.contact}</td>
-                          <td className="px-6 py-4">
-                            <div className="flex items-center gap-1">
-                              <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-                              <span className="font-medium">{driver.rating ?? '-'}</span>
-                            </div>
-                          </td>
-                          <td className="px-6 py-4 text-foreground">{driver.assignedVehicle || '-'}</td>
-                          <td className="px-6 py-4">
+                          )}
+
+                          {/* Status Badge in top right */}
+                          <div className="absolute top-3 right-3">
                             {driver.lifecycleStatus === 'pending' ? (
-                              <span className="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium bg-yellow-100 text-yellow-700 border border-yellow-200 select-none">
-                                <Clock className="h-3 w-3 animate-pulse" />Pending Verification
+                              <span className="inline-flex items-center justify-center rounded-full px-3 py-0.5 text-xs font-semibold bg-amber-50/95 text-amber-800 border border-amber-300/90 backdrop-blur-md shadow-sm select-none">
+                                Pending Verification
                               </span>
                             ) : driver.lifecycleStatus === 'rejected' ? (
-                              <span className="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium bg-red-100 text-red-700 border border-red-200 select-none">
-                                <AlertTriangle className="h-3 w-3" />Rejected
+                              <span className="inline-flex items-center justify-center rounded-full px-3 py-0.5 text-xs font-semibold bg-rose-50/95 text-rose-700 border border-rose-300/90 backdrop-blur-md shadow-sm select-none">
+                                Rejected
                               </span>
                             ) : (
                               <DropdownMenu>
                                 <DropdownMenuTrigger className="focus:outline-none">
-                                  <span className={cn('inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium cursor-pointer hover:opacity-80', status.class)}>
-                                    <StatusIcon className="h-3 w-3" />{status.label}
+                                  <span className={cn('inline-flex items-center justify-center rounded-full px-3 py-0.5 text-xs font-semibold cursor-pointer hover:opacity-90 shadow-sm backdrop-blur-md', status.class)}>
+                                    {status.label}
                                   </span>
                                 </DropdownMenuTrigger>
                                 <DropdownMenuContent align="end">
@@ -1552,24 +1526,62 @@ const Vehicles = () => {
                                 </DropdownMenuContent>
                               </DropdownMenu>
                             )}
-                          </td>
-                          <td className="px-6 py-4 text-right">
-                            <div className="flex items-center justify-end gap-2">
-                              {driver.lifecycleStatus === 'suspended' ? (
-                                <Button size="sm" className="bg-green-600 hover:bg-green-700 text-white" onClick={() => handleRestoreDriver(driver.id)}>Restore</Button>
-                              ) : (
-                                <>
-                                  <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => handleEditDriver(driver)}><Edit className="h-4 w-4" /></Button>
-                                  <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-destructive hover:bg-destructive/10" onClick={() => setDeleteActionDriver(driver)}><Trash2 className="h-4 w-4" /></Button>
-                                </>
-                              )}
+                          </div>
+                        </div>
+
+                        {/* Card Details Body */}
+                        <div className="p-5">
+                          <h3 className="font-semibold text-foreground text-lg">{fullName}</h3>
+                          <p className="text-sm text-muted-foreground">{driver.email || 'No email provided'}</p>
+
+                          {driver.lifecycleStatus === 'rejected' && driver.rejectionReason && (
+                            <div className="mt-3 p-2.5 bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800/50 rounded-lg text-xs text-destructive font-medium">
+                              ⚠️ Reason: {driver.rejectionReason}
                             </div>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
+                          )}
+
+                          <div className="mt-4 space-y-2 text-sm">
+                            <div className="flex justify-between">
+                              <span className="text-muted-foreground">License</span>
+                              <span className="font-medium">{driver.licenseNumber || driver.license || '-'}</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span className="text-muted-foreground">Contact</span>
+                              <span className="font-medium">{driver.mobileNumber || driver.contact || '-'}</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span className="text-muted-foreground">Rating</span>
+                              <div className="flex items-center gap-1">
+                                <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+                                <span className="font-medium">{driver.rating != null ? driver.rating : '0'}</span>
+                              </div>
+                            </div>
+                            <div className="flex justify-between">
+                              <span className="text-muted-foreground">Vehicle</span>
+                              <span className="font-medium">{driver.assignedVehicle || 'Unassigned'}</span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Card Footer Actions */}
+                      <div className="px-5 pb-5 pt-0 flex gap-2">
+                        {driver.lifecycleStatus === 'suspended' ? (
+                          <Button size="sm" className="flex-1 bg-green-600 hover:bg-green-700 text-white" onClick={() => handleRestoreDriver(driver.id)}>Restore</Button>
+                        ) : (
+                          <>
+                            <Button variant="outline" size="sm" className="flex-1 gap-1" onClick={() => handleEditDriver(driver)}>
+                              <Edit className="h-3.5 w-3.5" />Edit
+                            </Button>
+                            <Button variant="ghost" size="sm" className="text-destructive hover:bg-destructive/10" onClick={() => setDeleteActionDriver(driver)}>
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             )}
 

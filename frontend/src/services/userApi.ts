@@ -12,7 +12,7 @@ export interface ChangePasswordResponse {
 
 export const userApi = {
   changePassword: async (request: ChangePasswordRequest): Promise<ChangePasswordResponse> => {
-    const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+    const token = localStorage.getItem('travelhub_token') || localStorage.getItem('token') || sessionStorage.getItem('token');
     const res = await fetch(`${BASE_URL}/users/change-password`, {
       method: 'POST',
       headers: {

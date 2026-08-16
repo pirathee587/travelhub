@@ -196,15 +196,23 @@
   }
 
   .badge-available {
-    @apply bg-success/15 text-success border border-success/20;
+    @apply bg-emerald-50/95 text-emerald-700 border border-emerald-300/90 dark:bg-emerald-950/90 dark:text-emerald-300 dark:border-emerald-700/80 backdrop-blur-md font-semibold shadow-sm;
   }
 
   .badge-booked {
-    @apply bg-primary/15 text-primary border border-primary/20;
+    @apply bg-sky-50/95 text-sky-700 border border-sky-300/90 dark:bg-sky-950/90 dark:text-sky-300 dark:border-sky-700/80 backdrop-blur-md font-semibold shadow-sm;
+  }
+
+  .badge-active {
+    @apply bg-teal-50/95 text-teal-700 border border-teal-300/90 dark:bg-teal-950/90 dark:text-teal-300 dark:border-teal-700/80 backdrop-blur-md font-semibold shadow-sm;
+  }
+
+  .badge-pending {
+    @apply bg-amber-50/95 text-amber-800 border border-amber-300/90 dark:bg-amber-950/90 dark:text-amber-300 dark:border-amber-700/80 backdrop-blur-md font-semibold shadow-sm;
   }
 
   .badge-maintenance {
-    @apply bg-warning/15 text-warning border border-warning/20;
+    @apply bg-rose-50/95 text-rose-700 border border-rose-300/90 dark:bg-rose-950/90 dark:text-rose-300 dark:border-rose-700/80 backdrop-blur-md font-semibold shadow-sm;
   }
 
   .glass-effect {

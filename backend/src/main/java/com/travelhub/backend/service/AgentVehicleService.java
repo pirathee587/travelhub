@@ -55,8 +55,18 @@ public class AgentVehicleService {
                     .collect(Collectors.toList());
         }
 
-        // Convert entities to response DTOs.
-        return vehicles.stream().map(this::toResponse).collect(Collectors.toList());
+        List<Long> currentlyBookedVehicleIds = bookingRepository.findBookedVehicleIds(realAgentId, LocalDate.now(), LocalDate.now());
+
+        // Convert entities to response DTOs with dynamic date-based status calculations.
+        return vehicles.stream().map(v -> {
+            VehicleResponse res = toResponse(v);
+            if (currentlyBookedVehicleIds.contains(v.getId())) {
+                res.setStatus("booked");
+            } else if ("booked".equals(res.getStatus())) {
+                res.setStatus("available");
+            }
+            return res;
+        }).collect(Collectors.toList());
     }
 
     /**
@@ -160,6 +170,25 @@ public class AgentVehicleService {
             throw new ResourceNotFoundException("Vehicle", "id", vehicleId);
         }
 
+        boolean complianceChanged = false;
+
+        if (request.getRegistration() != null && !request.getRegistration().trim().isEmpty() && !request.getRegistration().equals(vehicle.getRegistration())) {
+            vehicle.setRegistration(request.getRegistration());
+            complianceChanged = true;
+        }
+        if (request.getYearOfManufacture() != null && !request.getYearOfManufacture().trim().isEmpty() && !request.getYearOfManufacture().equals(vehicle.getYearOfManufacture())) {
+            vehicle.setYearOfManufacture(request.getYearOfManufacture());
+            complianceChanged = true;
+        }
+        if (request.getRevenueLicenseImage() != null && !request.getRevenueLicenseImage().equals(vehicle.getRevenueLicenseImage())) {
+            vehicle.setRevenueLicenseImage(request.getRevenueLicenseImage());
+            complianceChanged = true;
+        }
+        if (request.getInsuranceCardFront() != null && !request.getInsuranceCardFront().equals(vehicle.getInsuranceCardFront())) {
+            vehicle.setInsuranceCardFront(request.getInsuranceCardFront());
+            complianceChanged = true;
+        }
+
         // Handle owner update or change
         if (request.getOwnerId() != null) {
             VehicleOwner owner = vehicleOwnerRepository.findById(request.getOwnerId())
@@ -168,10 +197,20 @@ public class AgentVehicleService {
         } else if (vehicle.getOwner() != null) {
             // Update the existing linked owner details
             VehicleOwner owner = vehicle.getOwner();
+            if (request.getNicNumber() != null && !request.getNicNumber().trim().isEmpty() && !request.getNicNumber().equals(owner.getNicNumber())) {
+                owner.setNicNumber(request.getNicNumber());
+                complianceChanged = true;
+            }
+            if (request.getNicFrontImage() != null && !request.getNicFrontImage().equals(owner.getNicFrontImage())) {
+                owner.setNicFrontImage(request.getNicFrontImage());
+                complianceChanged = true;
+            }
+            if (request.getNicRearImage() != null && !request.getNicRearImage().equals(owner.getNicRearImage())) {
+                owner.setNicRearImage(request.getNicRearImage());
+                complianceChanged = true;
+            }
             owner.setFirstName(request.getOwnerFirstName());
             owner.setLastName(request.getOwnerLastName());
-            owner.setNicFrontImage(request.getNicFrontImage());
-            owner.setNicRearImage(request.getNicRearImage());
             owner.setAddressLine1(request.getAddressLine1());
             owner.setAddressLine2(request.getAddressLine2());
             owner.setMobileNumber(request.getMobileNumber());
@@ -186,21 +225,19 @@ public class AgentVehicleService {
 
         // Always editable
         vehicle.setColor(request.getColor());
-        vehicle.setCapacity(request.getCapacity());
-        vehicle.setInsuranceCardFront(request.getInsuranceCardFront());
+        if (request.getCapacity() != null && !request.getCapacity().toString().isEmpty()) {
+            vehicle.setCapacity(request.getCapacity().toString());
+        }
         vehicle.setInsuranceExpiryDate(request.getInsuranceExpiryDate());
-        vehicle.setRevenueLicenseImage(request.getRevenueLicenseImage());
         vehicle.setVehicleImageFront(request.getVehicleImageFront());
         vehicle.setVehicleImageBack(request.getVehicleImageBack());
         vehicle.setVehicleImageSide(request.getVehicleImageSide());
         vehicle.setVehicleImageInside(request.getVehicleImageInside());
 
-        if ("rejected".equals(vehicle.getLifecycleStatus())) {
+        if ("rejected".equals(vehicle.getLifecycleStatus()) || ("active".equals(vehicle.getLifecycleStatus()) && complianceChanged)) {
             vehicle.setLifecycleStatus("pending");
             vehicle.setRejectionReason(null);
         }
-
-        // Still locked (not updated here): nicNumber, registration, yearOfManufacture.
 
         // Persist changes and return updated DTO.
         return toResponse(vehicleRepository.save(vehicle));

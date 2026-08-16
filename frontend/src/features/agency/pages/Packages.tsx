@@ -57,7 +57,8 @@ const Packages = () => {
 
   const handleEdit = async (pkg: any) => {
     try {
-      const result = await api.getAgentPackage(pkg.packageId);
+      const targetId = pkg.packageId || pkg.id;
+      const result = await api.getAgentPackage(targetId);
       setEditingPkg(result);
       setShowCreateModal(true);
     } catch (err) {
@@ -162,13 +163,13 @@ const Packages = () => {
                   )}
 
                   {/* Badges container */}
-                  <div className="absolute top-3 left-3 flex flex-col gap-2 items-start">
+                  <div className="absolute top-3 left-3 flex flex-col gap-2 items-start z-10">
                     {/* Active badge */}
                     <span className={cn(
-                      'text-xs font-medium px-3 py-1 rounded-full border shadow-sm',
+                      'text-xs font-semibold px-3 py-0.5 rounded-full border shadow-sm backdrop-blur-md transition-all',
                       (pkg.isActive !== false)
-                        ? 'bg-primary/15 text-primary border-primary/20 backdrop-blur-sm'
-                        : 'bg-muted/80 text-muted-foreground border-muted-foreground/20 backdrop-blur-sm'
+                        ? 'bg-emerald-50/95 text-emerald-700 border-emerald-300/90 dark:bg-emerald-950/90 dark:text-emerald-300 dark:border-emerald-700/80'
+                        : 'bg-slate-100/95 text-slate-700 border-slate-300/90 dark:bg-slate-900/90 dark:text-slate-300 dark:border-slate-700/80'
                     )}>
                       {(pkg.isActive !== false) ? 'Active' : 'Inactive'}
                     </span>
@@ -176,12 +177,13 @@ const Packages = () => {
                     {/* Approval Status badge (Only show if not Approved) */}
                     {pkg.applicationStatus && pkg.applicationStatus.trim().toLowerCase() !== 'approved' && (
                       <span className={cn(
-                        'text-xs font-medium px-2 py-0.5 rounded border shadow-sm backdrop-blur-sm flex items-center gap-1',
-                        pkg.applicationStatus.trim().toLowerCase() === 'rejected' ? 'bg-destructive/10 text-destructive border-destructive/20' :
-                        'bg-warning/10 text-warning-foreground border-warning/20'
+                        'text-xs font-bold px-2.5 py-1 rounded-full shadow-md flex items-center gap-1.5 border',
+                        pkg.applicationStatus.trim().toLowerCase() === 'rejected'
+                          ? 'bg-red-600 text-white border-red-500/50'
+                          : 'bg-amber-500 text-slate-950 border-amber-400/50'
                       )}>
-                        {pkg.applicationStatus.trim().toLowerCase() === 'rejected' ? <X className="h-3 w-3" /> :
-                         <Clock className="h-3 w-3" />}
+                        {pkg.applicationStatus.trim().toLowerCase() === 'rejected' ? <X className="h-3 w-3 text-white" /> :
+                         <Clock className="h-3 w-3 text-slate-950" />}
                         {pkg.applicationStatus.trim().toLowerCase() === 'pending' ? 'Pending Approval' : pkg.applicationStatus.trim()}
                       </span>
                     )}
@@ -193,7 +195,7 @@ const Packages = () => {
                 <div className="p-5">
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
-                      <Link to={`/agency/packages/${pkg.packageId}`} className="hover:underline">
+                      <Link to={`/agency/packages/${pkg.packageId || pkg.id}`} className="hover:underline">
                         <h3 className="font-semibold text-foreground truncate">
                           {pkg.name}
                         </h3>
@@ -249,7 +251,7 @@ const Packages = () => {
 
                   <div className="mt-4 flex gap-2">
                     <Button variant="outline" size="sm" className="gap-1.5" asChild>
-                      <Link to={`/agency/packages/${pkg.packageId}`}>
+                      <Link to={`/agency/packages/${pkg.packageId || pkg.id}`}>
                         <Eye className="h-3.5 w-3.5" />
                         View Details
                       </Link>
@@ -274,8 +276,9 @@ const Packages = () => {
                             className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                             onClick={async () => {
                               try {
-                                await api.deleteAgentPackage(pkg.packageId);
-                                setPackagesList(prev => prev.filter(p => p.packageId !== pkg.packageId));
+                                const targetId = pkg.packageId || pkg.id;
+                                await api.deleteAgentPackage(targetId);
+                                setPackagesList(prev => prev.filter(p => (p.packageId || p.id) !== targetId));
                                 toast.success('Package deleted successfully');
                               } catch (err) {
                                 console.error(err);

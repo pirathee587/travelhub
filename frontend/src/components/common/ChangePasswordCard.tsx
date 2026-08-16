@@ -16,6 +16,7 @@ export const ChangePasswordCard: React.FC<ChangePasswordCardProps> = ({ classNam
   const [showNew, setShowNew] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [statusMsg, setStatusMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -36,19 +37,23 @@ export const ChangePasswordCard: React.FC<ChangePasswordCardProps> = ({ classNam
     }
 
     setSubmitting(true);
+    setStatusMsg(null);
     try {
       const response = await userApi.changePassword({
         currentPassword,
         newPassword,
       });
 
-      toast.success(response.message || 'Password changed successfully!');
+      const msg = response.message || 'Password changed successfully!';
+      toast.success(msg);
+      setStatusMsg({ type: 'success', text: msg });
       setCurrentPassword('');
       setNewPassword('');
       setConfirmPassword('');
     } catch (err: any) {
       const errorMessage = err?.message || 'Failed to change password. Please check your current password.';
       toast.error(errorMessage);
+      setStatusMsg({ type: 'error', text: errorMessage });
     } finally {
       setSubmitting(false);
     }
@@ -150,6 +155,17 @@ export const ChangePasswordCard: React.FC<ChangePasswordCardProps> = ({ classNam
             <p className="text-xs text-red-500 mt-1 font-medium">Passwords do not match</p>
           )}
         </div>
+
+        {statusMsg && (
+          <div className={`p-3.5 rounded-xl border text-sm font-medium flex items-center gap-2 ${
+            statusMsg.type === 'success'
+              ? 'bg-emerald-50 text-emerald-800 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800'
+              : 'bg-red-50 text-red-800 border-red-200 dark:bg-red-950/40 dark:text-red-300 dark:border-red-800'
+          }`}>
+            <span>{statusMsg.type === 'success' ? '✅' : '❌'}</span>
+            <span>{statusMsg.text}</span>
+          </div>
+        )}
 
         {/* Submit Button */}
         <div className="pt-2">

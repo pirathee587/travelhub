@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import {
   Mail, Phone, MapPin, Star, CheckCircle, Calendar,
-  Edit, Camera, Globe, MessageCircle, X, Map,
+  Edit, Camera, Globe, MessageCircle, X, Map, Pencil, Trash2
 } from 'lucide-react';
 import { DashboardLayout } from '@/features/agency/components/dashboard/DashboardLayout';
 import { Button } from '@/components/common/ui/button';
@@ -148,9 +148,27 @@ const Profile = () => {
       const updated = await api.replyToReview(reviewId, replyText);
       setReviews(prev => prev.map(r => r.id === reviewId ? { ...r, reply: updated.reply } : r));
       setActiveReplyId(null);
-      toast.success('Reply sent successfully');
+      toast.success('Reply updated successfully');
     } catch (error) {
       toast.error('Failed to send reply');
+    }
+  };
+
+  const handleStartEditReply = (reviewId: string | number, currentReply: string) => {
+    setActiveReplyId(reviewId);
+    setReplyInputs(prev => ({ ...prev, [reviewId]: currentReply }));
+  };
+
+  const handleDeleteReply = async (reviewId: string | number) => {
+    if (!window.confirm('Are you sure you want to delete your reply?')) return;
+    try {
+      await api.replyToReview(reviewId, '');
+      setReviews(prev => prev.map(r => r.id === reviewId ? { ...r, reply: '' } : r));
+      setActiveReplyId(null);
+      setReplyInputs(prev => ({ ...prev, [reviewId]: '' }));
+      toast.success('Reply deleted successfully');
+    } catch (error) {
+      toast.error('Failed to delete reply');
     }
   };
 
@@ -465,10 +483,28 @@ const Profile = () => {
                     <p className="mt-3 text-xs text-muted-foreground pb-4">
                       {review.date} {review.packageName && `• ${review.packageName}`}
                     </p>
-                    {review.reply ? (
+                    {review.reply && activeReplyId !== review.id ? (
                       <div className="mt-2 ml-4 md:ml-8 rounded-lg bg-muted/40 p-4 border-l-2 border-primary">
-                        <p className="text-xs font-semibold text-primary mb-1">You replied:</p>
-                        <p className="text-sm text-foreground/80">{review.reply}</p>
+                        <div className="flex items-center justify-between mb-1">
+                          <p className="text-xs font-semibold text-primary">You replied:</p>
+                          <div className="flex items-center gap-2">
+                            <button
+                              onClick={() => handleStartEditReply(review.id, review.reply)}
+                              className="text-xs text-muted-foreground hover:text-primary transition-colors flex items-center gap-1 p-1 rounded hover:bg-muted"
+                              title="Edit Reply"
+                            >
+                              <Pencil className="h-3.5 w-3.5" /> Edit
+                            </button>
+                            <button
+                              onClick={() => handleDeleteReply(review.id)}
+                              className="text-xs text-muted-foreground hover:text-destructive transition-colors flex items-center gap-1 p-1 rounded hover:bg-muted"
+                              title="Delete Reply"
+                            >
+                              <Trash2 className="h-3.5 w-3.5" /> Delete
+                            </button>
+                          </div>
+                        </div>
+                        <p className="text-sm text-foreground/80 whitespace-pre-line">{review.reply}</p>
                       </div>
                     ) : (
                       <div className="mt-2 pt-4 border-t border-border">
@@ -482,7 +518,9 @@ const Profile = () => {
                             />
                             <div className="flex justify-end gap-2">
                               <Button variant="ghost" size="sm" onClick={() => setActiveReplyId(null)}>Cancel</Button>
-                              <Button size="sm" onClick={() => handleSendReply(review.id)}>Send Reply</Button>
+                              <Button size="sm" onClick={() => handleSendReply(review.id)}>
+                                {review.reply ? 'Save Changes' : 'Send Reply'}
+                              </Button>
                             </div>
                           </div>
                         ) : (

@@ -50,8 +50,18 @@ public class DriverService {
                     .collect(Collectors.toList());
         }
 
-        // Convert entities to response DTOs.
-        return drivers.stream().map(this::toResponse).collect(Collectors.toList());
+        List<Long> currentlyBookedDriverIds = bookingRepository.findBookedDriverIds(realAgentId, LocalDate.now(), LocalDate.now());
+
+        // Convert entities to response DTOs with dynamic date-based status calculations.
+        return drivers.stream().map(d -> {
+            DriverResponse res = toResponse(d);
+            if (currentlyBookedDriverIds.contains(d.getId())) {
+                res.setStatus("on-trip");
+            } else if ("on-trip".equals(res.getStatus())) {
+                res.setStatus("available");
+            }
+            return res;
+        }).collect(Collectors.toList());
     }
 
     /**
@@ -127,7 +137,18 @@ public class DriverService {
             throw new ResourceNotFoundException("Driver", "id", driverId);
         }
 
-        // Editable profile/identity fields (as allowed by current business rules).
+        boolean complianceChanged = false;
+
+        if (request.getNic() != null && !request.getNic().trim().isEmpty() && !request.getNic().equals(driver.getNic())) {
+            driver.setNic(request.getNic());
+            complianceChanged = true;
+        }
+        if (request.getLicenseNumber() != null && !request.getLicenseNumber().trim().isEmpty() && !request.getLicenseNumber().equals(driver.getLicenseNumber())) {
+            driver.setLicenseNumber(request.getLicenseNumber());
+            complianceChanged = true;
+        }
+
+        // Editable profile/identity fields.
         driver.setFirstName(request.getFirstName());
         driver.setLastName(request.getLastName());
         if (request.getProfileImage() != null) {
@@ -135,6 +156,9 @@ public class DriverService {
         }
 
         // Always editable contact/address/operational fields.
+        if (request.getBloodGroup() != null) {
+            driver.setBloodGroup(request.getBloodGroup());
+        }
         driver.setEmail(request.getEmail());
         driver.setMobileNumber(request.getMobileNumber());
         driver.setSecondaryMobileNumber(request.getSecondaryMobileNumber());
@@ -142,25 +166,27 @@ public class DriverService {
         driver.setAddressLine2(request.getAddressLine2());
         driver.setVehicleTypes(request.getVehicleTypes());
 
-        if (request.getNicFrontImage() != null) {
+        if (request.getNicFrontImage() != null && !request.getNicFrontImage().equals(driver.getNicFrontImage())) {
             driver.setNicFrontImage(request.getNicFrontImage());
+            complianceChanged = true;
         }
-        if (request.getNicRearImage() != null) {
+        if (request.getNicRearImage() != null && !request.getNicRearImage().equals(driver.getNicRearImage())) {
             driver.setNicRearImage(request.getNicRearImage());
+            complianceChanged = true;
         }
-        if (request.getLicenseFrontImage() != null) {
+        if (request.getLicenseFrontImage() != null && !request.getLicenseFrontImage().equals(driver.getLicenseFrontImage())) {
             driver.setLicenseFrontImage(request.getLicenseFrontImage());
+            complianceChanged = true;
         }
-        if (request.getLicenseRearImage() != null) {
+        if (request.getLicenseRearImage() != null && !request.getLicenseRearImage().equals(driver.getLicenseRearImage())) {
             driver.setLicenseRearImage(request.getLicenseRearImage());
+            complianceChanged = true;
         }
 
-        if ("rejected".equals(driver.getLifecycleStatus())) {
+        if ("rejected".equals(driver.getLifecycleStatus()) || ("active".equals(driver.getLifecycleStatus()) && complianceChanged)) {
             driver.setLifecycleStatus("pending");
             driver.setRejectionReason(null);
         }
-
-        // Still locked (not updated here): nic, licenseNumber.
 
         // Persist and return updated driver.
         return toResponse(driverRepository.save(driver));
