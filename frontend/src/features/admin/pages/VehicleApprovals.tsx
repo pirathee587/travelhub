@@ -7,16 +7,16 @@ import { Car, Clock, CheckCircle, AlertTriangle, ShieldAlert, FileText, User } f
 const STATUSES = ['All', 'Pending', 'Approved', 'Rejected']
 
 const STATUS_STYLES: Record<string, string> = {
-  pending:   'bg-orange-100 text-orange-700 border-orange-200',
-  active:    'bg-emerald-100 text-emerald-700 border-emerald-200',
-  rejected:  'bg-red-100 text-red-700 border-red-200',
+  pending: 'bg-orange-100 text-orange-700 border-orange-200',
+  active: 'bg-emerald-100 text-emerald-700 border-emerald-200',
+  rejected: 'bg-red-100 text-red-700 border-red-200',
   suspended: 'bg-gray-100 text-gray-600 border-gray-200',
 }
 
 const STATUS_LABELS: Record<string, string> = {
-  pending:   'Pending Approval',
-  active:    'Approved / Active',
-  rejected:  'Rejected',
+  pending: 'Pending Approval',
+  active: 'Approved / Active',
+  rejected: 'Rejected',
   suspended: 'Suspended',
 }
 
@@ -43,8 +43,8 @@ const VehicleDetailView = ({ vehicle, onBack, onApprove, onReject, loading }) =>
   const ownerEmail = vehicle.owner ? vehicle.owner.email : (vehicle.ownerEmail || '—')
   const ownerMobile = vehicle.owner ? vehicle.owner.mobileNumber : (vehicle.mobileNumber || '—')
   const ownerSecondaryMobile = vehicle.owner ? vehicle.owner.secondaryMobileNumber : (vehicle.secondaryMobileNumber || '—')
-  const ownerAddress = vehicle.owner 
-    ? [vehicle.owner.addressLine1, vehicle.owner.addressLine2].filter(Boolean).join(', ') 
+  const ownerAddress = vehicle.owner
+    ? [vehicle.owner.addressLine1, vehicle.owner.addressLine2].filter(Boolean).join(', ')
     : [vehicle.addressLine1, vehicle.addressLine2].filter(Boolean).join(', ')
 
   return (
@@ -54,7 +54,7 @@ const VehicleDetailView = ({ vehicle, onBack, onApprove, onReject, loading }) =>
       </button>
 
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-8 space-y-8">
-        
+
         {/* Header Title */}
         <div className="flex justify-between items-start">
           <div>
@@ -77,7 +77,7 @@ const VehicleDetailView = ({ vehicle, onBack, onApprove, onReject, loading }) =>
 
         {/* Audit Details */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-          
+
           {/* Column 1: Owner Information */}
           <div className="bg-gray-50/50 rounded-xl p-6 border border-gray-100 space-y-4">
             <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2 border-b pb-2">
@@ -140,7 +140,7 @@ const VehicleDetailView = ({ vehicle, onBack, onApprove, onReject, loading }) =>
             <FileText className="h-5 w-5 text-teal-600" /> Verification Documents & Photos
           </h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
-            
+
             {/* NIC Front */}
             <div className="border border-gray-100 rounded-lg p-3 bg-white space-y-2 flex flex-col justify-between">
               <div>
@@ -153,8 +153,8 @@ const VehicleDetailView = ({ vehicle, onBack, onApprove, onReject, loading }) =>
                   )}
                 </div>
               </div>
-              <button 
-                onClick={() => adminVehicleApi.viewDocumentImage(vehicle.nicFrontImage || vehicle.owner?.nicFrontImage)} 
+              <button
+                onClick={() => adminVehicleApi.viewDocumentImage(vehicle.nicFrontImage || vehicle.owner?.nicFrontImage)}
                 disabled={!(vehicle.nicFrontImage || vehicle.owner?.nicFrontImage)}
                 className="w-full py-1 text-xs font-medium text-teal-600 bg-teal-50 rounded hover:bg-teal-100 transition disabled:opacity-50"
               >
@@ -174,8 +174,8 @@ const VehicleDetailView = ({ vehicle, onBack, onApprove, onReject, loading }) =>
                   )}
                 </div>
               </div>
-              <button 
-                onClick={() => adminVehicleApi.viewDocumentImage(vehicle.nicRearImage || vehicle.owner?.nicRearImage)} 
+              <button
+                onClick={() => adminVehicleApi.viewDocumentImage(vehicle.nicRearImage || vehicle.owner?.nicRearImage)}
                 disabled={!(vehicle.nicRearImage || vehicle.owner?.nicRearImage)}
                 className="w-full py-1 text-xs font-medium text-teal-600 bg-teal-50 rounded hover:bg-teal-100 transition disabled:opacity-50"
               >
@@ -195,8 +195,8 @@ const VehicleDetailView = ({ vehicle, onBack, onApprove, onReject, loading }) =>
                   )}
                 </div>
               </div>
-              <button 
-                onClick={() => adminVehicleApi.viewDocumentImage(vehicle.insuranceCardFront)} 
+              <button
+                onClick={() => adminVehicleApi.viewDocumentImage(vehicle.insuranceCardFront)}
                 disabled={!vehicle.insuranceCardFront}
                 className="w-full py-1 text-xs font-medium text-teal-600 bg-teal-50 rounded hover:bg-teal-100 transition disabled:opacity-50"
               >
@@ -216,8 +216,8 @@ const VehicleDetailView = ({ vehicle, onBack, onApprove, onReject, loading }) =>
                   )}
                 </div>
               </div>
-              <button 
-                onClick={() => adminVehicleApi.viewDocumentImage(vehicle.revenueLicenseImage)} 
+              <button
+                onClick={() => adminVehicleApi.viewDocumentImage(vehicle.revenueLicenseImage)}
                 disabled={!vehicle.revenueLicenseImage}
                 className="w-full py-1 text-xs font-medium text-teal-600 bg-teal-50 rounded hover:bg-teal-100 transition disabled:opacity-50"
               >
@@ -230,15 +230,15 @@ const VehicleDetailView = ({ vehicle, onBack, onApprove, onReject, loading }) =>
         {/* Action Controls */}
         {vehicle.lifecycleStatus === 'pending' && (
           <div className="flex gap-4 border-t pt-6 justify-end">
-            <button 
-              onClick={() => onReject(vehicle)} 
+            <button
+              onClick={() => onReject(vehicle)}
               disabled={loading}
               className="px-6 py-2.5 rounded-lg border border-red-200 text-red-700 font-semibold text-sm hover:bg-red-50 active:bg-red-100 transition disabled:opacity-50 flex items-center gap-2"
             >
               <ShieldAlert className="h-4 w-4" /> Reject Registration
             </button>
-            <button 
-              onClick={() => onApprove(vehicle)} 
+            <button
+              onClick={() => onApprove(vehicle)}
               disabled={loading}
               className="px-6 py-2.5 rounded-lg bg-emerald-600 text-white font-semibold text-sm hover:bg-emerald-700 active:bg-emerald-800 shadow-sm transition disabled:opacity-50 flex items-center gap-2"
             >
@@ -287,7 +287,7 @@ export default function VehicleApprovals() {
   const handleApprove = async (vehicle) => {
     const vehicleName = vehicle.brand && vehicle.model ? `${vehicle.brand} ${vehicle.model}` : vehicle.registration
     const ok = await modal.showConfirm({
-      title:   'Approve Vehicle',
+      title: 'Approve Vehicle',
       message: `Are you sure you want to approve "${vehicleName}"? It will be activated immediately.`,
     })
     if (!ok) return
@@ -295,7 +295,7 @@ export default function VehicleApprovals() {
       setActionLoading(true)
       await adminVehicleApi.approveVehicle(vehicle.id)
       modal.addToast(`✅ "${vehicleName}" approved successfully`)
-      
+
       setVehicles(prev => prev.map(v =>
         v.id === vehicle.id ? { ...v, lifecycleStatus: 'active' } : v
       ))
@@ -328,7 +328,7 @@ export default function VehicleApprovals() {
       setIsRejectModalOpen(false)
       await adminVehicleApi.rejectVehicle(vehicle.id, rejectReason)
       modal.addToast(`🚫 "${vehicleName}" registration rejected`)
-      
+
       setVehicles(prev => prev.map(v =>
         v.id === vehicle.id ? { ...v, lifecycleStatus: 'rejected', rejectionReason: rejectReason } : v
       ))

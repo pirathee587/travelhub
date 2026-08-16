@@ -12,5 +12,10 @@ public record AdminAgentListResponse(
         String  applicationStatus,
         String  nicVerificationStatus,
         String  submittedDate,
-        boolean isActive
-) {}
+        boolean isActive,
+        String  profileImage,
+        Double  rating,
+        Integer totalTrips,
+        String  nicNumber,
+        Integer experienceYears
+) {}

@@ -5,18 +5,18 @@ import { useModal } from '../components/ModalContext'
 const STATUSES = ['All', 'Pending', 'Approved', 'Rejected', 'Suspended']
 
 const STATUS_STYLES: Record<string, string> = {
-  Pending:   'bg-orange-100 text-orange-700',
-  Approved:  'bg-emerald-100 text-emerald-700',
-  Rejected:  'bg-red-100 text-red-700',
+  Pending: 'bg-orange-100 text-orange-700',
+  Approved: 'bg-emerald-100 text-emerald-700',
+  Rejected: 'bg-red-100 text-red-700',
   Suspended: 'bg-gray-100 text-gray-600',
 }
 
 // NIC verification status badge styles
 const NIC_STATUS_STYLES: Record<string, { bg: string; icon: string; label: string }> = {
-  PENDING:   { bg: 'bg-amber-50 text-amber-700 border border-amber-200',   icon: '🕐', label: 'NIC Pending Review' },
-  APPROVED:  { bg: 'bg-emerald-50 text-emerald-700 border border-emerald-200', icon: '✅', label: 'NIC Verified' },
-  REJECTED:  { bg: 'bg-red-50 text-red-700 border border-red-200',         icon: '❌', label: 'NIC Rejected' },
-  SUSPENDED: { bg: 'bg-gray-100 text-gray-600 border border-gray-200',     icon: '🚫', label: 'Suspended' },
+  PENDING: { bg: 'bg-amber-50 text-amber-700 border border-amber-200', icon: '🕐', label: 'NIC Pending Review' },
+  APPROVED: { bg: 'bg-emerald-50 text-emerald-700 border border-emerald-200', icon: '✅', label: 'NIC Verified' },
+  REJECTED: { bg: 'bg-red-50 text-red-700 border border-red-200', icon: '❌', label: 'NIC Rejected' },
+  SUSPENDED: { bg: 'bg-gray-100 text-gray-600 border border-gray-200', icon: '🚫', label: 'Suspended' },
 }
 
 const fmtDate = (s?: string | null) => {
@@ -108,9 +108,9 @@ const MessageModal = ({ title, placeholder, actionLabel, actionClass, onConfirm,
 
 // ── Agent Packages Modal ──────────────────────────────────────────────────────
 const PKG_STATUS_STYLES: Record<string, { badge: string; label: string }> = {
-  Approved: { badge: 'bg-green-100 text-green-700',  label: 'Approved'  },
-  Pending:  { badge: 'bg-orange-100 text-orange-700', label: 'Pending'   },
-  Rejected: { badge: 'bg-red-100 text-red-700',       label: 'Rejected'  },
+  Approved: { badge: 'bg-green-100 text-green-700', label: 'Approved' },
+  Pending: { badge: 'bg-orange-100 text-orange-700', label: 'Pending' },
+  Rejected: { badge: 'bg-red-100 text-red-700', label: 'Rejected' },
 }
 
 interface AgentPackagesModalProps {
@@ -287,11 +287,10 @@ const AgentDetailView = ({
 
         {/* Admin Message Banner (if REJECTED or SUSPENDED) */}
         {adminMessage && (nicVerificationStatus === 'REJECTED' || nicVerificationStatus === 'SUSPENDED') && (
-          <div className={`mx-8 mt-6 px-5 py-4 rounded-xl border text-sm ${
-            nicVerificationStatus === 'SUSPENDED'
-              ? 'bg-gray-50 border-gray-200 text-gray-700'
-              : 'bg-red-50 border-red-200 text-red-700'
-          }`}>
+          <div className={`mx-8 mt-6 px-5 py-4 rounded-xl border text-sm ${nicVerificationStatus === 'SUSPENDED'
+            ? 'bg-gray-50 border-gray-200 text-gray-700'
+            : 'bg-red-50 border-red-200 text-red-700'
+            }`}>
             <div className="font-semibold mb-1">
               {nicVerificationStatus === 'SUSPENDED' ? '🚫 Suspension Reason:' : '❌ Rejection Reason:'}
             </div>
@@ -304,7 +303,7 @@ const AgentDetailView = ({
           {/* Left Panel - Owner Info */}
           <div className="flex-1 bg-[#f0fdf4] rounded-xl p-8">
             <h3 className="text-lg font-bold text-gray-900 mb-6">Owner Information</h3>
-            
+
             <div className="grid grid-cols-2 gap-y-6 gap-x-4">
               <div>
                 <div className="text-xs text-gray-500 font-medium mb-1">Owner Name</div>
@@ -355,7 +354,7 @@ const AgentDetailView = ({
           <div className="w-full md:w-80 flex flex-col gap-4">
             <div className="bg-[#fff7ed] rounded-xl p-8 border border-orange-50/50">
               <h3 className="text-lg font-bold text-gray-900 mb-6">Application Status</h3>
-              
+
               <div className="space-y-6">
                 <div>
                   <div className="text-xs text-gray-500 font-medium mb-2">Status</div>
@@ -364,11 +363,10 @@ const AgentDetailView = ({
                       Suspended
                     </span>
                   ) : (
-                    <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-                      applicationStatus === 'Approved' ? 'bg-[#e6f4ea] text-[#1e8e3e]' :
-                      applicationStatus === 'Pending'  ? 'bg-[#fef0db] text-[#e37400]' :
-                      'bg-red-100 text-red-600'
-                    }`}>
+                    <span className={`px-3 py-1 rounded-full text-xs font-medium ${applicationStatus === 'Approved' ? 'bg-[#e6f4ea] text-[#1e8e3e]' :
+                      applicationStatus === 'Pending' ? 'bg-[#fef0db] text-[#e37400]' :
+                        'bg-red-100 text-red-600'
+                      }`}>
                       {applicationStatus}
                     </span>
                   )}
@@ -390,7 +388,7 @@ const AgentDetailView = ({
                 🪪 View NIC Document
               </button>
             ) : (
-               <button disabled className="w-full py-3 bg-gray-300 text-white font-semibold rounded-lg shadow-sm transition text-sm cursor-not-allowed">
+              <button disabled className="w-full py-3 bg-gray-300 text-white font-semibold rounded-lg shadow-sm transition text-sm cursor-not-allowed">
                 No NIC Provided
               </button>
             )}
@@ -465,26 +463,26 @@ const AgentDetailView = ({
 export default function AgentApprovals() {
   const modal = useModal()
 
-  const [agents, setAgents]             = useState<any[]>([])
-  const [loading, setLoading]           = useState(true)
-  const [actionLoading, setAction]      = useState(false)
-  const [, setError]                    = useState<string | null>(null)
-  const [statusFilter, setStatus]       = useState('All')
-  const [search, setSearch]             = useState('')
-  const [selected, setSelected]         = useState<any | null>(null)
-  const [drawerAgent, setDrawerAgent]   = useState<any | null>(null)
-  const [drawerStats, setDrawerStats]   = useState<any | null>(null)
-  const [drawerPkgs, setDrawerPkgs]     = useState<any[] | null>(null)
-  const [drawerRev, setDrawerRev]       = useState<any | null>(null)
-  const [detailLoading, setDetailLoad]  = useState(false)
+  const [agents, setAgents] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+  const [actionLoading, setAction] = useState(false)
+  const [, setError] = useState<string | null>(null)
+  const [statusFilter, setStatus] = useState('All')
+  const [search, setSearch] = useState('')
+  const [selected, setSelected] = useState<any | null>(null)
+  const [drawerAgent, setDrawerAgent] = useState<any | null>(null)
+  const [drawerStats, setDrawerStats] = useState<any | null>(null)
+  const [drawerPkgs, setDrawerPkgs] = useState<any[] | null>(null)
+  const [drawerRev, setDrawerRev] = useState<any | null>(null)
+  const [detailLoading, setDetailLoad] = useState(false)
   const searchTimer = useRef<any>(null)
 
   // ── Packages Modal State ────────────────────────────────────────────────────
-  const [pkgModal, setPkgModal]         = useState<{ agentName: string; packages: any[] } | null>(null)
-  const [pkgLoading, setPkgLoading]     = useState(false)
+  const [pkgModal, setPkgModal] = useState<{ agentName: string; packages: any[] } | null>(null)
+  const [pkgLoading, setPkgLoading] = useState(false)
 
   // ── Message Modal State ─────────────────────────────────────────────────────
-  const [msgModal, setMsgModal]         = useState<{ type: 'reject' | 'suspend'; agent: any } | null>(null)
+  const [msgModal, setMsgModal] = useState<{ type: 'reject' | 'suspend'; agent: any } | null>(null)
 
   // ── Fetch list ─────────────────────────────────────────────────────────────
   const fetchAgents = useCallback(async (status = 'All', keyword = '') => {
@@ -528,10 +526,10 @@ export default function AgentApprovals() {
         adminAgentApi.getAgentPackages(agent.id),
         adminAgentApi.getAgentRevenue(agent.id, new Date().getFullYear()),
       ])
-      if (detRes.status === 'fulfilled')   setDrawerAgent(detRes.value?.data ?? detRes.value)
+      if (detRes.status === 'fulfilled') setDrawerAgent(detRes.value?.data ?? detRes.value)
       if (statsRes.status === 'fulfilled') setDrawerStats(statsRes.value?.data ?? statsRes.value)
-      if (pkgsRes.status === 'fulfilled')  setDrawerPkgs(pkgsRes.value?.data ?? pkgsRes.value ?? [])
-      if (revRes.status === 'fulfilled')   setDrawerRev(revRes.value?.data ?? revRes.value)
+      if (pkgsRes.status === 'fulfilled') setDrawerPkgs(pkgsRes.value?.data ?? pkgsRes.value ?? [])
+      if (revRes.status === 'fulfilled') setDrawerRev(revRes.value?.data ?? revRes.value)
     } catch {
       setDrawerAgent(agent)
     } finally {
@@ -683,8 +681,8 @@ export default function AgentApprovals() {
   }
 
   const counts = {
-    total:    agents.length,
-    pending:  agents.filter(a => getDisplayStatus(a) === 'Pending').length,
+    total: agents.length,
+    pending: agents.filter(a => getDisplayStatus(a) === 'Pending').length,
     approved: agents.filter(a => getDisplayStatus(a) === 'Approved').length,
     rejected: agents.filter(a => getDisplayStatus(a) === 'Rejected').length,
     suspended: agents.filter(a => getDisplayStatus(a) === 'Suspended').length,
@@ -759,10 +757,10 @@ export default function AgentApprovals() {
           {/* Summary Cards */}
           <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
             {[
-              { label: 'Total',     count: counts.total,    color: 'bg-blue-50 border-blue-100 text-blue-700' },
-              { label: 'Pending',   count: counts.pending,  color: 'bg-amber-50 border-amber-100 text-amber-700' },
-              { label: 'Approved',  count: counts.approved, color: 'bg-emerald-50 border-emerald-100 text-emerald-700' },
-              { label: 'Rejected',  count: counts.rejected, color: 'bg-red-50 border-red-100 text-red-600' },
+              { label: 'Total', count: counts.total, color: 'bg-blue-50 border-blue-100 text-blue-700' },
+              { label: 'Pending', count: counts.pending, color: 'bg-amber-50 border-amber-100 text-amber-700' },
+              { label: 'Approved', count: counts.approved, color: 'bg-emerald-50 border-emerald-100 text-emerald-700' },
+              { label: 'Rejected', count: counts.rejected, color: 'bg-red-50 border-red-100 text-red-600' },
               { label: 'Suspended', count: counts.suspended, color: 'bg-gray-100 border-gray-200 text-gray-600' },
             ].map(({ label, count, color }) => (
               <div key={label} className={`rounded-xl border p-4 text-center ${color}`}>
@@ -776,16 +774,16 @@ export default function AgentApprovals() {
             {/* Toolbar */}
             <div className="flex justify-between items-center mb-6 gap-4">
               <div className="relative flex-1">
-                <input 
-                  type="text" 
-                  placeholder="Search agencies..." 
-                  value={search} 
-                  onChange={e => handleSearch(e.target.value)} 
+                <input
+                  type="text"
+                  placeholder="Search agencies..."
+                  value={search}
+                  onChange={e => handleSearch(e.target.value)}
                   className="w-full pl-4 pr-4 py-2 border border-gray-100 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-gray-200"
                 />
               </div>
               <div className="w-36">
-                <select 
+                <select
                   value={statusFilter}
                   onChange={(e) => { setStatus(e.target.value); setSearch(''); }}
                   className="w-full px-4 py-2 border border-gray-100 rounded-lg text-sm text-gray-700 bg-white focus:outline-none"

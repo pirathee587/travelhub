@@ -25,7 +25,7 @@ const formatTimeAgo = (dateStr) => {
 const fmt = (n) => {
   if (n == null) return '—';
   if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
-  if (n >= 1_000)     return `${(n / 1_000).toFixed(1)}K`;
+  if (n >= 1_000) return `${(n / 1_000).toFixed(1)}K`;
   return String(n);
 };
 
@@ -69,9 +69,9 @@ const PendingBox = ({ label, value, loading }) => (
 // ─── Main Component ───────────────────────────────────────────────────────────
 
 export default function Dashboard() {
-  const [stats, setStats]     = useState(null);
+  const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError]     = useState(null);
+  const [error, setError] = useState(null);
 
   const load = useCallback(async () => {
     try {
@@ -90,8 +90,8 @@ export default function Dashboard() {
   useEffect(() => { load(); }, [load]);
 
   const totalPending =
-    (stats?.pendingAgents   ?? 0) +
-    (stats?.pendingHotels   ?? 0) +
+    (stats?.pendingAgents ?? 0) +
+    (stats?.pendingHotels ?? 0) +
     (stats?.pendingPackages ?? 0) +
     (stats?.pendingBookings ?? 0);
 
@@ -159,8 +159,8 @@ export default function Dashboard() {
           </div>
         </div>
         <div className="flex flex-wrap gap-3">
-          <PendingBox label="Agents"   value={stats?.pendingAgents}   loading={loading} />
-          <PendingBox label="Hotels"   value={stats?.pendingHotels}   loading={loading} />
+          <PendingBox label="Agents" value={stats?.pendingAgents} loading={loading} />
+          <PendingBox label="Hotels" value={stats?.pendingHotels} loading={loading} />
           <PendingBox label="Packages" value={stats?.pendingPackages} loading={loading} />
           <PendingBox label="Bookings" value={stats?.pendingBookings} loading={loading} />
         </div>
@@ -231,7 +231,7 @@ export default function Dashboard() {
 
       {/* ── Bottom Section Grid ─────────────────────────────────────────── */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        
+
         {/* Booking Trends */}
         <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100 flex flex-col">
           <h3 className="text-lg font-bold text-gray-900 mb-8">Booking Trends</h3>
@@ -345,3 +345,4 @@ export default function Dashboard() {
     </div>
   );
 }
+

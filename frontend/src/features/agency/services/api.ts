@@ -2,18 +2,18 @@ const BASE_URL = (import.meta.env.VITE_API_URL || "http://localhost:8080") + "/a
 
 // Dynamically retrieve the logged-in agent ID (User ID) from localStorage, no fallback
 const AGENT_ID = {
-  toString() {
-    const userStr = localStorage.getItem('travelhub_user') || localStorage.getItem('user');
-    if (userStr) {
-      try {
-        const user = JSON.parse(userStr);
-        return String(user.id || '');
-      } catch (e) {
+    toString() {
+        const userStr = localStorage.getItem('travelhub_user') || localStorage.getItem('user');
+        if (userStr) {
+            try {
+                const user = JSON.parse(userStr);
+                return String(user.id || '');
+            } catch (e) {
+                return '';
+            }
+        }
         return '';
-      }
     }
-    return '';
-  }
 };
 
 const getAuthHeaders = () => {
@@ -39,7 +39,7 @@ export const api = {
         const query = params.toString() ? `?${params}` : '';
         return fetch(`${BASE_URL}/agent/${AGENT_ID}/packages${query}`).then(r => r.json());
     },
-    getAgentPackage: (packageId) => 
+    getAgentPackage: (packageId) =>
         fetch(`${BASE_URL}/agent/${AGENT_ID}/packages/${packageId}`).then(r => r.json()),
     createPackage: (dataJson, imageFiles = []) => {
         const form = new FormData();

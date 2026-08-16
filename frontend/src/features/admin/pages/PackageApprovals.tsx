@@ -6,9 +6,9 @@ import { useModal } from '../components/ModalContext'
 const STATUSES = ['All', 'Pending', 'Approved', 'Rejected']
 
 const STATUS_STYLES = {
-  Pending:   'bg-orange-100 text-orange-700 border-orange-200',
-  Approved:  'bg-emerald-100 text-emerald-700 border-emerald-200',
-  Rejected:  'bg-red-100 text-red-700 border-red-200',
+  Pending: 'bg-orange-100 text-orange-700 border-orange-200',
+  Approved: 'bg-emerald-100 text-emerald-700 border-emerald-200',
+  Rejected: 'bg-red-100 text-red-700 border-red-200',
   Suspended: 'bg-gray-100 text-gray-600 border-gray-200',
 }
 
@@ -70,12 +70,12 @@ const PackageDetailView = ({ pkg, onBack, onApprove, onReject, onToggle, onDelet
 
         {/* Details Section */}
         <div className="p-8 flex flex-col md:flex-row gap-8">
-          
+
           {/* Left Panel - Package Info */}
           <div className="flex-1 space-y-6">
             <div className="bg-[#f0fdf4] rounded-xl p-8 border border-emerald-50">
               <h3 className="text-lg font-bold text-gray-900 mb-6">Package Details</h3>
-              
+
               <div className="grid grid-cols-2 md:grid-cols-3 gap-y-6 gap-x-4 mb-8">
                 <div>
                   <div className="text-xs text-gray-500 font-medium mb-1">Price</div>
@@ -145,16 +145,15 @@ const PackageDetailView = ({ pkg, onBack, onApprove, onReject, onToggle, onDelet
           <div className="w-full md:w-80 flex flex-col gap-4">
             <div className="bg-[#fff7ed] rounded-xl p-8 border border-orange-50">
               <h3 className="text-lg font-bold text-gray-900 mb-6">Application Status</h3>
-              
+
               <div className="space-y-6">
                 <div>
                   <div className="text-xs text-gray-500 font-medium mb-2">Status</div>
-                  <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-                    String(applicationStatus).trim().toLowerCase() === 'approved' ? 'bg-[#e6f4ea] text-[#1e8e3e]' :
+                  <span className={`px-3 py-1 rounded-full text-xs font-medium ${String(applicationStatus).trim().toLowerCase() === 'approved' ? 'bg-[#e6f4ea] text-[#1e8e3e]' :
                     String(applicationStatus).trim().toLowerCase() === 'pending' ? 'bg-[#fef0db] text-[#e37400]' :
-                    String(applicationStatus).trim().toLowerCase() === 'suspended' ? 'bg-gray-100 text-gray-600 border border-gray-200' :
-                    'bg-red-100 text-red-600'
-                  }`}>
+                      String(applicationStatus).trim().toLowerCase() === 'suspended' ? 'bg-gray-100 text-gray-600 border border-gray-200' :
+                        'bg-red-100 text-red-600'
+                    }`}>
                     {String(applicationStatus || 'Pending').trim()}
                   </span>
                 </div>
@@ -170,25 +169,25 @@ const PackageDetailView = ({ pkg, onBack, onApprove, onReject, onToggle, onDelet
             {/* Admin Actions */}
             <div className="bg-white rounded-xl p-6 border border-gray-100 space-y-3 shadow-sm mt-2">
               <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wide mb-4">Admin Actions</h4>
-              
+
               {String(applicationStatus).trim().toLowerCase() !== 'approved' && (
                 <button onClick={() => onApprove(pkg)} disabled={loading} className="w-full py-2.5 rounded-lg font-semibold text-sm bg-emerald-500 text-white hover:bg-emerald-600 transition disabled:opacity-60">
                   Approve Package
                 </button>
               )}
-              
+
               {String(applicationStatus).trim().toLowerCase() !== 'rejected' && (
                 <button onClick={() => onReject(pkg)} disabled={loading} className="w-full py-2.5 rounded-lg font-semibold text-sm bg-orange-50 text-orange-700 border border-orange-200 hover:bg-orange-100 transition disabled:opacity-60">
                   Reject Package
                 </button>
               )}
-              
+
               {String(applicationStatus).trim().toLowerCase() === 'approved' && (
                 <button onClick={() => onToggle(pkg)} disabled={loading} className={`w-full py-2.5 rounded-lg font-semibold text-sm border transition disabled:opacity-60 ${isActive ? 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-orange-50 hover:text-orange-700 hover:border-orange-200' : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-emerald-50 hover:text-emerald-700 hover:border-emerald-200'}`}>
                   {isActive ? 'Deactivate Package' : 'Activate Package'}
                 </button>
               )}
-              
+
               <button onClick={() => onDelete(pkg)} disabled={loading} className="w-full py-2.5 rounded-lg font-semibold text-sm bg-gray-50 text-gray-600 border border-gray-200 hover:bg-red-50 hover:text-red-700 hover:border-red-200 transition disabled:opacity-60 mt-4">
                 Delete Package
               </button>
@@ -209,10 +208,10 @@ const PackageCard = ({ pkg, onView, onApprove, onReject, onToggle, onDelete, act
     <div className="bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-shadow border border-gray-100 flex flex-col">
       {/* Image */}
       <div className="relative h-48">
-        <img 
-          src={imageUrl || placeholderImg} 
+        <img
+          src={imageUrl || placeholderImg}
           alt={packageName}
-          onError={(e) => { e.target.src = placeholderImg }} 
+          onError={(e) => { e.target.src = placeholderImg }}
           className="w-full h-full object-cover"
         />
       </div>
@@ -236,12 +235,11 @@ const PackageCard = ({ pkg, onView, onApprove, onReject, onToggle, onDelete, act
         )}
 
         <div className="mb-4">
-          <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-            String(applicationStatus).trim().toLowerCase() === 'approved' ? 'bg-[#e6f4ea] text-[#1e8e3e]' :
+          <span className={`px-3 py-1 rounded-full text-xs font-medium ${String(applicationStatus).trim().toLowerCase() === 'approved' ? 'bg-[#e6f4ea] text-[#1e8e3e]' :
             String(applicationStatus).trim().toLowerCase() === 'pending' ? 'bg-[#fef0db] text-[#e37400]' :
-            String(applicationStatus).trim().toLowerCase() === 'suspended' ? 'bg-gray-100 text-gray-600 border border-gray-200' :
-            'bg-red-100 text-red-600'
-          }`}>
+              String(applicationStatus).trim().toLowerCase() === 'suspended' ? 'bg-gray-100 text-gray-600 border border-gray-200' :
+                'bg-red-100 text-red-600'
+            }`}>
             {String(applicationStatus || 'Pending').trim()}
           </span>
         </div>
@@ -297,7 +295,7 @@ const PackageCard = ({ pkg, onView, onApprove, onReject, onToggle, onDelete, act
               )}
             </>
           ) : (
-             <>
+            <>
               <button
                 onClick={(e) => { e.stopPropagation(); onView(pkg); }}
                 className="flex-1 py-2 text-sm font-medium border border-gray-200 rounded text-gray-700 hover:bg-gray-50 transition flex items-center justify-center gap-2"
@@ -311,7 +309,7 @@ const PackageCard = ({ pkg, onView, onApprove, onReject, onToggle, onDelete, act
               >
                 🗑 Delete
               </button>
-             </>
+            </>
           )}
         </div>
       </div>
@@ -323,14 +321,14 @@ const PackageCard = ({ pkg, onView, onApprove, onReject, onToggle, onDelete, act
 export default function PackageApprovals() {
   const modal = useModal()
 
-  const [packages, setPackages]           = useState([])
-  const [loading, setLoading]             = useState(true)
+  const [packages, setPackages] = useState([])
+  const [loading, setLoading] = useState(true)
   const [actionLoading, setActionLoading] = useState(false)
-  const [error, setError]                 = useState(null)
-  const [statusFilter, setStatusFilter]   = useState('All')
-  const [search, setSearch]               = useState('')
-  const [selected, setSelected]           = useState(null)
-  const [drawerDetail, setDrawerDetail]   = useState(null)
+  const [error, setError] = useState(null)
+  const [statusFilter, setStatusFilter] = useState('All')
+  const [search, setSearch] = useState('')
+  const [selected, setSelected] = useState(null)
+  const [drawerDetail, setDrawerDetail] = useState(null)
   const [detailLoading, setDetailLoading] = useState(false)
 
   const fetchPackages = useCallback(async (status = 'All') => {
@@ -394,7 +392,7 @@ export default function PackageApprovals() {
       setActionLoading(true)
       await adminPackageApi.togglePackageActive(pkg.id)
       modal.addToast(`✅ "${pkg.packageName}" ${action}d`)
-      patchLocal(pkg.id, { 
+      patchLocal(pkg.id, {
         isActive: !pkg.isActive,
         applicationStatus: !pkg.isActive ? 'Approved' : 'Suspended'
       })
@@ -421,8 +419,8 @@ export default function PackageApprovals() {
   })
 
   const counts = {
-    total:    packages.length,
-    pending:  packages.filter(p => p.applicationStatus === 'Pending').length,
+    total: packages.length,
+    pending: packages.filter(p => p.applicationStatus === 'Pending').length,
     approved: packages.filter(p => String(p.applicationStatus).trim().toLowerCase() === 'approved').length,
     rejected: packages.filter(p => String(p.applicationStatus).trim().toLowerCase() === 'rejected').length,
   }

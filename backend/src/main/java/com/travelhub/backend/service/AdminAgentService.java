@@ -173,6 +173,16 @@ public class AdminAgentService {
                             "dd/MM/yyyy"));
         }
 
+        String phone = (a.getAgencyNumber() != null && !a.getAgencyNumber().isBlank())
+                ? a.getAgencyNumber()
+                : (a.getOwner() != null ? a.getOwner().getTelephone() : null);
+
+        String profileImg   = a.getOwner() != null ? a.getOwner().getProfileImage() : null;
+        String nic          = a.getOwner() != null ? a.getOwner().getNicNumber()     : null;
+        Double rating       = a.getRating() != null ? a.getRating() : agentRatingCalculator.getAgentRating(a.getId());
+        Integer totalTrips  = a.getTotalTrips()      != null ? a.getTotalTrips()      : 0;
+        Integer expYears    = a.getExperienceYears() != null ? a.getExperienceYears() : 0;
+
         return new AdminAgentListResponse(
                 a.getId(),
                 a.getOwner() != null ? a.getOwner().getId() : null,
@@ -180,16 +190,22 @@ public class AdminAgentService {
                 a.getAgencyName(),
                 a.getOwner() != null ? a.getOwner().getName() : null,
                 a.getOwner() != null ? a.getOwner().getEmail() : null,
-                a.getOwner() != null ? a.getOwner().getTelephone() : null,
+                phone,
                 a.getLocation(),
                 a.getOwner() != null && Boolean.TRUE.equals(a.getOwner().getAgentApproved())
                         ? "Approved"
                         : "Pending",
                 a.getOwner() != null ? a.getOwner().getNicVerificationStatus() : "PENDING",
                 submittedDate,
-                a.getIsActive()
+                a.getIsActive() != null ? a.getIsActive() : true,
+                profileImg,
+                rating,
+                totalTrips,
+                nic,
+                expYears
         );
     }
+
 
     // ── Map Package → Response ────────────────────────
     private AdminAgentPackageResponse mapToPackageResponse(

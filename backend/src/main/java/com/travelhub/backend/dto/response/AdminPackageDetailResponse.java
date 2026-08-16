@@ -58,4 +58,10 @@ public record AdminPackageDetailResponse(
             String  description,
             List<String> activities
     ) {}
-}
+
+    // Package Activity inner record
+    public record PackageActivityDetail(
+            String description,
+            String imageUrl
+    ) {}
+}

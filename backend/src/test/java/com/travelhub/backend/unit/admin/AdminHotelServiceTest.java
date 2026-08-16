@@ -61,6 +61,7 @@ public class AdminHotelServiceTest {
         when(reviewRepository.getReviewCountsByHotelIds(anyList())).thenReturn(Map.of());
         when(hotelPricingService.getPriceRangesByHotelIds(anyList())).thenReturn(Map.of());
         when(roomRepository.findByHotelId(anyLong())).thenReturn(List.of());
+        when(amenityRepository.findByHotelId(anyLong())).thenReturn(List.of());
 
         var result = adminHotelService.getAllHotels();
 

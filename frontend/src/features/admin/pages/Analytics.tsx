@@ -78,7 +78,7 @@ export default function Analytics() {
     setSelectedAgentTripStatus(null)
     setRevenueData(null)
     setDetailLoading(true)
-    
+
     try {
       // First, check map cache
       const cached = agentStatsMap[agent.id]
@@ -124,8 +124,8 @@ export default function Analytics() {
   const filteredAgents = agents.filter(a => {
     const name = a.companyName || a.agentName || ''
     const owner = a.ownerName || ''
-    return name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-           owner.toLowerCase().includes(searchTerm.toLowerCase())
+    return name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      owner.toLowerCase().includes(searchTerm.toLowerCase())
   })
 
   const StatCard = ({ title, value, trend, icon, bgColor, trendUp }) => (
@@ -183,7 +183,7 @@ export default function Analytics() {
           <div className="w-16 h-16 bg-red-50 rounded-full flex items-center justify-center text-2xl mx-auto mb-4">⚠️</div>
           <h2 className="text-lg font-bold text-gray-900 mb-2">Failed to Load Analytics</h2>
           <p className="text-gray-500 text-sm mb-6">{error}</p>
-          <button 
+          <button
             onClick={fetchAgentsAndStats}
             className="w-full px-6 py-2.5 bg-teal-600 hover:bg-teal-700 text-white rounded-lg font-semibold text-sm transition"
           >
@@ -197,7 +197,7 @@ export default function Analytics() {
   if (selectedAgent) {
     const stats = selectedAgentStats
     const tripStatus = selectedAgentTripStatus
-    
+
     // Calculate total details trips
     const totalDetailTrips = (tripStatus?.completed || 0) + (tripStatus?.pending || 0) + (tripStatus?.cancelled || 0) || 1
     const completedPct = ((tripStatus?.completed || 0) / totalDetailTrips * 100).toFixed(0)
@@ -210,7 +210,7 @@ export default function Analytics() {
     return (
       <div className="p-8 bg-gray-50 min-h-screen animate-fade-in">
         {/* Back Button */}
-        <button 
+        <button
           onClick={() => setSelectedAgent(null)}
           className="mb-6 flex items-center gap-2 text-teal-600 hover:text-teal-700 font-bold transition text-sm"
         >
@@ -235,8 +235,8 @@ export default function Analytics() {
             </div>
             <div className="flex items-center gap-3">
               <span className="text-sm font-semibold text-gray-600">Year:</span>
-              <select 
-                value={selectedYear} 
+              <select
+                value={selectedYear}
                 onChange={(e) => setSelectedYear(Number(e.target.value))}
                 className="px-4 py-1.5 bg-white border border-gray-200 rounded-lg text-sm font-semibold text-gray-700 cursor-pointer hover:border-teal-500 transition focus:outline-none"
               >
@@ -259,28 +259,28 @@ export default function Analytics() {
           <>
             {/* Stats Cards */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-              <StatCard 
-                title="Total Revenue" 
-                value={`$${(stats?.totalRevenue || 0).toLocaleString()}`} 
-                icon="💰" 
+              <StatCard
+                title="Total Revenue"
+                value={`$${(stats?.totalRevenue || 0).toLocaleString()}`}
+                icon="💰"
                 bgColor="bg-emerald-50 text-emerald-600"
               />
-              <StatCard 
-                title="Total Trips" 
-                value={stats?.totalTrips || 0} 
-                icon="🚗" 
+              <StatCard
+                title="Total Trips"
+                value={stats?.totalTrips || 0}
+                icon="🚗"
                 bgColor="bg-blue-50 text-blue-600"
               />
-              <StatCard 
-                title="Average Rating" 
-                value={stats?.averageRating || '0.0'} 
-                icon="★" 
+              <StatCard
+                title="Average Rating"
+                value={stats?.averageRating || '0.0'}
+                icon="★"
                 bgColor="bg-amber-50 text-amber-600"
               />
-              <StatCard 
-                title="Cancellation Rate" 
-                value={`${stats?.cancellationRate || 0}%`} 
-                icon="⚠️" 
+              <StatCard
+                title="Cancellation Rate"
+                value={`${stats?.cancellationRate || 0}%`}
+                icon="⚠️"
                 bgColor="bg-rose-50 text-rose-600"
               />
             </div>
@@ -289,8 +289,8 @@ export default function Analytics() {
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
               {/* Monthly Revenue Chart */}
               <div className="lg:col-span-2">
-                <ChartCard 
-                  title="Monthly Revenue" 
+                <ChartCard
+                  title="Monthly Revenue"
                   subtitle={`Revenue performance over the year ${selectedYear}`}
                 >
                   <div className="h-72 w-full flex items-end justify-between gap-1 sm:gap-2 md:gap-3 p-4 pt-6 bg-white rounded-xl border border-gray-50">
@@ -302,9 +302,9 @@ export default function Analytics() {
                       return (
                         <div key={i} className="flex flex-col items-center flex-1 h-full justify-end group">
                           {/* Bar + Value Wrapper */}
-                          <div 
+                          <div
                             className="w-full flex flex-col items-center justify-end transition-all duration-500"
-                            style={{ 
+                            style={{
                               height: isZero ? 'auto' : `${Math.max(heightPercent, 18)}%`,
                               maxHeight: 'calc(100% - 28px)'
                             }}
@@ -335,8 +335,8 @@ export default function Analytics() {
 
               {/* Trip Status Distribution */}
               <div>
-                <ChartCard 
-                  title="Trip Status" 
+                <ChartCard
+                  title="Trip Status"
                   subtitle="Proportion of trip outcomes"
                 >
                   <div className="space-y-5">
@@ -398,11 +398,11 @@ export default function Analytics() {
 
       {/* Search */}
       <div className="mb-8">
-        <input 
-          type="text" 
-          placeholder="Search agent by company name or owner..." 
-          value={searchTerm} 
-          onChange={(e) => setSearchTerm(e.target.value)} 
+        <input
+          type="text"
+          placeholder="Search agent by company name or owner..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
           className="w-full max-w-md px-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-gray-200 bg-white"
         />
       </div>
@@ -435,20 +435,20 @@ export default function Analytics() {
 
               {/* Stats Preview */}
               <div className="p-6 space-y-4 flex-1">
-                <SmallStatCard 
-                  title="Total Revenue" 
-                  value={`$${(stats?.totalRevenue || 0).toLocaleString(undefined, {maximumFractionDigits: 0})}`}
+                <SmallStatCard
+                  title="Total Revenue"
+                  value={`$${(stats?.totalRevenue || 0).toLocaleString(undefined, { maximumFractionDigits: 0 })}`}
                   icon="💰"
                   bgColor="bg-emerald-50 text-emerald-600"
                 />
-                <SmallStatCard 
-                  title="Total Trips" 
+                <SmallStatCard
+                  title="Total Trips"
                   value={stats?.totalTrips || 0}
                   icon="🚗"
                   bgColor="bg-blue-50 text-blue-600"
                 />
-                <SmallStatCard 
-                  title="Completed Trips" 
+                <SmallStatCard
+                  title="Completed Trips"
                   value={tripStatus?.completed || 0}
                   icon="✓"
                   bgColor="bg-purple-50 text-purple-600"
@@ -457,8 +457,8 @@ export default function Analytics() {
 
               {/* Action Button */}
               <div className="px-6 py-4 bg-gray-50 border-t border-gray-100">
-                <button 
-                  onClick={() => handleSelectAgent(agent)} 
+                <button
+                  onClick={() => handleSelectAgent(agent)}
                   className="w-full px-4 py-2 bg-teal-600 hover:bg-teal-700 text-white rounded-lg font-semibold text-xs transition duration-200"
                 >
                   View Detailed Analytics

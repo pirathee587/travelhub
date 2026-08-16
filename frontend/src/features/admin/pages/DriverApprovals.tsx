@@ -7,16 +7,16 @@ import { User, Clock, CheckCircle, AlertTriangle, ShieldAlert, FileText, Star, C
 const STATUSES = ['All', 'Pending', 'Approved', 'Rejected']
 
 const STATUS_STYLES: Record<string, string> = {
-  pending:   'bg-orange-100 text-orange-700 border-orange-200',
-  active:    'bg-emerald-100 text-emerald-700 border-emerald-200',
-  rejected:  'bg-red-100 text-red-700 border-red-200',
+  pending: 'bg-orange-100 text-orange-700 border-orange-200',
+  active: 'bg-emerald-100 text-emerald-700 border-emerald-200',
+  rejected: 'bg-red-100 text-red-700 border-red-200',
   suspended: 'bg-gray-100 text-gray-600 border-gray-200',
 }
 
 const STATUS_LABELS: Record<string, string> = {
-  pending:   'Pending Approval',
-  active:    'Approved / Active',
-  rejected:  'Rejected',
+  pending: 'Pending Approval',
+  active: 'Approved / Active',
+  rejected: 'Rejected',
   suspended: 'Suspended',
 }
 
@@ -46,7 +46,7 @@ const DriverDetailView = ({ driver, onBack, onApprove, onReject, loading }) => {
       </button>
 
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-8 space-y-8">
-        
+
         {/* Header Title */}
         <div className="flex justify-between items-start">
           <div className="flex items-center gap-4">
@@ -69,7 +69,7 @@ const DriverDetailView = ({ driver, onBack, onApprove, onReject, loading }) => {
 
         {/* Audit Details */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-          
+
           {/* Column 1: Personal & Contact Info */}
           <div className="bg-gray-50/50 rounded-xl p-6 border border-gray-100 space-y-4">
             <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2 border-b pb-2">
@@ -142,7 +142,7 @@ const DriverDetailView = ({ driver, onBack, onApprove, onReject, loading }) => {
             <FileText className="h-5 w-5 text-teal-600" /> Verification Documents
           </h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
-            
+
             {/* NIC Front */}
             <div className="border border-gray-100 rounded-lg p-3 bg-white space-y-2 flex flex-col justify-between">
               <div>
@@ -155,8 +155,8 @@ const DriverDetailView = ({ driver, onBack, onApprove, onReject, loading }) => {
                   )}
                 </div>
               </div>
-              <button 
-                onClick={() => adminDriverApi.viewDocumentImage(driver.nicFrontImage)} 
+              <button
+                onClick={() => adminDriverApi.viewDocumentImage(driver.nicFrontImage)}
                 disabled={!driver.nicFrontImage}
                 className="w-full py-1 text-xs font-medium text-teal-600 bg-teal-50 rounded hover:bg-teal-100 transition disabled:opacity-50"
               >
@@ -176,8 +176,8 @@ const DriverDetailView = ({ driver, onBack, onApprove, onReject, loading }) => {
                   )}
                 </div>
               </div>
-              <button 
-                onClick={() => adminDriverApi.viewDocumentImage(driver.nicRearImage)} 
+              <button
+                onClick={() => adminDriverApi.viewDocumentImage(driver.nicRearImage)}
                 disabled={!driver.nicRearImage}
                 className="w-full py-1 text-xs font-medium text-teal-600 bg-teal-50 rounded hover:bg-teal-100 transition disabled:opacity-50"
               >
@@ -197,8 +197,8 @@ const DriverDetailView = ({ driver, onBack, onApprove, onReject, loading }) => {
                   )}
                 </div>
               </div>
-              <button 
-                onClick={() => adminDriverApi.viewDocumentImage(driver.licenseFrontImage)} 
+              <button
+                onClick={() => adminDriverApi.viewDocumentImage(driver.licenseFrontImage)}
                 disabled={!driver.licenseFrontImage}
                 className="w-full py-1 text-xs font-medium text-teal-600 bg-teal-50 rounded hover:bg-teal-100 transition disabled:opacity-50"
               >
@@ -218,8 +218,8 @@ const DriverDetailView = ({ driver, onBack, onApprove, onReject, loading }) => {
                   )}
                 </div>
               </div>
-              <button 
-                onClick={() => adminDriverApi.viewDocumentImage(driver.licenseRearImage)} 
+              <button
+                onClick={() => adminDriverApi.viewDocumentImage(driver.licenseRearImage)}
                 disabled={!driver.licenseRearImage}
                 className="w-full py-1 text-xs font-medium text-teal-600 bg-teal-50 rounded hover:bg-teal-100 transition disabled:opacity-50"
               >
@@ -232,15 +232,15 @@ const DriverDetailView = ({ driver, onBack, onApprove, onReject, loading }) => {
         {/* Action Controls */}
         {driver.lifecycleStatus === 'pending' && (
           <div className="flex gap-4 border-t pt-6 justify-end">
-            <button 
-              onClick={() => onReject(driver)} 
+            <button
+              onClick={() => onReject(driver)}
               disabled={loading}
               className="px-6 py-2.5 rounded-lg border border-red-200 text-red-700 font-semibold text-sm hover:bg-red-50 active:bg-red-100 transition disabled:opacity-50 flex items-center gap-2"
             >
               <ShieldAlert className="h-4 w-4" /> Reject Registration
             </button>
-            <button 
-              onClick={() => onApprove(driver)} 
+            <button
+              onClick={() => onApprove(driver)}
               disabled={loading}
               className="px-6 py-2.5 rounded-lg bg-emerald-600 text-white font-semibold text-sm hover:bg-emerald-700 active:bg-emerald-800 shadow-sm transition disabled:opacity-50 flex items-center gap-2"
             >
@@ -289,7 +289,7 @@ export default function DriverApprovals() {
   const handleApprove = async (driver) => {
     const name = `${driver.firstName} ${driver.lastName}`
     const ok = await modal.showConfirm({
-      title:   'Approve Driver',
+      title: 'Approve Driver',
       message: `Are you sure you want to approve driver "${name}"? They will be activated immediately.`,
     })
     if (!ok) return
@@ -297,7 +297,7 @@ export default function DriverApprovals() {
       setActionLoading(true)
       await adminDriverApi.approveDriver(driver.id)
       modal.addToast(`✅ Driver "${name}" approved successfully`)
-      
+
       setDrivers(prev => prev.map(d =>
         d.id === driver.id ? { ...d, lifecycleStatus: 'active', status: 'available' } : d
       ))
@@ -330,7 +330,7 @@ export default function DriverApprovals() {
       setIsRejectModalOpen(false)
       await adminDriverApi.rejectDriver(driver.id, rejectReason)
       modal.addToast(`🚫 Driver "${name}" registration rejected`)
-      
+
       setDrivers(prev => prev.map(d =>
         d.id === driver.id ? { ...d, lifecycleStatus: 'rejected', status: 'off-duty', rejectionReason: rejectReason } : d
       ))
