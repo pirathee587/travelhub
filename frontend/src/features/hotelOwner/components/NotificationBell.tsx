@@ -225,7 +225,6 @@ export function NotificationBell() {
                             {n.message}
                           </p>
                         )}
-                        <p className="mt-1 text-[10px] text-muted-foreground/70">{n.time}</p>
                       </div>
                     </div>
                   );

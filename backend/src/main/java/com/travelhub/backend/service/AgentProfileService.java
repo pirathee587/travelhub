@@ -61,6 +61,13 @@ public class AgentProfileService {
         }
         if (request.getNicImage() != null) {
             user.setNicImage(request.getNicImage());
+            // When updating NIC, if it was rejected, reset to pending for review
+            if ("REJECTED".equals(user.getNicVerificationStatus())) {
+                user.setNicVerificationStatus("PENDING");
+            }
+        }
+        if (request.getNicNumber() != null) {
+            user.setNicNumber(request.getNicNumber().trim());
         }
 
         Agent saved = agentRepository.save(agent);
@@ -89,6 +96,9 @@ public class AgentProfileService {
                 .websiteUrl(agent.getWebsiteUrl())
                 .profileImage(user != null ? user.getProfileImage() : null)
                 .nicImage(user != null ? user.getNicImage() : null)
+                .nicNumber(user != null ? user.getNicNumber() : null)
+                .nicVerificationStatus(user != null ? user.getNicVerificationStatus() : "PENDING")
+                .adminMessage(user != null ? user.getAdminMessage() : null)
                 .memberSince(agent.getMemberSince() != null ? agent.getMemberSince().toString() : null)
                 .rating(agentRatingCalculator.getAgentRating(agent.getId()))
                 .totalTrips(agent.getTotalTrips())

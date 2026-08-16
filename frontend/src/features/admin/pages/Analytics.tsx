@@ -293,21 +293,38 @@ export default function Analytics() {
                   title="Monthly Revenue" 
                   subtitle={`Revenue performance over the year ${selectedYear}`}
                 >
-                  <div className="h-64 flex items-end justify-around bg-gradient-to-b from-teal-50/20 to-white p-4 rounded-xl border border-gray-50">
-                    {(revenueData?.data || Array(12).fill(0)).map((val, i) => {
-                      const pct = (val / maxRevenue) * 100
-                      const barHeight = Math.max(pct, 2) // At least 2% so it shows something
+                  <div className="h-72 w-full flex items-end justify-between gap-1 sm:gap-2 md:gap-3 p-4 pt-6 bg-white rounded-xl border border-gray-50">
+                    {['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'].map((monthName, i) => {
+                      const val = (revenueData?.data || [])[i] ?? 0
+                      const heightPercent = maxRevenue > 0 && val > 0 ? (val / maxRevenue) * 100 : 0
+                      const isZero = val === 0
+
                       return (
-                        <div key={i} className="flex flex-col items-center gap-2 flex-1 group">
-                          <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 bg-slate-800 text-white text-[9px] px-1.5 py-0.5 rounded absolute -translate-y-12 pointer-events-none font-bold">
-                            ${val.toLocaleString(undefined, {maximumFractionDigits: 0})}
-                          </div>
+                        <div key={i} className="flex flex-col items-center flex-1 h-full justify-end group">
+                          {/* Bar + Value Wrapper */}
                           <div 
-                            className="w-8 sm:w-10 bg-teal-500 hover:bg-teal-600 rounded-t transition-all duration-500 shadow-sm" 
-                            style={{ height: `${barHeight}%` }}
-                          />
-                          <span className="text-xs font-bold text-gray-400 mt-1">
-                            {['J', 'F', 'M', 'A', 'M', 'J', 'J', 'A', 'S', 'O', 'N', 'D'][i]}
+                            className="w-full flex flex-col items-center justify-end transition-all duration-500"
+                            style={{ 
+                              height: isZero ? 'auto' : `${Math.max(heightPercent, 18)}%`,
+                              maxHeight: 'calc(100% - 28px)'
+                            }}
+                          >
+                            {/* Value directly above bar */}
+                            <span className="text-xs sm:text-sm font-medium text-gray-700 mb-2 select-none whitespace-nowrap transition-transform duration-200 group-hover:-translate-y-0.5">
+                              {isZero ? '0' : `$${val.toLocaleString(undefined, { maximumFractionDigits: 0 })}`}
+                            </span>
+
+                            {/* Rounded Bar or Zero Dash */}
+                            {isZero ? (
+                              <div className="w-full max-w-[38px] sm:max-w-[48px] h-1.5 bg-[#00bfa5] rounded-full" />
+                            ) : (
+                              <div className="w-full max-w-[38px] sm:max-w-[48px] flex-1 min-h-[22px] bg-[#00bfa5] hover:bg-[#00a892] rounded-xl sm:rounded-2xl transition-all duration-300 shadow-sm" />
+                            )}
+                          </div>
+
+                          {/* Month Label */}
+                          <span className="text-xs sm:text-sm font-medium text-gray-400 mt-3 select-none">
+                            {monthName}
                           </span>
                         </div>
                       )

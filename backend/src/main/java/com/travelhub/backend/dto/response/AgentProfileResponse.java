@@ -20,6 +20,9 @@ public class AgentProfileResponse {
     private String websiteUrl;
     private String profileImage;
     private String nicImage;
+    private String nicNumber;
+    private String nicVerificationStatus;
+    private String adminMessage;
     private String memberSince;
     private Double rating;
     private Integer totalTrips;

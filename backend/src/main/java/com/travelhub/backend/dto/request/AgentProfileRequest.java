@@ -16,4 +16,5 @@ public class AgentProfileRequest {
     private String profileImage;
     private String agencyName;
     private String nicImage;
+    private String nicNumber;
 }

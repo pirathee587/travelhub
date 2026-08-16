@@ -115,9 +115,6 @@ const UserNotifications = () => {
                   <h6 className="font-semibold">{notification.title}</h6>
                   <p className="text-sm text-muted-foreground">{notification.message}</p>
                 </div>
-                <div className="text-xs text-muted-foreground whitespace-nowrap">
-                  {notification.time}
-                </div>
               </div>
             ))}
           </div>
