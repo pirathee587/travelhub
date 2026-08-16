@@ -1,22 +1,48 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import adminAgentApi from '../services/adminAgentApi'
 import { useModal } from '../components/ModalContext'
+import {
+  Search,
+  MapPin,
+  Clock,
+  Star,
+  Eye,
+  Check,
+  X,
+  Building2,
+  User,
+  Calendar,
+  ChevronRight,
+  Package,
+  Briefcase
+} from 'lucide-react'
 
 const STATUSES = ['All', 'Pending', 'Approved', 'Rejected', 'Suspended']
 
+const CARD_GRADIENTS = [
+  'from-sky-500 to-blue-600',
+  'from-emerald-500 to-teal-600',
+  'from-violet-500 to-purple-600',
+  'from-orange-500 to-red-500',
+  'from-pink-500 to-rose-600',
+  'from-cyan-500 to-sky-600',
+  'from-amber-500 to-orange-500',
+  'from-indigo-500 to-blue-700',
+]
+
 const STATUS_STYLES: Record<string, string> = {
-  Pending:   'bg-orange-100 text-orange-700',
-  Approved:  'bg-emerald-100 text-emerald-700',
-  Rejected:  'bg-red-100 text-red-700',
+  Pending: 'bg-orange-100 text-orange-700',
+  Approved: 'bg-emerald-100 text-emerald-700',
+  Rejected: 'bg-red-100 text-red-700',
   Suspended: 'bg-gray-100 text-gray-600',
 }
 
 // NIC verification status badge styles
 const NIC_STATUS_STYLES: Record<string, { bg: string; icon: string; label: string }> = {
-  PENDING:   { bg: 'bg-amber-50 text-amber-700 border border-amber-200',   icon: '🕐', label: 'NIC Pending Review' },
-  APPROVED:  { bg: 'bg-emerald-50 text-emerald-700 border border-emerald-200', icon: '✅', label: 'NIC Verified' },
-  REJECTED:  { bg: 'bg-red-50 text-red-700 border border-red-200',         icon: '❌', label: 'NIC Rejected' },
-  SUSPENDED: { bg: 'bg-gray-100 text-gray-600 border border-gray-200',     icon: '🚫', label: 'Suspended' },
+  PENDING: { bg: 'bg-amber-50 text-amber-700 border border-amber-200', icon: '🕐', label: 'NIC Pending' },
+  APPROVED: { bg: 'bg-emerald-50 text-emerald-700 border border-emerald-200', icon: '✅', label: 'NIC Verified' },
+  REJECTED: { bg: 'bg-red-50 text-red-700 border border-red-200', icon: '❌', label: 'NIC Rejected' },
+  SUSPENDED: { bg: 'bg-gray-100 text-gray-600 border border-gray-200', icon: '🚫', label: 'Suspended' },
 }
 
 const fmtDate = (s?: string | null) => {
@@ -30,12 +56,24 @@ const fmtDate = (s?: string | null) => {
 const initials = (name = '') => name.split(' ').slice(0, 2).map(w => w[0]).join('').toUpperCase() || '?'
 
 // ── Skeleton ──────────────────────────────────────────────────────────────────
-const Skeleton = () => (
-  <tr className="border-b border-gray-100 animate-pulse">
-    {[200, 150, 100, 100, 180].map((w, i) => (
-      <td key={i} className="px-5 py-4"><div className="h-4 bg-gray-100 rounded" style={{ width: w }} /></td>
-    ))}
-  </tr>
+const CardSkeleton = () => (
+  <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm animate-pulse flex flex-col h-full">
+    <div className="flex gap-3.5 items-center mb-4">
+      <div className="h-14 w-14 rounded-full bg-gray-100 flex-shrink-0" />
+      <div className="space-y-2 flex-1">
+        <div className="h-4 bg-gray-100 rounded w-3/4" />
+        <div className="h-3 bg-gray-100 rounded w-1/2" />
+      </div>
+    </div>
+    <div className="h-3 bg-gray-100 rounded w-full mt-1" />
+    <div className="h-3 bg-gray-100 rounded w-5/6 mt-2" />
+    <div className="flex gap-2.5 mt-4">
+      <div className="h-4 bg-gray-100 rounded w-14" />
+      <div className="h-4 bg-gray-100 rounded w-16" />
+      <div className="h-4 bg-gray-100 rounded w-20" />
+    </div>
+    <div className="h-9 bg-gray-100 rounded-xl w-full mt-auto pt-4" />
+  </div>
 )
 
 // ── Message Modal ─────────────────────────────────────────────────────────────
@@ -108,9 +146,9 @@ const MessageModal = ({ title, placeholder, actionLabel, actionClass, onConfirm,
 
 // ── Agent Packages Modal ──────────────────────────────────────────────────────
 const PKG_STATUS_STYLES: Record<string, { badge: string; label: string }> = {
-  Approved: { badge: 'bg-green-100 text-green-700',  label: 'Approved'  },
-  Pending:  { badge: 'bg-orange-100 text-orange-700', label: 'Pending'   },
-  Rejected: { badge: 'bg-red-100 text-red-700',       label: 'Rejected'  },
+  Approved: { badge: 'bg-green-100 text-green-700', label: 'Approved' },
+  Pending: { badge: 'bg-orange-100 text-orange-700', label: 'Pending' },
+  Rejected: { badge: 'bg-red-100 text-red-700', label: 'Rejected' },
 }
 
 interface AgentPackagesModalProps {
@@ -219,6 +257,42 @@ const AgentPackagesModal = ({ agentName, packages = [], loading, onClose }: Agen
   )
 }
 
+// ── Agency Avatar Component with Error Fallback ──────────────────────────────
+const AgencyAvatar = ({
+  src,
+  name,
+  gradient = 'from-sky-500 to-blue-600',
+  size = 'md',
+}: {
+  src?: string | null
+  name: string
+  gradient?: string
+  size?: 'md' | 'lg'
+}) => {
+  const [imgError, setImgError] = useState(false)
+  const avatarInitials = initials(name)
+  const sizeClass = size === 'lg' ? 'h-20 w-20 text-2xl' : 'h-14 w-14 text-lg'
+
+  if (src && !imgError) {
+    return (
+      <img
+        src={src}
+        alt={name}
+        onError={() => setImgError(true)}
+        className={`${sizeClass} rounded-full object-cover shadow-sm border border-gray-100 flex-shrink-0`}
+      />
+    )
+  }
+
+  return (
+    <div
+      className={`${sizeClass} rounded-full shadow-sm flex-shrink-0 flex items-center justify-center font-bold text-white bg-gradient-to-br ${gradient}`}
+    >
+      {avatarInitials}
+    </div>
+  )
+}
+
 // ── NIC Status Badge ──────────────────────────────────────────────────────────
 const NicStatusBadge = ({ status }: { status?: string }) => {
   const s = NIC_STATUS_STYLES[status || 'PENDING'] || NIC_STATUS_STYLES.PENDING
@@ -260,10 +334,11 @@ const AgentDetailView = ({
   const {
     agentName, companyName, ownerName, email, phone, location, memberSince,
     applicationStatus, nicImageUrl, ownerNic, nicVerificationStatus, adminMessage,
-    rating, totalTrips, experienceYears, isActive
+    rating, totalTrips, experienceYears, isActive, profileImage, imageUrl, logoUrl
   } = agent
 
   const isSuspended = nicVerificationStatus === 'SUSPENDED' || (isActive === false && applicationStatus === 'Approved')
+  const avatarUrl = profileImage || imageUrl || logoUrl
 
   return (
     <div className="animate-fade-in">
@@ -274,8 +349,13 @@ const AgentDetailView = ({
       <div className="bg-white rounded-xl shadow-sm overflow-hidden border border-gray-100">
         {/* Header Section */}
         <div className="flex flex-col items-center justify-center py-10 border-b border-gray-100">
-          <div className="w-20 h-20 rounded-full bg-gradient-to-br from-emerald-400 to-orange-400 flex items-center justify-center text-2xl text-white font-bold mb-4 shadow-md">
-            {initials(companyName || agentName)}
+          <div className="mb-4">
+            <AgencyAvatar
+              src={avatarUrl}
+              name={companyName || agentName || 'Agency'}
+              gradient="from-emerald-400 to-orange-400"
+              size="lg"
+            />
           </div>
           <h2 className="text-2xl font-bold text-gray-900">{companyName || agentName}</h2>
           <p className="text-sm text-gray-500 mt-1">Sri Lanka Travel Experts</p>
@@ -287,11 +367,10 @@ const AgentDetailView = ({
 
         {/* Admin Message Banner (if REJECTED or SUSPENDED) */}
         {adminMessage && (nicVerificationStatus === 'REJECTED' || nicVerificationStatus === 'SUSPENDED') && (
-          <div className={`mx-8 mt-6 px-5 py-4 rounded-xl border text-sm ${
-            nicVerificationStatus === 'SUSPENDED'
+          <div className={`mx-8 mt-6 px-5 py-4 rounded-xl border text-sm ${nicVerificationStatus === 'SUSPENDED'
               ? 'bg-gray-50 border-gray-200 text-gray-700'
               : 'bg-red-50 border-red-200 text-red-700'
-          }`}>
+            }`}>
             <div className="font-semibold mb-1">
               {nicVerificationStatus === 'SUSPENDED' ? '🚫 Suspension Reason:' : '❌ Rejection Reason:'}
             </div>
@@ -304,7 +383,7 @@ const AgentDetailView = ({
           {/* Left Panel - Owner Info */}
           <div className="flex-1 bg-[#f0fdf4] rounded-xl p-8">
             <h3 className="text-lg font-bold text-gray-900 mb-6">Owner Information</h3>
-            
+
             <div className="grid grid-cols-2 gap-y-6 gap-x-4">
               <div>
                 <div className="text-xs text-gray-500 font-medium mb-1">Owner Name</div>
@@ -355,7 +434,7 @@ const AgentDetailView = ({
           <div className="w-full md:w-80 flex flex-col gap-4">
             <div className="bg-[#fff7ed] rounded-xl p-8 border border-orange-50/50">
               <h3 className="text-lg font-bold text-gray-900 mb-6">Application Status</h3>
-              
+
               <div className="space-y-6">
                 <div>
                   <div className="text-xs text-gray-500 font-medium mb-2">Status</div>
@@ -364,11 +443,10 @@ const AgentDetailView = ({
                       Suspended
                     </span>
                   ) : (
-                    <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-                      applicationStatus === 'Approved' ? 'bg-[#e6f4ea] text-[#1e8e3e]' :
-                      applicationStatus === 'Pending'  ? 'bg-[#fef0db] text-[#e37400]' :
-                      'bg-red-100 text-red-600'
-                    }`}>
+                    <span className={`px-3 py-1 rounded-full text-xs font-medium ${applicationStatus === 'Approved' ? 'bg-[#e6f4ea] text-[#1e8e3e]' :
+                        applicationStatus === 'Pending' ? 'bg-[#fef0db] text-[#e37400]' :
+                          'bg-red-100 text-red-600'
+                      }`}>
                       {applicationStatus}
                     </span>
                   )}
@@ -390,7 +468,7 @@ const AgentDetailView = ({
                 🪪 View NIC Document
               </button>
             ) : (
-               <button disabled className="w-full py-3 bg-gray-300 text-white font-semibold rounded-lg shadow-sm transition text-sm cursor-not-allowed">
+              <button disabled className="w-full py-3 bg-gray-300 text-white font-semibold rounded-lg shadow-sm transition text-sm cursor-not-allowed">
                 No NIC Provided
               </button>
             )}
@@ -461,30 +539,192 @@ const AgentDetailView = ({
   )
 }
 
+// ── Agency Card (Compact View matching Uploaded Template) ─────────────────────
+interface AgencyCardProps {
+  agent: any
+  index: number
+  onView: (agent: any) => void
+  onApprove: (agent: any) => void
+  onReject: (agent: any) => void
+  onSuspend: (agent: any) => void
+  onUnsuspend: (agent: any) => void
+  actionLoading: boolean
+}
+
+const AgencyCard = ({ agent, index, onView, onApprove, onReject, onSuspend, onUnsuspend, actionLoading }: AgencyCardProps) => {
+  const {
+    id,
+    companyName,
+    agentName,
+    ownerName,
+    email,
+    phone,
+    location,
+    memberSince,
+    applicationStatus,
+    nicVerificationStatus,
+    ownerNic,
+    rating,
+    totalTrips,
+    experienceYears,
+    isActive,
+    imageUrl,
+    logoUrl,
+    coverUrl,
+    profileImage,
+    bio,
+    totalPackages,
+    packageCount
+  } = agent
+
+  const displayName = companyName || agentName || 'Agency'
+  const isSuspended = nicVerificationStatus === 'SUSPENDED' || (isActive === false && applicationStatus === 'Approved')
+  const displayStatus = isSuspended ? 'Suspended' : (applicationStatus || 'Pending')
+  const isApproved = displayStatus === 'Approved'
+  const isPending = displayStatus === 'Pending'
+  const isRejected = displayStatus === 'Rejected'
+
+  const avatar = profileImage || imageUrl || logoUrl
+  const gradient = CARD_GRADIENTS[index % CARD_GRADIENTS.length]
+  const avatarInitials = initials(displayName)
+  const nicStatus = NIC_STATUS_STYLES[nicVerificationStatus || 'PENDING'] || NIC_STATUS_STYLES.PENDING
+  const pkgs = totalPackages ?? packageCount ?? 0
+
+  return (
+    <div
+      onClick={() => onView(agent)}
+      className="group flex flex-col bg-white p-5 rounded-2xl border-2 border-primary/20 shadow-sm hover:shadow-xl hover:-translate-y-1 hover:border-primary/60 transition-all duration-300 cursor-pointer h-full justify-between"
+    >
+      <div>
+        {/* Top Header: Avatar + Info */}
+        <div className="flex gap-3.5 items-start mb-3">
+          <div className="relative flex-shrink-0">
+            <AgencyAvatar
+              src={avatar}
+              name={displayName}
+              gradient={gradient}
+              size="md"
+            />
+          </div>
+
+          <div className="flex-1 min-w-0">
+            <h3 className="font-bold text-base text-gray-900 leading-tight truncate group-hover:text-[#0ea5e9] transition-colors">
+              {displayName}
+            </h3>
+
+            {(ownerName || agentName) && (
+              <p className="text-xs text-gray-500 truncate mt-0.5">
+                {ownerName || agentName}
+              </p>
+            )}
+
+            {location && (
+              <div className="flex items-center gap-1 text-xs text-gray-400 mt-1 truncate">
+                <MapPin className="h-3 w-3 text-gray-400 shrink-0" />
+                <span className="truncate">{location}</span>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Bio / Description */}
+        <p className="text-xs text-gray-500 line-clamp-2 mb-3 min-h-[32px]">
+          {bio || agent.description || "Experienced travel agent ready to plan your perfect trip."}
+        </p>
+
+        {/* Stats Row */}
+        <div className="flex items-center gap-2.5 flex-wrap text-xs text-gray-500 mb-3">
+          {rating != null && Number(rating) > 0 ? (
+            <div className="flex items-center gap-1 font-semibold text-gray-800">
+              <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400" />
+              <span>{Number(rating).toFixed(1)}</span>
+            </div>
+          ) : (
+            <span className="text-gray-400">No Rating</span>
+          )}
+
+          <div className="flex items-center gap-1 text-gray-500">
+            <span>🧳</span>
+            <span>{totalTrips ?? 0} trips</span>
+          </div>
+
+          <div className="flex items-center gap-1 bg-emerald-50 text-emerald-700 border border-emerald-200/60 px-2 py-0.5 rounded-md font-semibold text-[11px]">
+            <span>📦</span>
+            <span>{pkgs} packages</span>
+          </div>
+        </div>
+
+        {/* Status Pills Row */}
+        <div className="flex items-center justify-between gap-2 mb-4 pt-2 border-t border-gray-100">
+          <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold ${
+            isApproved ? 'bg-emerald-50 text-emerald-700' : isPending ? 'bg-amber-50 text-amber-700' : 'bg-red-50 text-red-600'
+          }`}>
+            {displayStatus === 'Approved' ? 'Active' : displayStatus}
+          </span>
+
+          <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold ${nicStatus.bg}`}>
+            <span>{nicStatus.icon}</span>
+            <span>{nicStatus.label}</span>
+          </span>
+        </div>
+      </div>
+
+      {/* Action CTA buttons */}
+      <div className="space-y-2 pt-1 mt-auto" onClick={(e) => e.stopPropagation()}>
+        <button
+          onClick={() => onView(agent)}
+          className="w-full py-2 px-3 bg-[#0ea5e9]/10 text-[#0ea5e9] hover:bg-[#0ea5e9] hover:text-white rounded-xl text-xs sm:text-sm font-semibold flex items-center justify-center gap-1 transition duration-200 shadow-sm"
+        >
+          View Profile <ChevronRight className="h-4 w-4" />
+        </button>
+
+        {applicationStatus === 'Pending' && (
+          <div className="flex gap-2">
+            <button
+              onClick={() => onApprove(agent)}
+              disabled={actionLoading}
+              className="flex-1 py-1.5 px-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg text-xs font-semibold flex items-center justify-center gap-1 transition disabled:opacity-60"
+            >
+              <Check className="w-3 h-3" /> Approve
+            </button>
+            <button
+              onClick={() => onReject(agent)}
+              disabled={actionLoading}
+              className="flex-1 py-1.5 px-2 bg-rose-500 hover:bg-rose-600 text-white rounded-lg text-xs font-semibold flex items-center justify-center gap-1 transition disabled:opacity-60"
+            >
+              <X className="w-3 h-3" /> Reject
+            </button>
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
 // ── Main Component ────────────────────────────────────────────────────────────
 export default function AgentApprovals() {
   const modal = useModal()
 
-  const [agents, setAgents]             = useState<any[]>([])
-  const [loading, setLoading]           = useState(true)
-  const [actionLoading, setAction]      = useState(false)
-  const [, setError]                    = useState<string | null>(null)
-  const [statusFilter, setStatus]       = useState('All')
-  const [search, setSearch]             = useState('')
-  const [selected, setSelected]         = useState<any | null>(null)
-  const [drawerAgent, setDrawerAgent]   = useState<any | null>(null)
-  const [drawerStats, setDrawerStats]   = useState<any | null>(null)
-  const [drawerPkgs, setDrawerPkgs]     = useState<any[] | null>(null)
-  const [drawerRev, setDrawerRev]       = useState<any | null>(null)
-  const [detailLoading, setDetailLoad]  = useState(false)
+  const [agents, setAgents] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+  const [actionLoading, setAction] = useState(false)
+  const [, setError] = useState<string | null>(null)
+  const [statusFilter, setStatus] = useState('All')
+  const [search, setSearch] = useState('')
+  const [selected, setSelected] = useState<any | null>(null)
+  const [drawerAgent, setDrawerAgent] = useState<any | null>(null)
+  const [drawerStats, setDrawerStats] = useState<any | null>(null)
+  const [drawerPkgs, setDrawerPkgs] = useState<any[] | null>(null)
+  const [drawerRev, setDrawerRev] = useState<any | null>(null)
+  const [detailLoading, setDetailLoad] = useState(false)
   const searchTimer = useRef<any>(null)
 
   // ── Packages Modal State ────────────────────────────────────────────────────
-  const [pkgModal, setPkgModal]         = useState<{ agentName: string; packages: any[] } | null>(null)
-  const [pkgLoading, setPkgLoading]     = useState(false)
+  const [pkgModal, setPkgModal] = useState<{ agentName: string; packages: any[] } | null>(null)
+  const [pkgLoading, setPkgLoading] = useState(false)
 
   // ── Message Modal State ─────────────────────────────────────────────────────
-  const [msgModal, setMsgModal]         = useState<{ type: 'reject' | 'suspend'; agent: any } | null>(null)
+  const [msgModal, setMsgModal] = useState<{ type: 'reject' | 'suspend'; agent: any } | null>(null)
 
   // ── Fetch list ─────────────────────────────────────────────────────────────
   const fetchAgents = useCallback(async (status = 'All', keyword = '') => {
@@ -528,10 +768,10 @@ export default function AgentApprovals() {
         adminAgentApi.getAgentPackages(agent.id),
         adminAgentApi.getAgentRevenue(agent.id, new Date().getFullYear()),
       ])
-      if (detRes.status === 'fulfilled')   setDrawerAgent(detRes.value?.data ?? detRes.value)
+      if (detRes.status === 'fulfilled') setDrawerAgent(detRes.value?.data ?? detRes.value)
       if (statsRes.status === 'fulfilled') setDrawerStats(statsRes.value?.data ?? statsRes.value)
-      if (pkgsRes.status === 'fulfilled')  setDrawerPkgs(pkgsRes.value?.data ?? pkgsRes.value ?? [])
-      if (revRes.status === 'fulfilled')   setDrawerRev(revRes.value?.data ?? revRes.value)
+      if (pkgsRes.status === 'fulfilled') setDrawerPkgs(pkgsRes.value?.data ?? pkgsRes.value ?? [])
+      if (revRes.status === 'fulfilled') setDrawerRev(revRes.value?.data ?? revRes.value)
     } catch {
       setDrawerAgent(agent)
     } finally {
@@ -683,8 +923,8 @@ export default function AgentApprovals() {
   }
 
   const counts = {
-    total:    agents.length,
-    pending:  agents.filter(a => getDisplayStatus(a) === 'Pending').length,
+    total: agents.length,
+    pending: agents.filter(a => getDisplayStatus(a) === 'Pending').length,
     approved: agents.filter(a => getDisplayStatus(a) === 'Approved').length,
     rejected: agents.filter(a => getDisplayStatus(a) === 'Rejected').length,
     suspended: agents.filter(a => getDisplayStatus(a) === 'Suspended').length,
@@ -754,112 +994,67 @@ export default function AgentApprovals() {
       ) : (
         <>
           {/* Header */}
-          <h1 className="text-3xl font-bold text-slate-800 mb-8">Agency Approvals</h1>
-
-          {/* Summary Cards */}
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
-            {[
-              { label: 'Total',     count: counts.total,    color: 'bg-blue-50 border-blue-100 text-blue-700' },
-              { label: 'Pending',   count: counts.pending,  color: 'bg-amber-50 border-amber-100 text-amber-700' },
-              { label: 'Approved',  count: counts.approved, color: 'bg-emerald-50 border-emerald-100 text-emerald-700' },
-              { label: 'Rejected',  count: counts.rejected, color: 'bg-red-50 border-red-100 text-red-600' },
-              { label: 'Suspended', count: counts.suspended, color: 'bg-gray-100 border-gray-200 text-gray-600' },
-            ].map(({ label, count, color }) => (
-              <div key={label} className={`rounded-xl border p-4 text-center ${color}`}>
-                <div className="text-2xl font-bold">{count}</div>
-                <div className="text-xs font-semibold mt-1">{label}</div>
-              </div>
-            ))}
+          <div className="mb-6">
+            <h1 className="text-3xl font-bold text-slate-800 tracking-tight">Agency Approvals</h1>
+            <p className="text-sm text-gray-500 mt-1">Review and manage travel agency accounts, documents, and verification requests.</p>
           </div>
 
-          <div className="bg-white rounded-xl shadow-sm p-6">
-            {/* Toolbar */}
-            <div className="flex justify-between items-center mb-6 gap-4">
-              <div className="relative flex-1">
-                <input 
-                  type="text" 
-                  placeholder="Search agencies..." 
-                  value={search} 
-                  onChange={e => handleSearch(e.target.value)} 
-                  className="w-full pl-4 pr-4 py-2 border border-gray-100 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-gray-200"
+          {/* Toolbar Search & Status Filter */}
+          <div className="flex flex-col md:flex-row items-stretch md:items-center gap-3.5 mb-8">
+            {/* Search Input */}
+            <div className="relative flex-1 max-w-lg">
+              <input
+                type="text"
+                placeholder="Search by agency name, owner, location, email..."
+                value={search}
+                onChange={(e) => handleSearch(e.target.value)}
+                className="w-full pl-4 pr-11 py-2.5 bg-white border border-gray-200 rounded-2xl text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#0ea5e9]/20 focus:border-[#0ea5e9] shadow-sm transition"
+              />
+              <Search className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+            </div>
+
+            {/* Status Dropdown */}
+            <div className="w-full md:w-48">
+              <select
+                value={statusFilter}
+                onChange={(e) => { setStatus(e.target.value); setSearch(''); }}
+                className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-2xl text-sm text-gray-700 font-medium focus:outline-none focus:ring-2 focus:ring-[#0ea5e9]/20 focus:border-[#0ea5e9] shadow-sm transition"
+              >
+                {STATUSES.map(s => <option key={s} value={s}>{s}</option>)}
+              </select>
+            </div>
+          </div>
+
+          {/* Grid of Agency Cards */}
+          {loading ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
+              {Array.from({ length: 8 }).map((_, i) => <CardSkeleton key={i} />)}
+            </div>
+          ) : agents.length === 0 ? (
+            <div className="bg-white rounded-3xl border border-gray-200/80 p-12 text-center shadow-sm">
+              <div className="w-16 h-16 rounded-full bg-sky-50 flex items-center justify-center mx-auto mb-4 text-3xl">🏢</div>
+              <h3 className="text-lg font-bold text-gray-800">No agencies found</h3>
+              <p className="text-sm text-gray-500 mt-1 max-w-sm mx-auto">
+                No agency requests match the current search or status filter.
+              </p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
+              {agents.map((agent, i) => (
+                <AgencyCard
+                  key={agent.id}
+                  agent={agent}
+                  index={i}
+                  onView={openDrawer}
+                  onApprove={handleApprove}
+                  onReject={handleReject}
+                  onSuspend={handleSuspend}
+                  onUnsuspend={handleUnsuspend}
+                  actionLoading={actionLoading}
                 />
-              </div>
-              <div className="w-36">
-                <select 
-                  value={statusFilter}
-                  onChange={(e) => { setStatus(e.target.value); setSearch(''); }}
-                  className="w-full px-4 py-2 border border-gray-100 rounded-lg text-sm text-gray-700 bg-white focus:outline-none"
-                >
-                  {STATUSES.map(s => <option key={s} value={s}>{s}</option>)}
-                </select>
-              </div>
+              ))}
             </div>
-
-            {/* Table */}
-            <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse">
-                <thead>
-                  <tr className="border-b border-gray-100">
-                    <th className="py-4 px-4 font-bold text-sm text-gray-900">Agency</th>
-                    <th className="py-4 px-4 font-bold text-sm text-gray-900">Owner</th>
-                    <th className="py-4 px-4 font-bold text-sm text-gray-900">Status</th>
-                    <th className="py-4 px-4 font-bold text-sm text-gray-900">NIC Verification</th>
-                    <th className="py-4 px-4 font-bold text-sm text-gray-900">Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {loading ? (
-                    Array.from({ length: 5 }).map((_, i) => <Skeleton key={i} />)
-                  ) : agents.length === 0 ? (
-                    <tr><td colSpan={5} className="py-8 text-center text-gray-500">No agencies found</td></tr>
-                  ) : (
-                    agents.map(agent => {
-                      const displayStatus = getDisplayStatus(agent)
-                      const nicStatus = NIC_STATUS_STYLES[agent.nicVerificationStatus || 'PENDING'] || NIC_STATUS_STYLES.PENDING
-                      return (
-                        <tr key={agent.id} className="border-b border-gray-50 hover:bg-gray-50 transition">
-                          <td className="py-4 px-4 text-sm font-bold text-gray-900">
-                            {agent.companyName || agent.agentName}
-                          </td>
-                          <td className="py-4 px-4 text-sm text-gray-700">
-                            {agent.ownerName || agent.agentName || '—'}
-                          </td>
-                          <td className="py-4 px-4 text-sm">
-                            <span className={`px-3 py-1 rounded text-xs font-medium ${STATUS_STYLES[displayStatus] || STATUS_STYLES.Pending}`}>
-                              {displayStatus}
-                            </span>
-                          </td>
-                          <td className="py-4 px-4 text-sm">
-                            <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold ${nicStatus.bg}`}>
-                              {nicStatus.icon} {nicStatus.label}
-                            </span>
-                          </td>
-                          <td className="py-4 px-4">
-                            <div className="flex gap-2 flex-wrap">
-                              <button onClick={(e) => { e.stopPropagation(); openDrawer(agent) }} className="px-4 py-1.5 bg-[#3b82f6] hover:bg-blue-600 text-white rounded text-sm font-medium transition">View</button>
-                              {agent.applicationStatus === 'Pending' && (
-                                <>
-                                  <button onClick={(e) => { e.stopPropagation(); handleApprove(agent) }} disabled={actionLoading} className="px-4 py-1.5 bg-[#22c55e] hover:bg-green-600 text-white rounded text-sm font-medium transition disabled:opacity-60">Approve</button>
-                                  <button onClick={(e) => { e.stopPropagation(); handleReject(agent) }} disabled={actionLoading} className="px-4 py-1.5 bg-[#ef4444] hover:bg-red-600 text-white rounded text-sm font-medium transition disabled:opacity-60">Reject</button>
-                                </>
-                              )}
-                              {agent.applicationStatus === 'Approved' && (
-                                displayStatus === 'Suspended' ? (
-                                  <button onClick={(e) => { e.stopPropagation(); handleUnsuspend(agent) }} disabled={actionLoading} className="px-4 py-1.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded text-sm font-medium transition disabled:opacity-60">Unsuspend</button>
-                                ) : (
-                                  <button onClick={(e) => { e.stopPropagation(); handleSuspend(agent) }} disabled={actionLoading} className="px-4 py-1.5 bg-[#ef4444] hover:bg-red-600 text-white rounded text-sm font-medium transition disabled:opacity-60">Suspend</button>
-                                )
-                              )}
-                            </div>
-                          </td>
-                        </tr>
-                      )
-                    })
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </div>
+          )}
         </>
       )}
 
@@ -872,3 +1067,4 @@ export default function AgentApprovals() {
     </div>
   )
 }
+

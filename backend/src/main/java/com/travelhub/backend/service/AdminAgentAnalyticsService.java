@@ -152,10 +152,17 @@ public class AdminAgentAnalyticsService {
                 a.getOwner() != null ? a.getOwner().getEmail() : null,
                 a.getOwner() != null ? a.getOwner().getTelephone() : null,
                 a.getLocation(),
+                a.getOwner() != null ? a.getOwner().getProfileImage() : null,
+                a.getBio(),
+                a.getRating() != null ? a.getRating() : 0.0,
+                a.getTotalTrips() != null ? a.getTotalTrips() : 0,
+                0,
+                a.getExperienceYears() != null ? a.getExperienceYears() : 0,
+                a.getOwner() != null ? a.getOwner().getNicNumber() : null,
                 a.getOwner() != null && Boolean.TRUE.equals(a.getOwner().getAgentApproved()) ? "Approved" : "Pending",
                 a.getOwner() != null ? a.getOwner().getNicVerificationStatus() : "PENDING",
                 a.getSubmittedDate() != null ? a.getSubmittedDate().toString() : null,
-                a.getIsActive()
+                a.getIsActive() != null ? a.getIsActive() : true
         );
     }
 }

@@ -74,7 +74,7 @@ export default function Sidebar({ collapsed, setCollapsed }: SidebarProps) {
         {!collapsed && (
           <div className="animate-fade-in">
             <h1 className="font-bold text-lg text-sidebar-foreground">TravelHub</h1>
-            <p className="text-xs text-sidebar-foreground/60">Dashboard</p>
+            <p className="text-xs text-sidebar-foreground/60">Admin Dashboard</p>
           </div>
         )}
       </div>
