@@ -14,6 +14,7 @@ import {
     Building2,
     Users,
     CreditCard,
+    AlertTriangle,
 } from "lucide-react";
 import { cn } from "@/features/tourist/services/utils";
 
@@ -21,6 +22,7 @@ const navItems = [
     { icon: Compass, label: "Explore", path: "/tourist" },
     { icon: LayoutDashboard, label: "Overview", path: "/tourist/overview" },
     { icon: Map, label: "My Trips", path: "/tourist/trips" },
+    { icon: AlertTriangle, label: "My Reports", path: "/tourist/reports" },
     { icon: Building2, label: "Hotels", path: "/tourist/hotels" },
     { icon: Users, label: "Agency", path: "/tourist/agents" },
     { icon: CreditCard, label: "Billing", path: "/tourist/billing" },
