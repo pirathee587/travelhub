@@ -1,9 +1,19 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react'
 import adminHotelApi from '../services/adminHotelApi'
 import { useModal } from '../components/ModalContext'
+import { Star, MapPin, Clock, Eye, Search, Building2, Bed } from 'lucide-react'
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 const STATUSES = ['All', 'Pending', 'Approved', 'Rejected']
+
+const SRI_LANKA_DISTRICTS = [
+  'All Districts',
+  'Ampara', 'Anuradhapura', 'Badulla', 'Batticaloa', 'Colombo',
+  'Galle', 'Gampaha', 'Hambantota', 'Jaffna', 'Kalutara',
+  'Kandy', 'Kegalle', 'Kilinochchi', 'Kurunegala', 'Mannar',
+  'Matale', 'Matara', 'Monaragala', 'Mullaitivu', 'Nuwara Eliya',
+  'Polonnaruwa', 'Puttalam', 'Ratnapura', 'Trincomalee', 'Vavuniya'
+]
 
 const STATUS_STYLES = {
   Pending:   'bg-orange-100 text-orange-700 border-orange-200',
@@ -226,120 +236,122 @@ const HotelDetailView = ({ hotel, onBack, onApprove, onReject, onToggle, onDelet
 }
 
 // ── Hotel Card ────────────────────────────────────────────────────────────────
-const HotelCard = ({ hotel, onView, onApprove, onReject, onToggle, onDelete, actionLoading }) => {
-  const { hotelName, imageUrl, district, location, rating, reviewCount,
-    priceFrom, priceTo, applicationStatus, numberOfRooms } = hotel
+const HotelCard = ({ hotel, onView }) => {
+  const { hotelName, imageUrl, district, location, destination, rating, reviewCount,
+    priceFrom, numberOfRooms, applicationStatus, isActive } = hotel
+
+  const isApproved = ['active', 'approved'].includes(String(applicationStatus || '').trim().toLowerCase()) && isActive !== false
+  const isPending = String(applicationStatus || '').trim().toLowerCase() === 'pending'
+  const isSuspended = isActive === false || String(applicationStatus || '').trim().toLowerCase() === 'suspended'
+
+  const hasReview = rating != null && Number(rating) > 0
 
   return (
-    <div className="bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-shadow border border-gray-100 flex flex-col">
-      {/* Image */}
-      <div className="relative">
-        {imageUrl ? (
-          <img src={imageUrl} alt={hotelName} className="w-full h-48 object-cover" />
-        ) : (
-          <div className="w-full h-48 bg-gray-100 flex items-center justify-center text-5xl">🏨</div>
-        )}
+    <div className="bg-white rounded-2xl md:rounded-3xl border border-gray-200/90 shadow-sm overflow-hidden flex flex-col justify-between hover:shadow-md transition-all duration-200 group">
+      <div>
+        {/* Cover Image */}
+        <div className="aspect-[16/10] w-full relative overflow-hidden bg-gray-100">
+          {imageUrl ? (
+            <img 
+              src={imageUrl} 
+              alt={hotelName} 
+              className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105" 
+            />
+          ) : (
+            <div className="w-full h-full bg-gradient-to-br from-teal-400 to-teal-600 flex items-center justify-center text-5xl">
+              🏨
+            </div>
+          )}
+
+          {/* Top-left Translucent Glass Status Pill */}
+          <div className="absolute top-3.5 left-3.5">
+            <span className={`backdrop-blur-md px-3.5 py-1 rounded-full text-xs font-semibold tracking-wide border shadow-sm ${
+              isApproved 
+                ? 'bg-[#0b2838]/85 text-[#38bdf8] border-[#38bdf8]/25' 
+                : isPending 
+                ? 'bg-[#2d1b06]/85 text-[#fbbf24] border-[#fbbf24]/25' 
+                : isSuspended 
+                ? 'bg-[#2b1111]/85 text-[#f87171] border-[#f87171]/25' 
+                : 'bg-[#2b1111]/85 text-[#f87171] border-[#f87171]/25'
+            }`}>
+              {isApproved ? 'Active' : (isPending ? 'Pending' : (isSuspended ? 'Suspended' : 'Rejected'))}
+            </span>
+          </div>
+        </div>
+
+        {/* Card Body Content */}
+        <div className="p-5">
+          {/* Row 1: Title and Rating */}
+          <div className="flex items-start justify-between gap-3">
+            <h4 
+              onClick={(e) => { e.stopPropagation(); onView(hotel); }}
+              className="font-bold text-gray-900 text-base sm:text-lg tracking-tight truncate flex-1 cursor-pointer hover:text-[#0ea5e9] transition"
+            >
+              {hotelName}
+            </h4>
+
+            <div className="flex items-center gap-1 shrink-0">
+              {hasReview ? (
+                <span className="flex items-center gap-1 text-xs font-semibold text-gray-700">
+                  <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400" />
+                  {Number(rating).toFixed(1)} {reviewCount ? `(${reviewCount})` : ''}
+                </span>
+              ) : (
+                <span className="flex items-center gap-1 text-xs text-gray-400 font-medium">
+                  <Star className="h-3.5 w-3.5 text-gray-300" />
+                  No reviews yet
+                </span>
+              )}
+            </div>
+          </div>
+
+          {/* Row 2: Location */}
+          <div className="flex items-center gap-1 text-xs text-gray-500 mt-2 font-medium">
+            <MapPin className="h-3.5 w-3.5 text-gray-400 shrink-0" />
+            <span className="truncate">{location || district || destination || 'Sri Lanka'}</span>
+          </div>
+
+          {/* Row 3: Tags */}
+          <div className="flex flex-wrap gap-1.5 mt-3">
+            <span className="px-3 py-0.5 rounded-full bg-gray-100/90 text-gray-600 text-xs font-medium">
+              HOTEL
+            </span>
+            {(district || location) && (
+              <span className="px-3 py-0.5 rounded-full bg-gray-100/90 text-gray-600 text-xs font-medium">
+                {district || location}
+              </span>
+            )}
+          </div>
+
+          {/* Divider */}
+          <div className="border-t border-gray-100 my-4" />
+
+          {/* Row 4: Rooms Info & Starts From Price */}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-1.5 text-xs text-gray-600 font-medium">
+              <Clock className="h-3.5 w-3.5 text-gray-400" />
+              <span>{numberOfRooms ? `${numberOfRooms} Rooms` : 'Standard Rooms'}</span>
+            </div>
+
+            <div className="text-right">
+              <span className="block text-[11px] text-gray-400 font-medium leading-none mb-0.5">Starts from</span>
+              <span className="block text-base sm:text-lg font-bold text-gray-900 tracking-tight">
+                ${Number(priceFrom || 180).toFixed(2)}
+              </span>
+            </div>
+          </div>
+        </div>
       </div>
 
-      {/* Info */}
-      <div className="p-5 flex-1 flex flex-col">
-        <h3 className="font-bold text-gray-900 text-lg mb-1">{hotelName}</h3>
-        <p className="text-gray-500 text-sm mb-3">
-          {district || location || '—'} • {numberOfRooms ?? 0} rooms
-        </p>
-
-        {String(applicationStatus).trim().toLowerCase() === 'approved' && (
-          <div className="flex items-center gap-1 text-sm text-gray-500 mb-4">
-            <span>Rating:</span>
-            <span className="text-yellow-400 ml-1">⭐</span>
-            <span>{fmtRating(rating)}</span>
-          </div>
-        )}
-
-        <div className="mb-4">
-          {hotel.isActive === false && String(hotel.applicationStatus).trim().toLowerCase() === 'approved' ? (
-            <span className="px-3 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-600">
-              Suspended
-            </span>
-          ) : (
-            <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-              String(applicationStatus).trim().toLowerCase() === 'approved' ? 'bg-[#e6f4ea] text-[#1e8e3e]' :
-              String(applicationStatus).trim().toLowerCase() === 'pending' ? 'bg-[#fef0db] text-[#e37400]' :
-              'bg-red-100 text-red-600'
-            }`}>
-              {String(applicationStatus || 'Pending').trim()}
-            </span>
-          )}
-        </div>
-
-        <div className="mt-auto pt-4 flex gap-3 border-t border-gray-50">
-          {String(applicationStatus).trim().toLowerCase() === 'pending' ? (
-            <>
-              <button
-                onClick={(e) => { e.stopPropagation(); onView(hotel); }}
-                className="flex-1 py-2 text-sm font-medium border border-gray-200 rounded text-gray-700 hover:bg-gray-50 transition flex items-center justify-center gap-2"
-              >
-                👁 View
-              </button>
-              <button
-                onClick={(e) => { e.stopPropagation(); onApprove(hotel); }}
-                disabled={actionLoading}
-                className="w-10 h-10 flex items-center justify-center text-[#22c55e] border border-[#bbf7d0] bg-[#f0fdf4] rounded hover:bg-[#dcfce7] transition disabled:opacity-60"
-              >
-                ✓
-              </button>
-              <button
-                onClick={(e) => { e.stopPropagation(); onReject(hotel); }}
-                disabled={actionLoading}
-                className="w-10 h-10 flex items-center justify-center text-[#ef4444] border border-[#fecaca] bg-[#fef2f2] rounded hover:bg-[#fee2e2] transition disabled:opacity-60"
-              >
-                ✕
-              </button>
-            </>
-          ) : String(applicationStatus).trim().toLowerCase() === 'approved' ? (
-            <>
-              <button
-                onClick={(e) => { e.stopPropagation(); onView(hotel); }}
-                className="flex-1 py-2 text-sm font-medium bg-[#3b82f6] text-white rounded hover:bg-blue-600 transition flex items-center justify-center gap-2"
-              >
-                👁 View
-              </button>
-              {hotel.isActive === false ? (
-                <button
-                  onClick={(e) => { e.stopPropagation(); onToggle(hotel); }}
-                  disabled={actionLoading}
-                  className="flex-1 py-2 text-sm font-medium bg-emerald-500 text-white rounded hover:bg-emerald-600 transition flex items-center justify-center gap-2 disabled:opacity-60"
-                >
-                  ▶ Activate
-                </button>
-              ) : (
-                <button
-                  onClick={(e) => { e.stopPropagation(); onToggle(hotel); }}
-                  disabled={actionLoading}
-                  className="flex-1 py-2 text-sm font-medium bg-[#ef4444] text-white rounded hover:bg-red-600 transition flex items-center justify-center gap-2 disabled:opacity-60"
-                >
-                  ⭕ Suspend
-                </button>
-              )}
-            </>
-          ) : (
-             <>
-              <button
-                onClick={(e) => { e.stopPropagation(); onView(hotel); }}
-                className="flex-1 py-2 text-sm font-medium border border-gray-200 rounded text-gray-700 hover:bg-gray-50 transition flex items-center justify-center gap-2"
-              >
-                👁 View
-              </button>
-              <button
-                onClick={(e) => { e.stopPropagation(); onDelete(hotel); }}
-                disabled={actionLoading}
-                className="flex-1 py-2 text-sm font-medium bg-gray-50 text-gray-500 border border-gray-200 rounded hover:bg-red-50 hover:text-red-600 transition flex items-center justify-center gap-2 disabled:opacity-60"
-              >
-                🗑 Delete
-              </button>
-             </>
-          )}
-        </div>
+      {/* Card Actions - Sky Blue View Details Button */}
+      <div className="p-5 pt-0">
+        <button
+          onClick={(e) => { e.stopPropagation(); onView(hotel); }}
+          className="w-full py-2.5 px-4 bg-[#0ea5e9] hover:bg-[#0284c7] active:scale-[0.99] text-white rounded-xl text-xs sm:text-sm font-semibold shadow-sm transition duration-200 flex items-center justify-center gap-1.5"
+        >
+          <Eye className="h-4 w-4" />
+          View Details
+        </button>
       </div>
     </div>
   )
@@ -354,6 +366,7 @@ export default function HotelApprovals() {
   const [actionLoading, setActionLoading] = useState(false)
   const [error, setError]               = useState(null)
   const [statusFilter, setStatusFilter] = useState('All')
+  const [districtFilter, setDistrictFilter] = useState('All')
   const [search, setSearch]             = useState('')
   const [selectedHotel, setSelectedHotel] = useState(null)
   const [drawerDetail, setDrawerDetail] = useState(null)
@@ -499,16 +512,24 @@ export default function HotelApprovals() {
     }
   }
 
-  // ── Client-side search filter ────────────────────────────────────────────
+  // ── Extract Available Districts dynamically ──────────────────────────────
+  const availableDistricts = React.useMemo(() => {
+    const distSet = new Set<string>()
+    hotels.forEach((h: any) => {
+      if (h.district?.trim()) distSet.add(h.district.trim())
+    })
+    const customDistricts = Array.from(distSet)
+    const all = Array.from(new Set([...SRI_LANKA_DISTRICTS.slice(1), ...customDistricts])).sort()
+    return ['All Districts', ...all]
+  }, [hotels])
+
+  // ── Client-side search and district filter ────────────────────────────────
   const displayed = hotels.filter(h => {
-    if (!search.trim()) return true
-    const q = search.toLowerCase()
-    return (
-      h.hotelName?.toLowerCase().includes(q) ||
-      h.district?.toLowerCase().includes(q) ||
-      h.location?.toLowerCase().includes(q) ||
-      h.destination?.toLowerCase().includes(q)
-    )
+    const q = search.trim().toLowerCase()
+    const matchesSearch = !q || [h.hotelName, h.district, h.location, h.destination].some(val => val?.toLowerCase().includes(q))
+    const matchesDistrict = districtFilter === 'All' || districtFilter === 'All Districts' || 
+      h.district?.trim().toLowerCase() === districtFilter.trim().toLowerCase()
+    return matchesSearch && matchesDistrict
   })
 
   // ── Counts ───────────────────────────────────────────────────────────────
@@ -546,22 +567,44 @@ export default function HotelApprovals() {
           <h1 className="text-3xl font-bold text-slate-800 mb-8">Hotel Approvals</h1>
 
           {/* ── Toolbar ─────────────────────────────────────────────────────── */}
-          <div className="bg-white rounded-xl shadow-sm p-6 mb-8">
-            <div className="flex justify-between items-center gap-4">
-              <div className="relative flex-1 max-w-full">
-                <input
-                  type="text"
-                  placeholder="Search by name..."
-                  value={search}
-                  onChange={e => setSearch(e.target.value)}
-                  className="w-full pl-4 pr-4 py-2 border border-gray-100 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-gray-200"
-                />
+          <div className="flex flex-col md:flex-row items-stretch md:items-center gap-3.5 mb-8">
+            {/* Search Input */}
+            <div className="relative flex-1 max-w-lg">
+              <input
+                type="text"
+                placeholder="Search hotels by name, location or district..."
+                value={search}
+                onChange={e => setSearch(e.target.value)}
+                className="w-full pl-4 pr-11 py-2.5 bg-white border border-gray-200 rounded-2xl text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#0ea5e9]/20 focus:border-[#0ea5e9] shadow-sm transition"
+              />
+              <Search className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+            </div>
+
+            {/* District Filter */}
+            <div className="relative">
+              <div className="flex items-center gap-2 bg-white border border-gray-200 rounded-2xl px-4 py-2.5 shadow-sm text-sm text-gray-700 font-medium">
+                <MapPin className="w-4 h-4 text-gray-400" />
+                <select
+                  value={districtFilter}
+                  onChange={(e) => setDistrictFilter(e.target.value)}
+                  className="bg-transparent text-sm text-gray-700 font-medium focus:outline-none cursor-pointer pr-2 max-w-[150px] truncate"
+                >
+                  {availableDistricts.map((d: string) => (
+                    <option key={d} value={d}>
+                      {d === 'All Districts' ? 'All Districts' : d}
+                    </option>
+                  ))}
+                </select>
               </div>
-              <div className="w-32">
+            </div>
+
+            {/* Status Filter */}
+            <div className="relative">
+              <div className="flex items-center gap-2 bg-white border border-gray-200 rounded-2xl px-4 py-2.5 shadow-sm text-sm text-gray-700 font-medium">
                 <select
                   value={statusFilter}
                   onChange={(e) => setStatusFilter(e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-100 rounded-lg text-sm text-gray-700 bg-white focus:outline-none"
+                  className="bg-transparent text-sm text-gray-700 font-medium focus:outline-none cursor-pointer pr-2"
                 >
                   {STATUSES.map(s => <option key={s} value={s}>{s}</option>)}
                 </select>
@@ -571,17 +614,17 @@ export default function HotelApprovals() {
 
           {/* ── Error ───────────────────────────────────────────────────────── */}
           {error && (
-            <div className="bg-red-50 border border-red-200 rounded-xl p-4 flex items-center justify-between mb-8">
+            <div className="bg-red-50 border border-red-200 rounded-2xl p-4 flex items-center justify-between mb-8 shadow-sm">
               <div className="flex items-center gap-3">
                 <span className="text-2xl">⚠️</span>
                 <div>
-                  <div className="font-semibold text-red-700">Failed to load hotels</div>
-                  <div className="text-sm text-red-600">{error}</div>
+                  <div className="font-bold text-red-800 text-sm">Failed to load hotels</div>
+                  <div className="text-xs text-red-600">{error}</div>
                 </div>
               </div>
               <button
                 onClick={() => fetchHotels(statusFilter)}
-                className="px-4 py-2 bg-red-600 text-white text-sm font-semibold rounded-lg hover:bg-red-700 transition"
+                className="px-4 py-2 bg-red-600 text-white text-xs font-semibold rounded-xl hover:bg-red-700 transition"
               >Retry</button>
             </div>
           )}
@@ -592,10 +635,10 @@ export default function HotelApprovals() {
               {Array.from({ length: 6 }).map((_, i) => <CardSkeleton key={i} />)}
             </div>
           ) : displayed.length === 0 ? (
-            <div className="bg-white rounded-xl p-16 text-center shadow-sm border border-gray-100">
-              <div className="text-5xl mb-4">🏨</div>
-              <div className="text-gray-600 font-semibold text-lg">No hotels found</div>
-              <div className="text-gray-400 text-sm mt-1">Try a different filter or search term</div>
+            <div className="text-center py-16 bg-white rounded-3xl border border-gray-100 shadow-sm mt-6">
+              <div className="text-5xl mb-3">🏨</div>
+              <h3 className="text-gray-700 font-bold text-base">No hotels found</h3>
+              <p className="text-gray-400 text-sm mt-1">Try a different filter or search term</p>
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -604,11 +647,6 @@ export default function HotelApprovals() {
                   key={hotel.id}
                   hotel={hotel}
                   onView={openDrawer}
-                  onApprove={handleApprove}
-                  onReject={handleReject}
-                  onToggle={handleToggle}
-                  onDelete={handleDelete}
-                  actionLoading={actionLoading}
                 />
               ))}
             </div>

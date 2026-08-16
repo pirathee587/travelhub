@@ -1,32 +1,53 @@
-import placeholderImg from '@/assets/images/placeholder.png';
+import placeholderImg from '@/assets/images/placeholder.png'
+import kandyImg from '@/assets/images/kandy_temple.jpg'
+import galleImg from '@/assets/images/galle_fort.jpg'
 import React, { useState, useEffect, useCallback } from 'react'
 import adminPackageApi from '../services/adminPackageApi'
 import { useModal } from '../components/ModalContext'
+import { 
+  Search, 
+  MapPin, 
+  Clock, 
+  Star, 
+  Eye, 
+  Check, 
+  X, 
+  Trash2, 
+  Power, 
+  ArrowLeft,
+  AlertCircle,
+  Package as PackageIcon,
+  Tag
+} from 'lucide-react'
 
 const STATUSES = ['All', 'Pending', 'Approved', 'Rejected']
 
-const STATUS_STYLES = {
-  Pending:   'bg-orange-100 text-orange-700 border-orange-200',
-  Approved:  'bg-emerald-100 text-emerald-700 border-emerald-200',
-  Rejected:  'bg-red-100 text-red-700 border-red-200',
-  Suspended: 'bg-gray-100 text-gray-600 border-gray-200',
-}
+const SRI_LANKA_DISTRICTS = [
+  'All Districts',
+  'Ampara', 'Anuradhapura', 'Badulla', 'Batticaloa', 'Colombo',
+  'Galle', 'Gampaha', 'Hambantota', 'Jaffna', 'Kalutara',
+  'Kandy', 'Kegalle', 'Kilinochchi', 'Kurunegala', 'Mannar',
+  'Matale', 'Matara', 'Monaragala', 'Mullaitivu', 'Nuwara Eliya',
+  'Polonnaruwa', 'Puttalam', 'Ratnapura', 'Trincomalee', 'Vavuniya'
+]
 
-const fmtPrice = (v) => v != null ? `$${Number(v).toLocaleString()}` : '—'
+const fmtPrice = (v) => v != null ? `$${Number(v).toFixed(2)}` : '—'
 
 // ── Skeleton ──────────────────────────────────────────────────────────────────
 const Skeleton = () => (
-  <div className="bg-white rounded-xl overflow-hidden shadow-sm border border-gray-100 animate-pulse flex flex-col">
-    <div className="h-48 bg-gray-100" />
-    <div className="p-5 space-y-3 flex-1 flex flex-col">
-      <div className="h-5 bg-gray-100 rounded w-3/4" />
-      <div className="h-4 bg-gray-100 rounded w-1/2" />
-      <div className="h-4 bg-gray-100 rounded w-1/3" />
-      <div className="mt-auto pt-4 flex gap-3 border-t border-gray-50">
-        <div className="h-10 bg-gray-100 rounded flex-1" />
-        <div className="h-10 w-10 bg-gray-100 rounded" />
-        <div className="h-10 w-10 bg-gray-100 rounded" />
-      </div>
+  <div className="bg-white rounded-3xl overflow-hidden shadow-sm border border-gray-100 animate-pulse flex flex-col p-5 space-y-4">
+    <div className="aspect-[16/10] bg-gray-100 rounded-2xl" />
+    <div className="space-y-2">
+      <div className="h-5 bg-gray-100 rounded-lg w-3/4" />
+      <div className="h-4 bg-gray-100 rounded-lg w-1/2" />
+    </div>
+    <div className="pt-2 flex justify-between items-center">
+      <div className="h-4 bg-gray-100 rounded-lg w-20" />
+      <div className="h-4 bg-gray-100 rounded-lg w-16" />
+    </div>
+    <div className="pt-3 flex gap-2 border-t border-gray-50">
+      <div className="h-9 bg-gray-100 rounded-xl flex-1" />
+      <div className="h-9 w-20 bg-gray-100 rounded-xl" />
     </div>
   </div>
 )
@@ -38,160 +59,178 @@ const PackageDetailView = ({ pkg, onBack, onApprove, onReject, onToggle, onDelet
     category, rating, trending, isActive, applicationStatus,
     providerName, description, inclusions, itinerary, imageUrl, images } = pkg
 
-  const cover = (images && images[0]) || imageUrl
+  const cover = (images && images[0]) || imageUrl || placeholderImg
 
   return (
-    <div className="animate-fade-in">
-      <button onClick={onBack} className="px-4 py-2 bg-white rounded-lg shadow-sm text-sm font-semibold text-gray-700 hover:bg-gray-50 transition mb-6 border border-gray-100 flex items-center gap-2">
-        &lt; Back to Packages
-      </button>
+    <div className="p-6 sm:p-8 bg-[#F8FAFC] min-h-screen animate-fade-in font-sans">
+      <div className="max-w-6xl mx-auto space-y-6">
+        <button 
+          onClick={onBack} 
+          className="inline-flex items-center gap-2 text-sm font-semibold text-gray-700 hover:text-[#0ea5e9] bg-white px-4 py-2 rounded-xl border border-gray-200 shadow-sm transition"
+        >
+          <ArrowLeft className="w-4 h-4" /> Back to Packages
+        </button>
 
-      <div className="bg-white rounded-xl shadow-sm overflow-hidden border border-gray-100">
-        {/* Header Section */}
-        <div className="relative">
-          {cover ? (
-            <img src={cover} alt={packageName} className="w-full h-64 object-cover" />
-          ) : (
-            <div className="w-full h-64 bg-gradient-to-r from-teal-500 to-emerald-400 flex items-center justify-center text-6xl">
-              📦
-            </div>
-          )}
-          <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
-          <div className="absolute bottom-6 left-8 text-white">
-            <h2 className="text-3xl font-bold mb-2">{packageName}</h2>
-            <div className="flex items-center gap-3 text-sm opacity-90">
-              <span>{providerName || 'Unknown Provider'}</span>
-              <span>•</span>
-              <span>{[destination, district].filter(Boolean).join(', ')}</span>
-              {trending && <span className="bg-orange-500 text-white px-2 py-0.5 rounded-full text-xs font-bold">🔥 Trending</span>}
-            </div>
-          </div>
-        </div>
-
-        {/* Details Section */}
-        <div className="p-8 flex flex-col md:flex-row gap-8">
-          
-          {/* Left Panel - Package Info */}
-          <div className="flex-1 space-y-6">
-            <div className="bg-[#f0fdf4] rounded-xl p-8 border border-emerald-50">
-              <h3 className="text-lg font-bold text-gray-900 mb-6">Package Details</h3>
-              
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-y-6 gap-x-4 mb-8">
-                <div>
-                  <div className="text-xs text-gray-500 font-medium mb-1">Price</div>
-                  <div className="text-lg font-bold text-teal-700">
-                    {basePriceAdult != null ? (
-                      <>
-                        {fmtPrice(basePriceAdult)} <span className="text-sm font-medium text-gray-500">/ adult</span>
-                        {basePriceChild != null && <div className="text-sm text-gray-500">{fmtPrice(basePriceChild)} <span className="text-xs">/ child</span></div>}
-                      </>
-                    ) : (
-                      <>{fmtPrice(priceFrom)}{priceTo ? ` - ${fmtPrice(priceTo)}` : ''}</>
-                    )}
-                  </div>
+        <div className="bg-white rounded-3xl shadow-sm overflow-hidden border border-gray-200/80">
+          {/* Header Section */}
+          <div className="relative h-72 sm:h-80 w-full overflow-hidden bg-slate-900">
+            <img 
+              src={cover} 
+              alt={packageName} 
+              onError={(e: any) => { e.target.src = placeholderImg }}
+              className="w-full h-full object-cover opacity-85" 
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-[#0B3444]/90 via-[#0B3444]/40 to-transparent" />
+            
+            <div className="absolute bottom-6 left-6 right-6 text-white flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+              <div>
+                <div className="flex items-center gap-2 mb-2 flex-wrap">
+                  <span className="bg-white/20 backdrop-blur-md text-white border border-white/30 px-3 py-0.5 rounded-full text-xs font-semibold">
+                    {category || 'Travel Package'}
+                  </span>
+                  {trending && (
+                    <span className="bg-amber-500 text-white px-2.5 py-0.5 rounded-full text-xs font-bold shadow-sm">
+                      🔥 Trending
+                    </span>
+                  )}
+                  <span className={`px-3 py-0.5 rounded-full text-xs font-semibold backdrop-blur-md border ${
+                    String(applicationStatus).toLowerCase() === 'approved' ? 'bg-emerald-500/80 text-white border-emerald-400' :
+                    String(applicationStatus).toLowerCase() === 'pending' ? 'bg-amber-500/80 text-white border-amber-400' :
+                    'bg-red-500/80 text-white border-red-400'
+                  }`}>
+                    {String(applicationStatus || 'Pending')}
+                  </span>
                 </div>
-                <div>
-                  <div className="text-xs text-gray-500 font-medium mb-1">Duration</div>
-                  <div className="text-lg font-bold text-gray-900">{duration || '—'}</div>
-                </div>
-                <div>
-                  <div className="text-xs text-gray-500 font-medium mb-1">Category</div>
-                  <div className="text-lg font-bold text-gray-900">{category || '—'}</div>
-                </div>
-                <div>
-                  <div className="text-xs text-gray-500 font-medium mb-1">Rating</div>
-                  <div className="text-lg font-bold text-gray-900">⭐ {rating != null ? Number(rating).toFixed(1) : '—'}</div>
-                </div>
+                <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-white">{packageName}</h1>
+                <p className="text-gray-200 text-sm mt-1 flex items-center gap-2">
+                  <span>{providerName || 'TravelHub Partner'}</span>
+                  <span>•</span>
+                  <span>{[destination, district].filter(Boolean).join(', ') || 'Sri Lanka'}</span>
+                </p>
               </div>
 
-              {description && (
-                <div className="mb-6">
-                  <div className="text-xs text-gray-500 font-medium mb-2">Description</div>
-                  <p className="text-sm text-gray-700 leading-relaxed">{description}</p>
-                </div>
-              )}
+              <div className="bg-white/10 backdrop-blur-md rounded-2xl p-4 border border-white/20 text-right sm:text-right shrink-0">
+                <span className="text-xs text-gray-300 block">Starts from</span>
+                <span className="text-2xl font-bold text-white tracking-tight">
+                  {fmtPrice(basePriceAdult ?? priceFrom)}
+                </span>
+                <span className="text-[11px] text-gray-300 block">per adult</span>
+              </div>
+            </div>
+          </div>
 
-              {inclusions && inclusions.length > 0 && (
-                <div>
-                  <div className="text-xs text-gray-500 font-medium mb-2">Inclusions</div>
-                  <div className="flex flex-wrap gap-2">
-                    {inclusions.map((inc, i) => (
-                      <span key={i} className="px-3 py-1 bg-white border border-emerald-100 text-emerald-700 rounded-full text-xs font-semibold">
-                        {inc}
-                      </span>
+          {/* Details Section */}
+          <div className="p-6 sm:p-8 grid grid-cols-1 lg:grid-cols-3 gap-8">
+            
+            {/* Left Panel - Package Info */}
+            <div className="lg:col-span-2 space-y-6">
+              <div className="bg-gray-50 rounded-2xl p-6 border border-gray-100">
+                <h3 className="text-base font-bold text-gray-900 mb-4">Package Specifications</h3>
+                
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 text-sm">
+                  <div className="bg-white p-3.5 rounded-xl border border-gray-100 shadow-sm">
+                    <div className="text-xs text-gray-400 font-medium mb-0.5">Duration</div>
+                    <div className="text-sm font-bold text-gray-900">{duration || '2 Days / 1 Night'}</div>
+                  </div>
+                  <div className="bg-white p-3.5 rounded-xl border border-gray-100 shadow-sm">
+                    <div className="text-xs text-gray-400 font-medium mb-0.5">Category</div>
+                    <div className="text-sm font-bold text-gray-900">{category || 'Culture'}</div>
+                  </div>
+                  <div className="bg-white p-3.5 rounded-xl border border-gray-100 shadow-sm">
+                    <div className="text-xs text-gray-400 font-medium mb-0.5">Rating</div>
+                    <div className="text-sm font-bold text-amber-500 flex items-center gap-1">
+                      <Star className="w-3.5 h-3.5 fill-amber-400" />
+                      {rating != null && rating > 0 ? Number(rating).toFixed(1) : 'No reviews'}
+                    </div>
+                  </div>
+                </div>
+
+                {description && (
+                  <div className="mt-5 pt-5 border-t border-gray-200/60">
+                    <div className="text-xs text-gray-400 font-bold uppercase tracking-wider mb-2">Description</div>
+                    <p className="text-sm text-gray-700 leading-relaxed">{description}</p>
+                  </div>
+                )}
+
+                {inclusions && inclusions.length > 0 && (
+                  <div className="mt-5 pt-5 border-t border-gray-200/60">
+                    <div className="text-xs text-gray-400 font-bold uppercase tracking-wider mb-2.5">Inclusions</div>
+                    <div className="flex flex-wrap gap-2">
+                      {inclusions.map((inc, i) => (
+                        <span key={i} className="px-3 py-1 bg-white border border-gray-200 text-gray-700 rounded-full text-xs font-semibold shadow-sm">
+                          ✓ {inc}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Itinerary */}
+              {itinerary && itinerary.length > 0 && (
+                <div className="bg-white rounded-2xl p-6 border border-gray-200/80 shadow-sm">
+                  <h3 className="text-base font-bold text-gray-900 mb-4">Trip Itinerary</h3>
+                  <div className="space-y-3">
+                    {itinerary.map((day, i) => (
+                      <div key={i} className="bg-gray-50 rounded-xl p-4 border border-gray-100">
+                        <div className="font-bold text-gray-900 text-sm">Day {day.dayNumber || (i + 1)}: {day.title}</div>
+                        {day.description && <p className="text-sm text-gray-600 mt-1.5 leading-relaxed">{day.description}</p>}
+                      </div>
                     ))}
                   </div>
                 </div>
               )}
             </div>
 
-            {/* Itinerary */}
-            {itinerary && itinerary.length > 0 && (
-              <div className="bg-gray-50 rounded-xl p-8 border border-gray-100">
-                <h3 className="text-lg font-bold text-gray-900 mb-4">Itinerary</h3>
-                <div className="space-y-4">
-                  {itinerary.map((day, i) => (
-                    <div key={i} className="bg-white rounded-lg p-4 shadow-sm border border-gray-100">
-                      <div className="font-bold text-gray-900 text-sm">Day {day.dayNumber}: {day.title}</div>
-                      {day.description && <p className="text-sm text-gray-500 mt-2">{day.description}</p>}
-                    </div>
-                  ))}
+            {/* Right Panel - Actions */}
+            <div className="space-y-6">
+              <div className="bg-white rounded-2xl p-6 border border-gray-200/80 shadow-sm space-y-4">
+                <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wider border-b pb-3">Admin Decision</h3>
+                
+                <div className="space-y-3">
+                  {String(applicationStatus).toLowerCase() !== 'approved' && (
+                    <button 
+                      onClick={() => onApprove(pkg)} 
+                      disabled={loading} 
+                      className="w-full py-2.5 rounded-xl font-semibold text-xs sm:text-sm bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm transition disabled:opacity-60 flex items-center justify-center gap-1.5"
+                    >
+                      <Check className="w-4 h-4" /> Approve Package
+                    </button>
+                  )}
+                  
+                  {String(applicationStatus).toLowerCase() !== 'rejected' && (
+                    <button 
+                      onClick={() => onReject(pkg)} 
+                      disabled={loading} 
+                      className="w-full py-2.5 rounded-xl font-semibold text-xs sm:text-sm bg-white hover:bg-rose-50 text-rose-600 border border-rose-200 shadow-sm transition disabled:opacity-60 flex items-center justify-center gap-1.5"
+                    >
+                      <X className="w-4 h-4" /> Reject Package
+                    </button>
+                  )}
+                  
+                  {String(applicationStatus).toLowerCase() === 'approved' && (
+                    <button 
+                      onClick={() => onToggle(pkg)} 
+                      disabled={loading} 
+                      className={`w-full py-2.5 rounded-xl font-semibold text-xs sm:text-sm border shadow-sm transition disabled:opacity-60 flex items-center justify-center gap-1.5 ${
+                        isActive 
+                          ? 'bg-white hover:bg-amber-50 text-amber-600 border-amber-200' 
+                          : 'bg-emerald-600 hover:bg-emerald-700 text-white border-emerald-600'
+                      }`}
+                    >
+                      <Power className="w-4 h-4" /> {isActive ? 'Suspend / Deactivate' : 'Activate Package'}
+                    </button>
+                  )}
+                  
+                  <button 
+                    onClick={() => onDelete(pkg)} 
+                    disabled={loading} 
+                    className="w-full py-2.5 rounded-xl font-semibold text-xs sm:text-sm bg-white hover:bg-gray-100 text-gray-600 border border-gray-200 transition disabled:opacity-60 flex items-center justify-center gap-1.5 mt-2"
+                  >
+                    <Trash2 className="w-4 h-4 text-gray-500" /> Delete Package
+                  </button>
                 </div>
               </div>
-            )}
-          </div>
-
-          {/* Right Panel - Application Status & Actions */}
-          <div className="w-full md:w-80 flex flex-col gap-4">
-            <div className="bg-[#fff7ed] rounded-xl p-8 border border-orange-50">
-              <h3 className="text-lg font-bold text-gray-900 mb-6">Application Status</h3>
-              
-              <div className="space-y-6">
-                <div>
-                  <div className="text-xs text-gray-500 font-medium mb-2">Status</div>
-                  <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-                    String(applicationStatus).trim().toLowerCase() === 'approved' ? 'bg-[#e6f4ea] text-[#1e8e3e]' :
-                    String(applicationStatus).trim().toLowerCase() === 'pending' ? 'bg-[#fef0db] text-[#e37400]' :
-                    String(applicationStatus).trim().toLowerCase() === 'suspended' ? 'bg-gray-100 text-gray-600 border border-gray-200' :
-                    'bg-red-100 text-red-600'
-                  }`}>
-                    {String(applicationStatus || 'Pending').trim()}
-                  </span>
-                </div>
-                <div>
-                  <div className="text-xs text-gray-500 font-medium mb-2">Visibility</div>
-                  <span className={`px-3 py-1 rounded-full text-xs font-medium border ${isActive ? 'bg-white text-emerald-700 border-emerald-200' : 'bg-white text-red-700 border-red-200'}`}>
-                    {isActive ? 'Active' : 'Inactive'}
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            {/* Admin Actions */}
-            <div className="bg-white rounded-xl p-6 border border-gray-100 space-y-3 shadow-sm mt-2">
-              <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wide mb-4">Admin Actions</h4>
-              
-              {String(applicationStatus).trim().toLowerCase() !== 'approved' && (
-                <button onClick={() => onApprove(pkg)} disabled={loading} className="w-full py-2.5 rounded-lg font-semibold text-sm bg-emerald-500 text-white hover:bg-emerald-600 transition disabled:opacity-60">
-                  Approve Package
-                </button>
-              )}
-              
-              {String(applicationStatus).trim().toLowerCase() !== 'rejected' && (
-                <button onClick={() => onReject(pkg)} disabled={loading} className="w-full py-2.5 rounded-lg font-semibold text-sm bg-orange-50 text-orange-700 border border-orange-200 hover:bg-orange-100 transition disabled:opacity-60">
-                  Reject Package
-                </button>
-              )}
-              
-              {String(applicationStatus).trim().toLowerCase() === 'approved' && (
-                <button onClick={() => onToggle(pkg)} disabled={loading} className={`w-full py-2.5 rounded-lg font-semibold text-sm border transition disabled:opacity-60 ${isActive ? 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-orange-50 hover:text-orange-700 hover:border-orange-200' : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-emerald-50 hover:text-emerald-700 hover:border-emerald-200'}`}>
-                  {isActive ? 'Deactivate Package' : 'Activate Package'}
-                </button>
-              )}
-              
-              <button onClick={() => onDelete(pkg)} disabled={loading} className="w-full py-2.5 rounded-lg font-semibold text-sm bg-gray-50 text-gray-600 border border-gray-200 hover:bg-red-50 hover:text-red-700 hover:border-red-200 transition disabled:opacity-60 mt-4">
-                Delete Package
-              </button>
             </div>
           </div>
         </div>
@@ -200,178 +239,196 @@ const PackageDetailView = ({ pkg, onBack, onApprove, onReject, onToggle, onDelet
   )
 }
 
-// ── Package Card ──────────────────────────────────────────────────────────────
+// ── Package Card (Redesigned matching modern UI requirements) ─────────────────
 const PackageCard = ({ pkg, onView, onApprove, onReject, onToggle, onDelete, actionLoading }) => {
-  const { packageName, destination, priceFrom, priceTo, basePriceAdult, duration, category,
-    rating, agentName, isActive, applicationStatus, imageUrl } = pkg
+  const { id, packageName, destination, district, priceFrom, basePriceAdult, duration, category,
+    rating, reviewCount, isActive, applicationStatus, imageUrl, images } = pkg
+
+  const cover = (images && images[0]) || imageUrl || (id % 2 === 0 ? galleImg : kandyImg)
+  const isApproved = String(applicationStatus).trim().toLowerCase() === 'approved'
+  const isPending = String(applicationStatus).trim().toLowerCase() === 'pending'
+  const isSuspended = String(applicationStatus).trim().toLowerCase() === 'suspended'
+  const isRejected = String(applicationStatus).trim().toLowerCase() === 'rejected'
 
   return (
-    <div className="bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-shadow border border-gray-100 flex flex-col">
-      {/* Image */}
-      <div className="relative h-48">
+    <div className="bg-white rounded-2xl md:rounded-3xl border border-gray-200/90 shadow-sm overflow-hidden flex flex-col justify-between hover:shadow-md transition-all duration-200 group">
+      
+      {/* 1. Cover Image Section with Modern Pill Badges */}
+      <div className="aspect-[16/10] w-full relative overflow-hidden bg-gray-100">
         <img 
-          src={imageUrl || placeholderImg} 
+          src={cover} 
           alt={packageName}
-          onError={(e) => { e.target.src = placeholderImg }} 
-          className="w-full h-full object-cover"
+          onError={(e: any) => { e.target.src = placeholderImg }} 
+          className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
         />
-      </div>
 
-      {/* Info */}
-      <div className="p-5 flex-1 flex flex-col">
-        <h3 className="font-bold text-gray-900 text-lg mb-1">{packageName}</h3>
-        <p className="text-gray-500 text-sm mb-2">
-          {[destination, duration].filter(Boolean).join(' • ') || '—'}
-        </p>
-        <p className="text-teal-600 font-semibold text-sm mb-3">
-          {basePriceAdult != null ? `${fmtPrice(basePriceAdult)} / adult` : (priceFrom != null ? fmtPrice(priceFrom) : '—')}
-        </p>
-
-        {String(applicationStatus).trim().toLowerCase() === 'approved' && (
-          <div className="flex items-center gap-1 text-sm text-gray-500 mb-4">
-            <span>Rating:</span>
-            <span className="text-yellow-400 ml-1">⭐</span>
-            <span>{rating != null ? Number(rating).toFixed(1) : '—'}</span>
-          </div>
-        )}
-
-        <div className="mb-4">
-          <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-            String(applicationStatus).trim().toLowerCase() === 'approved' ? 'bg-[#e6f4ea] text-[#1e8e3e]' :
-            String(applicationStatus).trim().toLowerCase() === 'pending' ? 'bg-[#fef0db] text-[#e37400]' :
-            String(applicationStatus).trim().toLowerCase() === 'suspended' ? 'bg-gray-100 text-gray-600 border border-gray-200' :
-            'bg-red-100 text-red-600'
+        {/* Status Pill on Top-Left */}
+        <div className="absolute top-3.5 left-3.5">
+          <span className={`backdrop-blur-md px-3.5 py-1 rounded-full text-xs font-semibold tracking-wide border shadow-sm ${
+            isApproved 
+              ? 'bg-[#0b2838]/75 text-[#38bdf8] border-[#38bdf8]/20' 
+              : isPending 
+              ? 'bg-[#2d1b06]/75 text-[#fbbf24] border-[#fbbf24]/20' 
+              : isSuspended 
+              ? 'bg-[#2b1111]/75 text-[#f87171] border-[#f87171]/20' 
+              : 'bg-[#2b1111]/75 text-[#f87171] border-[#f87171]/20'
           }`}>
-            {String(applicationStatus || 'Pending').trim()}
+            {isApproved ? 'Active' : (isPending ? 'Pending' : (isSuspended ? 'Suspended' : 'Rejected'))}
           </span>
         </div>
+      </div>
 
-        <div className="mt-auto pt-4 flex gap-3 border-t border-gray-50">
-          {String(applicationStatus).trim().toLowerCase() === 'pending' ? (
-            <>
-              <button
-                onClick={(e) => { e.stopPropagation(); onView(pkg); }}
-                className="flex-1 py-2 text-sm font-medium border border-gray-200 rounded text-gray-700 hover:bg-gray-50 transition flex items-center justify-center gap-2"
-              >
-                👁 View
-              </button>
-              <button
-                onClick={(e) => { e.stopPropagation(); onApprove(pkg); }}
-                disabled={actionLoading}
-                className="w-10 h-10 flex items-center justify-center text-[#22c55e] border border-[#bbf7d0] bg-[#f0fdf4] rounded hover:bg-[#dcfce7] transition disabled:opacity-60"
-              >
-                ✓
-              </button>
-              <button
-                onClick={(e) => { e.stopPropagation(); onReject(pkg); }}
-                disabled={actionLoading}
-                className="w-10 h-10 flex items-center justify-center text-[#ef4444] border border-[#fecaca] bg-[#fef2f2] rounded hover:bg-[#fee2e2] transition disabled:opacity-60"
-              >
-                ✕
-              </button>
-            </>
-          ) : (String(applicationStatus).trim().toLowerCase() === 'approved' || String(applicationStatus).trim().toLowerCase() === 'suspended') ? (
-            <>
-              <button
-                onClick={(e) => { e.stopPropagation(); onView(pkg); }}
-                className="flex-1 py-2 text-sm font-medium bg-[#3b82f6] text-white rounded hover:bg-blue-600 transition flex items-center justify-center gap-2"
-              >
-                👁 View
-              </button>
-              {String(applicationStatus).trim().toLowerCase() === 'suspended' ? (
-                <button
-                  onClick={(e) => { e.stopPropagation(); onToggle(pkg); }}
-                  disabled={actionLoading}
-                  className="flex-1 py-2 text-sm font-medium bg-emerald-500 text-white rounded hover:bg-emerald-600 transition flex items-center justify-center gap-2 disabled:opacity-60"
-                >
-                  ▶ Activate
-                </button>
+      {/* 2. Content Info */}
+      <div className="p-5 flex-1 flex flex-col justify-between bg-white">
+        <div>
+          {/* Header Row: Title & Rating */}
+          <div className="flex items-start justify-between gap-3">
+            <h3 
+              onClick={() => onView(pkg)}
+              className="font-bold text-gray-900 text-base sm:text-lg tracking-tight truncate flex-1 cursor-pointer hover:text-[#0ea5e9] transition"
+            >
+              {packageName}
+            </h3>
+
+            <div className="shrink-0 flex items-center gap-1">
+              {rating && Number(rating) > 0 ? (
+                <div className="flex items-center gap-1 text-xs font-semibold text-gray-900">
+                  <Star className="h-4 w-4 fill-amber-400 text-amber-400" />
+                  <span>{Number(rating).toFixed(1)}</span>
+                  <span className="text-gray-400 font-normal">({reviewCount ?? 1})</span>
+                </div>
               ) : (
-                <button
-                  onClick={(e) => { e.stopPropagation(); onToggle(pkg); }}
-                  disabled={actionLoading}
-                  className="flex-1 py-2 text-sm font-medium bg-[#ef4444] text-white rounded hover:bg-red-600 transition flex items-center justify-center gap-2 disabled:opacity-60"
-                >
-                  ⭕ Suspend
-                </button>
+                <div className="flex items-center gap-1 text-xs text-gray-400 font-normal">
+                  <Star className="h-3.5 w-3.5 text-gray-300" />
+                  <span>No reviews yet</span>
+                </div>
               )}
-            </>
-          ) : (
-             <>
-              <button
-                onClick={(e) => { e.stopPropagation(); onView(pkg); }}
-                className="flex-1 py-2 text-sm font-medium border border-gray-200 rounded text-gray-700 hover:bg-gray-50 transition flex items-center justify-center gap-2"
-              >
-                👁 View
-              </button>
-              <button
-                onClick={(e) => { e.stopPropagation(); onDelete(pkg); }}
-                disabled={actionLoading}
-                className="flex-1 py-2 text-sm font-medium bg-gray-50 text-gray-500 border border-gray-200 rounded hover:bg-red-50 hover:text-red-600 transition flex items-center justify-center gap-2 disabled:opacity-60"
-              >
-                🗑 Delete
-              </button>
-             </>
-          )}
+            </div>
+          </div>
+
+          {/* Location */}
+          <div className="flex items-center gap-1 text-sm text-gray-500 mt-1">
+            <MapPin className="h-3.5 w-3.5 text-gray-400 shrink-0" />
+            <span className="truncate">{destination || district || 'Sri Lanka'}</span>
+          </div>
+
+          {/* Category & Location Badges */}
+          <div className="flex flex-wrap gap-2 mt-3">
+            {category && (
+              <span className="px-3 py-0.5 rounded-full bg-gray-100 text-gray-600 text-xs font-medium">
+                {category}
+              </span>
+            )}
+            {(district || destination) && (
+              <span className="px-3 py-0.5 rounded-full bg-gray-100 text-gray-600 text-xs font-medium">
+                {district || destination}
+              </span>
+            )}
+          </div>
+        </div>
+
+        {/* Divider */}
+        <div className="border-t border-gray-100 my-4" />
+
+        {/* Duration & Starts from Price */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-1.5 text-sm text-gray-600 font-medium">
+            <Clock className="h-4 w-4 text-gray-400" />
+            <span>{duration || '2 Days / 1 Night'}</span>
+          </div>
+
+          <div className="text-right">
+            <span className="block text-[11px] text-gray-400 font-medium">Starts from</span>
+            <span className="block text-base sm:text-lg font-bold text-gray-900 tracking-tight">
+              {fmtPrice(basePriceAdult ?? priceFrom ?? 100)}
+            </span>
+          </div>
+        </div>
+
+        {/* 3. Action Button: Only View Details */}
+        <div className="mt-4 pt-1">
+          <button
+            onClick={() => onView(pkg)}
+            className="w-full py-2.5 px-4 bg-[#0ea5e9] hover:bg-[#0284c7] active:scale-[0.99] text-white rounded-xl text-xs sm:text-sm font-semibold flex items-center justify-center gap-1.5 transition duration-200 shadow-sm"
+          >
+            <Eye className="h-4 w-4" />
+            View Details
+          </button>
         </div>
       </div>
     </div>
   )
 }
 
-// ── Main ──────────────────────────────────────────────────────────────────────
+// ── Main Page Component ───────────────────────────────────────────────────────
 export default function PackageApprovals() {
   const modal = useModal()
-
-  const [packages, setPackages]           = useState([])
-  const [loading, setLoading]             = useState(true)
-  const [actionLoading, setActionLoading] = useState(false)
-  const [error, setError]                 = useState(null)
-  const [statusFilter, setStatusFilter]   = useState('All')
-  const [search, setSearch]               = useState('')
-  const [selected, setSelected]           = useState(null)
-  const [drawerDetail, setDrawerDetail]   = useState(null)
+  const [packages, setPackages] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
+  const [search, setSearch] = useState('')
+  const [statusFilter, setStatusFilter] = useState('All')
+  const [districtFilter, setDistrictFilter] = useState('All')
+  const [selected, setSelected] = useState(null)
+  const [drawerDetail, setDrawerDetail] = useState(null)
   const [detailLoading, setDetailLoading] = useState(false)
+  const [actionLoading, setActionLoading] = useState(false)
 
-  const fetchPackages = useCallback(async (status = 'All') => {
+  const fetchPackages = useCallback(async (status) => {
+    setLoading(true)
+    setError(null)
     try {
-      setLoading(true); setError(null)
-      const res = status === 'All'
-        ? await adminPackageApi.getAllPackages()
-        : await adminPackageApi.getPackagesByStatus(status)
-      setPackages(res?.data ?? res ?? [])
+      let res
+      if (!status || status === 'All') {
+        res = await adminPackageApi.getAllPackages()
+      } else {
+        res = await adminPackageApi.getPackagesByStatus(status)
+      }
+      const data = res?.data ?? res ?? []
+      setPackages(Array.isArray(data) ? data : [])
     } catch (err) {
-      setError(err?.response?.data?.message || 'Failed to load packages.')
+      setError(err?.response?.data?.message || err?.message || 'Failed to load packages')
     } finally {
       setLoading(false)
     }
   }, [])
 
-  useEffect(() => { fetchPackages(statusFilter) }, [statusFilter, fetchPackages])
+  useEffect(() => {
+    fetchPackages(statusFilter)
+  }, [statusFilter, fetchPackages])
 
   const openDrawer = async (pkg) => {
-    setSelected(pkg); setDrawerDetail(null); setDetailLoading(true)
+    setSelected(pkg)
+    setDrawerDetail(null)
+    setDetailLoading(true)
     try {
-      const res = await adminPackageApi.getPackageDetail(pkg.id)
+      const res = await adminPackageApi.getPackageById(pkg.id)
       setDrawerDetail(res?.data ?? res)
-    } catch { setDrawerDetail(pkg) }
-    finally { setDetailLoading(false) }
+    } catch (err) {
+      setDrawerDetail(pkg)
+    } finally {
+      setDetailLoading(false)
+    }
   }
 
-  const closeDrawer = () => { setSelected(null); setDrawerDetail(null) }
+  const closeDrawer = () => {
+    setSelected(null)
+    setDrawerDetail(null)
+  }
 
-  const patchLocal = (id, changes) => {
-    setPackages(prev => prev.map(p => p.id === id ? { ...p, ...changes } : p))
-    setDrawerDetail(d => d?.id === id ? { ...d, ...changes } : d)
+  const patchLocal = (id, patch) => {
+    setPackages(prev => prev.map(p => p.id === id ? { ...p, ...patch } : p))
+    if (selected?.id === id) setSelected(p => ({ ...p, ...patch }))
+    if (drawerDetail?.id === id) setDrawerDetail(p => ({ ...p, ...patch }))
   }
 
   const handleApprove = async (pkg) => {
-    if (!await modal.showConfirm({ title: 'Approve Package', message: `Approve "${pkg.packageName}"?` })) return
+    if (!await modal.showConfirm({ title: 'Approve Package', message: `Approve "${pkg.packageName}"? It will become visible to tourists.` })) return
     try {
       setActionLoading(true)
       await adminPackageApi.approvePackage(pkg.id)
       modal.addToast(`✅ "${pkg.packageName}" approved`)
-      patchLocal(pkg.id, { applicationStatus: 'Approved' })
+      patchLocal(pkg.id, { applicationStatus: 'Approved', isActive: true })
     } catch (err) { modal.addToast(`❌ ${err?.response?.data?.message || 'Failed'}`) }
     finally { setActionLoading(false) }
   }
@@ -388,7 +445,7 @@ export default function PackageApprovals() {
   }
 
   const handleToggle = async (pkg) => {
-    const action = pkg.isActive ? 'deactivate' : 'activate'
+    const action = pkg.isActive ? 'suspend' : 'activate'
     if (!await modal.showConfirm({ title: 'Toggle Package', message: `${action.charAt(0).toUpperCase() + action.slice(1)} "${pkg.packageName}"?` })) return
     try {
       setActionLoading(true)
@@ -414,54 +471,97 @@ export default function PackageApprovals() {
     finally { setActionLoading(false) }
   }
 
+  // ── Extract Available Districts dynamically ──────────────────────────────
+  const availableDistricts = React.useMemo(() => {
+    const distSet = new Set<string>()
+    packages.forEach((p: any) => {
+      if (p.district?.trim()) distSet.add(p.district.trim())
+    })
+    const customDistricts = Array.from(distSet)
+    const all = Array.from(new Set([...SRI_LANKA_DISTRICTS.slice(1), ...customDistricts])).sort()
+    return ['All Districts', ...all]
+  }, [packages])
+
   const displayed = packages.filter(p => {
-    if (!search.trim()) return true
-    const q = search.toLowerCase()
-    return p.packageName?.toLowerCase().includes(q) || p.destination?.toLowerCase().includes(q) || p.agentName?.toLowerCase().includes(q) || p.category?.toLowerCase().includes(q)
+    const q = search.trim().toLowerCase()
+    const matchesSearch = !q || [p.packageName, p.destination, p.district, p.location, p.agentName, p.category].some(val => val?.toLowerCase().includes(q))
+    const matchesDistrict = districtFilter === 'All' || districtFilter === 'All Districts' || 
+      (p.district && p.district.trim().toLowerCase() === districtFilter.trim().toLowerCase())
+    return matchesSearch && matchesDistrict
   })
 
-  const counts = {
-    total:    packages.length,
-    pending:  packages.filter(p => p.applicationStatus === 'Pending').length,
-    approved: packages.filter(p => String(p.applicationStatus).trim().toLowerCase() === 'approved').length,
-    rejected: packages.filter(p => String(p.applicationStatus).trim().toLowerCase() === 'rejected').length,
-  }
-
   return (
-    <div className="p-8 bg-gray-50 min-h-screen">
+    <div className="p-6 sm:p-8 bg-[#F8FAFC] min-h-screen animate-fade-in font-sans">
       {selected ? (
         detailLoading ? (
           <div className="flex items-center justify-center h-[50vh]">
             <div className="text-center space-y-4">
-              <div className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto" />
-              <div className="text-gray-500 text-sm">Loading package details…</div>
+              <div className="w-12 h-12 border-4 border-[#0ea5e9] border-t-transparent rounded-full animate-spin mx-auto" />
+              <div className="text-gray-500 text-sm font-semibold">Loading package details…</div>
             </div>
           </div>
         ) : (
-          <PackageDetailView pkg={drawerDetail ?? selected} onBack={closeDrawer} onApprove={handleApprove} onReject={handleReject} onToggle={handleToggle} onDelete={handleDelete} loading={actionLoading} />
+          <PackageDetailView 
+            pkg={drawerDetail ?? selected} 
+            onBack={closeDrawer} 
+            onApprove={handleApprove} 
+            onReject={handleReject} 
+            onToggle={handleToggle} 
+            onDelete={handleDelete} 
+            loading={actionLoading} 
+          />
         )
       ) : (
         <>
           {/* ── Header ──────────────────────────────────────────────────────── */}
-          <h1 className="text-3xl font-bold text-slate-800 mb-8">Package Approvals</h1>
+          <div className="mb-6 sm:mb-8">
+            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 tracking-tight">
+              Package Approvals
+            </h1>
+            <p className="text-gray-500 text-sm mt-1">
+              Review, approve, suspend and manage all agency travel packages
+            </p>
+          </div>
 
-          {/* ── Toolbar ─────────────────────────────────────────────────────── */}
-          <div className="bg-white rounded-xl shadow-sm p-6 mb-8">
-            <div className="flex justify-between items-center gap-4">
-              <div className="relative flex-1 max-w-full">
-                <input
-                  type="text"
-                  placeholder="Search by name, destination..."
-                  value={search}
-                  onChange={e => setSearch(e.target.value)}
-                  className="w-full pl-4 pr-4 py-2 border border-gray-100 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-gray-200"
-                />
+          {/* ── Toolbar / Filter Bar ────────────────────────────────────────── */}
+          <div className="flex flex-col md:flex-row items-stretch md:items-center gap-3.5 mb-8">
+            {/* Search Input */}
+            <div className="relative flex-1 max-w-lg">
+              <input 
+                type="text" 
+                placeholder="Search by package name, destination, category..." 
+                value={search} 
+                onChange={(e) => setSearch(e.target.value)} 
+                className="w-full pl-4 pr-11 py-2.5 bg-white border border-gray-200 rounded-2xl text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#0ea5e9]/20 focus:border-[#0ea5e9] shadow-sm transition"
+              />
+              <Search className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+            </div>
+
+            {/* District Filter */}
+            <div className="relative">
+              <div className="flex items-center gap-2 bg-white border border-gray-200 rounded-2xl px-4 py-2.5 shadow-sm text-sm text-gray-700 font-medium">
+                <MapPin className="w-4 h-4 text-gray-400" />
+                <select
+                  value={districtFilter}
+                  onChange={(e) => setDistrictFilter(e.target.value)}
+                  className="bg-transparent text-sm text-gray-700 font-medium focus:outline-none cursor-pointer pr-2 max-w-[150px] truncate"
+                >
+                  {availableDistricts.map((d: string) => (
+                    <option key={d} value={d}>
+                      {d === 'All Districts' ? 'All Districts' : d}
+                    </option>
+                  ))}
+                </select>
               </div>
-              <div className="w-32">
+            </div>
+
+            {/* Status Filter */}
+            <div className="relative">
+              <div className="flex items-center gap-2 bg-white border border-gray-200 rounded-2xl px-4 py-2.5 shadow-sm text-sm text-gray-700 font-medium">
                 <select
                   value={statusFilter}
                   onChange={(e) => setStatusFilter(e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-100 rounded-lg text-sm text-gray-700 bg-white focus:outline-none"
+                  className="bg-transparent text-sm text-gray-700 font-medium focus:outline-none cursor-pointer pr-2"
                 >
                   {STATUSES.map(s => <option key={s} value={s}>{s}</option>)}
                 </select>
@@ -471,18 +571,20 @@ export default function PackageApprovals() {
 
           {/* ── Error ───────────────────────────────────────────────────────── */}
           {error && (
-            <div className="bg-red-50 border border-red-200 rounded-xl p-4 flex items-center justify-between mb-8">
+            <div className="bg-red-50 border border-red-200 rounded-2xl p-4 flex items-center justify-between mb-8 shadow-sm">
               <div className="flex items-center gap-3">
-                <span className="text-2xl">⚠️</span>
+                <AlertCircle className="w-6 h-6 text-red-500 flex-shrink-0" />
                 <div>
-                  <div className="font-semibold text-red-700">Failed to load packages</div>
-                  <div className="text-sm text-red-600">{error}</div>
+                  <div className="font-bold text-red-800 text-sm">Failed to load packages</div>
+                  <div className="text-xs text-red-600">{error}</div>
                 </div>
               </div>
               <button
                 onClick={() => fetchPackages(statusFilter)}
-                className="px-4 py-2 bg-red-600 text-white text-sm font-semibold rounded-lg hover:bg-red-700 transition"
-              >Retry</button>
+                className="px-4 py-2 bg-red-600 text-white text-xs font-semibold rounded-xl hover:bg-red-700 transition"
+              >
+                Retry
+              </button>
             </div>
           )}
 
@@ -492,10 +594,10 @@ export default function PackageApprovals() {
               {Array.from({ length: 6 }).map((_, i) => <Skeleton key={i} />)}
             </div>
           ) : displayed.length === 0 ? (
-            <div className="bg-white rounded-xl p-16 text-center shadow-sm border border-gray-100">
-              <div className="text-5xl mb-4">📦</div>
-              <div className="text-gray-600 font-semibold text-lg">No packages found</div>
-              <div className="text-gray-400 text-sm mt-1">Try a different filter or search term</div>
+            <div className="text-center py-16 bg-white rounded-3xl border border-gray-100 shadow-sm mt-6">
+              <PackageIcon className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+              <h3 className="text-gray-700 font-bold text-base">No packages found</h3>
+              <p className="text-gray-400 text-sm mt-1">Try adjusting your search criteria or filter settings.</p>
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

@@ -64,6 +64,15 @@ const adminAgentApi = {
         return res.data;
     },
 
+    // GET /api/v1/agent/{id}/analytics?period=
+    getAgentFullAnalytics: async (id: number | string, period = "monthly") => {
+        const res = await api.get(
+            `/v1/agent/${id}/analytics`, {
+            params: { period },
+        });
+        return res.data;
+    },
+
     // PATCH /api/admin/users/agents/{ownerId}/approve
     approveAgent: async (ownerId: number | string) => {
         const res = await api.patch(
