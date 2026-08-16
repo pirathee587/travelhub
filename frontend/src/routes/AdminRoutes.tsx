@@ -16,7 +16,6 @@ const PackageApprovals = lazy(() => import('@/features/admin/pages/PackageApprov
 const PackageDetails   = lazy(() => import('@/features/admin/pages/PackageDetails'));
 const Payments         = lazy(() => import('@/features/admin/pages/Payments'));
 const Analytics        = lazy(() => import('@/features/admin/pages/Analytics'));
-const Users            = lazy(() => import('@/features/admin/pages/Users'));
 
 /**
  * AdminRoutes
@@ -45,7 +44,6 @@ export default function AdminRoutes() {
         <Route path="packages"      element={<PackageApprovals />} />
         <Route path="payments"      element={<Payments />} />
         <Route path="analytics"     element={<Analytics />} />
-        <Route path="users"         element={<Users />} />
       </Route>
 
       {/* ── Detail pages — full-screen, outside the layout shell ── */}

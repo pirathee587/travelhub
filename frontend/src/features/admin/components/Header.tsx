@@ -133,7 +133,6 @@ export default function Header() {
                       <div className="flex-1 min-w-0">
                         <p className={`text-sm font-medium text-gray-900 truncate ${!n.read ? 'font-semibold' : ''}`}>{n.title}</p>
                         <p className="text-xs text-gray-500 mt-0.5 line-clamp-2">{n.message}</p>
-                        <p className="text-xs text-gray-400 mt-1">{n.time}</p>
                       </div>
                       {!n.read && (
                         <span className="mt-1.5 w-2 h-2 rounded-full bg-blue-500 shrink-0" title="Unread" />

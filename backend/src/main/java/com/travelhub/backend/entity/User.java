@@ -42,6 +42,15 @@ public class User {
     private String nationality;           // Tourist
     private String nicNumber;             // Agent (Captured at Signup)
     private String nicImage;              // Agent (Captured in Profile)
+
+    // ── NIC Verification ──────────────────────────────
+    // Values: PENDING | APPROVED | REJECTED | SUSPENDED
+    @Column(name = "nic_verification_status", length = 20)
+    @Builder.Default
+    private String nicVerificationStatus = "PENDING";
+
+    @Column(name = "admin_message", columnDefinition = "TEXT")
+    private String adminMessage;
     private String hotelName;             // Hotel Owner
     private String businessRegistrationId; // Hotel Owner (For Admin Verification)
     private String businessAddress;        // Hotel Owner
@@ -52,10 +61,12 @@ public class User {
 
     // Currency preference for Tourists (USD or LKR), default USD
     @Column(name = "currency_preference", length = 10)
+    @Builder.Default
     private String currencyPreference = "USD";
 
     // Auth & Status
     @Column(name = "is_email_verified", nullable = true)
+    @Builder.Default
     private boolean isEmailVerified = false;
 
     private String verificationToken;
@@ -63,6 +74,7 @@ public class User {
     private LocalDateTime passwordResetExpires;
 
     @Column(nullable = true)
+    @Builder.Default
     private String status = "PENDING"; // PENDING, ACTIVE, DEACTIVATED
 
     // --- Admin Control Fields ---
@@ -97,6 +109,7 @@ public class User {
         this.updatedAt = LocalDateTime.now();
         if (this.isActive == null) this.isActive = true;
         if (this.agentApproved == null) this.agentApproved = false;
+        if (this.nicVerificationStatus == null) this.nicVerificationStatus = "PENDING";
     }
 
     @PreUpdate
