@@ -37,17 +37,11 @@ public class Hotel {
     private String district;
 
     // ── Owner Information ──────────────────────────────
-    @Column(name = "owner_name")
-    private String ownerName;
+    @Column(name = "business_registration_image_url")
+    private String businessRegistrationImageUrl;
 
-    @Column(name = "owner_email")
-    private String ownerEmail;
-
-    @Column(name = "owner_nic")
-    private String ownerNic;
-
-    @Column(name = "nic_image_url")
-    private String nicImageUrl;
+    @Column(name = "rejection_reason")
+    private String rejectionReason;
 
     @Column(name = "owner_id", insertable = false, updatable = false)
     private Long ownerId;

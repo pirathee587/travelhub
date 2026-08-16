@@ -44,7 +44,7 @@ const HotelDetailView = ({ hotel, onBack, onApprove, onReject, onToggle, onDelet
   if (!hotel) return null
 
   const { hotelName, imageUrl, district, location, rating, numberOfRooms,
-    ownerName, ownerEmail, ownerNic, nicImageUrl, phoneNumber, hotlineNumber,
+    ownerName, ownerEmail, ownerNic, nicImageUrl, businessRegistrationImageUrl, rejectionReason, phoneNumber, hotlineNumber,
     amenities, roomTypes, applicationStatus, isActive, id } = hotel
 
   return (
@@ -104,19 +104,24 @@ const HotelDetailView = ({ hotel, onBack, onApprove, onReject, onToggle, onDelet
         </div>
 
         {/* Owner Information */}
-        
-
-        {/* Contact Information */}
-        <div className="bg-[#f0fdf4] rounded-xl p-6 border border-emerald-50">
-          <h3 className="text-lg font-bold text-gray-900 mb-6">Contact Information</h3>
-          <div className="space-y-5">
+        <div className="bg-[#eff6ff] rounded-xl p-6 border border-blue-50">
+          <h3 className="text-lg font-bold text-gray-900 mb-6">Owner Information</h3>
+          <div className="grid grid-cols-2 gap-6">
             <div>
-              <div className="text-xs text-gray-500 font-medium mb-1">Phone Number</div>
-              <div className="font-bold text-emerald-600">{phoneNumber || '—'}</div>
+              <div className="text-xs text-gray-500 font-medium mb-1">Owner Name</div>
+              <div className="font-semibold text-gray-900">{ownerName || '—'}</div>
+            </div>
+            <div>
+              <div className="text-xs text-gray-500 font-medium mb-1">Owner Email</div>
+              <div className="font-semibold text-gray-900">{ownerEmail || '—'}</div>
             </div>
             <div>
               <div className="text-xs text-gray-500 font-medium mb-1">NIC Number</div>
-              <div className="font-bold text-emerald-600">{ownerNic || '—'}</div>
+              <div className="font-bold text-blue-600">{ownerNic || '—'}</div>
+            </div>
+            <div>
+              <div className="text-xs text-gray-500 font-medium mb-1">Phone Number</div>
+              <div className="font-bold text-blue-600">{phoneNumber || '—'}</div>
             </div>
           </div>
         </div>
@@ -185,16 +190,36 @@ const HotelDetailView = ({ hotel, onBack, onApprove, onReject, onToggle, onDelet
           </div>
         </div>
 
-        {/* NIC Button */}
-        {nicImageUrl ? (
-          <button onClick={() => window.open(nicImageUrl, '_blank')} className="w-full py-4 bg-[#2563eb] hover:bg-blue-700 text-white font-bold rounded-lg shadow-sm transition flex items-center justify-center gap-2">
-            📄 View NIC Photocopy
-          </button>
-        ) : (
-          <button disabled className="w-full py-4 bg-gray-200 text-gray-500 font-bold rounded-lg shadow-sm transition flex items-center justify-center gap-2 cursor-not-allowed">
-            No NIC Provided
-          </button>
-        )}
+        {/* Verification Documents */}
+        <div className="space-y-4">
+          <h3 className="text-lg font-bold text-gray-900 mb-4">Verification Documents</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {nicImageUrl ? (
+              <button onClick={() => window.open(nicImageUrl, '_blank')} className="w-full py-4 bg-[#2563eb] hover:bg-blue-700 text-white font-bold rounded-lg shadow-sm transition flex items-center justify-center gap-2">
+                📄 NIC Image
+              </button>
+            ) : (
+              <button disabled className="w-full py-4 bg-gray-200 text-gray-500 font-bold rounded-lg shadow-sm transition flex items-center justify-center gap-2 cursor-not-allowed">
+                No NIC Image
+              </button>
+            )}
+
+            {businessRegistrationImageUrl ? (
+              <button onClick={() => window.open(businessRegistrationImageUrl, '_blank')} className="w-full py-4 bg-[#2563eb] hover:bg-blue-700 text-white font-bold rounded-lg shadow-sm transition flex items-center justify-center gap-2">
+                📄 Business Registration
+              </button>
+            ) : (
+              <button disabled className="w-full py-4 bg-gray-200 text-gray-500 font-bold rounded-lg shadow-sm transition flex items-center justify-center gap-2 cursor-not-allowed">
+                No Business Registration
+              </button>
+            )}
+          </div>
+          {rejectionReason && (
+            <div className="bg-red-50 text-red-700 p-4 rounded-lg mt-4 border border-red-200">
+              <span className="font-bold">Rejection Reason:</span> {rejectionReason}
+            </div>
+          )}
+        </div>
       </div>
     </div>
   )
@@ -333,6 +358,9 @@ export default function HotelApprovals() {
   const [selectedHotel, setSelectedHotel] = useState(null)
   const [drawerDetail, setDrawerDetail] = useState(null)
   const [detailLoading, setDetailLoading] = useState(false)
+  const [isRejectModalOpen, setIsRejectModalOpen] = useState(false)
+  const [rejectReason, setRejectReason] = useState('')
+  const [rejectingHotel, setRejectingHotel] = useState(null)
   const searchTimer = useRef(null)
 
   // ── Fetch ─────────────────────────────────────────────────────────────────
@@ -397,25 +425,35 @@ export default function HotelApprovals() {
     }
   }
 
-  const handleReject = async (hotel) => {
-    const ok = await modal.showConfirm({
-      title:   'Reject Hotel',
-      message: `Reject "${hotel.hotelName}"? The owner will be notified.`,
-    })
-    if (!ok) return
+  const handleReject = (hotel) => {
+    setRejectingHotel(hotel)
+    setRejectReason('')
+    setIsRejectModalOpen(true)
+  }
+
+  const submitRejection = async () => {
+    if (!rejectReason.trim()) {
+      modal.addToast('⚠️ Rejection reason is required')
+      return
+    }
+    const hotel = rejectingHotel
+    if (!hotel) return
+
     try {
       setActionLoading(true)
-      await adminHotelApi.rejectHotel(hotel.id, 'Rejected by admin')
+      setIsRejectModalOpen(false)
+      await adminHotelApi.rejectHotel(hotel.id, rejectReason)
       modal.addToast(`🚫 "${hotel.hotelName}" rejected`)
       setHotels(prev => prev.map(h =>
         h.id === hotel.id ? { ...h, applicationStatus: 'Rejected' } : h
       ))
       if (drawerDetail?.id === hotel.id)
-        setDrawerDetail(d => ({ ...d, applicationStatus: 'Rejected' }))
+        setDrawerDetail(d => ({ ...d, applicationStatus: 'Rejected', rejectionReason: rejectReason }))
     } catch (err) {
       modal.addToast(`❌ ${err?.response?.data?.message || 'Rejection failed'}`)
     } finally {
       setActionLoading(false)
+      setRejectingHotel(null)
     }
   }
 
@@ -576,6 +614,39 @@ export default function HotelApprovals() {
             </div>
           )}
         </>
+      )}
+
+      {isRejectModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 animate-fade-in">
+          <div className="bg-white w-full max-w-md rounded-2xl p-6 shadow-xl space-y-4 border animate-scale-in">
+            <h3 className="text-xl font-bold text-gray-900">Provide Rejection Reason</h3>
+            <p className="text-sm text-gray-500">
+              Please enter the reason for rejecting this hotel.
+            </p>
+            <textarea
+              className="w-full min-h-[100px] p-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-1 focus:ring-teal-600 focus:border-transparent resize-none"
+              placeholder="e.g. Incomplete business registration details."
+              value={rejectReason}
+              onChange={(e) => setRejectReason(e.target.value)}
+            />
+            <div className="flex gap-3 justify-end">
+              <button
+                className="px-4 py-2 border border-gray-200 text-gray-700 font-semibold text-sm rounded-lg hover:bg-gray-50 transition"
+                onClick={() => setIsRejectModalOpen(false)}
+                disabled={actionLoading}
+              >
+                Cancel
+              </button>
+              <button
+                className="px-4 py-2 bg-red-600 text-white font-semibold text-sm rounded-lg hover:bg-red-700 active:bg-red-800 transition disabled:opacity-50"
+                onClick={submitRejection}
+                disabled={actionLoading}
+              >
+                Confirm Rejection
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   )

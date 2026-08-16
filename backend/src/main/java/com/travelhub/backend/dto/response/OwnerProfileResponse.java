@@ -17,6 +17,8 @@ public class OwnerProfileResponse {
     private String businessAddress;
     private String district;
     private String businessRegistrationId;
+    private String nicNumber;
+    private String nicImage;
     private String status;
     private LocalDateTime updatedAt;
 }

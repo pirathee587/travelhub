@@ -6,6 +6,8 @@ export type Profile = {
   email: string;
   phone: string;
   avatar: string;
+  nicNumber: string;
+  nicImage: string;
 };
 
 const API_BASE = "http://localhost:8080/api/v1/owner/profile";
@@ -15,6 +17,8 @@ const defaultProfile: Profile = {
   email: "",
   phone: "",
   avatar: "",
+  nicNumber: "",
+  nicImage: "",
 };
 
 function mapResponse(data: Record<string, string>): Profile {
@@ -23,6 +27,8 @@ function mapResponse(data: Record<string, string>): Profile {
     email: data.email ?? "",
     phone: data.telephone ?? "",
     avatar: data.profileImage ?? "",
+    nicNumber: data.nicNumber ?? "",
+    nicImage: data.nicImage ?? "",
   };
 }
 
@@ -37,11 +43,13 @@ export async function fetchProfile(): Promise<Profile> {
 }
 
 export async function updateProfile(
-  patch: Partial<Pick<Profile, "name" | "phone">>,
+  patch: Partial<Pick<Profile, "name" | "phone" | "nicNumber" | "nicImage">>,
 ): Promise<Profile> {
   const body: Record<string, string> = {};
   if (patch.name !== undefined) body.name = patch.name;
   if (patch.phone !== undefined) body.telephone = patch.phone;
+  if (patch.nicNumber !== undefined) body.nicNumber = patch.nicNumber;
+  if (patch.nicImage !== undefined) body.nicImage = patch.nicImage;
 
   const res = await fetch(API_BASE, {
     method: "PUT",
@@ -63,6 +71,20 @@ export async function uploadAvatar(file: File): Promise<Profile> {
   });
   if (!res.ok) throw new Error("Failed to upload photo");
   return mapResponse(await res.json());
+}
+
+export async function uploadNicImage(file: File): Promise<string> {
+  const formData = new FormData();
+  formData.append("file", file);
+
+  const res = await fetch("http://localhost:8080/api/upload/identity", {
+    method: "POST",
+    headers: getOwnerAuthHeaders(),
+    body: formData,
+  });
+  if (!res.ok) throw new Error("Failed to upload NIC image");
+  const data = await res.json();
+  return data.data.imageUrl; // The ImageUploadResponse returns { imageUrl, publicId }
 }
 
 const CACHE_EVENT = "travelhub:profile-changed";

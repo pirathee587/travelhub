@@ -40,6 +40,7 @@ public class User {
 
     // Role-specific fields (Nullable based on role)
     private String nationality;           // Tourist
+<<<<<<< Updated upstream
     private String nicNumber;             // Agent (Captured at Signup)
     private String nicImage;              // Agent (Captured in Profile)
 
@@ -51,6 +52,10 @@ public class User {
 
     @Column(name = "admin_message", columnDefinition = "TEXT")
     private String adminMessage;
+=======
+    private String nicNumber;             // Agent + Hotel Owner (Captured at Signup)
+    private String nicImage;              // Agent + Hotel Owner (Captured in Profile / Hotel Setup)
+>>>>>>> Stashed changes
     private String hotelName;             // Hotel Owner
     private String businessRegistrationId; // Hotel Owner (For Admin Verification)
     private String businessAddress;        // Hotel Owner

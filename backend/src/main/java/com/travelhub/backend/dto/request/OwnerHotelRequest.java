@@ -20,7 +20,7 @@ public class OwnerHotelRequest {
     private String district;
     private String phoneNumber;
     private String hotlineNumber;
-    private String ownerName;
-    private String ownerEmail;
     private String ownerNic;
+    private String nicImageUrl;
+    private String businessRegistrationImageUrl;
 }
