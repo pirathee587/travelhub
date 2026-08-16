@@ -1,3 +1,4 @@
+
 package com.travelhub.backend.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -36,12 +37,34 @@ public class Hotel {
     private String imageUrl;
     private String district;
 
-    // ── Owner Information ──────────────────────────────
-    @Column(name = "business_registration_image_url")
-    private String businessRegistrationImageUrl;
+    // ── Owner Information (Dropped from hotels table in V6, mapped to owner User) ──
+    @Transient
+    private String ownerName;
 
-    @Column(name = "rejection_reason")
-    private String rejectionReason;
+    @Transient
+    private String ownerEmail;
+
+    @Transient
+    private String ownerNic;
+
+    @Transient
+    private String nicImageUrl;
+
+    public String getOwnerName() {
+        return owner != null ? owner.getName() : ownerName;
+    }
+
+    public String getOwnerEmail() {
+        return owner != null ? owner.getEmail() : ownerEmail;
+    }
+
+    public String getOwnerNic() {
+        return (owner != null && owner.getNicNumber() != null) ? owner.getNicNumber() : ownerNic;
+    }
+
+    public String getNicImageUrl() {
+        return (owner != null && owner.getNicImage() != null) ? owner.getNicImage() : nicImageUrl;
+    }
 
     @Column(name = "owner_id", insertable = false, updatable = false)
     private Long ownerId;

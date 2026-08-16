@@ -29,7 +29,7 @@ public class TouristAggregatorService {
 
     private final DashboardService dashboardService;
     private final BookingService bookingService;
-    private final DocumentService documentService;
+
     private final RecommendationService recommendationService;
     private final PackageService packageService;
     private final HotelService hotelService;
@@ -47,18 +47,14 @@ public class TouristAggregatorService {
         CompletableFuture<List<TripResponse>> tripsFuture =
                 CompletableFuture.supplyAsync(() -> fetchTrips(userId));
 
-        CompletableFuture<List<DocumentResponse>> documentsFuture =
-                CompletableFuture.supplyAsync(() -> fetchDocuments(userId));
-
         CompletableFuture<List<PackageResponse>> recommendationsFuture =
                 CompletableFuture.supplyAsync(() -> fetchRecommendations(userId));
 
-        CompletableFuture.allOf(statsFuture, tripsFuture, documentsFuture, recommendationsFuture).join();
+        CompletableFuture.allOf(statsFuture, tripsFuture, recommendationsFuture).join();
 
         return TouristOverviewResponse.builder()
                 .stats(statsFuture.join())
                 .trips(tripsFuture.join())
-                .documents(documentsFuture.join())
                 .recommendations(recommendationsFuture.join())
                 .build();
     }
@@ -163,14 +159,6 @@ public class TouristAggregatorService {
         }
     }
 
-    private List<DocumentResponse> fetchDocuments(Long userId) {
-        try {
-            return documentService.getDocumentsByUserId(userId);
-        } catch (Exception e) {
-            log.warn("[TouristAggregator] Documents fetch failed for userId={}: {}", userId, e.getMessage());
-            return Collections.emptyList();
-        }
-    }
 
     private List<PackageResponse> fetchRecommendations(Long userId) {
         if (userId == null) return Collections.emptyList();

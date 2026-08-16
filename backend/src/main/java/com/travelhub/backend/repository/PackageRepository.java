@@ -59,4 +59,20 @@ public interface PackageRepository extends JpaRepository<Package, Long> {
      */
     @Query(value = "SELECT * FROM packages WHERE agent_id = :agentUserId", nativeQuery = true)
     List<Package> findByAgentUserId(@Param("agentUserId") Long agentUserId);
+
+    // ── Dynamic District Map queries ──────────────────────────────────────
+    @Query("SELECT DISTINCT p.district FROM Package p " +
+           "WHERE p.isActive = true " +
+           "AND p.deletedAt IS NULL " +
+           "AND p.applicationStatus = 'Approved' " +
+           "AND p.district IS NOT NULL " +
+           "AND TRIM(p.district) <> ''")
+    List<String> findDistinctDistricts();
+
+    @Query("SELECT p FROM Package p " +
+           "WHERE LOWER(p.district) = LOWER(:district) " +
+           "AND p.isActive = true " +
+           "AND p.deletedAt IS NULL " +
+           "AND p.applicationStatus = 'Approved'")
+    List<Package> findActivePackagesByDistrict(@Param("district") String district);
 }

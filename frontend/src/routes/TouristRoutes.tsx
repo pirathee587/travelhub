@@ -7,7 +7,7 @@ import ProtectedRoute from '@/auth/components/ProtectedRoute';
 const Explore          = lazy(() => import('@/features/tourist/pages/Explore'));
 const Overview         = lazy(() => import('@/features/tourist/pages/Overview'));
 const MyTrips          = lazy(() => import('@/features/tourist/pages/MyTrips'));
-const Documents        = lazy(() => import('@/features/tourist/pages/Documents'));
+
 const Hotels           = lazy(() => import('@/features/tourist/pages/Hotel'));
 const HotelDetails     = lazy(() => import('@/features/tourist/pages/HotelDetails'));
 const Agents           = lazy(() => import('@/features/tourist/pages/Agents'));
@@ -45,7 +45,7 @@ export default function TouristRoutes() {
         <Route path="/tourist/explore/package/:id/reserve" element={<PackageReserve />} />
         <Route path="/tourist/overview"                    element={<Overview />} />
         <Route path="/tourist/trips"                       element={<MyTrips />} />
-        <Route path="/tourist/documents"                   element={<Documents />} />
+
         <Route path="/tourist/settings"                    element={<Settings />} />
         <Route path="/tourist/payment/:id"                 element={<Payment />} />
         <Route path="/tourist/payment/success"             element={<PaymentSuccess />} />

@@ -1,18 +1,18 @@
 import { useState, useRef, useCallback, memo } from "react";
-import { Plane, CheckCircle, Calendar, TrendingUp, ChevronRight, ChevronLeft, Sparkles, } from "lucide-react";
+import { Plane, CheckCircle, Calendar, TrendingUp, ChevronRight, ChevronLeft, Sparkles, Compass } from "lucide-react";
 import { DashboardLayout } from "@/features/tourist/components/dashboard/DashboardLayout";
 import { StatsCard } from "@/features/tourist/components/dashboard/StatsCard";
 import { TripCard } from "@/features/tourist/components/dashboard/TripCard";
 import { TravelCard } from "@/features/tourist/components/dashboard/TravelCard";
-import { DocumentCard } from "@/features/tourist/components/dashboard/DocumentCard";
 import { TripDetailsSheet } from "@/features/tourist/components/dashboard/TripDetailsSheet";
 import { ReviewDialog } from "@/features/tourist/components/dashboard/ReviewDialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/common/ui/tabs";
 import { Button } from "@/components/common/ui/button";
 import { Link } from "react-router-dom";
 import { api } from "@/features/tourist/services/api";
-import { useTouristOverview } from "@/features/tourist/hooks/useApi";
+import { useTouristOverview, useActiveDistricts } from "@/features/tourist/hooks/useApi";
 import { StatsSkeleton, RecommendationSkeleton } from "@/components/common/ui/skeletons";
+import { SriLankaTravelMap } from "@/features/tourist/components/dashboard/SriLankaTravelMap";
 import { defaultUserId } from "@/features/tourist/services/userHelpers";
 
 const MemoizedTravelCard = memo(TravelCard);
@@ -26,6 +26,10 @@ const Overview = () => {
     const scrollContainerRef = useRef(null);
     const [selectedPackageId, setSelectedPackageId] = useState(null);
     const [selectedHotelId, setSelectedHotelId] = useState(null);
+    const [selectedDistrict, setSelectedDistrict] = useState("Colombo");
+
+    // Dynamic Active districts hook
+    const { data: activeDistricts } = useActiveDistricts();
 
     // Single aggregated SWR hook (Overview Dashboard: 4 requests -> 1 request)
     const userId = defaultUserId();
@@ -33,14 +37,11 @@ const Overview = () => {
 
     const stats = overview?.stats ?? { totalTrips: 0, ongoingTrips: 0, completedTrips: 0, upcomingTrips: 0 };
     const trips = overview?.trips ?? [];
-    const allDocs = overview?.documents ?? [];
     const recommendations = overview?.recommendations ?? [];
 
     const statsLoading = overviewLoading;
     const tripsLoading = overviewLoading;
     const recsLoading = overviewLoading;
-
-    const recentDocs = allDocs.slice(0, 4);
 
     // Trip -> Filter Trips by Status
     const pendingTrips = trips.filter((t) => t.status?.toLowerCase() === "pending");
@@ -301,28 +302,22 @@ const Overview = () => {
                 </Tabs>
             </section>
 
-            {/* Documents Section */}
-            <section className="animate-slide-up py-8" style={{ animationDelay: "0.3s" }}>
-                <div className="flex items-center justify-between mb-4">
-                    <h2 className="text-xl font-semibold">Recent Documents</h2>
-                    <Link to="/tourist/documents">
-                        <Button variant="ghost" className="text-primary">
-                            All Documents
-                            <ChevronRight className="h-4 w-4 ml-1" />
-                        </Button>
-                    </Link>
+            {/* Interactive Sri Lanka Travel Map Section */}
+            <section className="animate-slide-up py-6" style={{ animationDelay: "0.35s" }}>
+                <div className="flex items-center gap-3 mb-6">
+                    <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center">
+                        <Compass className="h-5 w-5 text-primary" />
+                    </div>
+                    <div>
+                        <h2 className="text-2xl font-bold">Interactive Sri Lanka Map</h2>
+                        <p className="text-muted-foreground text-sm">Explore travel packages by geographical district</p>
+                    </div>
                 </div>
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">         {/* Documents */}
-                    {recentDocs.map((doc, index) => (
-                        <DocumentCard
-                            key={index}
-                            title={doc.title}
-                            type={doc.docType}
-                            date={new Date(doc.createdAt).toLocaleDateString()}
-                            size={doc.fileSize}
-                        />
-                    ))}
-                </div>
+                <SriLankaTravelMap
+                    selectedDistrict={selectedDistrict}
+                    onSelectDistrict={setSelectedDistrict}
+                    districtsWithPackages={activeDistricts || []}
+                />
             </section>
 
             {/* Recommendations Section */}
