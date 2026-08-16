@@ -77,6 +77,7 @@ public class AdminAgentService {
 
         return new AdminAgentDetailResponse(
                 agent.getId(),
+                agent.getOwner() != null ? agent.getOwner().getId() : null,
                 initials,
                 agent.getAgencyName(),
                 agent.getAgencyName(),
@@ -92,6 +93,8 @@ public class AdminAgentService {
                 submittedDate,
                 agent.getOwner() != null ? agent.getOwner().getNicNumber() : null,
                 agent.getOwner() != null ? agent.getOwner().getNicImage() : null,
+                agent.getOwner() != null ? agent.getOwner().getNicVerificationStatus() : "PENDING",
+                agent.getOwner() != null ? agent.getOwner().getAdminMessage() : null,
                 agentRatingCalculator.getAgentRating(id),
                 agent.getTotalTrips(),
                 agent.getExperienceYears(),
@@ -172,6 +175,7 @@ public class AdminAgentService {
 
         return new AdminAgentListResponse(
                 a.getId(),
+                a.getOwner() != null ? a.getOwner().getId() : null,
                 a.getAgencyName(),
                 a.getAgencyName(),
                 a.getOwner() != null ? a.getOwner().getName() : null,
@@ -181,6 +185,7 @@ public class AdminAgentService {
                 a.getOwner() != null && Boolean.TRUE.equals(a.getOwner().getAgentApproved())
                         ? "Approved"
                         : "Pending",
+                a.getOwner() != null ? a.getOwner().getNicVerificationStatus() : "PENDING",
                 submittedDate,
                 a.getIsActive()
         );

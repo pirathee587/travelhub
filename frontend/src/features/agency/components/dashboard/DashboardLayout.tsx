@@ -271,14 +271,11 @@ export function DashboardLayout({ children, title, subtitle, showSearch = true }
                             <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed line-clamp-2">
                               {notification.message}
                             </p>
-                            <div className="flex items-center gap-2 mt-1.5">
-                              <span className="text-[11px] text-muted-foreground/70">
-                                {notification.time}
-                              </span>
-                              {!notification.read && (
+                            {!notification.read && (
+                              <div className="flex items-center gap-2 mt-1.5">
                                 <span className="h-1.5 w-1.5 rounded-full bg-primary" />
-                              )}
-                            </div>
+                              </div>
+                            )}
                           </div>
                         </div>
                       );

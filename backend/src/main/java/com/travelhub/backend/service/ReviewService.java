@@ -23,6 +23,8 @@ import com.travelhub.backend.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
+import org.springframework.cache.annotation.CacheEvict;
+
 @Service
 @RequiredArgsConstructor
 @Slf4j
@@ -73,6 +75,7 @@ public class ReviewService {
 
     /** Submit a review for a package */
     @Transactional
+    @CacheEvict(value = {"touristPackages", "touristPackageDetails"}, allEntries = true)
     public ReviewResponse addPackageReview(Long packageId, ReviewRequest request, List<org.springframework.web.multipart.MultipartFile> images) {
 
         Package pkg = packageRepository.findById(packageId)
@@ -125,6 +128,7 @@ public class ReviewService {
 
     /** Submit a review for a hotel */
     @Transactional
+    @CacheEvict(value = {"touristHotels", "touristHotelDetails"}, allEntries = true)
     public ReviewResponse addHotelReview(Long hotelId, ReviewRequest request, List<org.springframework.web.multipart.MultipartFile> images) {
 
         // ✅ FIXED: same — removed blocking booking-completion check
@@ -261,6 +265,7 @@ public class ReviewService {
 
     /** Update an existing review - only the owner can update */
     @Transactional
+    @CacheEvict(value = {"touristPackages", "touristPackageDetails", "touristHotels", "touristHotelDetails"}, allEntries = true)
     public ReviewResponse updateReview(Long reviewId, Long userId, ReviewRequest request, List<org.springframework.web.multipart.MultipartFile> newImages) {
 
         Review review = reviewRepository.findById(reviewId)
@@ -326,6 +331,7 @@ public class ReviewService {
 
     /** Delete a review - only the owner can delete */
     @Transactional
+    @CacheEvict(value = {"touristPackages", "touristPackageDetails", "touristHotels", "touristHotelDetails"}, allEntries = true)
     public void deleteReview(Long reviewId, Long userId) {
 
         Review review = reviewRepository.findById(reviewId)

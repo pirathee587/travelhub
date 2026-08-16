@@ -99,7 +99,7 @@ public class AdminUserService {
         return mapToResponse(user);
     }
 
-    // ── Approve Agent ─────────────────────────────────
+    // ── Approve Agent ──────────────────────────────
     @Transactional
     public AdminUserResponse approveAgent(Long id) {
         User user = userRepository.findById(id)
@@ -112,8 +112,10 @@ public class AdminUserService {
                     "User is not an Agent");
 
         user.setAgentApproved(true);
+        user.setNicVerificationStatus("APPROVED");
+        user.setAdminMessage(null);  // Clear any previous rejection/suspension message
+        user.setIsActive(true);
         userRepository.save(user);
-
 
         eventPublisher.publishEvent(
                 new UserAccountEvent(
@@ -122,7 +124,7 @@ public class AdminUserService {
         return mapToResponse(user);
     }
 
-    // ── Reject Agent ──────────────────────────────────
+    // ── Reject Agent ───────────────────────────────
     @Transactional
     public AdminUserResponse rejectAgent(
             Long id, String reason) {
@@ -136,12 +138,64 @@ public class AdminUserService {
                     "User is not an Agent");
 
         user.setAgentApproved(false);
+        user.setNicVerificationStatus("REJECTED");
+        user.setAdminMessage(reason);
         userRepository.save(user);
-
 
         eventPublisher.publishEvent(
                 new UserAccountEvent(
                         this, user, "REJECTED", reason));
+
+        return mapToResponse(user);
+    }
+
+    // ── Suspend Agent (with message) ────────────────────
+    @Transactional
+    public AdminUserResponse suspendAgent(
+            Long id, String message) {
+        User user = userRepository.findById(id)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException(
+                                "User", "id", id));
+
+        if (user.getRole() != Role.AGENT)
+            throw new BadRequestException(
+                    "User is not an Agent");
+
+        user.setIsActive(false);
+        user.setAgentApproved(false);
+        user.setNicVerificationStatus("SUSPENDED");
+        user.setAdminMessage(message);
+        userRepository.save(user);
+
+        eventPublisher.publishEvent(
+                new UserAccountEvent(
+                        this, user, "REJECTED", message));
+
+        return mapToResponse(user);
+    }
+
+    // ── Unsuspend Agent ────────────────────────────
+    @Transactional
+    public AdminUserResponse unsuspendAgent(Long id) {
+        User user = userRepository.findById(id)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException(
+                                "User", "id", id));
+
+        if (user.getRole() != Role.AGENT)
+            throw new BadRequestException(
+                    "User is not an Agent");
+
+        user.setIsActive(true);
+        user.setAgentApproved(true);
+        user.setNicVerificationStatus("APPROVED");
+        user.setAdminMessage(null);
+        userRepository.save(user);
+
+        eventPublisher.publishEvent(
+                new UserAccountEvent(
+                        this, user, "APPROVED"));
 
         return mapToResponse(user);
     }

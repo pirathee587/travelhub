@@ -9,12 +9,13 @@ import {
     DialogTitle,
 } from "@/components/common/ui/dialog";
 import { cn } from "@/features/tourist/services/utils";
+import { useTouristCurrency } from "@/features/tourist/hooks/TouristCurrencyContext";
 
 const CHATBOT_API_URL = "http://localhost:8080/api/chatbot/message";
 
 const WELCOME_MESSAGE = {
     role: "bot",
-    text: "Hello! I'm your TravelHUB AI assistant 👋\n\nI can help you with:\n• Finding travel packages\n• Recommending hotels\n• Sri Lanka destinations & tips\n• Booking information\n\nWhat would you like to know?",
+    text: "Hello! I'm your TravelHUB AI assistant 👋\n\nI can help you with:\n• Finding travel packages\n• Recommending hotels\n• Sri Lanka destinations & tips\n• Booking information\n• Prices in USD or LKR 💱\n\nWhat would you like to know?",
 };
 
 export function ChatbotButton() {
@@ -22,7 +23,13 @@ export function ChatbotButton() {
     const [messages, setMessages] = useState([WELCOME_MESSAGE]);
     const [inputValue, setInputValue] = useState("");
     const [isLoading, setIsLoading] = useState(false);
-    
+
+    // Read the tourist's live currency preference from the shared context
+    // (managed by TouristCurrencyContext.tsx — the teammate's implementation).
+    // This ensures the chatbot is always in sync with what the tourist sees
+    // on the rest of the dashboard.
+    const { currency } = useTouristCurrency();
+
     const messagesEndRef = useRef(null);
 
     // Auto-scroll to latest message
@@ -35,33 +42,50 @@ export function ChatbotButton() {
         if (!trimmed || isLoading) return;
 
         const userMessage = { role: "user", text: trimmed };
-        setMessages((prev) => [...prev, userMessage]);
+
+        // Capture current messages BEFORE state update for history snapshot
+        setMessages((prev) => {
+            const updated = [...prev, userMessage];
+
+            // Fire the API call inside the setState callback so we have
+            // the up-to-date history (all messages except the one just added,
+            // since the bot hasn't replied yet).
+            const history = prev
+                .filter((m) => m.role === "user" || m.role === "bot")
+                .slice(-6) // last 6 messages for context window
+                .map((m) => ({ role: m.role, text: m.text }));
+
+            (async () => {
+                setIsLoading(true);
+                try {
+                    const token = localStorage.getItem("token");
+                    const res = await fetch(CHATBOT_API_URL, {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json",
+                            ...(token && { "Authorization": `Bearer ${token}` }),
+                        },
+                        body: JSON.stringify({ prompt: trimmed, currency, history }),
+                    });
+
+                    if (!res.ok) throw new Error(`Server error: ${res.status}`);
+
+                    const data = await res.json();
+                    const botReply = data.response || "Sorry, I couldn't get a response.";
+                    setMessages((p) => [...p, { role: "bot", text: botReply }]);
+                } catch (err) {
+                    console.error("[Chatbot] Error:", err);
+                    const errorMsg = "⚠️ Cannot connect to the server. Please make sure the backend is running.";
+                    setMessages((p) => [...p, { role: "bot", text: errorMsg }]);
+                } finally {
+                    setIsLoading(false);
+                }
+            })();
+
+            return updated;
+        });
+
         setInputValue("");
-        setIsLoading(true);
-
-        try {
-            const token = localStorage.getItem("token");
-            const res = await fetch(CHATBOT_API_URL, {
-                method: "POST",
-                headers: { 
-                    "Content-Type": "application/json",
-                    ...(token && { "Authorization": `Bearer ${token}` })
-                },
-                body: JSON.stringify({ prompt: trimmed }),
-            });
-
-            if (!res.ok) throw new Error(`Server error: ${res.status}`);
-
-            const data = await res.json();
-            const botReply = data.response || "Sorry, I couldn't get a response.";
-            setMessages((prev) => [...prev, { role: "bot", text: botReply }]);
-        } catch (err) {
-            console.error("[Chatbot] Error:", err);
-            const errorMsg = "⚠️ Cannot connect to the server. Please make sure the backend is running.";
-            setMessages((prev) => [...prev, { role: "bot", text: errorMsg }]);
-        } finally {
-            setIsLoading(false);
-        }
     };
 
     const handleKeyDown = (e) => {

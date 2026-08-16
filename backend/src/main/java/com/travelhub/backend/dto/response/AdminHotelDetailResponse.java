@@ -23,6 +23,7 @@ public record AdminHotelDetailResponse(
         String ownerEmail,
         String ownerNic,
         String nicImageUrl,
+        String businessRegistrationImageUrl,
         Long   ownerId,
 
         // ── Contact Information ────────────────────────
@@ -37,7 +38,8 @@ public record AdminHotelDetailResponse(
 
         // ── Application Status ─────────────────────────
         // Pending, Approved, Rejected
-        String applicationStatus
+        String applicationStatus,
+        String rejectionReason
 
 ) {
     // Room type inner record

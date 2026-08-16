@@ -1,8 +1,9 @@
 import { useState, useEffect } from "react";
-import { Plus, Pencil, Trash2, Lock } from "lucide-react";
+import { Plus, Pencil, Trash2, RefreshCw } from "lucide-react";
 import { AddRoomDrawer } from "./AddRoomDrawer";
 import { EditRoomDrawer } from "./EditRoomDrawer";
 import { toast } from "sonner";
+import { useCurrency } from "@/features/hotelOwner/services/currency-store";
 
 interface Room {
   id: string;
@@ -23,6 +24,7 @@ type RoomManagementProps = {
 const RoomManagement = ({ searchQuery, hotelId, isLocked = false }: RoomManagementProps) => {
   const [rooms, setRooms] = useState<Room[]>([]);
   const [loading, setLoading] = useState(true);
+  const { currency, setCurrency, formatPrice, exchangeRate, rateLoading, rateError } = useCurrency();
 
   const fetchRooms = async () => {
     if (!hotelId) {
@@ -88,7 +90,7 @@ const RoomManagement = ({ searchQuery, hotelId, isLocked = false }: RoomManageme
 
   return (
     <section className="flex flex-col rounded-xl bg-card shadow-md p-6 h-full">
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex items-center justify-between mb-4">
         <div>
           <h2 className="text-lg font-semibold text-card-foreground">
             Room Management
@@ -97,14 +99,49 @@ const RoomManagement = ({ searchQuery, hotelId, isLocked = false }: RoomManageme
             {visibleRooms.length} {visibleRooms.length === 1 ? "room" : "rooms"}
           </p>
         </div>
-        {hotelId && (
-          <AddRoomDrawer hotelId={hotelId} onSuccess={fetchRooms}>
-            <button className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors">
-              <Plus className="h-4 w-4" />
-              Add Room
-            </button>
-          </AddRoomDrawer>
-        )}
+
+        <div className="flex items-center gap-3">
+          {/* Currency Toggle */}
+          <div className="flex items-center gap-1.5">
+            <span className="text-xs text-muted-foreground font-medium">Currency:</span>
+            <div className="flex rounded-lg border border-border overflow-hidden">
+              {(["USD", "LKR"] as const).map((c) => (
+                <button
+                  key={c}
+                  onClick={() => setCurrency(c)}
+                  className={`px-3 py-1.5 text-xs font-semibold transition-colors ${
+                    currency === c
+                      ? "bg-primary text-primary-foreground"
+                      : "bg-card text-muted-foreground hover:bg-muted"
+                  }`}
+                >
+                  {c}
+                </button>
+              ))}
+            </div>
+            {/* Live Rate Badge */}
+            {currency === "LKR" && (
+              <span className="inline-flex items-center gap-1 rounded-full border border-border bg-muted/60 px-2 py-0.5 text-[10px] text-muted-foreground">
+                {rateLoading ? (
+                  <RefreshCw className="h-2.5 w-2.5 animate-spin" />
+                ) : rateError ? (
+                  "Rate unavailable"
+                ) : (
+                  `1 USD ≈ ${exchangeRate?.toFixed(0)} LKR`
+                )}
+              </span>
+            )}
+          </div>
+
+          {hotelId && (
+            <AddRoomDrawer hotelId={hotelId} onSuccess={fetchRooms}>
+              <button className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors">
+                <Plus className="h-4 w-4" />
+                Add Room
+              </button>
+            </AddRoomDrawer>
+          )}
+        </div>
       </div>
 
       {visibleRooms.length === 0 ? (
@@ -145,7 +182,7 @@ const RoomManagement = ({ searchQuery, hotelId, isLocked = false }: RoomManageme
                   </div>
                   <div className="flex flex-col items-end gap-1">
                     <p className="text-sm font-bold text-card-foreground whitespace-nowrap">
-                      ${room.price}
+                      {formatPrice(room.price)}
                       <span className="text-xs font-normal text-muted-foreground">
                         /night
                       </span>

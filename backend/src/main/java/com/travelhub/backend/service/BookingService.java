@@ -119,7 +119,7 @@ public class BookingService {
                                 .district(h.getDistrict())
                                 .roomName(pref.getRoomName() != null ? pref.getRoomName() : "Standard Room")
                                 .contactNumber(h.getHotelContactNumber() != null ? h.getHotelContactNumber() : h.getPhoneNumber())
-                                .email(h.getHotelEmail() != null ? h.getHotelEmail() : h.getOwnerEmail())
+                                .email(h.getHotelEmail() != null ? h.getHotelEmail() : (h.getOwner() != null ? h.getOwner().getEmail() : null))
                                 .build());
                     }
                 }
@@ -161,12 +161,15 @@ public class BookingService {
                 .category(booking.getPkg() != null ? booking.getPkg().getCategory() : null)
                 .startPlace(booking.getPkg() != null ? booking.getPkg().getStartPlace() : null)
                 .endPlace(booking.getPkg() != null ? booking.getPkg().getEndPlace() : null)
+                .agentId(booking.getPkg() != null && booking.getPkg().getAgent() != null ? booking.getPkg().getAgent().getId() : null)
+                .agencyName(booking.getPkg() != null && booking.getPkg().getAgent() != null ? booking.getPkg().getAgent().getAgencyName() : null)
                 .bookedOn(booking.getCreatedAt())
+                .hotelId(booking.getHotel() != null ? booking.getHotel().getId() : null)
                 .hotelName(booking.getHotel() != null ? booking.getHotel().getHotelName() : null)
                 .hotelLocation(booking.getHotel() != null ? booking.getHotel().getLocation() : null)
-                .driverName(booking.getVehicle() != null ? booking.getVehicle().getDriverName() : null)
-                .driverPhone(booking.getVehicle() != null ? booking.getVehicle().getDriverPhone() : null)
-                .driverRating(booking.getVehicle() != null ? booking.getVehicle().getDriverRating() : null)
+                .driverName(booking.getDriver() != null ? booking.getDriver().getFirstName() + " " + booking.getDriver().getLastName() : (booking.getVehicle() != null ? booking.getVehicle().getDriverName() : null))
+                .driverPhone(booking.getDriver() != null ? booking.getDriver().getMobileNumber() : (booking.getVehicle() != null ? booking.getVehicle().getDriverPhone() : null))
+                .driverRating(booking.getDriver() != null ? booking.getDriver().getRating() : (booking.getVehicle() != null ? booking.getVehicle().getDriverRating() : null))
                 .driverTrips(booking.getVehicle() != null ? booking.getVehicle().getDriverTrips() : null)
                 .vehicleType(booking.getVehicle() != null ? booking.getVehicle().getVehicleType() : null)
                 .vehicleModel(booking.getVehicle() != null ? booking.getVehicle().getModel() : null)

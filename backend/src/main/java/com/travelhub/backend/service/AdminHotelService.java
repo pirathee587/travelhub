@@ -143,17 +143,19 @@ public class AdminHotelService {
                 hotel.getLocation(),
                 rooms.size(),
                 roomTypes,
-                hotel.getOwnerName(),
-                hotel.getOwnerEmail(),
-                (hotel.getOwnerNic() != null && !hotel.getOwnerNic().isEmpty()) ? hotel.getOwnerNic() : (hotel.getOwner() != null ? hotel.getOwner().getNicNumber() : null),
-                hotel.getNicImageUrl(),
+                hotel.getOwner() != null ? hotel.getOwner().getName() : null,
+                hotel.getOwner() != null ? hotel.getOwner().getEmail() : null,
+                hotel.getOwner() != null ? hotel.getOwner().getNicNumber() : null,
+                hotel.getOwner() != null ? hotel.getOwner().getNicImage() : null,
+                hotel.getBusinessRegistrationImageUrl(),
                 hotel.getOwnerId(),
                 hotel.getPhoneNumber(),
                 hotel.getHotlineNumber(),
                 hotel.getHotelEmail(),
                 hotel.getHotelContactNumber(),
                 amenities,
-                hotel.getApplicationStatus()
+                hotel.getApplicationStatus(),
+                hotel.getRejectionReason()
         );
     }
 
@@ -189,6 +191,7 @@ public class AdminHotelService {
                         new ResourceNotFoundException(
                                 "Hotel", "id", id));
         hotel.setApplicationStatus("Rejected");
+        hotel.setRejectionReason(reason);
         hotelRepository.save(hotel);
 
 

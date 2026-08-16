@@ -29,6 +29,18 @@ export function useAllPackages() {
     });
 }
 
+export function useActiveDistricts() {
+    return useSWR("active-districts", () => api.getDistrictsWithPackages(), defaultOptions);
+}
+
+export function usePackagesByDistrict(district: string | null) {
+    return useSWR(
+        district && district !== "all" ? `packages-district-${district}` : null,
+        () => api.getPackagesByDistrict(district!),
+        defaultOptions
+    );
+}
+
 export function usePackageById(id) {
     return useSWR(id ? `package-${id}` : null, () => api.getPackageById(id), defaultOptions);
 }
@@ -196,3 +208,68 @@ export function useUserProfile(userId) {
         }
     );
 }
+
+// ── Tourist Portal Aggregated SWR Hooks ───────────────────────────────────
+
+/**
+ * useTouristOverview
+ * Replaces 4 separate SWR hooks (useStats, useTrips, useDocuments, useRecommendations)
+ */
+export function useTouristOverview(userId) {
+    return useSWR(
+        userId ? `tourist-overview-${userId}` : null,
+        () => api.getTouristOverview(userId),
+        {
+            ...defaultOptions,
+            fallbackData: {
+                stats: { totalTrips: 0, ongoingTrips: 0, completedTrips: 0, upcomingTrips: 0 },
+                trips: [],
+                documents: [],
+                recommendations: [],
+            },
+        }
+    );
+}
+
+/**
+ * useTouristExploreData
+ * Replaces 2 separate SWR hooks (useAllPackages, useRecommendations)
+ */
+export function useTouristExploreData(userId) {
+    return useSWR(
+        `tourist-explore-${userId || "guest"}`,
+        () => api.getTouristExploreData(userId),
+        {
+            ...defaultOptions,
+            fallbackData: {
+                packages: [],
+                recommendations: [],
+            },
+        }
+    );
+}
+
+/**
+ * useTouristPackagePageData
+ * Replaces 3 separate SWR hooks (usePackageById, usePackageReviews, usePackageRating)
+ */
+export function useTouristPackagePageData(packageId) {
+    return useSWR(
+        packageId ? `tourist-package-page-${packageId}` : null,
+        () => api.getTouristPackagePageData(packageId),
+        defaultOptions
+    );
+}
+
+/**
+ * useTouristHotelPageData
+ * Replaces 5 separate SWR hooks (useHotelById, useHotelImages, useHotelRooms, useHotelReviews, useHotelRating)
+ */
+export function useTouristHotelPageData(hotelId) {
+    return useSWR(
+        hotelId ? `tourist-hotel-page-${hotelId}` : null,
+        () => api.getTouristHotelPageData(hotelId),
+        defaultOptions
+    );
+}
+

@@ -54,7 +54,6 @@ public class AuthService {
                 .role(request.getRole())
                 .preferredLanguage(request.getPreferredLanguage())
                 .nationality(request.getNationality())
-                .nicNumber(request.getNicNumber())
                 .hotelName(request.getHotelName())
                 .businessRegistrationId(request.getBusinessRegistrationId())
                 .businessAddress(request.getBusinessAddress())
@@ -84,13 +83,12 @@ public class AuthService {
                     .destination(user.getDistrict() != null ? user.getDistrict() : "Unknown")
                     .owner(user)
                     .ownerId(user.getId())
-                    .ownerName(user.getName())
-                    .ownerEmail(user.getEmail())
-                    .ownerNic(user.getNicNumber())
+
                     .build();
             hotel = hotelRepository.save(hotel);
             user.setHotelId(hotel.getId());
         }
+
 
         // Save User again to cascade the linked profile relationships
         user = userRepository.save(user);
@@ -206,6 +204,8 @@ public class AuthService {
         user.setPasswordResetToken(null);
         user.setPasswordResetExpires(null);
         userRepository.save(user);
+
+        emailService.sendPasswordChangedNotification(user);
 
         return new ApiResponse(true, "Password reset successfully. You can now login with your new password.");
     }

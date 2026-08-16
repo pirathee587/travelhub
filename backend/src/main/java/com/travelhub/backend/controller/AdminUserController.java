@@ -77,4 +77,27 @@ public class AdminUserController {
                         adminUserService
                                 .rejectAgent(id, reason)));
     }
+
+    @PatchMapping("/agents/{id}/suspend")
+    public ResponseEntity<?> suspendAgent(
+            @PathVariable Long id,
+            @RequestBody(required = false)
+            Map<String, String> body) {
+        String message = body != null
+                ? body.getOrDefault("message", null)
+                : null;
+        return ResponseEntity.ok(
+                new ApiResponse(true, "Agent suspended",
+                        adminUserService
+                                .suspendAgent(id, message)));
+    }
+
+    @PatchMapping("/agents/{id}/unsuspend")
+    public ResponseEntity<?> unsuspendAgent(
+            @PathVariable Long id) {
+        return ResponseEntity.ok(
+                new ApiResponse(true, "Agent unsuspended",
+                        adminUserService
+                                .unsuspendAgent(id)));
+    }
 }

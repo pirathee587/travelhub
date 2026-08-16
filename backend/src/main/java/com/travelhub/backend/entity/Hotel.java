@@ -1,3 +1,4 @@
+
 package com.travelhub.backend.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -36,18 +37,34 @@ public class Hotel {
     private String imageUrl;
     private String district;
 
-    // ── Owner Information ──────────────────────────────
-    @Column(name = "owner_name")
+    // ── Owner Information (Dropped from hotels table in V6, mapped to owner User) ──
+    @Transient
     private String ownerName;
 
-    @Column(name = "owner_email")
+    @Transient
     private String ownerEmail;
 
-    @Column(name = "owner_nic")
+    @Transient
     private String ownerNic;
 
-    @Column(name = "nic_image_url")
+    @Transient
     private String nicImageUrl;
+
+    public String getOwnerName() {
+        return owner != null ? owner.getName() : ownerName;
+    }
+
+    public String getOwnerEmail() {
+        return owner != null ? owner.getEmail() : ownerEmail;
+    }
+
+    public String getOwnerNic() {
+        return (owner != null && owner.getNicNumber() != null) ? owner.getNicNumber() : ownerNic;
+    }
+
+    public String getNicImageUrl() {
+        return (owner != null && owner.getNicImage() != null) ? owner.getNicImage() : nicImageUrl;
+    }
 
     @Column(name = "owner_id", insertable = false, updatable = false)
     private Long ownerId;
@@ -70,6 +87,15 @@ public class Hotel {
     @Column(name = "application_status")
     @Builder.Default
     private String applicationStatus = "Pending";
+
+    @Column(name = "nic_rear_image_url")
+    private String nicRearImageUrl;
+
+    @Column(name = "business_registration_image_url")
+    private String businessRegistrationImageUrl;
+
+    @Column(name = "rejection_reason")
+    private String rejectionReason;
 
     @Column(name = "is_active")
     @Builder.Default

@@ -406,7 +406,7 @@ public class AgentBookingService {
                                 .district(h.getDistrict())
                                 .roomName(pref.getRoomName() != null ? pref.getRoomName() : "Standard Room")
                                 .contactNumber(h.getHotelContactNumber() != null ? h.getHotelContactNumber() : h.getPhoneNumber())
-                                .email(h.getHotelEmail() != null ? h.getHotelEmail() : h.getOwnerEmail())
+                                .email(h.getHotelEmail() != null ? h.getHotelEmail() : (h.getOwner() != null ? h.getOwner().getEmail() : null))
                                 .build());
                     }
                 }
@@ -446,6 +446,10 @@ public class AgentBookingService {
                 .vehicleType(vehicleType)
                 .vehicleModel(vehicleModel)
                 .vehicleRegistration(vehicleRegistration)
+                .driverName(booking.getDriver() != null ? booking.getDriver().getFirstName() + " " + booking.getDriver().getLastName() : (booking.getVehicle() != null ? booking.getVehicle().getDriverName() : null))
+                .driverPhone(booking.getDriver() != null ? booking.getDriver().getMobileNumber() : (booking.getVehicle() != null ? booking.getVehicle().getDriverPhone() : null))
+                .driverRating(booking.getDriver() != null ? booking.getDriver().getRating() : (booking.getVehicle() != null ? booking.getVehicle().getDriverRating() : null))
+                .driverTrips(booking.getVehicle() != null ? booking.getVehicle().getDriverTrips() : null)
                 .bookedOn(booking.getCreatedAt())
                 .adults(booking.getAdults())
                 .children(booking.getChildren())

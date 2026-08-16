@@ -8,6 +8,7 @@ import { Badge } from '@/components/common/ui/badge';
 import { Bell, CreditCard, Loader2, CheckCircle2, ArrowLeft } from 'lucide-react';
 import { cn } from '@/features/tourist/services/utils';
 import { DashboardLayout } from '@/features/tourist/components/dashboard/DashboardLayout';
+import { DocumentListSkeleton } from '@/components/common/ui/skeletons';
 
 const UserNotifications = () => {
   const [notifications, setNotifications] = useState<any[]>([]);
@@ -81,9 +82,7 @@ const UserNotifications = () => {
       </div>
 
       {loading ? (
-        <div className="flex justify-center items-center py-20">
-          <Loader2 className="w-8 h-8 animate-spin text-primary" />
-        </div>
+        <DocumentListSkeleton count={4} />
       ) : notifications.length === 0 ? (
         <Card className="border-dashed border-2 shadow-sm rounded-xl">
           <CardContent className="flex flex-col items-center justify-center py-20 text-center">
@@ -115,9 +114,6 @@ const UserNotifications = () => {
                   </div>
                   <h6 className="font-semibold">{notification.title}</h6>
                   <p className="text-sm text-muted-foreground">{notification.message}</p>
-                </div>
-                <div className="text-xs text-muted-foreground whitespace-nowrap">
-                  {notification.time}
                 </div>
               </div>
             ))}

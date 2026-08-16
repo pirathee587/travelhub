@@ -1,15 +1,18 @@
 import { useNavigate } from "react-router-dom";
 import { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
-import { ArrowLeft, ImagePlus, X, Loader2 } from "lucide-react";
+import { ArrowLeft, ImagePlus, X, Loader2, ScanLine } from "lucide-react";
 import { z } from "zod";
 import { toast } from "sonner";
+import { createWorker } from "tesseract.js";
+import { validateNIC } from "@/utils/nicValidation";
 import { AppShell } from "@/features/hotelOwner/components/AppShell";
 import { ChangePasswordCard } from "@/components/common/ChangePasswordCard";
 import {
   getInitials,
   updateProfile,
   uploadAvatar,
+  uploadNicImage,
   useProfile,
   mutateProfile,
 } from "@/features/hotelOwner/services/profile-store";
@@ -24,24 +27,29 @@ const schema = z.object({
     .min(6, "Phone number is required")
     .max(30)
     .regex(/^[0-9+\-\s()]+$/, "Use digits, spaces, +, -, ()"),
+  nicNumber: z.string().trim().optional(),
 });
 
-type FormValues = z.infer<typeof schema> & { avatar: string };
+type FormValues = z.infer<typeof schema> & { avatar: string; nicNumber: string; nicImage: string };
 
 export default function SettingsPage() {
   const profile = useProfile();
   const navigate = useNavigate();
   const fileRef = useRef<HTMLInputElement>(null);
+  const nicFileRef = useRef<HTMLInputElement>(null);
 
   const [values, setValues] = useState<FormValues>({
     name: profile.name,
     email: profile.email,
     phone: profile.phone,
     avatar: profile.avatar,
+    nicNumber: profile.nicNumber,
+    nicImage: profile.nicImage,
   });
   const [errors, setErrors] = useState<Partial<Record<keyof FormValues, string>>>({});
   const [saving, setSaving] = useState(false);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
+  const [isScanning, setIsScanning] = useState(false);
 
   // Sync form when profile loads from API
   useEffect(() => {
@@ -50,8 +58,10 @@ export default function SettingsPage() {
       email: profile.email,
       phone: profile.phone,
       avatar: profile.avatar,
+      nicNumber: profile.nicNumber,
+      nicImage: profile.nicImage,
     });
-  }, [profile.name, profile.email, profile.phone, profile.avatar]);
+  }, [profile.name, profile.email, profile.phone, profile.avatar, profile.nicNumber, profile.nicImage]);
 
   const setField = <K extends keyof FormValues>(k: K, v: FormValues[K]) => {
     setValues((prev) => ({ ...prev, [k]: v }));
@@ -83,6 +93,48 @@ export default function SettingsPage() {
     }
   };
 
+  // ── Handle NIC scan ─────────────────────────────────────────────────────────
+  const handleScanNIC = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsScanning(true);
+    const toastId = toast.loading("Scanning NIC...");
+
+    try {
+      const worker = await createWorker("eng");
+      const { data: { text } } = await worker.recognize(file);
+      await worker.terminate();
+
+      const oldNicMatch = text.match(/[0-9]{9}[vVxX]/);
+      const newNicMatch = text.match(/[0-9]{12}/);
+      const extractedNic = (newNicMatch ? newNicMatch[0] : (oldNicMatch ? oldNicMatch[0] : "")).toUpperCase();
+
+      if (extractedNic) {
+        const validation = validateNIC(extractedNic);
+        if (validation.isValid) {
+          toast.loading("NIC verified. Uploading image...", { id: toastId });
+          const imageUrl = await uploadNicImage(file);
+          setValues((prev) => ({
+            ...prev,
+            nicNumber: extractedNic,
+            nicImage: imageUrl,
+          }));
+          toast.success("NIC scanned and uploaded successfully!", { id: toastId });
+        } else {
+          toast.error("NIC detected but format is invalid.", { id: toastId });
+        }
+      } else {
+        toast.error("Could not detect NIC number. Please try a clearer photo or enter manually.", { id: toastId });
+      }
+    } catch {
+      toast.error("Scanning failed. Please enter NIC manually.", { id: toastId });
+    } finally {
+      setIsScanning(false);
+      if (nicFileRef.current) nicFileRef.current.value = "";
+    }
+  };
+
   // ── Handle form save ────────────────────────────────────────────────────────
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -104,6 +156,8 @@ export default function SettingsPage() {
       const updated = await updateProfile({
         name: result.data.name,
         phone: result.data.phone,
+        nicNumber: values.nicNumber || undefined,
+        nicImage: values.nicImage || undefined,
       });
       mutateProfile(updated);
       toast.success("Profile updated successfully.");
@@ -233,6 +287,48 @@ export default function SettingsPage() {
             <p className="mt-1 text-[11px] text-muted-foreground">
               Email is managed by your account and cannot be edited here.
             </p>
+          </Field>
+
+          {/* ── NIC Number with Scan ────────────────────────────────────────── */}
+          <Field label="NIC Number" error={errors.nicNumber} className="md:col-span-2">
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={values.nicNumber}
+                onChange={(e) => setField("nicNumber", e.target.value.toUpperCase())}
+                placeholder="e.g. 199912345678 or 991234567V"
+                className={`${inputClass(!!errors.nicNumber)} flex-1`}
+              />
+              <button
+                type="button"
+                onClick={() => nicFileRef.current?.click()}
+                disabled={isScanning}
+                className="inline-flex h-11 items-center gap-1.5 rounded-[10px] border border-border bg-slate-700 hover:bg-slate-800 px-4 text-sm font-semibold text-white shadow-sm transition disabled:opacity-60"
+              >
+                {isScanning ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <ScanLine className="h-4 w-4" />
+                )}
+                {isScanning ? "Scanning..." : "Add NIC Image"}
+              </button>
+            </div>
+            <input
+              ref={nicFileRef}
+              type="file"
+              accept="image/*"
+              className="sr-only"
+              onChange={handleScanNIC}
+            />
+            <p className="mt-1 text-[11px] text-muted-foreground">
+              Format: 9 digits + V/X or 12 digits. Click Add NIC Image to auto-fill and upload.
+            </p>
+            {values.nicImage && (
+              <div className="mt-3">
+                <p className="text-[12px] font-medium text-muted-foreground mb-1">Uploaded NIC Image:</p>
+                <img src={values.nicImage} alt="NIC" className="h-24 w-auto rounded-md border shadow-sm object-cover" />
+              </div>
+            )}
           </Field>
         </div>
 

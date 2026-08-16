@@ -22,6 +22,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import lombok.RequiredArgsConstructor;
 
+import org.springframework.cache.annotation.Cacheable;
+
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
@@ -31,6 +33,7 @@ public class PackageService {
     private final ReviewRepository reviewRepository;
     private final AgentRatingCalculator agentRatingCalculator;
 
+    @Cacheable(value = "touristPackages", key = "'all'")
     public List<PackageResponse> getAllPackages() {
         List<Package> packages = packageRepository.findByIsActiveTrue()
                 .stream()
@@ -39,6 +42,7 @@ public class PackageService {
         return toPackageResponses(packages);
     }
 
+    @Cacheable(value = "touristPackages", key = "'cat_' + #category")
     public List<PackageResponse> getPackagesByCategory(String category) {
         List<Package> packages = packageRepository.findByCategory(category)
                 .stream()
@@ -47,6 +51,7 @@ public class PackageService {
         return toPackageResponses(packages);
     }
 
+    @Cacheable(value = "touristPackages", key = "'trending'")
     public List<PackageResponse> getTrendingPackages() {
         List<Package> packages = packageRepository.findByTrendingTrue()
                 .stream()
@@ -67,6 +72,7 @@ public class PackageService {
         return toPackageResponses(packages);
     }
 
+    @Cacheable(value = "touristPackageDetails", key = "#id")
     public PackageDetailResponse getPackageById(Long id) {
         Package pkg = packageRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Package not found with id: " + id));   //Error handling for package not found
@@ -319,5 +325,17 @@ public class PackageService {
                     return map;
                 })
                 .collect(Collectors.toList());
+    }
+
+    // ── Dynamic District Map services ──────────────────────────────────────
+    @Cacheable(value = "touristPackages", key = "'active_districts'")
+    public List<String> getActiveDistricts() {
+        return packageRepository.findDistinctDistricts();
+    }
+
+    @Cacheable(value = "touristPackages", key = "'dist_' + #district")
+    public List<PackageResponse> getPackagesByDistrict(String district) {
+        List<Package> packages = packageRepository.findActivePackagesByDistrict(district);
+        return toPackageResponses(packages);
     }
 }

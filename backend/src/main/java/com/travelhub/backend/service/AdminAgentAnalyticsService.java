@@ -93,8 +93,8 @@ public class AdminAgentAnalyticsService {
                                 "Agent", "id", agentId));
 
         List<String> labels = List.of(
-                "J","F","M","A","M","J",
-                "J","A","S","O","N","D");
+                "Jan","Feb","Mar","Apr","May","Jun",
+                "Jul","Aug","Sep","Oct","Nov","Dec");
 
         List<Double> data = new ArrayList<>();
 
@@ -145,6 +145,7 @@ public class AdminAgentAnalyticsService {
             Agent a) {
         return new AdminAgentListResponse(
                 a.getId(),
+                a.getOwner() != null ? a.getOwner().getId() : null,
                 a.getAgencyName(),
                 a.getAgencyName(),
                 a.getOwner() != null ? a.getOwner().getName() : null,
@@ -152,8 +153,10 @@ public class AdminAgentAnalyticsService {
                 a.getOwner() != null ? a.getOwner().getTelephone() : null,
                 a.getLocation(),
                 a.getOwner() != null && Boolean.TRUE.equals(a.getOwner().getAgentApproved()) ? "Approved" : "Pending",
+                a.getOwner() != null ? a.getOwner().getNicVerificationStatus() : "PENDING",
                 a.getSubmittedDate() != null ? a.getSubmittedDate().toString() : null,
                 a.getIsActive()
         );
     }
 }
+

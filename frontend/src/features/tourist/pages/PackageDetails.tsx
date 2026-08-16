@@ -23,8 +23,9 @@ import {
 import { Avatar, AvatarFallback } from "@/components/common/ui/avatar";
 import { useState, useMemo, useCallback, useRef } from "react";
 import { cn } from "@/features/tourist/services/utils";
-import { usePackageById, usePackageReviews, usePackageRating } from "@/features/tourist/hooks/useApi";
+import { useTouristPackagePageData } from "@/features/tourist/hooks/useApi";
 import { DetailSkeleton } from "@/components/common/ui/skeletons";
+import { ImageWithSkeleton } from "@/components/common/ui/ImageWithSkeleton";
 import { EditReviewDialog } from "@/features/tourist/components/dashboard/EditReviewDialog";
 import { DeleteConfirmDialog } from "@/features/tourist/components/dashboard/DeleteConfirmDialog";
 import { useToast } from "@/hooks/use-toast";
@@ -97,10 +98,11 @@ const PackageDetails = () => {
     const touchStartX = useRef(null);
     const touchEndX = useRef(null);
 
-    // SWR hooks — parallel fetching with caching
-    const { data: pkg, isLoading: pkgLoading } = usePackageById(id);
-    const { data: reviews = [], mutate: mutateReviews } = usePackageReviews(id);
-    const { data: ratingInfo = { averageRating: 0, reviewCount: 0 } } = usePackageRating(id);
+    // Single aggregated SWR hook (Package Details: 3 requests -> 1 request)
+    const { data: pageData, isLoading: pkgLoading, mutate: mutateReviews } = useTouristPackagePageData(id);
+    const pkg = pageData?.packageDetails ?? null;
+    const reviews = pageData?.reviews ?? [];
+    const ratingInfo = pageData?.ratingInfo ?? { averageRating: 0, reviewCount: 0 };
 
     // Memoize sorted itinerary
     const sortedItinerary = useMemo(() =>
@@ -292,11 +294,10 @@ const PackageDetails = () => {
                             )}
                             onClick={() => openLightbox(0)}
                         >
-                        <img
+                        <ImageWithSkeleton
                             src={galleryImages[0]}
                             alt={`${pkg.packageName} main view`}
-                            className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-                            loading="eager"
+                            className="transition-transform duration-700 group-hover:scale-105"
                         />
                         <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent" />
                     </div>
@@ -313,11 +314,10 @@ const PackageDetails = () => {
                                     )}
                                     onClick={() => openLightbox(imageIndex)}
                                 >
-                                    <img
+                                    <ImageWithSkeleton
                                         src={img}
                                         alt={`${pkg.packageName} ${imageIndex + 1}`}
-                                        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-                                        loading="lazy"
+                                        className="transition-transform duration-500 group-hover:scale-110"
                                     />
                                     <div className="absolute inset-0 bg-gradient-to-t from-black/25 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                                 </div>

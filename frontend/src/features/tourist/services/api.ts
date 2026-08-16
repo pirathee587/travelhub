@@ -48,6 +48,12 @@ export const api = {
     getPackageById: (id: string | number) =>
         fetch(`${BASE_URL}/packages/${id}`).then(handleResponse).then(mapPackagePrices).catch(() => null),
 
+    getDistrictsWithPackages: () =>
+        fetch(`${BASE_URL}/packages/districts`).then(handleResponse).catch(() => []),
+
+    getPackagesByDistrict: (district: string) =>
+        fetch(`${BASE_URL}/packages?district=${encodeURIComponent(district)}`).then(handleResponse).then(mapPackagesPrices).catch(() => []),
+
     // Hotels
     getAllHotels: (district: string | null = null) => {
         const url = district && district !== "all" 
@@ -167,13 +173,6 @@ export const api = {
             console.error("[API] Cancel booking failed:", err);
             throw err;
         }),
-
-    // Tourist — Documents
-    getDocuments: (userId: string | number) =>
-        fetch(`${BASE_URL}/tourist/documents?userId=${userId}`).then(handleResponse).catch(() => []),
-
-    getDocumentsByType: (userId: string | number, type: string) =>
-        fetch(`${BASE_URL}/tourist/documents?userId=${userId}&type=${type}`).then(handleResponse).catch(() => []),
 
     //package reviews
     getPackageReviews: (packageId: string | number) =>
@@ -317,4 +316,51 @@ export const api = {
             body: formData,
         }).then(handleResponse);
     },
+
+    // ── Tourist Portal API Aggregators ───────────────────────────────────────
+
+    /**
+     * GET /api/tourist/overview?userId=X
+     * Combines stats + trips + documents + recommendations into 1 request.
+     */
+    getTouristOverview: (userId: string | number) =>
+        fetch(`${BASE_URL}/tourist/overview?userId=${userId}`)
+            .then(handleResponse)
+            .catch(() => ({
+                stats: { totalTrips: 0, ongoingTrips: 0, completedTrips: 0, upcomingTrips: 0 },
+                trips: [],
+                documents: [],
+                recommendations: [],
+            })),
+
+    /**
+     * GET /api/tourist/explore-data?userId=X
+     * Combines packages + recommendations into 1 request.
+     */
+    getTouristExploreData: (userId?: string | number) =>
+        fetch(`${BASE_URL}/tourist/explore-data${userId ? `?userId=${userId}` : ""}`)
+            .then(handleResponse)
+            .catch(() => ({
+                packages: [],
+                recommendations: [],
+            })),
+
+    /**
+     * GET /api/tourist/packages/{id}/page-data
+     * Combines package details + reviews + rating summary into 1 request.
+     */
+    getTouristPackagePageData: (id: string | number) =>
+        fetch(`${BASE_URL}/tourist/packages/${id}/page-data`)
+            .then(handleResponse)
+            .catch(() => null),
+
+    /**
+     * GET /api/tourist/hotels/{id}/page-data
+     * Combines hotel details + images + rooms + reviews + rating summary into 1 request.
+     */
+    getTouristHotelPageData: (id: string | number) =>
+        fetch(`${BASE_URL}/tourist/hotels/${id}/page-data`)
+            .then(handleResponse)
+            .catch(() => null),
 };
+
