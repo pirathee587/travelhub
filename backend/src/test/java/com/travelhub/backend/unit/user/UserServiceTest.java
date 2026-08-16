@@ -4,6 +4,7 @@ import com.travelhub.backend.common.BadRequestException;
 import com.travelhub.backend.dto.request.UpdatePasswordRequest;
 import com.travelhub.backend.entity.User;
 import com.travelhub.backend.repository.UserRepository;
+import com.travelhub.backend.service.EmailService;
 import com.travelhub.backend.service.UserService;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
@@ -27,6 +28,9 @@ public class UserServiceTest {
     @Mock
     private PasswordEncoder passwordEncoder;
 
+    @Mock
+    private EmailService emailService;
+
     @InjectMocks
     private UserService userService;
 
@@ -45,6 +49,7 @@ public class UserServiceTest {
         userService.changePassword(73L, request, passwordEncoder);
 
         verify(userRepository, times(1)).save(user);
+        verify(emailService, times(1)).sendPasswordChangedNotification(user);
         assertEquals(user.getPassword(), "encoded_new_pass");
     }
 

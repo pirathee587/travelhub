@@ -139,6 +139,19 @@ public class EmailService {
         sendEmail(email, "Reset your password - TravelHub", message, "USER", userId);
     }
 
+    public void sendPasswordChangedNotification(User user) {
+        if (user == null || user.getEmail() == null) {
+            return;
+        }
+        String message = "<h3>Security Alert: Password Changed</h3>"
+                + "<p>Dear <b>" + user.getName() + "</b>,</p>"
+                + "<p>Your TravelHub account password was successfully updated.</p>"
+                + "<p>If you performed this action, no further action is required.</p>"
+                + "<p style=\"color: #ef4444;\">If you did NOT change your password, please contact our support team immediately or request a password reset.</p>"
+                + "<p>Thank you,<br/>TravelHub Security Team</p>";
+        sendEmail(user.getEmail(), "Security Alert: Password Changed - TravelHub", message, "USER", user.getId());
+    }
+
     public void sendPaymentConfirmation(Payment payment) {
         if (payment.getUser() == null) {
             return;
