@@ -119,7 +119,7 @@ public class BookingService {
                                 .district(h.getDistrict())
                                 .roomName(pref.getRoomName() != null ? pref.getRoomName() : "Standard Room")
                                 .contactNumber(h.getHotelContactNumber() != null ? h.getHotelContactNumber() : h.getPhoneNumber())
-                                .email(h.getHotelEmail() != null ? h.getHotelEmail() : h.getOwnerEmail())
+                                .email(h.getHotelEmail() != null ? h.getHotelEmail() : (h.getOwner() != null ? h.getOwner().getEmail() : null))
                                 .build());
                     }
                 }

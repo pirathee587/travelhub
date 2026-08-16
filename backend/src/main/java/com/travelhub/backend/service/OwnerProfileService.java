@@ -32,6 +32,8 @@ public class OwnerProfileService {
         if (request.getPreferredLanguage() != null) user.setPreferredLanguage(request.getPreferredLanguage());
         if (request.getBusinessAddress() != null) user.setBusinessAddress(request.getBusinessAddress());
         if (request.getDistrict() != null) user.setDistrict(request.getDistrict());
+        if (request.getNicNumber() != null) user.setNicNumber(request.getNicNumber());
+        if (request.getNicImage() != null) user.setNicImage(request.getNicImage());
 
         user = userRepository.save(user);
 
@@ -60,6 +62,8 @@ public class OwnerProfileService {
                 .businessAddress(user.getBusinessAddress())
                 .district(user.getDistrict())
                 .businessRegistrationId(user.getBusinessRegistrationId())
+                .nicNumber(user.getNicNumber())
+                .nicImage(user.getNicImage())
                 .status(user.getStatus())
                 .updatedAt(user.getUpdatedAt())
                 .build();

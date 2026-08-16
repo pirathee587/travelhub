@@ -80,17 +80,23 @@ public class OwnerHotelService {
                 .priceTo(request.getPriceTo())
                 .imageUrl(imageUrl)
                 .district(request.getDistrict())
-                .hotelEmail(request.getOwnerEmail())
+                .hotelEmail(owner.getEmail())
                 .hotelContactNumber(request.getPhoneNumber())
                 .phoneNumber(request.getPhoneNumber())
                 .hotlineNumber(request.getHotlineNumber())
-                .ownerName(request.getOwnerName())
-                .ownerEmail(owner.getEmail())
-                .ownerNic(request.getOwnerNic())
+                .businessRegistrationImageUrl(request.getBusinessRegistrationImageUrl())
                 .applicationStatus("Pending")
                 .isActive(true)
                 .owner(owner)
                 .build();
+
+        if (request.getNicImageUrl() != null && !request.getNicImageUrl().trim().isEmpty()) {
+            owner.setNicImage(request.getNicImageUrl());
+        }
+        if (request.getOwnerNic() != null && !request.getOwnerNic().trim().isEmpty()) {
+            owner.setNicNumber(request.getOwnerNic());
+        }
+        userRepository.save(owner);
 
         hotel = hotelRepository.save(hotel);
         eventPublisher.publishEvent(new HotelEvent(this, hotel, "CREATED"));
@@ -122,9 +128,29 @@ public class OwnerHotelService {
         hotel.setPhoneNumber(request.getPhoneNumber());
         hotel.setHotelContactNumber(request.getPhoneNumber());
         hotel.setHotlineNumber(request.getHotlineNumber());
-        hotel.setOwnerName(request.getOwnerName());
-        hotel.setHotelEmail(request.getOwnerEmail());
-        hotel.setOwnerNic(request.getOwnerNic());
+
+        User owner = hotel.getOwner();
+        boolean ownerUpdated = false;
+        if (request.getOwnerNic() != null) {
+            owner.setNicNumber(request.getOwnerNic());
+            ownerUpdated = true;
+        }
+        if (request.getNicImageUrl() != null && !request.getNicImageUrl().trim().isEmpty()) {
+            owner.setNicImage(request.getNicImageUrl());
+            ownerUpdated = true;
+        }
+        if (ownerUpdated) {
+            userRepository.save(owner);
+        }
+
+        if (request.getBusinessRegistrationImageUrl() != null && !request.getBusinessRegistrationImageUrl().trim().isEmpty()) {
+            hotel.setBusinessRegistrationImageUrl(request.getBusinessRegistrationImageUrl());
+        }
+
+        if ("Rejected".equalsIgnoreCase(hotel.getApplicationStatus())) {
+            hotel.setApplicationStatus("Pending");
+            hotel.setRejectionReason(null);
+        }
 
         hotel = hotelRepository.save(hotel);
         return toHotelResponse(hotel);

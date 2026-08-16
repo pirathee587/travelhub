@@ -10,4 +10,6 @@ public class OwnerProfileRequest {
     private String preferredLanguage;
     private String businessAddress;
     private String district;
+    private String nicNumber;
+    private String nicImage;
 }
