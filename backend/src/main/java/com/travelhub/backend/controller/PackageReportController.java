@@ -1,5 +1,7 @@
 package com.travelhub.backend.controller;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.travelhub.backend.common.BadRequestException;
 import com.travelhub.backend.dto.request.PackageReportRequestDto;
 import com.travelhub.backend.dto.response.PackageReportResponseDto;
 import com.travelhub.backend.common.UnauthorizedException;
@@ -25,12 +27,20 @@ public class PackageReportController {
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<PackageReportResponseDto> createReport(
             @RequestParam("bookingId") Long bookingId,
-            @RequestPart("data") @Valid PackageReportRequestDto dto,
+            @RequestPart("data") String dataJson,
             @RequestPart(value = "files", required = false) List<MultipartFile> files
     ) {
-        Long userId = requireUserId();
-        PackageReportResponseDto response = packageReportService.createReport(userId, bookingId, dto, files);
-        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+        try {
+            ObjectMapper mapper = new ObjectMapper();
+            PackageReportRequestDto dto = mapper.readValue(dataJson, PackageReportRequestDto.class);
+            Long userId = requireUserId();
+            PackageReportResponseDto response = packageReportService.createReport(userId, bookingId, dto, files);
+            return ResponseEntity.status(HttpStatus.CREATED).body(response);
+        } catch (BadRequestException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to process report: " + e.getMessage(), e);
+        }
     }
 
     @GetMapping

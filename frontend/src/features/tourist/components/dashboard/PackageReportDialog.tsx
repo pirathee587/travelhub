@@ -100,7 +100,7 @@ export default function PackageReportDialog({
         onSuccess();
       }
     } catch (err: any) {
-      const msg = err.response?.data?.message || 'Failed to submit report';
+      const msg = err.message || err.response?.data?.message || 'Failed to submit report';
       toast.error(msg);
     } finally {
       setLoading(false);

@@ -41,7 +41,7 @@ const packageReportService = {
   createReport: async (bookingId: number | string, data: PackageReportRequestPayload, files?: File[]): Promise<PackageReportResponseDto> => {
     const formData = new FormData();
     formData.append('bookingId', String(bookingId));
-    formData.append('data', new Blob([JSON.stringify(data)], { type: 'application/json' }));
+    formData.append('data', JSON.stringify(data));
     
     if (files && files.length > 0) {
       files.forEach((file) => {
@@ -49,12 +49,24 @@ const packageReportService = {
       });
     }
 
-    const response = await api.post('/tourist/reports', formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
+    const token = localStorage.getItem('token');
+    const headers: Record<string, string> = {};
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+
+    const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080';
+    const response = await fetch(`${BASE_URL}/api/tourist/reports?bookingId=${bookingId}`, {
+      method: 'POST',
+      headers,
+      body: formData,
     });
-    return response.data;
+
+    const resData = await response.json();
+    if (!response.ok) {
+      throw new Error(resData?.message || `Failed with status ${response.status}`);
+    }
+    return resData;
   },
 
   getTouristReports: async (): Promise<PackageReportResponseDto[]> => {

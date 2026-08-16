@@ -66,7 +66,7 @@ public class PackageReportService {
             throw new BadRequestException("No travel agency associated with this package");
         }
 
-        // Step 5: Build Report
+        // Step 5: Build & Save Initial Report
         PackageReport report = PackageReport.builder()
                 .booking(booking)
                 .user(booking.getUser())
@@ -79,25 +79,28 @@ public class PackageReportService {
                 .evidenceList(new ArrayList<>())
                 .build();
 
+        PackageReport savedReport = packageReportRepository.save(report);
+
         // Step 6: Handle Evidence Uploads
+        log.info("Received {} evidence files for booking report #{}", files != null ? files.size() : 0, bookingId);
         if (files != null && !files.isEmpty()) {
             for (MultipartFile file : files) {
                 if (file != null && !file.isEmpty()) {
                     try {
                         String imageUrl = imageUploadService.uploadReportImage(file).getImageUrl();
+                        log.info("Successfully uploaded evidence image: {}", imageUrl);
                         PackageReportEvidence evidence = PackageReportEvidence.builder()
-                                .report(report)
+                                .report(savedReport)
                                 .imageUrl(imageUrl)
                                 .build();
-                        report.getEvidenceList().add(evidence);
+                        savedReport.getEvidenceList().add(evidence);
                     } catch (Exception e) {
                         log.error("Failed to upload report evidence image: {}", e.getMessage(), e);
                     }
                 }
             }
+            savedReport = packageReportRepository.save(savedReport);
         }
-
-        PackageReport savedReport = packageReportRepository.save(report);
 
         // Step 7: Notify Tourist
         try {
