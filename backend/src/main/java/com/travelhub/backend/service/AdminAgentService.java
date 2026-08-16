@@ -173,6 +173,13 @@ public class AdminAgentService {
                             "dd/MM/yyyy"));
         }
 
+        int pkgCount = 0;
+        try {
+            pkgCount = packageRepository.findByAgent_Id(a.getId()).size();
+        } catch (Exception ignored) {}
+
+        Double computedRating = agentRatingCalculator.getAgentRating(a.getId());
+
         return new AdminAgentListResponse(
                 a.getId(),
                 a.getOwner() != null ? a.getOwner().getId() : null,
@@ -182,12 +189,19 @@ public class AdminAgentService {
                 a.getOwner() != null ? a.getOwner().getEmail() : null,
                 a.getOwner() != null ? a.getOwner().getTelephone() : null,
                 a.getLocation(),
+                a.getOwner() != null ? a.getOwner().getProfileImage() : null,
+                a.getBio(),
+                computedRating != null ? computedRating : (a.getRating() != null ? a.getRating() : 0.0),
+                a.getTotalTrips() != null ? a.getTotalTrips() : 0,
+                pkgCount,
+                a.getExperienceYears() != null ? a.getExperienceYears() : 0,
+                a.getOwner() != null ? a.getOwner().getNicNumber() : null,
                 a.getOwner() != null && Boolean.TRUE.equals(a.getOwner().getAgentApproved())
                         ? "Approved"
                         : "Pending",
                 a.getOwner() != null ? a.getOwner().getNicVerificationStatus() : "PENDING",
                 submittedDate,
-                a.getIsActive()
+                a.getIsActive() != null ? a.getIsActive() : true
         );
     }
 

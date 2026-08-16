@@ -161,16 +161,6 @@ export default function Dashboard() {
   return (
     <div className="p-6 sm:p-8 bg-[#F8FAFC] min-h-screen animate-fade-in space-y-7 font-sans">
       
-      {/* ── Top Header Section ─────────────────────────────────────────────── */}
-      <div>
-        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 tracking-tight flex items-center gap-2">
-          Welcome back, Piratheepan! <span className="text-2xl">👋</span>
-        </h1>
-        <p className="text-gray-500 text-sm mt-1">
-          Manage and monitor Sri Lanka's tourism ecosystem from one powerful platform
-        </p>
-      </div>
-
       {/* ── Error Notification Banner ───────────────────────────────────────── */}
       {error && (
         <div className="bg-red-50 border border-red-200 rounded-2xl p-4 flex items-center justify-between shadow-sm">

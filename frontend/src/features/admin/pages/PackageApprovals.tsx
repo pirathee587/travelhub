@@ -6,19 +6,19 @@ import adminPackageApi from '../services/adminPackageApi'
 import { useModal } from '../components/ModalContext'
 import { Switch } from '@/components/common/ui/switch'
 import { Badge } from '@/components/common/ui/badge'
-import { 
-  Search, 
-  MapPin, 
-  Clock, 
+import {
+  Search,
+  MapPin,
+  Clock,
   DollarSign,
   Calendar,
-  Star, 
-  Eye, 
-  Check, 
+  Star,
+  Eye,
+  Check,
   CheckCircle,
-  X, 
-  Trash2, 
-  Power, 
+  X,
+  Trash2,
+  Power,
   ArrowLeft,
   AlertCircle,
   Package as PackageIcon,
@@ -67,7 +67,7 @@ const parseActivities = (raw: any): Array<{ description: string; imageUrl?: stri
   if (Array.isArray(raw)) {
     // Check if it's an array of broken split strings from the previous backend bug
     // e.g. ['[{"description":"Mirissa whale watching"', '"imageUrl":"..."}']
-    const isFragmentedJson = raw.some((item: any) => 
+    const isFragmentedJson = raw.some((item: any) =>
       typeof item === 'string' && (item.includes('{"description"') || item.includes('"imageUrl"') || item.startsWith('[{') || item.endsWith('}]') || item.includes('"description":'))
     )
 
@@ -93,7 +93,7 @@ const parseActivities = (raw: any): Array<{ description: string; imageUrl?: stri
           try {
             const parsed = JSON.parse(trimmed)
             return { description: parsed.description || '', imageUrl: parsed.imageUrl || '' }
-          } catch (e) {}
+          } catch (e) { }
         }
         return { description: trimmed }
       }
@@ -116,7 +116,7 @@ const parseActivities = (raw: any): Array<{ description: string; imageUrl?: stri
         if (Array.isArray(parsed)) {
           return parseActivities(parsed)
         }
-      } catch (e) {}
+      } catch (e) { }
     }
 
     return trimmed.split(',')
@@ -199,21 +199,21 @@ const PackageDetailView = ({ pkg, onBack, onApprove, onReject, onToggle, onDelet
   }) : []
 
   // Normalized inclusions
-  const rawInclusions = Array.isArray(inclusions) 
-    ? inclusions 
+  const rawInclusions = Array.isArray(inclusions)
+    ? inclusions
     : (typeof inclusions === 'string' && inclusions.trim() !== '' ? inclusions.split(',').map((s: string) => s.trim()) : [])
-  const normalizedInclusions = rawInclusions.length > 0 
-    ? rawInclusions 
+  const normalizedInclusions = rawInclusions.length > 0
+    ? rawInclusions
     : ['AC Transport', 'Meals', 'Accommodation', 'Local Guide']
 
   return (
     <div className="p-4 sm:p-8 bg-[#F8FAFC] min-h-screen animate-fade-in font-sans">
       <div className="max-w-6xl mx-auto space-y-6">
-        
+
         {/* Top Bar Navigation & Actions */}
         <div className="flex items-center justify-between">
-          <button 
-            onClick={onBack} 
+          <button
+            onClick={onBack}
             className="inline-flex items-center gap-2 text-sm font-semibold text-gray-700 hover:text-[#0ea5e9] bg-white px-4 py-2 rounded-xl border border-gray-200 shadow-sm transition active:scale-95"
           >
             <ArrowLeft className="w-4 h-4" /> Back
@@ -231,31 +231,29 @@ const PackageDetailView = ({ pkg, onBack, onApprove, onReject, onToggle, onDelet
 
         {/* ── 1. Big Hero Image Banner with Floating Pills ──────────────────── */}
         <div className="relative h-64 sm:h-80 md:h-[400px] w-full rounded-2xl md:rounded-3xl overflow-hidden bg-slate-900 shadow-sm border border-gray-200/80 group">
-          <img 
-            src={cover} 
-            alt={title} 
+          <img
+            src={cover}
+            alt={title}
             onError={(e: any) => { e.target.src = placeholderImg }}
-            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" 
+            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
           />
           <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/20 pointer-events-none" />
 
           {/* Floating Badges on Top Right of Cover */}
           <div className="absolute top-4 right-4 flex items-center gap-2 z-10">
-            <span className={`backdrop-blur-md px-3.5 py-1 rounded-full text-xs font-semibold tracking-wide shadow-md ${
-              isActive 
-                ? 'bg-[#0ea5e9] text-white border border-white/20' 
+            <span className={`backdrop-blur-md px-3.5 py-1 rounded-full text-xs font-semibold tracking-wide shadow-md ${isActive
+                ? 'bg-[#0ea5e9] text-white border border-white/20'
                 : 'bg-red-500 text-white border border-white/20'
-            }`}>
+              }`}>
               {isActive ? 'Active' : 'Inactive'}
             </span>
 
-            <span className={`backdrop-blur-md px-3.5 py-1 rounded-full text-xs font-semibold tracking-wide shadow-md flex items-center gap-1.5 border ${
-              isApproved 
-                ? 'bg-emerald-500 text-white border-emerald-400' 
-                : isPending 
-                ? 'bg-amber-500 text-white border-amber-400' 
-                : 'bg-rose-500 text-white border-rose-400'
-            }`}>
+            <span className={`backdrop-blur-md px-3.5 py-1 rounded-full text-xs font-semibold tracking-wide shadow-md flex items-center gap-1.5 border ${isApproved
+                ? 'bg-emerald-500 text-white border-emerald-400'
+                : isPending
+                  ? 'bg-amber-500 text-white border-amber-400'
+                  : 'bg-rose-500 text-white border-rose-400'
+              }`}>
               {isApproved && <CheckCircle className="w-3.5 h-3.5" />}
               {isPending && <Clock className="w-3.5 h-3.5" />}
               {isRejected && <X className="w-3.5 h-3.5" />}
@@ -264,7 +262,7 @@ const PackageDetailView = ({ pkg, onBack, onApprove, onReject, onToggle, onDelet
           </div>
 
           {/* Enlarge Cover Button */}
-          <button 
+          <button
             onClick={() => setSelectedImage(cover)}
             className="absolute bottom-4 right-4 bg-black/40 hover:bg-black/70 text-white p-2 rounded-xl backdrop-blur-md transition border border-white/20"
             title="View Full Cover Image"
@@ -361,10 +359,10 @@ const PackageDetailView = ({ pkg, onBack, onApprove, onReject, onToggle, onDelet
 
         {/* ── 4. Main Two Column Grid (Details vs Included & Actions) ───────── */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
-          
+
           {/* Left Column: Description, Itinerary & Gallery */}
           <div className="lg:col-span-2 space-y-8">
-            
+
             {/* Description */}
             <div className="space-y-2">
               <h3 className="text-lg font-bold text-gray-900">Description</h3>
@@ -376,7 +374,7 @@ const PackageDetailView = ({ pkg, onBack, onApprove, onReject, onToggle, onDelet
             {/* Itinerary Timeline */}
             <div className="space-y-4">
               <h3 className="text-lg font-bold text-gray-900">Itinerary</h3>
-              
+
               {normalizedDays.length > 0 ? (
                 <div className="space-y-6 pl-4 border-l-2 border-sky-100 relative">
                   {normalizedDays.map((day: any, dayIdx: number) => (
@@ -425,8 +423,8 @@ const PackageDetailView = ({ pkg, onBack, onApprove, onReject, onToggle, onDelet
                         {day.activities && day.activities.length > 0 && (
                           <div className="mt-3 space-y-2.5">
                             {day.activities.map((act: any, actIdx: number) => (
-                              <div 
-                                key={actIdx} 
+                              <div
+                                key={actIdx}
                                 className="flex items-start gap-3 p-3.5 rounded-xl border border-slate-200/70 bg-slate-50/70 hover:bg-slate-50 transition"
                               >
                                 <div className="h-6 w-6 shrink-0 rounded-full bg-[#0ea5e9]/10 text-[#0ea5e9] flex items-center justify-center text-xs font-bold mt-0.5">
@@ -437,14 +435,14 @@ const PackageDetailView = ({ pkg, onBack, onApprove, onReject, onToggle, onDelet
                                     {act.description}
                                   </p>
                                   {act.imageUrl && (
-                                    <div 
+                                    <div
                                       className="rounded-lg overflow-hidden h-28 w-44 border border-gray-200 cursor-pointer group/actimg"
                                       onClick={() => setSelectedImage(act.imageUrl)}
                                     >
-                                      <img 
-                                        src={act.imageUrl} 
-                                        alt={`Activity ${actIdx + 1}`} 
-                                        className="w-full h-full object-cover group-hover/actimg:scale-105 transition-transform duration-300" 
+                                      <img
+                                        src={act.imageUrl}
+                                        alt={`Activity ${actIdx + 1}`}
+                                        className="w-full h-full object-cover group-hover/actimg:scale-105 transition-transform duration-300"
                                       />
                                     </div>
                                   )}
@@ -489,11 +487,11 @@ const PackageDetailView = ({ pkg, onBack, onApprove, onReject, onToggle, onDelet
 
           {/* Right Column: What's Included & Admin Decisions */}
           <div className="space-y-6">
-            
+
             {/* What's Included Card */}
             <div className="p-6 border border-gray-200/80 rounded-2xl bg-white shadow-sm space-y-4">
               <h3 className="font-bold text-lg text-gray-900">What's Included</h3>
-              
+
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2 gap-3">
                 {normalizedInclusions.map((item: string, i: number) => (
                   <div
@@ -512,45 +510,44 @@ const PackageDetailView = ({ pkg, onBack, onApprove, onReject, onToggle, onDelet
               <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider border-b border-gray-100 pb-3">
                 Admin Decision
               </h3>
-              
+
               <div className="space-y-3">
                 {!isApproved && (
-                  <button 
-                    onClick={() => onApprove(pkg)} 
-                    disabled={loading} 
+                  <button
+                    onClick={() => onApprove(pkg)}
+                    disabled={loading}
                     className="w-full py-2.5 px-4 rounded-xl font-semibold text-xs sm:text-sm bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm transition disabled:opacity-60 flex items-center justify-center gap-2"
                   >
                     <Check className="w-4 h-4" /> Approve Package
                   </button>
                 )}
-                
+
                 {!isRejected && (
-                  <button 
-                    onClick={() => onReject(pkg)} 
-                    disabled={loading} 
+                  <button
+                    onClick={() => onReject(pkg)}
+                    disabled={loading}
                     className="w-full py-2.5 px-4 rounded-xl font-semibold text-xs sm:text-sm bg-white hover:bg-rose-50 text-rose-600 border border-rose-200 shadow-sm transition disabled:opacity-60 flex items-center justify-center gap-2"
                   >
                     <X className="w-4 h-4" /> Reject Package
                   </button>
                 )}
-                
+
                 {isApproved && (
-                  <button 
-                    onClick={() => onToggle(pkg)} 
-                    disabled={loading} 
-                    className={`w-full py-2.5 px-4 rounded-xl font-semibold text-xs sm:text-sm border shadow-sm transition disabled:opacity-60 flex items-center justify-center gap-2 ${
-                      isActive 
-                        ? 'bg-white hover:bg-amber-50 text-amber-700 border-amber-200' 
+                  <button
+                    onClick={() => onToggle(pkg)}
+                    disabled={loading}
+                    className={`w-full py-2.5 px-4 rounded-xl font-semibold text-xs sm:text-sm border shadow-sm transition disabled:opacity-60 flex items-center justify-center gap-2 ${isActive
+                        ? 'bg-white hover:bg-amber-50 text-amber-700 border-amber-200'
                         : 'bg-emerald-600 hover:bg-emerald-700 text-white border-emerald-600'
-                    }`}
+                      }`}
                   >
                     <Power className="w-4 h-4" /> {isActive ? 'Suspend / Deactivate' : 'Activate Package'}
                   </button>
                 )}
-                
-                <button 
-                  onClick={() => onDelete(pkg)} 
-                  disabled={loading} 
+
+                <button
+                  onClick={() => onDelete(pkg)}
+                  disabled={loading}
                   className="w-full py-2.5 px-4 rounded-xl font-semibold text-xs sm:text-sm bg-white hover:bg-gray-100 text-gray-600 border border-gray-200 transition disabled:opacity-60 flex items-center justify-center gap-2"
                 >
                   <Trash2 className="w-4 h-4 text-gray-500" /> Delete Package
@@ -566,20 +563,20 @@ const PackageDetailView = ({ pkg, onBack, onApprove, onReject, onToggle, onDelet
 
       {/* ── Image Lightbox Modal ────────────────────────────────────────────── */}
       {selectedImage && (
-        <div 
+        <div
           className="fixed inset-0 z-[100] flex items-center justify-center bg-black/85 backdrop-blur-sm p-4 animate-fade-in"
           onClick={() => setSelectedImage(null)}
         >
           <div className="relative max-w-4xl w-full max-h-[90vh] flex items-center justify-center">
-            <button 
+            <button
               className="absolute -top-12 right-0 text-white hover:text-gray-300 bg-black/60 hover:bg-black/90 rounded-full p-2.5 transition border border-white/20"
               onClick={(e) => { e.stopPropagation(); setSelectedImage(null); }}
             >
               <X className="h-5 w-5" />
             </button>
-            <img 
-              src={selectedImage} 
-              alt="Expanded view" 
+            <img
+              src={selectedImage}
+              alt="Expanded view"
               className="max-w-full max-h-[85vh] object-contain rounded-2xl shadow-2xl border border-white/10"
               onClick={(e) => e.stopPropagation()}
             />
@@ -603,27 +600,26 @@ const PackageCard = ({ pkg, onView, onApprove, onReject, onToggle, onDelete, act
 
   return (
     <div className="bg-white rounded-2xl md:rounded-3xl border border-gray-200/90 shadow-sm overflow-hidden flex flex-col justify-between hover:shadow-md transition-all duration-200 group">
-      
+
       {/* 1. Cover Image Section with Modern Pill Badges */}
       <div className="aspect-[16/10] w-full relative overflow-hidden bg-gray-100">
-        <img 
-          src={cover} 
+        <img
+          src={cover}
           alt={packageName}
-          onError={(e: any) => { e.target.src = placeholderImg }} 
+          onError={(e: any) => { e.target.src = placeholderImg }}
           className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
         />
 
         {/* Status Pill on Top-Left */}
         <div className="absolute top-3.5 left-3.5">
-          <span className={`backdrop-blur-md px-3.5 py-1 rounded-full text-xs font-semibold tracking-wide border shadow-sm ${
-            isApproved 
-              ? 'bg-[#0b2838]/75 text-[#38bdf8] border-[#38bdf8]/20' 
-              : isPending 
-              ? 'bg-[#2d1b06]/75 text-[#fbbf24] border-[#fbbf24]/20' 
-              : isSuspended 
-              ? 'bg-[#2b1111]/75 text-[#f87171] border-[#f87171]/20' 
-              : 'bg-[#2b1111]/75 text-[#f87171] border-[#f87171]/20'
-          }`}>
+          <span className={`backdrop-blur-md px-3.5 py-1 rounded-full text-xs font-semibold tracking-wide border shadow-sm ${isApproved
+              ? 'bg-[#0b2838]/75 text-[#38bdf8] border-[#38bdf8]/20'
+              : isPending
+                ? 'bg-[#2d1b06]/75 text-[#fbbf24] border-[#fbbf24]/20'
+                : isSuspended
+                  ? 'bg-[#2b1111]/75 text-[#f87171] border-[#f87171]/20'
+                  : 'bg-[#2b1111]/75 text-[#f87171] border-[#f87171]/20'
+            }`}>
             {isApproved ? 'Active' : (isPending ? 'Pending' : (isSuspended ? 'Suspended' : 'Rejected'))}
           </span>
         </div>
@@ -634,7 +630,7 @@ const PackageCard = ({ pkg, onView, onApprove, onReject, onToggle, onDelete, act
         <div>
           {/* Header Row: Title & Rating */}
           <div className="flex items-start justify-between gap-3">
-            <h3 
+            <h3
               onClick={() => onView(pkg)}
               className="font-bold text-gray-900 text-base sm:text-lg tracking-tight truncate flex-1 cursor-pointer hover:text-[#0ea5e9] transition"
             >
@@ -803,7 +799,7 @@ export default function PackageApprovals() {
       setActionLoading(true)
       await adminPackageApi.togglePackageActive(pkg.id)
       modal.addToast(`✅ "${pkg.packageName || pkg.name}" ${action}d`)
-      patchLocal(pkg.id, { 
+      patchLocal(pkg.id, {
         isActive: !pkg.isActive,
         applicationStatus: !pkg.isActive ? 'Approved' : 'Suspended'
       })
@@ -837,7 +833,7 @@ export default function PackageApprovals() {
   const displayed = packages.filter(p => {
     const q = search.trim().toLowerCase()
     const matchesSearch = !q || [p.packageName, p.name, p.destination, p.district, p.location, p.agentName, p.category].some(val => val?.toLowerCase().includes(q))
-    const matchesDistrict = districtFilter === 'All' || districtFilter === 'All Districts' || 
+    const matchesDistrict = districtFilter === 'All' || districtFilter === 'All Districts' ||
       (p.district && p.district.trim().toLowerCase() === districtFilter.trim().toLowerCase())
     return matchesSearch && matchesDistrict
   })
@@ -853,14 +849,14 @@ export default function PackageApprovals() {
             </div>
           </div>
         ) : (
-          <PackageDetailView 
-            pkg={drawerDetail ?? selected} 
-            onBack={closeDrawer} 
-            onApprove={handleApprove} 
-            onReject={handleReject} 
-            onToggle={handleToggle} 
-            onDelete={handleDelete} 
-            loading={actionLoading} 
+          <PackageDetailView
+            pkg={drawerDetail ?? selected}
+            onBack={closeDrawer}
+            onApprove={handleApprove}
+            onReject={handleReject}
+            onToggle={handleToggle}
+            onDelete={handleDelete}
+            loading={actionLoading}
           />
         )
       ) : (
@@ -879,11 +875,11 @@ export default function PackageApprovals() {
           <div className="flex flex-col md:flex-row items-stretch md:items-center gap-3.5 mb-8">
             {/* Search Input */}
             <div className="relative flex-1 max-w-lg">
-              <input 
-                type="text" 
-                placeholder="Search by package name, destination, category..." 
-                value={search} 
-                onChange={(e) => setSearch(e.target.value)} 
+              <input
+                type="text"
+                placeholder="Search by package name, destination, category..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
                 className="w-full pl-4 pr-11 py-2.5 bg-white border border-gray-200 rounded-2xl text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#0ea5e9]/20 focus:border-[#0ea5e9] shadow-sm transition"
               />
               <Search className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
