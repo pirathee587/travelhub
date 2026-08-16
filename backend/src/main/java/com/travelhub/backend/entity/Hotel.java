@@ -88,6 +88,15 @@ public class Hotel {
     @Builder.Default
     private String applicationStatus = "Pending";
 
+    @Column(name = "nic_rear_image_url")
+    private String nicRearImageUrl;
+
+    @Column(name = "business_registration_image_url")
+    private String businessRegistrationImageUrl;
+
+    @Column(name = "rejection_reason")
+    private String rejectionReason;
+
     @Column(name = "is_active")
     @Builder.Default
     private Boolean isActive = true;
