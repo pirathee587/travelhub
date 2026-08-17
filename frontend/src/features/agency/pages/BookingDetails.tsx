@@ -1155,13 +1155,43 @@ const BookingDetails = () => {
                   </div>
                 )}
                 <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium text-foreground">Total Price</span>
+                  <span className="text-sm font-medium text-foreground">Gross Booking Price</span>
                   <span className="text-2xl font-bold text-foreground">
                     {formatPrice(booking.totalPrice || 0)}
                   </span>
                 </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-muted-foreground">Status</span>
+
+                {/* 5% Platform Commission & Net Agency Settlement Breakdown */}
+                {(booking.totalPrice || 0) > 0 && (
+                  <div className="mt-4 p-3.5 bg-muted/30 border rounded-xl space-y-2 text-xs">
+                    <div className="font-semibold text-foreground border-b pb-1.5 flex items-center justify-between">
+                      <span>Financial Breakdown</span>
+                      <span className="text-[10px] text-primary bg-primary/10 px-2 py-0.5 rounded-full">5% Commission Model</span>
+                    </div>
+                    <div className="flex items-center justify-between text-muted-foreground">
+                      <span>Gross Tourist Payment:</span>
+                      <span className="font-medium text-foreground">{formatPrice(booking.totalPrice || 0)}</span>
+                    </div>
+                    <div className="flex items-center justify-between text-amber-600 dark:text-amber-400">
+                      <span>Platform Commission Fee (5%):</span>
+                      <span className="font-medium">-{formatPrice((booking.totalPrice || 0) * 0.05)}</span>
+                    </div>
+                    <div className="flex items-center justify-between font-bold text-emerald-600 dark:text-emerald-400 border-t pt-1.5 text-sm">
+                      <span>Net Agency Earnings (95%):</span>
+                      <span>{formatPrice((booking.totalPrice || 0) * 0.95)}</span>
+                    </div>
+                    <div className="text-[11px] text-muted-foreground pt-1 italic">
+                      {booking.status === 'completed'
+                        ? '✓ Net earnings released to Available Wallet.'
+                        : isPaid
+                          ? '🔒 Funds held in Escrow until trip completion.'
+                          : '⏳ Awaiting tourist payment.'}
+                    </div>
+                  </div>
+                )}
+
+                <div className="flex items-center justify-between pt-2">
+                  <span className="text-sm text-muted-foreground">Payment Status</span>
                   <span className={cn(
                     'inline-flex items-center rounded-full px-3 py-1 text-xs font-medium',
                     booking.status === 'cancelled'

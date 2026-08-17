@@ -14,6 +14,7 @@ const Analytics     = lazy(() => import('@/features/agency/pages/Analytics'));
 const Profile       = lazy(() => import('@/features/agency/pages/Profile'));
 const Settings      = lazy(() => import('@/features/agency/pages/Settings'));
 const Refunds       = lazy(() => import('@/features/agency/pages/Refunds'));
+const Wallet        = lazy(() => import('@/features/agency/pages/Wallet'));
 
 const AgencyLayoutWrapper = () => (
   <CurrencyProvider>
@@ -35,6 +36,7 @@ export default function AgencyRoutes() {
         <Route path="/agency/bookings/:id"  element={<BookingDetail />} />
         <Route path="/agency/packages"      element={<Packages />} />
         <Route path="/agency/packages/:id"  element={<PackageDetail />} />
+        <Route path="/agency/wallet"        element={<Wallet />} />
         <Route path="/agency/refunds"       element={<Navigate to="/agency/settings?tab=refunds" replace />} />
         <Route path="/agency/analytics"     element={<Analytics />} />
         <Route path="/agency/profile"       element={<Profile />} />

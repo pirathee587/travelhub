@@ -16,6 +16,7 @@ const DriverApprovals  = lazy(() => import('@/features/admin/pages/DriverApprova
 const PackageApprovals = lazy(() => import('@/features/admin/pages/PackageApprovals'));
 const PackageDetails   = lazy(() => import('@/features/admin/pages/PackageDetails'));
 const Payments         = lazy(() => import('@/features/admin/pages/Payments'));
+const PayoutApprovals  = lazy(() => import('@/features/admin/pages/PayoutApprovals'));
 const Analytics        = lazy(() => import('@/features/admin/pages/Analytics'));
 const PackageReports   = lazy(() => import('@/features/admin/pages/PackageReports'));
 const Settings         = lazy(() => import('@/features/admin/pages/Settings'));
@@ -53,6 +54,7 @@ export default function AdminRoutes() {
           <Route path="drivers"       element={<DriverApprovals />} />
           <Route path="packages"      element={<PackageApprovals />} />
           <Route path="payments"      element={<Payments />} />
+          <Route path="payouts"       element={<PayoutApprovals />} />
           <Route path="reports"       element={<PackageReports />} />
           <Route path="analytics"     element={<Analytics />} />
           <Route path="settings"      element={<Settings />} />

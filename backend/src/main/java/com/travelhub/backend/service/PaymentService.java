@@ -27,15 +27,18 @@ public class PaymentService {
     private final BookingRepository bookingRepository;
     private final UserRepository userRepository;
     private final ApplicationEventPublisher eventPublisher;
+    private final WalletService walletService;
 
     public PaymentService(PaymentRepository paymentRepository,
                           BookingRepository bookingRepository,
                           UserRepository userRepository,
-                          ApplicationEventPublisher eventPublisher) {
+                          ApplicationEventPublisher eventPublisher,
+                          WalletService walletService) {
         this.paymentRepository = paymentRepository;
         this.bookingRepository = bookingRepository;
         this.userRepository = userRepository;
         this.eventPublisher = eventPublisher;
+        this.walletService = walletService;
     }
 
     @Value("${payhere.merchant.id}")
@@ -197,6 +200,7 @@ public class PaymentService {
             }
 
             paymentRepository.save(payment);
+            walletService.recordBookingPaymentEscrow(booking);
             eventPublisher.publishEvent(new PaymentEvent(this, payment, "COMPLETED"));
         } else if (statusCode == 0) {
             payment.setStatus("Pending");

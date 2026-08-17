@@ -33,6 +33,7 @@ public class AgentBookingService {
     private final AgentRepository agentRepository;
     private final HotelRepository hotelRepository;
     private final DriverRepository driverRepository;
+    private final WalletService walletService;
 
     /**
      * Returns all bookings visible to the agent.
@@ -254,6 +255,7 @@ public class AgentBookingService {
         booking.setStatus("completed");
         booking.setProgress(100);
         Booking saved = bookingRepository.save(booking);
+        walletService.releaseTripEscrowToWallet(saved);
         eventPublisher.publishEvent(new BookingEvent(this, saved, "COMPLETED"));
         return toResponse(saved);
     }

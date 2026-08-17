@@ -29,6 +29,7 @@ public class RefundRequestService {
     private final AgentSettingsRepository agentSettingsRepository;
     private final AgentNotificationService agentNotificationService;
     private final UserNotificationService userNotificationService;
+    private final WalletService walletService;
 
     @Transactional
     public RefundResponseDto createRefundRequest(Long userId, Long bookingId, RefundRequestDto dto) {
@@ -143,6 +144,9 @@ public class RefundRequestService {
         booking.setPaymentStatus("REFUNDED");
         booking.setStatus("cancelled");
         bookingRepository.save(booking);
+
+        // Process Shared Late Cancellation Fee Split (80% Agency, 20% Platform)
+        walletService.handleLateCancellationSplit(booking, feeAmount);
 
         // Create completed payment record of type Refund
         Payment refundPayment = new Payment();

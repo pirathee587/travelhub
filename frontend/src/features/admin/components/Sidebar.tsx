@@ -16,20 +16,22 @@ import {
   Plane,
   Menu,
   X,
+  DollarSign,
 } from 'lucide-react'
 import { useModal } from './ModalContext'
 import { cn } from '@/utils/utils'
 
 const navItems = [
-  { icon: LayoutDashboard, label: 'Dashboard', path: '/admin' },
-  { icon: Users,           label: 'Agency',    path: '/admin/agents' },
-  { icon: Building2,       label: 'Hotels',    path: '/admin/hotels' },
-  { icon: Car,             label: 'Vehicles',  path: '/admin/vehicles' },
-  { icon: UserCheck,       label: 'Drivers',   path: '/admin/drivers' },
-  { icon: Package,         label: 'Packages',  path: '/admin/packages' },
-  { icon: CreditCard,      label: 'Payments',  path: '/admin/payments' },
-  { icon: AlertTriangle,   label: 'Reports',   path: '/admin/reports' },
-  { icon: BarChart3,       label: 'Analytics', path: '/admin/analytics' },
+  { icon: LayoutDashboard, label: 'Dashboard',          path: '/admin' },
+  { icon: Users,           label: 'Agency',             path: '/admin/agents' },
+  { icon: Building2,       label: 'Hotels',             path: '/admin/hotels' },
+  { icon: Car,             label: 'Vehicles',           path: '/admin/vehicles' },
+  { icon: UserCheck,       label: 'Drivers',            path: '/admin/drivers' },
+  { icon: Package,         label: 'Packages',           path: '/admin/packages' },
+  { icon: CreditCard,      label: 'Payments',           path: '/admin/payments' },
+  { icon: DollarSign,      label: 'Finance & Payouts', path: '/admin/payouts' },
+  { icon: AlertTriangle,   label: 'Reports',            path: '/admin/reports' },
+  { icon: BarChart3,       label: 'Analytics',          path: '/admin/analytics' },
 ]
 
 interface SidebarProps {
