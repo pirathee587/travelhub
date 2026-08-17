@@ -19,7 +19,8 @@ import {
   Plus,
   Trash2,
   Upload,
-  Info
+  Info,
+  AlertCircle
 } from 'lucide-react';
 import { Badge } from '@/components/common/ui/badge';
 import { api } from '@/features/agency/services/api';
@@ -195,7 +196,8 @@ const PackageDetails = () => {
           })),
           inclusions: Array.isArray(data.inclusions) ? data.inclusions : [],
           available: data.isActive !== false,
-          bookings: data.bookings || 0
+          bookings: data.bookings || 0,
+          rejectionReason: data.rejectionReason || null
         };
         setPkg(normalized);
       } else {
@@ -692,6 +694,26 @@ const PackageDetails = () => {
                       </span>
                     )}
                   </div>
+
+                  {/* Admin Rejection / Feedback Banner */}
+                  {pkg.rejectionReason && (
+                    <div className="p-4 rounded-xl bg-destructive/10 border border-destructive/20 flex items-start gap-3 text-sm animate-fade-in mt-4">
+                      <AlertCircle className="h-5 w-5 text-destructive shrink-0 mt-0.5" />
+                      <div className="space-y-1">
+                        <p className="font-bold text-destructive">
+                          {pkg.applicationStatus?.toLowerCase() === 'rejected' ? 'Rejection Reason from Admin' : 'Admin Note / Feedback'}
+                        </p>
+                        <p className="text-foreground/90 text-sm leading-relaxed">
+                          {pkg.rejectionReason}
+                        </p>
+                        {pkg.applicationStatus?.toLowerCase() === 'rejected' && (
+                          <p className="text-xs text-muted-foreground mt-1">
+                            💡 You can edit this package and click <strong>Save Changes</strong> to automatically resubmit it for admin approval.
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  )}
                 </>
               )}
             </div>

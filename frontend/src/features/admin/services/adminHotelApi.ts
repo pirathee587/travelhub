@@ -40,16 +40,20 @@ const adminHotelApi = {
     },
 
     // DELETE /api/admin/hotels/{id}
-    deleteHotel: async (id) => {
+    deleteHotel: async (id, reason) => {
         const res = await api.delete(
-            `/admin/hotels/${id}`);
+            `/admin/hotels/${id}`, {
+            data: { reason },
+            params: reason ? { reason } : undefined,
+        });
         return res.data;
     },
 
     // PATCH /api/admin/hotels/{id}/toggle-active
-    toggleHotelActive: async (id) => {
+    toggleHotelActive: async (id, reason) => {
         const res = await api.patch(
-            `/admin/hotels/${id}/toggle-active`);
+            `/admin/hotels/${id}/toggle-active`,
+            { reason });
         return res.data;
     },
 

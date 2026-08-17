@@ -25,6 +25,7 @@ public class AgentPackageDetailResponse {
 
     private Boolean isActive;
     private String applicationStatus;
+    private String rejectionReason;
 
     private List<AgentPackageImageResponse> images;
     private List<AgentPackageDayResponse> days;

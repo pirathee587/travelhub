@@ -1,4 +1,4 @@
-package com.travelhub.backend.repository;
+ package com.travelhub.backend.repository;
 
 
 
@@ -52,6 +52,14 @@ public interface PaymentRepository
     // Booking-ஆல் தேடு
     List<Payment> findByBookingId(Long bookingId);
 
+    // Agent-ஆல் தேடு
+    @Query("SELECT p FROM Payment p WHERE p.agent.id = :agentId")
+    List<Payment> findByAgentId(@org.springframework.data.repository.query.Param("agentId") Long agentId);
+
     // User-ஆல் தேடு
     List<Payment> findByUserId(Long userId);
+
+    List<Payment> findTop10ByStatusOrderByCreatedAtDesc(String status);
+
+    List<Payment> findTop10ByOrderByCreatedAtDesc();
 }

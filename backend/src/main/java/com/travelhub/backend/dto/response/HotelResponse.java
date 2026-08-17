@@ -28,5 +28,6 @@ public class HotelResponse {
     private Boolean isActive;
     private String hotelEmail;
     private String hotelContactNumber;
+    private String rejectionReason;
     private List<RoomResponse> rooms;
 }

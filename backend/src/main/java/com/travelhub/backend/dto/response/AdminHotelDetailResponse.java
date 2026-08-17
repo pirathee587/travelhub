@@ -45,7 +45,8 @@ public record AdminHotelDetailResponse(
         // ── Application Status ─────────────────────────
         String applicationStatus,
         String rejectionReason,
-        Boolean isActive
+        Boolean isActive,
+        Long activeBookingsCount
 
 ) {
     // Room detail inner record

@@ -71,6 +71,18 @@ const adminNotificationApi = {
             `/admin/notifications/${id}`);
         return res.data;
     },
+
+    // GET /api/admin/notifications/preferences
+    getPreferences: async () => {
+        const res = await api.get('/admin/notifications/preferences');
+        return res.data;
+    },
+
+    // PUT /api/admin/notifications/preferences
+    savePreferences: async (preferences: Record<string, boolean>) => {
+        const res = await api.put('/admin/notifications/preferences', preferences);
+        return res.data;
+    },
 };
 
 export default adminNotificationApi;

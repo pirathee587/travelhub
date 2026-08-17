@@ -212,6 +212,11 @@ public class AgentPackageService {
         pkg.getItinerary().clear();
         if (req.getDays() != null) buildItinerary(pkg, req.getDays());
 
+        if ("Rejected".equalsIgnoreCase(pkg.getApplicationStatus())) {
+            pkg.setApplicationStatus("Pending");
+            pkg.setRejectionReason(null);
+        }
+
         return toDetail(packageRepository.save(pkg));
     }
 
@@ -366,6 +371,7 @@ public class AgentPackageService {
                 .basePriceChild(pkg.getBasePriceChild())
                 .isActive(pkg.getIsActive())
                 .applicationStatus(pkg.getApplicationStatus())
+                .rejectionReason(pkg.getRejectionReason())
                 .coverImageUrl(coverUrl)
                 .createdAt(pkg.getCreatedAt())
                 .build();
@@ -462,6 +468,7 @@ public class AgentPackageService {
                 .inclusions(pkg.getInclusions() != null && !pkg.getInclusions().isEmpty() ? java.util.Arrays.asList(pkg.getInclusions().split(",")) : new ArrayList<>())
                 .isActive(pkg.getIsActive())
                 .applicationStatus(pkg.getApplicationStatus())
+                .rejectionReason(pkg.getRejectionReason())
                 .images(images)
                 .days(days)
                 .createdAt(pkg.getCreatedAt())

@@ -14,9 +14,19 @@ public interface PackageReportRepository extends JpaRepository<PackageReport, Lo
 
     List<PackageReport> findByBookingId(Long bookingId);
 
+    @org.springframework.data.jpa.repository.Query("SELECT pr FROM PackageReport pr WHERE pr.agent.id = :agentId")
+    List<PackageReport> findByAgentId(@org.springframework.data.repository.query.Param("agentId") Long agentId);
+
+    @org.springframework.data.jpa.repository.Query("SELECT pr FROM PackageReport pr WHERE pr.pkg.id = :pkgId")
+    List<PackageReport> findByPkgId(@org.springframework.data.repository.query.Param("pkgId") Long pkgId);
+
     Optional<PackageReport> findByUserIdAndBookingId(Long userId, Long bookingId);
 
     List<PackageReport> findAllByOrderByCreatedAtDesc();
+
+    List<PackageReport> findTop10ByStatusOrderByCreatedAtDesc(String status);
+
+    List<PackageReport> findTop10ByStatusInOrderByCreatedAtDesc(List<String> statuses);
 
     boolean existsByUserIdAndBookingIdAndStatusIn(Long userId, Long bookingId, List<String> statuses);
 }

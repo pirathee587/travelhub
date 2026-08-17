@@ -4,7 +4,7 @@ import galleImg from '@/assets/images/galle_fort.jpg'
 import React, { useState, useEffect, useCallback } from 'react'
 import adminPackageApi from '../services/adminPackageApi'
 import { useModal } from '../components/ModalContext'
-import { Switch } from '@/components/common/ui/switch'
+import { useAdminCurrency } from '../hooks/AdminCurrencyContext'
 import { Badge } from '@/components/common/ui/badge'
 import {
   Search,
@@ -37,8 +37,6 @@ const SRI_LANKA_DISTRICTS = [
   'Matale', 'Matara', 'Monaragala', 'Mullaitivu', 'Nuwara Eliya',
   'Polonnaruwa', 'Puttalam', 'Ratnapura', 'Trincomalee', 'Vavuniya'
 ]
-
-const fmtPrice = (v: any) => v != null ? `$${Number(v).toFixed(2)}` : '—'
 
 // ── Skeleton ──────────────────────────────────────────────────────────────────
 const Skeleton = () => (
@@ -128,8 +126,186 @@ const parseActivities = (raw: any): Array<{ description: string; imageUrl?: stri
   return []
 }
 
+// ── Action Reason Modal (Reject / Suspend / Delete) ───────────────────────────
+interface PackageActionReasonModalProps {
+  type: 'reject' | 'suspend' | 'delete'
+  pkg: any
+  onConfirm: (reason: string) => Promise<void> | void
+  onCancel: () => void
+  loading: boolean
+}
+
+const PackageActionReasonModal: React.FC<PackageActionReasonModalProps> = ({
+  type,
+  pkg,
+  onConfirm,
+  onCancel,
+  loading
+}) => {
+  const [reason, setReason] = useState('')
+  const [error, setError] = useState('')
+
+  const isReject = type === 'reject'
+  const isSuspend = type === 'suspend'
+  const isDelete = type === 'delete'
+
+  const title = isReject
+    ? 'Reject Package Application'
+    : isSuspend
+    ? 'Suspend Travel Package'
+    : 'Delete Package Permanently'
+
+  const subtitle = isReject
+    ? 'Please provide a clear reason for rejecting this travel package. This will be sent to the agency.'
+    : isSuspend
+    ? 'Please provide a reason for temporarily suspending this package. This will be sent to the agency.'
+    : 'Please provide a reason for permanently deleting this package.'
+
+  const placeholder = isReject
+    ? 'e.g. Incomplete itinerary details, inaccurate pricing, missing hotel details, or quality standards not met.'
+    : isSuspend
+    ? 'e.g. Policy violation, safety concerns, temporary maintenance, or pending verification.'
+    : 'e.g. Package discontinued, duplicate listing, or requested by agency.'
+
+  const actionLabel = isReject
+    ? 'Confirm Rejection'
+    : isSuspend
+    ? 'Confirm Suspension'
+    : 'Confirm Delete'
+
+  const actionButtonClass = isReject
+    ? 'bg-rose-600 hover:bg-rose-700 active:bg-rose-800'
+    : isSuspend
+    ? 'bg-amber-600 hover:bg-amber-700 active:bg-amber-800'
+    : 'bg-red-600 hover:bg-red-700 active:bg-red-800'
+
+  const pkgTitle = pkg?.packageName || pkg?.name || 'Travel Package'
+  const agencyName = pkg?.providerName || pkg?.agentName || 'Travel Agency'
+  const bookingsCount = Number(pkg?.bookings || pkg?.bookingsCount || 0)
+  const hasBookings = (isDelete || isSuspend) && bookingsCount > 0
+
+  const handleConfirm = () => {
+    if (hasBookings) {
+      setError(`Cannot ${isSuspend ? 'suspend' : 'delete'}: This package currently has ${bookingsCount} active booking(s).`)
+      return
+    }
+    if (!reason.trim()) {
+      setError('Please enter a reason.')
+      return
+    }
+    setError('')
+    onConfirm(reason.trim())
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-fade-in">
+      <div 
+        className="bg-white w-full max-w-lg rounded-2xl p-6 sm:p-7 shadow-2xl space-y-5 border border-gray-200"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Header */}
+        <div className="flex items-center justify-between border-b border-gray-100 pb-3.5">
+          <div>
+            <h3 className="text-xl font-bold text-gray-900">{title}</h3>
+            <p className="text-xs text-gray-500 mt-0.5">{subtitle}</p>
+          </div>
+          <button 
+            onClick={onCancel}
+            disabled={loading}
+            className="w-8 h-8 flex items-center justify-center rounded-full border border-gray-200 text-gray-400 hover:bg-gray-50 hover:text-gray-700 transition"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+
+        {/* Package & Recipient Agency Details Card */}
+        <div className="bg-slate-50 border border-slate-200/80 rounded-xl p-4 space-y-2.5">
+          <div className="flex items-center justify-between text-xs">
+            <span className="text-gray-500 font-medium flex items-center gap-1.5">
+              <PackageIcon className="w-3.5 h-3.5 text-[#0ea5e9]" /> Target Package:
+            </span>
+            <span className="font-bold text-gray-900 truncate max-w-[240px]" title={pkgTitle}>
+              {pkgTitle}
+            </span>
+          </div>
+
+          <div className="border-t border-slate-200/60 pt-2.5 flex items-start justify-between text-xs">
+            <span className="text-gray-500 font-medium flex items-center gap-1.5">
+              <Building2 className="w-3.5 h-3.5 text-[#0ea5e9]" /> Travel Agency:
+            </span>
+            <span className="font-bold text-gray-900">{agencyName}</span>
+          </div>
+
+          {pkg?.bookings !== undefined && (
+            <div className="border-t border-slate-200/60 pt-2.5 flex items-center justify-between text-xs">
+              <span className="text-gray-500 font-medium flex items-center gap-1.5">
+                <Calendar className="w-3.5 h-3.5 text-[#0ea5e9]" /> Active Bookings:
+              </span>
+              <span className={`font-bold ${bookingsCount > 0 ? 'text-amber-600' : 'text-gray-700'}`}>
+                {bookingsCount} booking(s)
+              </span>
+            </div>
+          )}
+        </div>
+
+        {/* If trying to delete or suspend a package with bookings */}
+        {hasBookings && (
+          <div className="p-3.5 bg-red-50 border border-red-200 rounded-xl flex items-start gap-2.5">
+            <AlertCircle className="w-5 h-5 text-red-600 shrink-0 mt-0.5" />
+            <div className="text-xs text-red-800">
+              <p className="font-bold">Cannot {isSuspend ? 'suspend' : 'delete'} package with active bookings</p>
+              <p className="mt-0.5">This package currently has {bookingsCount} active booking(s). Packages with active bookings cannot be {isSuspend ? 'suspended' : 'removed'} to prevent disruptions to tourists and existing reservations.</p>
+            </div>
+          </div>
+        )}
+
+        {/* Textarea */}
+        <div className="space-y-1.5">
+          <label className="block text-xs font-bold text-gray-700 uppercase tracking-wide">
+            Reason / Message to Agency <span className="text-red-500">*</span>
+          </label>
+          <textarea
+            className={`w-full min-h-[110px] p-3.5 border rounded-xl text-sm focus:outline-none focus:ring-2 resize-none transition ${
+              error
+                ? 'border-red-400 focus:ring-red-200 focus:border-red-500'
+                : 'border-gray-200 focus:ring-[#0ea5e9]/20 focus:border-[#0ea5e9]'
+            }`}
+            placeholder={placeholder}
+            value={reason}
+            onChange={(e) => {
+              setReason(e.target.value)
+              if (error) setError('')
+            }}
+            disabled={loading || hasBookings}
+          />
+          {error && <p className="text-xs text-red-600 font-medium">{error}</p>}
+        </div>
+
+        {/* Actions */}
+        <div className="flex gap-3 justify-end pt-2 border-t border-gray-100">
+          <button
+            className="px-4 py-2.5 border border-gray-200 text-gray-700 font-semibold text-sm rounded-xl hover:bg-gray-50 transition"
+            onClick={onCancel}
+            disabled={loading}
+          >
+            Cancel
+          </button>
+          <button
+            className={`px-5 py-2.5 text-white font-semibold text-sm rounded-xl shadow-sm transition disabled:opacity-50 flex items-center gap-2 ${actionButtonClass}`}
+            onClick={handleConfirm}
+            disabled={loading || !reason.trim() || hasBookings}
+          >
+            {actionLabel}
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 // ── Package Detail View (Exact Modern Template) ───────────────────────────────
 const PackageDetailView = ({ pkg, onBack, onApprove, onReject, onToggle, onDelete, loading }: any) => {
+  const { formatPrice } = useAdminCurrency()
   const [selectedImage, setSelectedImage] = useState<string | null>(null)
 
   if (!pkg) return null
@@ -161,13 +337,16 @@ const PackageDetailView = ({ pkg, onBack, onApprove, onReject, onToggle, onDelet
     days,
     imageUrl,
     images,
-    bookings
+    bookings,
+    rejectionReason
   } = pkg
 
   const title = packageName || name || 'Travel Package'
-  const isApproved = String(applicationStatus || '').trim().toLowerCase() === 'approved'
+  const isApproved = String(applicationStatus || '').trim().toLowerCase() === 'approved' && isActive !== false
   const isPending = String(applicationStatus || '').trim().toLowerCase() === 'pending'
+  const isSuspended = String(applicationStatus || '').trim().toLowerCase() === 'suspended' || (!isActive && String(applicationStatus || '').trim().toLowerCase() === 'approved')
   const isRejected = String(applicationStatus || '').trim().toLowerCase() === 'rejected'
+  const bookingsCount = Number(bookings || pkg.bookingsCount || 0)
 
   // Image list extraction
   const imageList: string[] = []
@@ -220,13 +399,7 @@ const PackageDetailView = ({ pkg, onBack, onApprove, onReject, onToggle, onDelet
           </button>
 
           {/* Quick Header Badges / Status */}
-          <div className="flex items-center gap-2">
-            {trending && (
-              <span className="bg-amber-500 text-white px-3 py-1 rounded-full text-xs font-bold shadow-sm flex items-center gap-1">
-                🔥 Trending
-              </span>
-            )}
-          </div>
+          <div className="flex items-center gap-2" />
         </div>
 
         {/* ── 1. Big Hero Image Banner with Floating Pills ──────────────────── */}
@@ -257,7 +430,7 @@ const PackageDetailView = ({ pkg, onBack, onApprove, onReject, onToggle, onDelet
               {isApproved && <CheckCircle className="w-3.5 h-3.5" />}
               {isPending && <Clock className="w-3.5 h-3.5" />}
               {isRejected && <X className="w-3.5 h-3.5" />}
-              {isApproved ? 'Approved' : (isPending ? 'Pending Approval' : 'Rejected')}
+              {isApproved ? 'Approved' : (isPending ? 'Pending Approval' : (isSuspended ? 'Suspended' : 'Rejected'))}
             </span>
           </div>
 
@@ -307,10 +480,25 @@ const PackageDetailView = ({ pkg, onBack, onApprove, onReject, onToggle, onDelet
               </span>
             )}
           </div>
+
+          {/* ── Rejection / Suspension Reason Banner ────────────────── */}
+          {rejectionReason && (isRejected || isSuspended || !isActive) && (
+            <div className="p-4 rounded-2xl bg-amber-50 border border-amber-200 shadow-sm flex items-start gap-3 text-sm animate-fade-in">
+              <AlertCircle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
+              <div className="space-y-1 flex-1">
+                <span className="font-bold text-amber-900 block text-xs uppercase tracking-wider">
+                  {isSuspended || !isActive ? 'Suspension Reason:' : 'Rejection Reason:'}
+                </span>
+                <p className="text-amber-800 text-xs sm:text-sm leading-relaxed">
+                  {rejectionReason}
+                </p>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* ── 3. Key Info Specifications Strip ──────────────────────────────── */}
-        <div className="border border-gray-200/80 rounded-2xl bg-white p-4 sm:p-5 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 items-center shadow-sm">
+        <div className="border border-gray-200/80 rounded-2xl bg-white p-4 sm:p-5 grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-4 gap-4 items-center shadow-sm">
           <div className="space-y-1">
             <span className="text-xs text-gray-400 font-medium flex items-center gap-1.5">
               <Clock className="w-3.5 h-3.5 text-gray-400" /> Duration
@@ -325,7 +513,7 @@ const PackageDetailView = ({ pkg, onBack, onApprove, onReject, onToggle, onDelet
               <DollarSign className="w-3.5 h-3.5 text-gray-400" /> Base Adult
             </span>
             <p className="text-sm sm:text-base font-bold text-gray-900">
-              {fmtPrice(basePriceAdult ?? priceFrom ?? 120)}
+              {formatPrice(basePriceAdult ?? priceFrom ?? 120)}
             </p>
           </div>
 
@@ -334,7 +522,7 @@ const PackageDetailView = ({ pkg, onBack, onApprove, onReject, onToggle, onDelet
               <DollarSign className="w-3.5 h-3.5 text-gray-400" /> Base Child
             </span>
             <p className="text-sm sm:text-base font-bold text-gray-900">
-              {fmtPrice(basePriceChild ?? 70)}
+              {formatPrice(basePriceChild ?? 70)}
             </p>
           </div>
 
@@ -345,15 +533,6 @@ const PackageDetailView = ({ pkg, onBack, onApprove, onReject, onToggle, onDelet
             <p className="text-sm sm:text-base font-bold text-gray-900">
               {bookings ?? 0}
             </p>
-          </div>
-
-          <div className="col-span-2 sm:col-span-1 flex items-center justify-between sm:justify-end gap-3 sm:border-l sm:border-gray-100 sm:pl-4">
-            <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">ACTIVE</span>
-            <Switch
-              checked={Boolean(isActive)}
-              onCheckedChange={() => onToggle(pkg)}
-              disabled={loading}
-            />
           </div>
         </div>
 
@@ -512,45 +691,78 @@ const PackageDetailView = ({ pkg, onBack, onApprove, onReject, onToggle, onDelet
               </h3>
 
               <div className="space-y-3">
-                {!isApproved && (
-                  <button
-                    onClick={() => onApprove(pkg)}
-                    disabled={loading}
-                    className="w-full py-2.5 px-4 rounded-xl font-semibold text-xs sm:text-sm bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm transition disabled:opacity-60 flex items-center justify-center gap-2"
-                  >
-                    <Check className="w-4 h-4" /> Approve Package
-                  </button>
-                )}
-
-                {!isRejected && (
-                  <button
-                    onClick={() => onReject(pkg)}
-                    disabled={loading}
-                    className="w-full py-2.5 px-4 rounded-xl font-semibold text-xs sm:text-sm bg-white hover:bg-rose-50 text-rose-600 border border-rose-200 shadow-sm transition disabled:opacity-60 flex items-center justify-center gap-2"
-                  >
-                    <X className="w-4 h-4" /> Reject Package
-                  </button>
-                )}
-
-                {isApproved && (
+                {/* 1. If Suspended: ONLY show Unsuspend Package in sky blue, removing Reject and Approve buttons */}
+                {isSuspended ? (
                   <button
                     onClick={() => onToggle(pkg)}
                     disabled={loading}
-                    className={`w-full py-2.5 px-4 rounded-xl font-semibold text-xs sm:text-sm border shadow-sm transition disabled:opacity-60 flex items-center justify-center gap-2 ${isActive
-                        ? 'bg-white hover:bg-amber-50 text-amber-700 border-amber-200'
-                        : 'bg-emerald-600 hover:bg-emerald-700 text-white border-emerald-600'
-                      }`}
+                    className="w-full py-2.5 px-4 rounded-xl font-semibold text-xs sm:text-sm bg-[#0ea5e9] hover:bg-[#0284c7] text-white shadow-sm transition disabled:opacity-60 flex items-center justify-center gap-2 cursor-pointer"
                   >
-                    <Power className="w-4 h-4" /> {isActive ? 'Suspend / Deactivate' : 'Activate Package'}
+                    <Check className="w-4 h-4" /> Unsuspend Package
                   </button>
+                ) : (
+                  <>
+                    {/* If Pending: show Approve and Reject */}
+                    {isPending && (
+                      <>
+                        <button
+                          onClick={() => onApprove(pkg)}
+                          disabled={loading}
+                          className="w-full py-2.5 px-4 rounded-xl font-semibold text-xs sm:text-sm bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm transition disabled:opacity-60 flex items-center justify-center gap-2 cursor-pointer"
+                        >
+                          <Check className="w-4 h-4" /> Approve Package
+                        </button>
+
+                        <button
+                          onClick={() => onReject(pkg)}
+                          disabled={loading}
+                          className="w-full py-2.5 px-4 rounded-xl font-semibold text-xs sm:text-sm bg-white hover:bg-rose-50 text-rose-600 border border-rose-200 shadow-sm transition disabled:opacity-60 flex items-center justify-center gap-2 cursor-pointer"
+                        >
+                          <X className="w-4 h-4" /> Reject Package
+                        </button>
+                      </>
+                    )}
+
+                    {/* If Approved & Active: show Suspend */}
+                    {isApproved && (
+                      <button
+                        onClick={() => onToggle(pkg)}
+                        disabled={loading || (isActive && bookingsCount > 0)}
+                        title={isActive && bookingsCount > 0 ? `Cannot suspend: Package has ${bookingsCount} active booking(s)` : 'Suspend Package'}
+                        className={`w-full py-2.5 px-4 rounded-xl font-semibold text-xs sm:text-sm border shadow-sm transition disabled:opacity-60 flex items-center justify-center gap-2 ${
+                          isActive && bookingsCount > 0
+                            ? 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed'
+                            : 'bg-white hover:bg-amber-50 text-amber-700 border-amber-200 cursor-pointer'
+                        }`}
+                      >
+                        <Power className="w-4 h-4" /> {isActive && bookingsCount > 0 ? `Suspend (${bookingsCount} bookings)` : 'Suspend Package'}
+                      </button>
+                    )}
+
+                    {/* If Rejected: show Approve option */}
+                    {isRejected && (
+                      <button
+                        onClick={() => onApprove(pkg)}
+                        disabled={loading}
+                        className="w-full py-2.5 px-4 rounded-xl font-semibold text-xs sm:text-sm bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm transition disabled:opacity-60 flex items-center justify-center gap-2 cursor-pointer"
+                      >
+                        <Check className="w-4 h-4" /> Approve Package
+                      </button>
+                    )}
+                  </>
                 )}
 
                 <button
                   onClick={() => onDelete(pkg)}
-                  disabled={loading}
-                  className="w-full py-2.5 px-4 rounded-xl font-semibold text-xs sm:text-sm bg-white hover:bg-gray-100 text-gray-600 border border-gray-200 transition disabled:opacity-60 flex items-center justify-center gap-2"
+                  disabled={loading || (bookingsCount > 0)}
+                  title={bookingsCount > 0 ? `Cannot delete: Package has ${bookingsCount} active booking(s)` : 'Delete Package'}
+                  className={`w-full py-2.5 px-4 rounded-xl font-semibold text-xs sm:text-sm border transition disabled:opacity-60 flex items-center justify-center gap-2 ${
+                    bookingsCount > 0
+                      ? 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed'
+                      : 'bg-white hover:bg-gray-100 text-gray-600 border-gray-200 cursor-pointer'
+                  }`}
                 >
-                  <Trash2 className="w-4 h-4 text-gray-500" /> Delete Package
+                  <Trash2 className="w-4 h-4 text-gray-500" /> {bookingsCount > 0 ? `Delete Package (${bookingsCount} bookings)` : 'Delete Package'}
                 </button>
               </div>
             </div>
@@ -589,8 +801,9 @@ const PackageDetailView = ({ pkg, onBack, onApprove, onReject, onToggle, onDelet
 
 // ── Package Card (Approvals Grid View) ────────────────────────────────────────
 const PackageCard = ({ pkg, onView, onApprove, onReject, onToggle, onDelete, actionLoading }: any) => {
+  const { formatPrice } = useAdminCurrency()
   const { id, packageName, destination, district, priceFrom, basePriceAdult, duration, category,
-    rating, reviewCount, isActive, applicationStatus, imageUrl, images } = pkg
+    rating, reviewCount, isActive, applicationStatus, imageUrl, images, rejectionReason, bookings } = pkg
 
   const cover = (images && images[0]) || imageUrl || (id % 2 === 0 ? galleImg : kandyImg)
   const isApproved = String(applicationStatus || '').trim().toLowerCase() === 'approved'
@@ -671,7 +884,22 @@ const PackageCard = ({ pkg, onView, onApprove, onReject, onToggle, onDelete, act
                 {district || destination}
               </span>
             )}
+            {bookings !== undefined && Number(bookings) > 0 && (
+              <span className="px-2.5 py-0.5 rounded-full bg-sky-50 text-sky-700 text-xs font-semibold border border-sky-100">
+                {bookings} booking{bookings > 1 ? 's' : ''}
+              </span>
+            )}
           </div>
+
+          {/* Rejection / Suspension Note if present */}
+          {rejectionReason && (isRejected || isSuspended) && (
+            <div className="mt-3 p-2.5 rounded-xl bg-amber-50 border border-amber-200/80 text-xs text-amber-900 flex items-start gap-2">
+              <AlertCircle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+              <span className="line-clamp-2">
+                <strong>{isSuspended ? 'Suspended:' : 'Rejected:'}</strong> {rejectionReason}
+              </span>
+            </div>
+          )}
         </div>
 
         {/* Divider */}
@@ -687,7 +915,7 @@ const PackageCard = ({ pkg, onView, onApprove, onReject, onToggle, onDelete, act
           <div className="text-right">
             <span className="block text-[11px] text-gray-400 font-medium">Starts from</span>
             <span className="block text-base sm:text-lg font-bold text-gray-900 tracking-tight">
-              {fmtPrice(basePriceAdult ?? priceFrom ?? 100)}
+              {formatPrice(basePriceAdult ?? priceFrom ?? 100)}
             </span>
           </div>
         </div>
@@ -720,6 +948,17 @@ export default function PackageApprovals() {
   const [drawerDetail, setDrawerDetail] = useState<any>(null)
   const [detailLoading, setDetailLoading] = useState(false)
   const [actionLoading, setActionLoading] = useState(false)
+
+  // Reason Modal State (for Reject / Suspend / Delete)
+  const [reasonModal, setReasonModal] = useState<{
+    open: boolean
+    type: 'reject' | 'suspend' | 'delete'
+    pkg: any
+  }>({
+    open: false,
+    type: 'reject',
+    pkg: null
+  })
 
   const fetchPackages = useCallback(async (status: string) => {
     setLoading(true)
@@ -770,53 +1009,79 @@ export default function PackageApprovals() {
     if (drawerDetail?.id === id) setDrawerDetail((p: any) => ({ ...p, ...patch }))
   }
 
+  const handleOpenReasonModal = (type: 'reject' | 'suspend' | 'delete', pkg: any) => {
+    const bookingsCount = Number(pkg?.bookings || pkg?.bookingsCount || 0)
+    if ((type === 'delete' || type === 'suspend') && bookingsCount > 0) {
+      modal.addToast(`⚠️ Cannot ${type} package: "${pkg.packageName || pkg.name}" has ${bookingsCount} active booking(s).`)
+      return
+    }
+    setReasonModal({ open: true, type, pkg })
+  }
+
+  const handleReasonConfirm = async (reason: string) => {
+    const { type, pkg } = reasonModal
+    if (!pkg) return
+    try {
+      setActionLoading(true)
+      if (type === 'reject') {
+        await adminPackageApi.rejectPackage(pkg.id, reason)
+        modal.addToast(`🚫 "${pkg.packageName || pkg.name}" rejected`)
+        patchLocal(pkg.id, { applicationStatus: 'Rejected', isActive: false, rejectionReason: reason })
+      } else if (type === 'suspend') {
+        await adminPackageApi.togglePackageActive(pkg.id, reason)
+        modal.addToast(`⏸ "${pkg.packageName || pkg.name}" suspended`)
+        patchLocal(pkg.id, { applicationStatus: 'Suspended', isActive: false, rejectionReason: reason })
+      } else if (type === 'delete') {
+        await adminPackageApi.deletePackage(pkg.id, reason)
+        modal.addToast(`🗑 "${pkg.packageName || pkg.name}" deleted`)
+        setPackages(prev => prev.filter(p => p.id !== pkg.id))
+        closeDrawer()
+      }
+      setReasonModal({ open: false, type: 'reject', pkg: null })
+    } catch (err: any) {
+      modal.addToast(`❌ ${err?.response?.data?.message || err?.message || 'Action failed'}`)
+    } finally {
+      setActionLoading(false)
+    }
+  }
+
   const handleApprove = async (pkg: any) => {
     if (!await modal.showConfirm({ title: 'Approve Package', message: `Approve "${pkg.packageName || pkg.name}"? It will become visible to tourists.` })) return
     try {
       setActionLoading(true)
       await adminPackageApi.approvePackage(pkg.id)
       modal.addToast(`✅ "${pkg.packageName || pkg.name}" approved`)
-      patchLocal(pkg.id, { applicationStatus: 'Approved', isActive: true })
+      patchLocal(pkg.id, { applicationStatus: 'Approved', isActive: true, rejectionReason: null })
     } catch (err: any) { modal.addToast(`❌ ${err?.response?.data?.message || 'Failed'}`) }
     finally { setActionLoading(false) }
   }
 
-  const handleReject = async (pkg: any) => {
-    if (!await modal.showConfirm({ title: 'Reject Package', message: `Reject "${pkg.packageName || pkg.name}"?` })) return
-    try {
-      setActionLoading(true)
-      await adminPackageApi.rejectPackage(pkg.id, 'Rejected by admin')
-      modal.addToast(`🚫 "${pkg.packageName || pkg.name}" rejected`)
-      patchLocal(pkg.id, { applicationStatus: 'Rejected' })
-    } catch (err: any) { modal.addToast(`❌ ${err?.response?.data?.message || 'Failed'}`) }
-    finally { setActionLoading(false) }
+  const handleReject = (pkg: any) => {
+    handleOpenReasonModal('reject', pkg)
   }
 
   const handleToggle = async (pkg: any) => {
-    const action = pkg.isActive ? 'suspend' : 'activate'
-    if (!await modal.showConfirm({ title: 'Toggle Package', message: `${action.charAt(0).toUpperCase() + action.slice(1)} "${pkg.packageName || pkg.name}"?` })) return
-    try {
-      setActionLoading(true)
-      await adminPackageApi.togglePackageActive(pkg.id)
-      modal.addToast(`✅ "${pkg.packageName || pkg.name}" ${action}d`)
-      patchLocal(pkg.id, {
-        isActive: !pkg.isActive,
-        applicationStatus: !pkg.isActive ? 'Approved' : 'Suspended'
-      })
-    } catch (err: any) { modal.addToast(`❌ ${err?.response?.data?.message || 'Failed'}`) }
-    finally { setActionLoading(false) }
+    const isCurrentlySuspended = pkg.isActive === false || String(pkg.applicationStatus).toLowerCase() === 'suspended'
+    if (!isCurrentlySuspended) {
+      handleOpenReasonModal('suspend', pkg)
+    } else {
+      if (!await modal.showConfirm({ title: 'Unsuspend Package', message: `Unsuspend "${pkg.packageName || pkg.name}"? It will become active and visible to tourists.` })) return
+      try {
+        setActionLoading(true)
+        await adminPackageApi.togglePackageActive(pkg.id)
+        modal.addToast(`✅ "${pkg.packageName || pkg.name}" unsuspended successfully`)
+        patchLocal(pkg.id, {
+          isActive: true,
+          applicationStatus: 'Approved',
+          rejectionReason: null
+        })
+      } catch (err: any) { modal.addToast(`❌ ${err?.response?.data?.message || 'Failed'}`) }
+      finally { setActionLoading(false) }
+    }
   }
 
-  const handleDelete = async (pkg: any) => {
-    if (!await modal.showConfirm({ title: 'Delete Package', message: `Permanently delete "${pkg.packageName || pkg.name}"?` })) return
-    try {
-      setActionLoading(true)
-      await adminPackageApi.deletePackage(pkg.id)
-      modal.addToast(`🗑 "${pkg.packageName || pkg.name}" deleted`)
-      setPackages(prev => prev.filter(p => p.id !== pkg.id))
-      closeDrawer()
-    } catch (err: any) { modal.addToast(`❌ ${err?.response?.data?.message || 'Failed'}`) }
-    finally { setActionLoading(false) }
+  const handleDelete = (pkg: any) => {
+    handleOpenReasonModal('delete', pkg)
   }
 
   // ── Extract Available Districts dynamically ──────────────────────────────
@@ -964,6 +1229,17 @@ export default function PackageApprovals() {
             </div>
           )}
         </>
+      )}
+
+      {/* ── Package Action Reason Modal (Reject / Suspend / Delete) ─────────── */}
+      {reasonModal.open && (
+        <PackageActionReasonModal
+          type={reasonModal.type}
+          pkg={reasonModal.pkg}
+          onConfirm={handleReasonConfirm}
+          onCancel={() => setReasonModal({ open: false, type: 'reject', pkg: null })}
+          loading={actionLoading}
+        />
       )}
     </div>
   )

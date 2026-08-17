@@ -46,16 +46,21 @@ const adminPackageApi = {
     },
 
     // PATCH /api/admin/packages/{id}/toggle-active
-    togglePackageActive: async (id) => {
+    togglePackageActive: async (id: number | string, reason?: string) => {
         const res = await api.patch(
-            `/admin/packages/${id}/toggle-active`);
+            `/admin/packages/${id}/toggle-active`,
+            reason ? { reason } : {});
         return res.data;
     },
 
     // DELETE /api/admin/packages/{id}
-    deletePackage: async (id) => {
+    deletePackage: async (id: number | string, reason?: string) => {
         const res = await api.delete(
-            `/admin/packages/${id}`);
+            `/admin/packages/${id}`,
+            {
+                data: reason ? { reason } : undefined,
+                params: reason ? { reason } : undefined
+            });
         return res.data;
     },
 };

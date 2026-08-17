@@ -1,6 +1,9 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import adminDashboardApi from '../services/adminDashboardApi';
+import adminAgentApi from '../services/adminAgentApi';
+import adminHotelApi from '../services/adminHotelApi';
+import { useAdminCurrency } from '../hooks/AdminCurrencyContext';
 import { 
   Users, 
   TrendingUp, 
@@ -32,6 +35,7 @@ const formatTimeAgo = (dateStr?: string) => {
   if (!dateStr) return 'Recently';
   try {
     const date = new Date(dateStr);
+    if (isNaN(date.getTime())) return 'Recently';
     const now = new Date();
     const diffMs = now.getTime() - date.getTime();
     const diffMins = Math.floor(diffMs / 60000);
@@ -54,13 +58,19 @@ const fmt = (n?: number | string | null) => {
   return String(num);
 };
 
-const fmtCurrency = (n?: number | string | null) => {
-  if (n == null) return '$0';
-  return `$${Number(n).toLocaleString('en-US', { maximumFractionDigits: 0 })}`;
-};
+// Fallback Recent Approvals (Agencies & Hotels)
+const fallbackRecentActivities = [
+  { title: 'Agency Approved', desc: 'Ceylon Safari Adventures • Kamal Silva', status: 'APPROVED', time: '1 hour ago', icon: '🏢', color: 'bg-emerald-50 text-emerald-600 border border-emerald-100' },
+  { title: 'Hotel Approved', desc: 'Mirissa Beach Resort • Matara', status: 'APPROVED', time: '3 hours ago', icon: '🏨', color: 'bg-sky-50 text-sky-600 border border-sky-100' },
+  { title: 'Agency Approved', desc: 'Lanka Tour Operators • Ranjith Kumar', status: 'APPROVED', time: '5 hours ago', icon: '🏢', color: 'bg-emerald-50 text-emerald-600 border border-emerald-100' },
+  { title: 'Hotel Approved', desc: 'Kandy Mountain View Hotel • Kandy', status: 'APPROVED', time: '1 day ago', icon: '🏨', color: 'bg-sky-50 text-sky-600 border border-sky-100' },
+  { title: 'Agency Approved', desc: 'Sigiriya Express Travels • Anura Perera', status: 'APPROVED', time: '2 days ago', icon: '🏢', color: 'bg-emerald-50 text-emerald-600 border border-emerald-100' },
+];
 
 export default function Dashboard() {
+  const { formatPrice, convertPrice, currencySymbol, currency } = useAdminCurrency();
   const [stats, setStats] = useState<any>(null);
+  const [recentActivity, setRecentActivity] = useState<any[]>(fallbackRecentActivities);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [chartViewMode, setChartViewMode] = useState<'revenue' | 'bookings'>('revenue');
@@ -69,11 +79,107 @@ export default function Dashboard() {
     try {
       setLoading(true);
       setError(null);
-      const res = await adminDashboardApi.getDashboard();
-      setStats(res?.data ?? res);
+      
+      const [dashRes, agentsRes, hotelsRes] = await Promise.allSettled([
+        adminDashboardApi.getDashboard(),
+        adminAgentApi.getAllAgents(),
+        adminHotelApi.getAllHotels()
+      ]);
+
+      const dStats = dashRes.status === 'fulfilled' ? (dashRes.value?.data ?? dashRes.value) : null;
+      if (dStats) {
+        setStats(dStats);
+      }
+
+      let activities: any[] = [];
+
+      // 1. If backend returned clean non-booking recentActivities, use them
+      if (dStats?.recentActivities && Array.isArray(dStats.recentActivities)) {
+        const validActivities = dStats.recentActivities.filter((act: any) => {
+          const t = (act.title || '').toLowerCase();
+          const d = (act.desc || '').toLowerCase();
+          return !t.includes('booking') && !d.includes('booking');
+        });
+        if (validActivities.length > 0) {
+          activities = validActivities.map((act: any) => {
+            const isAgency = (act.title || '').toLowerCase().includes('agent') || (act.title || '').toLowerCase().includes('agency');
+            return {
+              title: act.title || (isAgency ? 'Agency Approved' : 'Hotel Approved'),
+              desc: act.desc || 'Approved Partner',
+              status: act.status || 'APPROVED',
+              time: formatTimeAgo(act.timestamp),
+              icon: act.icon || (isAgency ? '🏢' : '🏨'),
+              color: act.color || (isAgency ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' : 'bg-sky-50 text-sky-600 border border-sky-100')
+            };
+          });
+        }
+      }
+
+      // 2. If dashboard API had old booking items, extract from live approved agents & hotels
+      if (activities.length === 0) {
+        const list: any[] = [];
+
+        if (agentsRes.status === 'fulfilled') {
+          const agentsData = agentsRes.value?.data ?? agentsRes.value ?? [];
+          const approvedAgents = Array.isArray(agentsData)
+            ? agentsData.filter((a: any) => 
+                a.status?.toLowerCase() === 'approved' || 
+                a.agentApproved === true || 
+                a.nicVerificationStatus === 'APPROVED')
+            : [];
+          
+          approvedAgents.forEach((a: any) => {
+            const timeStr = a.submitted || a.updatedAt || a.createdAt;
+            list.push({
+              title: 'Agency Approved',
+              desc: `${a.agencyName || a.name || 'Travel Agency'}${a.owner ? ` • ${a.owner}` : (a.email ? ` • ${a.email}` : '')}`,
+              status: 'APPROVED',
+              time: formatTimeAgo(timeStr),
+              rawTime: timeStr ? new Date(timeStr).getTime() : 0,
+              icon: '🏢',
+              color: 'bg-emerald-50 text-emerald-600 border border-emerald-100'
+            });
+          });
+        }
+
+        if (hotelsRes.status === 'fulfilled') {
+          const hotelsData = hotelsRes.value?.data ?? hotelsRes.value ?? [];
+          const approvedHotels = Array.isArray(hotelsData)
+            ? hotelsData.filter((h: any) => 
+                h.status?.toLowerCase() === 'approved' || 
+                h.applicationStatus?.toLowerCase() === 'approved')
+            : [];
+          
+          approvedHotels.forEach((h: any) => {
+            const timeStr = h.submitted || h.updatedAt || h.createdAt;
+            list.push({
+              title: 'Hotel Approved',
+              desc: `${h.hotelName || h.name || 'Hotel Partner'}${h.district ? ` • ${h.district}` : (h.destination ? ` • ${h.destination}` : '')}`,
+              status: 'APPROVED',
+              time: formatTimeAgo(timeStr),
+              rawTime: timeStr ? new Date(timeStr).getTime() : 0,
+              icon: '🏨',
+              color: 'bg-sky-50 text-sky-600 border border-sky-100'
+            });
+          });
+        }
+
+        if (list.length > 0) {
+          list.sort((a, b) => (b.rawTime || 0) - (a.rawTime || 0));
+          activities = list;
+        }
+      }
+
+      // 3. Guaranteed fallback to approved agencies and hotels if no database records yet
+      if (activities.length === 0) {
+        activities = fallbackRecentActivities;
+      }
+
+      setRecentActivity(activities.slice(0, 5));
     } catch (err: any) {
       console.error('Dashboard fetch error:', err);
       setError(err?.response?.data?.message || 'Failed to load dashboard data.');
+      setRecentActivity(fallbackRecentActivities);
     } finally {
       setLoading(false);
     }
@@ -94,8 +200,9 @@ export default function Dashboard() {
   const pendingAgents = stats?.pendingAgents ?? 0;
   const pendingHotels = stats?.pendingHotels ?? 6;
   const pendingPackages = stats?.pendingPackages ?? 1;
-  const pendingBookings = stats?.pendingBookings ?? 6;
-  const totalPending = pendingAgents + pendingHotels + pendingPackages + pendingBookings;
+  const pendingVehicles = stats?.pendingVehicles ?? 0;
+  const pendingDrivers = stats?.pendingDrivers ?? 0;
+  const totalPending = pendingAgents + pendingHotels + pendingPackages + pendingVehicles + pendingDrivers;
 
   // 12 Months Graph Data (Jan to Dec) matching the screenshot curve
   const months12 = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
@@ -120,33 +227,16 @@ export default function Dashboard() {
       else bCount = 0;
     }
 
+    const convertedRev = convertPrice(rev);
+
     return {
       name: month,
-      revenue: rev,
+      revenue: convertedRev,
+      rawRevenue: rev,
       bookings: bCount,
-      value: chartViewMode === 'revenue' ? rev : bCount
+      value: chartViewMode === 'revenue' ? convertedRev : bCount
     };
   });
-
-  // Recent Activity Data
-  const fallbackRecentActivities = [
-    { title: 'New Booking', desc: 'Booking ID: 158', status: 'confirmed', time: '13 min ago', icon: '🎫', color: 'bg-emerald-50 text-emerald-600 border border-emerald-100' },
-    { title: 'New Booking', desc: 'Booking ID: 157', status: 'confirmed', time: '38 min ago', icon: '🎫', color: 'bg-emerald-50 text-emerald-600 border border-emerald-100' },
-    { title: 'New Booking', desc: 'Booking ID: 156', status: 'confirmed', time: '5 hours ago', icon: '🎫', color: 'bg-emerald-50 text-emerald-600 border border-emerald-100' },
-    { title: 'New Booking', desc: 'Booking ID: 155', status: 'confirmed', time: '5 hours ago', icon: '🎫', color: 'bg-emerald-50 text-emerald-600 border border-emerald-100' },
-    { title: 'New Booking', desc: 'Booking ID: 154', status: 'confirmed', time: '6 hours ago', icon: '🎫', color: 'bg-emerald-50 text-emerald-600 border border-emerald-100' },
-  ];
-
-  const recentActivity = stats?.recentActivities && stats.recentActivities.length > 0
-    ? stats.recentActivities.map((act: any) => ({
-        title: act.title || 'New Booking',
-        desc: act.desc || `Booking ID: ${act.id || '158'}`,
-        status: act.status || 'confirmed',
-        time: formatTimeAgo(act.timestamp),
-        icon: act.icon || '🎫',
-        color: 'bg-emerald-50 text-emerald-600 border border-emerald-100'
-      }))
-    : fallbackRecentActivities;
 
   // Package Distribution Donut Data
   const packageDistributionData = [
@@ -180,8 +270,8 @@ export default function Dashboard() {
       {/* ── Pending Approvals Quick Action Box ──────────────────────────────── */}
       <div className="bg-[#FFF8F1] border border-orange-200/70 rounded-3xl p-5 sm:p-6 shadow-sm flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-5">
         <div className="flex items-center gap-4">
-          <div className="w-12 h-12 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-amber-600 flex items-center justify-center text-2xl flex-shrink-0 shadow-xs">
-            ⏰
+          <div className="w-12 h-12 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-amber-600 flex items-center justify-center flex-shrink-0 shadow-xs">
+            <Clock className="w-6 h-6 text-amber-600" />
           </div>
           <div>
             <h3 className="text-lg font-bold text-gray-900 tracking-tight">Pending Approvals</h3>
@@ -191,8 +281,8 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* 4 Interactive Quick Filter Counter Badges */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        {/* 5 Interactive Quick Filter Counter Badges */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
           {/* Agents */}
           <Link 
             to="/admin/agents" 
@@ -226,14 +316,25 @@ export default function Dashboard() {
             </span>
           </Link>
 
-          {/* Bookings */}
+          {/* Vehicles */}
           <Link 
-            to="/admin/payments" 
+            to="/admin/vehicles" 
             className="bg-white hover:bg-amber-50/50 border border-orange-100 hover:border-amber-300 rounded-2xl p-3 text-center transition group shadow-2xs flex flex-col justify-center"
           >
-            <span className="text-[11px] font-bold text-gray-400 uppercase tracking-wider block">Bookings</span>
+            <span className="text-[11px] font-bold text-gray-400 uppercase tracking-wider block">Vehicles</span>
             <span className="text-xl font-bold text-gray-900 group-hover:text-amber-600 transition mt-0.5">
-              {pendingBookings}
+              {pendingVehicles}
+            </span>
+          </Link>
+
+          {/* Drivers */}
+          <Link 
+            to="/admin/drivers" 
+            className="bg-white hover:bg-amber-50/50 border border-orange-100 hover:border-amber-300 rounded-2xl p-3 text-center transition group shadow-2xs flex flex-col justify-center"
+          >
+            <span className="text-[11px] font-bold text-gray-400 uppercase tracking-wider block">Drivers</span>
+            <span className="text-xl font-bold text-gray-900 group-hover:text-amber-600 transition mt-0.5">
+              {pendingDrivers}
             </span>
           </Link>
         </div>
@@ -342,7 +443,7 @@ export default function Dashboard() {
           </div>
           <div className="mt-3">
             <span className="text-2xl sm:text-3xl font-bold text-gray-900 tracking-tight block">
-              {fmtCurrency(totalRevenue)}
+              {formatPrice(totalRevenue, { showCents: false })}
             </span>
             <span className="text-[11px] font-semibold text-emerald-600 flex items-center gap-0.5 mt-1">
               ↑ 18% <span className="text-gray-400 font-normal">vs last month</span>
@@ -378,24 +479,26 @@ export default function Dashboard() {
             {/* Segment Toggle Switch */}
             <div className="flex items-center bg-gray-100/90 p-1 rounded-2xl border border-gray-200/60 shadow-inner self-start sm:self-auto">
               <button
+                type="button"
                 onClick={() => setChartViewMode('revenue')}
-                className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold transition duration-150 ${
+                className={`px-4 py-2 rounded-xl text-xs font-bold transition-all duration-200 cursor-pointer ${
                   chartViewMode === 'revenue'
-                    ? 'bg-white text-gray-900 shadow-xs font-bold'
-                    : 'text-gray-500 hover:text-gray-900'
+                    ? 'bg-white text-gray-900 shadow-sm'
+                    : 'text-gray-500 hover:text-gray-800'
                 }`}
               >
-                Revenue ($)
+                Revenue
               </button>
               <button
+                type="button"
                 onClick={() => setChartViewMode('bookings')}
-                className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold transition duration-150 ${
+                className={`px-4 py-2 rounded-xl text-xs font-bold transition-all duration-200 cursor-pointer ${
                   chartViewMode === 'bookings'
-                    ? 'bg-white text-gray-900 shadow-xs font-bold'
-                    : 'text-gray-500 hover:text-gray-900'
+                    ? 'bg-white text-gray-900 shadow-sm'
+                    : 'text-gray-500 hover:text-gray-800'
                 }`}
               >
-                Bookings Count
+                Bookings
               </button>
             </div>
           </div>
@@ -418,17 +521,19 @@ export default function Dashboard() {
                   tick={{ fill: '#94A3B8', fontSize: 11, fontWeight: 500 }} 
                 />
                 <YAxis 
-                  domain={[0, chartViewMode === 'revenue' ? 260 : 28]}
-                  ticks={chartViewMode === 'revenue' ? [0, 65, 130, 195, 260] : [0, 7, 14, 21, 28]}
+                  domain={chartViewMode === 'revenue' ? [0, 'auto'] : [0, 28]}
+                  ticks={chartViewMode === 'bookings' ? [0, 7, 14, 21, 28] : undefined}
                   axisLine={false} 
                   tickLine={false} 
                   tick={{ fill: '#94A3B8', fontSize: 11, fontWeight: 500 }} 
-                  tickFormatter={(v) => chartViewMode === 'revenue' ? (v === 0 ? '$0' : `$${v}`) : String(v)}
+                  tickFormatter={(v) => chartViewMode === 'revenue' ? (v === 0 ? `${currencySymbol}0` : `${currencySymbol}${v >= 1000 ? `${(v/1000).toFixed(0)}k` : v}`) : String(v)}
                 />
                 <Tooltip 
                   contentStyle={{ backgroundColor: '#FFFFFF', border: '1px solid #E2E8F0', borderRadius: '12px', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
                   formatter={(val: any) => [
-                    chartViewMode === 'revenue' ? `$${Number(val).toLocaleString(undefined, { minimumFractionDigits: 2 })}` : `${val} Bookings`,
+                    chartViewMode === 'revenue' 
+                      ? `${currencySymbol} ${Number(val).toLocaleString(undefined, { minimumFractionDigits: currency === 'USD' ? 2 : 0, maximumFractionDigits: currency === 'USD' ? 2 : 0 })}` 
+                      : `${val} Bookings`,
                     chartViewMode === 'revenue' ? 'Revenue' : 'Bookings'
                   ]} 
                 />
@@ -497,38 +602,55 @@ export default function Dashboard() {
       {/* ── 3. Lower Row: Recent Activity ──────────────────────────────────── */}
       <div className="bg-white rounded-3xl border border-gray-200/80 p-6 sm:p-7 shadow-sm">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-bold text-gray-900 tracking-tight">
-            Recent Activity
-          </h3>
-          <Link 
-            to="/admin/payments" 
-            className="text-xs font-bold text-[#0ea5e9] hover:underline inline-flex items-center gap-1"
-          >
-            View All &rarr;
-          </Link>
+          <div>
+            <h3 className="text-lg font-bold text-gray-900 tracking-tight">
+              Recent Approvals
+            </h3>
+            <p className="text-xs text-gray-400 mt-0.5 font-medium">Recently approved agencies and hotels</p>
+          </div>
         </div>
 
         <div className="divide-y divide-gray-100">
-          {recentActivity.map((act: any, idx: number) => (
-            <div key={idx} className="py-3.5 flex items-center justify-between gap-4 hover:bg-slate-50/60 transition rounded-xl px-2">
-              <div className="flex items-center gap-3.5">
-                <div className="w-10 h-10 rounded-2xl bg-sky-50 text-[#0ea5e9] flex items-center justify-center text-base flex-shrink-0 shadow-2xs">
-                  {act.icon}
-                </div>
-                <div>
-                  <h4 className="font-bold text-gray-900 text-sm leading-tight">{act.title}</h4>
-                  <p className="text-xs text-gray-400 mt-0.5">{act.desc}</p>
-                </div>
-              </div>
+          {recentActivity.map((act: any, idx: number) => {
+            const isAgency = act.title?.toLowerCase().includes('agent') || act.title?.toLowerCase().includes('agency');
+            const targetUrl = isAgency ? '/admin/agents' : '/admin/hotels';
 
-              <div className="text-right flex flex-col items-end gap-1">
-                <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${act.color}`}>
-                  {act.status}
-                </span>
-                <span className="text-[11px] text-gray-400 font-medium">{act.time}</span>
-              </div>
-            </div>
-          ))}
+            return (
+              <Link
+                key={idx}
+                to={targetUrl}
+                className="py-3.5 flex items-center justify-between gap-4 hover:bg-slate-50 transition-colors rounded-2xl px-3 group block"
+              >
+                <div className="flex items-center gap-3.5 min-w-0">
+                  <div className={`w-10 h-10 rounded-2xl flex items-center justify-center flex-shrink-0 shadow-2xs transition-transform group-hover:scale-105 ${
+                    isAgency ? 'bg-sky-50 text-[#0ea5e9]' : 'bg-emerald-50 text-emerald-600'
+                  }`}>
+                    {isAgency ? (
+                      <Users className="w-5 h-5" />
+                    ) : (
+                      <Building2 className="w-5 h-5" />
+                    )}
+                  </div>
+                  <div className="min-w-0">
+                    <h4 className="font-bold text-gray-900 text-sm leading-tight group-hover:text-sky-600 transition-colors truncate">
+                      {act.title}
+                    </h4>
+                    <p className="text-xs text-gray-400 mt-0.5 truncate">{act.desc}</p>
+                  </div>
+                </div>
+
+                <div className="text-right flex items-center gap-3 flex-shrink-0">
+                  <div className="flex flex-col items-end gap-1">
+                    <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${act.color}`}>
+                      {act.status}
+                    </span>
+                    <span className="text-[11px] text-gray-400 font-medium">{act.time}</span>
+                  </div>
+                  <ChevronRight className="w-4 h-4 text-gray-300 group-hover:text-gray-600 group-hover:translate-x-0.5 transition-all" />
+                </div>
+              </Link>
+            );
+          })}
         </div>
       </div>
 

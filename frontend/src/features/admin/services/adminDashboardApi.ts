@@ -7,6 +7,7 @@ const adminDashboardApi = {
     //   totalUsers, totalTourists, totalAgents, totalHotelManagers,
     //   totalHotels, totalPackages, totalBookings, totalReviews,
     //   pendingAgents, pendingBookings, pendingHotels, pendingPackages,
+    //   pendingDrivers, pendingVehicles,
     //   totalRevenue
     // }
     getDashboard: async () => {

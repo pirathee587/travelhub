@@ -238,6 +238,7 @@ public class OwnerHotelService {
                 .isActive(hotel.getIsActive() != null ? hotel.getIsActive() : true)
                 .hotelEmail(hotel.getHotelEmail())
                 .hotelContactNumber(hotel.getHotelContactNumber() != null ? hotel.getHotelContactNumber() : hotel.getPhoneNumber())
+                .rejectionReason(hotel.getRejectionReason())
                 .build();
     }
 }

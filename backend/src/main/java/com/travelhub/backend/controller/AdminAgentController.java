@@ -71,8 +71,9 @@ public class AdminAgentController {
     // ── DELETE /api/admin/agents/{id} ─────────────────
     @DeleteMapping("/{id}")
     public ResponseEntity<?> deleteAgent(
-            @PathVariable Long id) {
-        adminAgentService.deleteAgent(id);
+            @PathVariable Long id,
+            @RequestParam(required = false) String reason) {
+        adminAgentService.deleteAgent(id, reason);
         return ResponseEntity.ok(
                 new ApiResponse(true,
                         "Agent deleted", null));

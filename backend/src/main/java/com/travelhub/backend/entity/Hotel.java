@@ -116,5 +116,6 @@ public class Hotel {
     // ── Link to Owner (User entity) ──
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "owner_id")
+    @org.hibernate.annotations.NotFound(action = org.hibernate.annotations.NotFoundAction.IGNORE)
     private User owner;
 }
