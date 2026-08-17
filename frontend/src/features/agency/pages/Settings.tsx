@@ -4,7 +4,7 @@ import {
   Bell, Lock, Eye, EyeOff, DollarSign, Save,
   ShieldCheck, BellRing, BellOff, CreditCard,
   PackageCheck, MessageSquare, Megaphone,
-  Camera, IdCard, Phone, Trash2
+  Camera, IdCard, Phone, Trash2, Wallet,
 } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/common/ui/dialog';
 import { DashboardLayout } from '@/features/agency/components/dashboard/DashboardLayout';
@@ -48,6 +48,8 @@ const notificationDefaults = [
   { id: 'trip-completed', label: 'Trip Completed', description: 'Get notified when a trip is marked as completed', defaultOn: true, icon: PackageCheck },
   { id: 'new-review', label: 'New Customer Reviews', description: 'Get notified when a customer leaves a review', defaultOn: true, icon: MessageSquare },
   { id: 'payment-received', label: 'Payment Received', description: 'Get notified when a payment is confirmed', defaultOn: true, icon: CreditCard },
+  { id: 'payout-updates', label: 'Payout & Wallet Alerts', description: 'Get notified when a payout is requested, approved, or credited to your wallet', defaultOn: true, icon: Wallet },
+  { id: 'verification-updates', label: 'Verification & Audit Alerts', description: 'Get notified when admin verifies or requests updates on your agency, driver, or vehicle documents', defaultOn: true, icon: ShieldCheck },
   { id: 'promo-updates', label: 'Promotional Updates', description: 'Receive updates about new features and offers', defaultOn: false, icon: Megaphone },
 ];
 

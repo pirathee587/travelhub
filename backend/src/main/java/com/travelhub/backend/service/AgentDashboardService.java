@@ -77,11 +77,11 @@ public class AgentDashboardService {
         // Total packages created/owned by this agent.
         long totalPackages = packageRepository.countByAgent_Id(realAgentId);
 
-        // Revenue = sum of totalPrice across completed bookings (treat null as 0).
+        // Revenue = sum of net earnings (95% of totalPrice after 5% platform commission) across completed bookings.
         Double totalRevenue = bookingRepository
                 .findByAgentIdAndStatus(realAgentId, "completed")
                 .stream()
-                .mapToDouble(b -> b.getTotalPrice() != null ? b.getTotalPrice() : 0)
+                .mapToDouble(b -> b.getTotalPrice() != null ? b.getTotalPrice() * 0.95 : 0)
                 .sum();
 
         Double averageRating = agentRatingCalculator.getAgentRating(realAgentId);
@@ -139,19 +139,19 @@ public class AgentDashboardService {
                 .count();
         Double pendingRequestsTrend = calculateTrend(pendingThisMonth, pendingLastMonth);
 
-        // 5. Total Revenue Trend (Completed bookings revenue in CM vs PM)
+        // 5. Total Revenue Trend (Completed bookings 95% net revenue in CM vs PM)
         double revenueThisMonth = bookings.stream()
                 .filter(b -> "completed".equalsIgnoreCase(b.getStatus()) 
                         && b.getEndDate() != null 
                         && !b.getEndDate().isBefore(startOfCurrentMonthDate))
-                .mapToDouble(b -> b.getTotalPrice() != null ? b.getTotalPrice() : 0.0)
+                .mapToDouble(b -> b.getTotalPrice() != null ? b.getTotalPrice() * 0.95 : 0.0)
                 .sum();
         double revenueLastMonth = bookings.stream()
                 .filter(b -> "completed".equalsIgnoreCase(b.getStatus()) 
                         && b.getEndDate() != null 
                         && !b.getEndDate().isBefore(startOfPreviousMonthDate) 
                         && b.getEndDate().isBefore(startOfCurrentMonthDate))
-                .mapToDouble(b -> b.getTotalPrice() != null ? b.getTotalPrice() : 0.0)
+                .mapToDouble(b -> b.getTotalPrice() != null ? b.getTotalPrice() * 0.95 : 0.0)
                 .sum();
         Double totalRevenueTrend = calculateTrend(revenueThisMonth, revenueLastMonth);
 

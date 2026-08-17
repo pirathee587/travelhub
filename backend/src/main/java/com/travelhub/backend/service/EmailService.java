@@ -204,6 +204,40 @@ public class EmailService {
         sendEmail(touristEmail, "Refund Request Declined - TravelHub", message, "BOOKING", request.getBooking().getId());
     }
 
+    public void sendPayoutRequestConfirmation(com.travelhub.backend.entity.Agent agent, com.travelhub.backend.entity.PayoutRequest request) {
+        if (agent == null || agent.getOwner() == null || agent.getOwner().getEmail() == null) return;
+        String email = agent.getOwner().getEmail();
+        String message = "<h3>Payout Request Submitted</h3>"
+                + "<p>Dear " + agent.getAgencyName() + ",</p>"
+                + "<p>Your payout request of <b>$" + String.format("%.2f", request.getAmount()) + "</b> to <b>" + request.getBankName() + " (" + request.getAccountNo() + ")</b> has been submitted successfully.</p>"
+                + "<p>Status: <b>PENDING ADMIN VERIFICATION</b></p>";
+        sendEmail(email, "Payout Request Submitted - TravelHub", message, "PAYOUT", request.getId());
+    }
+
+    public void sendPayoutApprovedNotification(com.travelhub.backend.entity.Agent agent, com.travelhub.backend.entity.PayoutRequest request) {
+        if (agent == null || agent.getOwner() == null || agent.getOwner().getEmail() == null) return;
+        String email = agent.getOwner().getEmail();
+        String slipInfo = request.getTransferSlipUrl() != null 
+                ? "<p><a href=\"" + request.getTransferSlipUrl() + "\">View Bank Transfer Receipt</a></p>" 
+                : "";
+        String message = "<h3>Payout Request Approved!</h3>"
+                + "<p>Dear " + agent.getAgencyName() + ",</p>"
+                + "<p>Your payout of <b>$" + String.format("%.2f", request.getAmount()) + "</b> has been APPROVED and processed to <b>" + request.getBankName() + " (" + request.getAccountNo() + ")</b>.</p>"
+                + slipInfo;
+        sendEmail(email, "Payout Approved & Processed - TravelHub", message, "PAYOUT", request.getId());
+    }
+
+    public void sendPayoutRejectedNotification(com.travelhub.backend.entity.Agent agent, com.travelhub.backend.entity.PayoutRequest request, String reason) {
+        if (agent == null || agent.getOwner() == null || agent.getOwner().getEmail() == null) return;
+        String email = agent.getOwner().getEmail();
+        String message = "<h3>Payout Request Declined</h3>"
+                + "<p>Dear " + agent.getAgencyName() + ",</p>"
+                + "<p>Your payout request of <b>$" + String.format("%.2f", request.getAmount()) + "</b> was declined.</p>"
+                + "<p>Reason: <i>" + (reason != null ? reason : "Unspecified") + "</i></p>"
+                + "<p>The requested amount has been refunded back to your Available Wallet balance.</p>";
+        sendEmail(email, "Payout Request Declined - TravelHub", message, "PAYOUT", request.getId());
+    }
+
     private void sendEmail(String to, String subject, String content, String relatedType, Long relatedId) {
         try {
             MimeMessage mimeMessage = mailSender.createMimeMessage();

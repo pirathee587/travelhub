@@ -23,6 +23,7 @@ import { cn } from '@/utils/utils';
 import { toast } from 'sonner';
 import { api } from '@/features/agency/services/api';
 import { useCurrency } from '@/features/agency/hooks/CurrencyContext';
+import { downloadBookingInvoice } from '@/features/agency/utils/invoiceGenerator';
 
 // ── Status badge styles ────────────────────────────────────────
 const statusBadge = {
@@ -49,80 +50,8 @@ const statusLabel = (status) => {
 };
 
 // ── Invoice generator ──────────────────────────────────────────
-const handleDownloadInvoice = (booking, formatPrice) => {
-  const invoiceHTML = `
-    <!DOCTYPE html>
-    <html lang="en">
-    <head>
-      <meta charset="UTF-8" />
-      <title>Invoice - ${booking.bookingId || booking.id}</title>
-      <style>
-        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: 'Plus Jakarta Sans', sans-serif; color: #1a1a2e; padding: 48px; background: #fff; }
-        .invoice-header { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 3px solid #0d9488; padding-bottom: 24px; margin-bottom: 32px; }
-        .brand h1 { font-size: 22px; font-weight: 700; color: #0d9488; }
-        .brand p { font-size: 12px; color: #64748b; margin-top: 4px; }
-        .invoice-title { text-align: right; }
-        .invoice-title h2 { font-size: 28px; font-weight: 700; color: #0d9488; letter-spacing: 2px; }
-        .invoice-title p { font-size: 13px; color: #64748b; margin-top: 4px; }
-        .section { margin-bottom: 28px; }
-        .section-title { font-size: 14px; font-weight: 700; color: #0d9488; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 12px; padding-bottom: 6px; border-bottom: 1px solid #e2e8f0; }
-        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px 32px; }
-        .field label { font-size: 11px; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px; }
-        .field p { font-size: 14px; font-weight: 500; margin-top: 2px; }
-        .payment-box { background: #f0fdfa; border: 1px solid #99f6e4; border-radius: 8px; padding: 20px; display: flex; justify-content: space-between; align-items: center; }
-        .payment-box .amount { font-size: 28px; font-weight: 700; color: #0d9488; }
-        .payment-box .status { background: #0d9488; color: #fff; padding: 6px 16px; border-radius: 20px; font-size: 12px; font-weight: 600; }
-        .footer { margin-top: 48px; text-align: center; padding-top: 24px; border-top: 1px solid #e2e8f0; color: #94a3b8; font-size: 13px; }
-        @media print { body { padding: 24px; } @page { margin: 0.5in; } }
-      </style>
-    </head>
-    <body>
-      <div class="invoice-header">
-        <div class="brand"><h1>Sri Lanka Travel Experts</h1><p>Premium Travel &amp; Tour Services</p></div>
-        <div class="invoice-title">
-          <h2>OFFICIAL INVOICE</h2>
-          <p>Booking ID: ${booking.bookingId || booking.id}</p>
-          <p>Issue Date: ${new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
-        </div>
-      </div>
-      <div class="section">
-        <div class="section-title">Trip Details</div>
-        <div class="grid">
-          <div class="field"><label>Package</label><p>${booking.packageName || '-'}</p></div>
-
-          <div class="field"><label>Start Date</label><p>${booking.startDate || '-'}</p></div>
-          <div class="field"><label>End Date</label><p>${booking.endDate || '-'}</p></div>
-        </div>
-      </div>
-      <div class="section">
-        <div class="section-title">Tourist Information</div>
-        <div class="grid">
-          <div class="field"><label>Name</label><p>${booking.touristName || '-'}</p></div>
-          <div class="field"><label>Email</label><p>${booking.touristEmail || '-'}</p></div>
-          <div class="field"><label>Adults</label><p>${booking.adults || 0}</p></div>
-          <div class="field"><label>Children</label><p>${booking.children || 0}</p></div>
-        </div>
-      </div>
-      <div class="section">
-        <div class="section-title">Payment</div>
-        <div class="payment-box">
-          <div>
-            <div style="font-size:12px;color:#64748b;margin-bottom:4px;">Total Amount</div>
-            <div class="amount">${formatPrice(booking.totalPrice || 0)}</div>
-          </div>
-          <div class="status">Paid</div>
-        </div>
-      </div>
-      <div class="footer"><p>Thank you for choosing Sri Lanka Travel Experts</p></div>
-    </body>
-    </html>`;
-  const printWindow = window.open('', '_blank', 'width=800,height=900');
-  printWindow.document.write(invoiceHTML);
-  printWindow.document.close();
-  printWindow.onload = () => printWindow.print();
-  toast.success('Invoice downloaded successfully');
+const handleDownloadInvoice = (booking, formatPrice, agencyProfile) => {
+  downloadBookingInvoice(booking, formatPrice, agencyProfile);
 };
 
 // ── Timeline ───────────────────────────────────────────────────
@@ -204,6 +133,7 @@ const BookingDetails = () => {
 
   const [booking, setBooking] = useState(null);
   const [packageDetails, setPackageDetails] = useState(null);
+  const [profile, setProfile] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
 
@@ -232,9 +162,11 @@ const BookingDetails = () => {
   const [declineReason, setDeclineReason] = useState('');
   const [customDeclineReason, setCustomDeclineReason] = useState('');
 
+  /* ── Load Booking Details ──────────────────────────────────────── */
   useEffect(() => {
     const fetchBooking = async () => {
       setLoading(true);
+      setNotFound(false);
       setTempVehicle(null);
       setTempDriver(null);
       setTempHotelId(null);
@@ -243,7 +175,11 @@ const BookingDetails = () => {
       setSelectedVehicleId('');
       setSelectedDriverId('');
       try {
-        const data = await api.getBookingById(id);
+        const [data, profileData] = await Promise.all([
+          api.getBookingById(id),
+          api.getProfile().catch(() => null)
+        ]);
+        if (profileData) setProfile(profileData);
         if (!data || data.error) {
           setNotFound(true);
         } else {
@@ -1215,7 +1151,7 @@ const BookingDetails = () => {
             {/* Download Invoice (completed only) */}
             {booking.status === 'completed' && (
               <Button className="w-full gap-2" variant="outline"
-                onClick={() => handleDownloadInvoice(booking, formatPrice)}>
+                onClick={() => handleDownloadInvoice(booking, formatPrice, profile)}>
                 <Download className="h-4 w-4" />
                 Download Invoice
               </Button>

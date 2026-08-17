@@ -27,6 +27,8 @@ public class WalletService {
     private final WalletTransactionRepository walletTransactionRepository;
     private final AgentRepository agentRepository;
     private final ImageUploadService imageUploadService;
+    private final EmailService emailService;
+    private final UserNotificationService userNotificationService;
 
     @Transactional
     public AgentWallet getOrCreateWallet(Agent agent) {
@@ -113,6 +115,17 @@ public class WalletService {
                 .amount(commissionAmount)
                 .description("Platform 5% Commission fee for Booking #" + booking.getId())
                 .build());
+
+        try {
+            userNotificationService.notifyAgent(agent, "WALLET", "Earnings Released to Wallet",
+                    "Net earnings of $" + String.format("%.2f", netEarnings) + " for Booking #" + booking.getId() + " have been released from Escrow to your Available Wallet balance.");
+            if (agent.getOwner() != null) {
+                userNotificationService.notifyUser(agent.getOwner().getId(), "WALLET", "Earnings Released to Wallet",
+                        "Net earnings of $" + String.format("%.2f", netEarnings) + " for Booking #" + booking.getId() + " released to wallet.", "/agency/settings");
+            }
+        } catch (Exception e) {
+            // Non-blocking notification dispatch
+        }
     }
 
     @Transactional
@@ -174,6 +187,18 @@ public class WalletService {
                 .description("Payout request #" + saved.getId() + " submitted to " + dto.getBankName() + " (" + dto.getAccountNo() + ")")
                 .build());
 
+        try {
+            emailService.sendPayoutRequestConfirmation(agent, saved);
+            userNotificationService.notifyAgent(agent, "PAYOUT", "Payout Request Submitted",
+                    "Your payout request of $" + String.format("%.2f", saved.getAmount()) + " to " + saved.getBankName() + " is pending approval.");
+            if (agent.getOwner() != null) {
+                userNotificationService.notifyUser(agent.getOwner().getId(), "PAYOUT", "Payout Request Submitted",
+                        "Payout request of $" + String.format("%.2f", saved.getAmount()) + " submitted to " + saved.getBankName(), "/agency/settings");
+            }
+        } catch (Exception e) {
+            // Non-blocking notification dispatch
+        }
+
         return mapToPayoutResponse(saved);
     }
 
@@ -228,6 +253,18 @@ public class WalletService {
                 .description("Payout #" + request.getId() + " approved and transferred to bank account")
                 .build());
 
+        try {
+            emailService.sendPayoutApprovedNotification(request.getAgent(), request);
+            userNotificationService.notifyAgent(request.getAgent(), "PAYOUT", "Payout Approved!",
+                    "Your payout request of $" + String.format("%.2f", request.getAmount()) + " has been approved and processed to your bank account.");
+            if (request.getAgent().getOwner() != null) {
+                userNotificationService.notifyUser(request.getAgent().getOwner().getId(), "PAYOUT", "Payout Approved!",
+                        "Payout of $" + String.format("%.2f", request.getAmount()) + " processed to " + request.getBankName(), "/agency/settings");
+            }
+        } catch (Exception e) {
+            // Non-blocking notification dispatch
+        }
+
         return mapToPayoutResponse(request);
     }
 
@@ -256,6 +293,18 @@ public class WalletService {
                 .amount(request.getAmount())
                 .description("Refund of rejected payout request #" + request.getId() + ". Reason: " + reason)
                 .build());
+
+        try {
+            emailService.sendPayoutRejectedNotification(request.getAgent(), request, reason);
+            userNotificationService.notifyAgent(request.getAgent(), "PAYOUT", "Payout Request Declined",
+                    "Your payout request of $" + String.format("%.2f", request.getAmount()) + " was declined. Reason: " + reason + ". Amount refunded to wallet.");
+            if (request.getAgent().getOwner() != null) {
+                userNotificationService.notifyUser(request.getAgent().getOwner().getId(), "PAYOUT", "Payout Request Declined",
+                        "Payout request of $" + String.format("%.2f", request.getAmount()) + " declined. Reason: " + reason, "/agency/settings");
+            }
+        } catch (Exception e) {
+            // Non-blocking notification dispatch
+        }
 
         return mapToPayoutResponse(request);
     }

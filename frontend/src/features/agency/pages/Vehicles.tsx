@@ -3,7 +3,7 @@ import { useSearchParams } from 'react-router-dom';
 import { createWorker } from 'tesseract.js';
 import {
   Car, Plus, Search, Edit, Trash2, User,
-  CheckCircle, Clock, AlertTriangle, Upload, Star, Lock, SearchX, Loader2, AlertCircle,
+  CheckCircle, Clock, AlertTriangle, Upload, Star, Lock, SearchX, Loader2, AlertCircle, Pencil,
 } from 'lucide-react';
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
@@ -179,8 +179,8 @@ const Vehicles = () => {
   const [searchVehicle, setSearchVehicle] = useState('');
   const [searchDriver, setSearchDriver] = useState('');
   const [activeTab, setActiveTab] = useState(tabParam === 'drivers' ? 'drivers' : 'vehicles');
-  const [vehicleFilter, setVehicleFilter] = useState(tabParam === 'vehicles' && filterParam ? filterParam : 'active');
-  const [driverFilter, setDriverFilter] = useState(tabParam === 'drivers' && filterParam ? filterParam : 'active');
+  const [vehicleFilter, setVehicleFilter] = useState(tabParam === 'vehicles' && filterParam ? filterParam : 'all');
+  const [driverFilter, setDriverFilter] = useState(tabParam === 'drivers' && filterParam ? filterParam : 'all');
   const [deleteActionDriver, setDeleteActionDriver] = useState(null);
   const [deleteActionVehicle, setDeleteActionVehicle] = useState(null);
   const [isAddDriverOpen, setIsAddDriverOpen] = useState(false);
@@ -919,13 +919,13 @@ const Vehicles = () => {
 
   // ── Filter ─────────────────────────────────────────────────
   const filteredVehicles = vehicles.filter(v =>
-    (v.lifecycleStatus === vehicleFilter || (!v.lifecycleStatus && vehicleFilter === 'active')) &&
+    (vehicleFilter === 'all' || v.lifecycleStatus === vehicleFilter || (!v.lifecycleStatus && vehicleFilter === 'active')) &&
     ((v.brand || v.name || '').toLowerCase().includes(searchVehicle.toLowerCase()) ||
       (v.registration || '').toLowerCase().includes(searchVehicle.toLowerCase()))
   );
 
   const filteredDrivers = drivers.filter(d =>
-    (d.lifecycleStatus === driverFilter || (!d.lifecycleStatus && driverFilter === 'active')) &&
+    (driverFilter === 'all' || d.lifecycleStatus === driverFilter || (!d.lifecycleStatus && driverFilter === 'active')) &&
     ((d.firstName || d.name || '').toLowerCase().includes(searchDriver.toLowerCase()) ||
       (d.licenseNumber || d.license || '').toLowerCase().includes(searchDriver.toLowerCase()) ||
       (d.email || '').toLowerCase().includes(searchDriver.toLowerCase()) ||
@@ -970,6 +970,7 @@ const Vehicles = () => {
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
               <div className="flex gap-4 w-full sm:w-auto">
                 <div className="flex bg-muted p-1 rounded-lg">
+                  <Button variant={vehicleFilter === 'all' ? 'secondary' : 'ghost'} size="sm" onClick={() => setVehicleFilter('all')}>All Vehicles</Button>
                   <Button variant={vehicleFilter === 'active' ? 'secondary' : 'ghost'} size="sm" onClick={() => setVehicleFilter('active')}>Active</Button>
                   <Button variant={vehicleFilter === 'pending' ? 'secondary' : 'ghost'} size="sm" onClick={() => setVehicleFilter('pending')}>Pending</Button>
                   <Button variant={vehicleFilter === 'suspended' ? 'secondary' : 'ghost'} size="sm" onClick={() => setVehicleFilter('suspended')}>Suspended</Button>
@@ -1299,9 +1300,22 @@ const Vehicles = () => {
                       <div className="p-5">
                         <h3 className="font-semibold text-foreground text-lg">{vehicleName}</h3>
                         <p className="text-sm text-muted-foreground">{vehicle.vehicleType}</p>
-                        {vehicle.lifecycleStatus === 'rejected' && vehicle.rejectionReason && (
-                          <div className="mt-2 p-2 bg-red-50 border border-red-100 rounded-lg text-xs text-destructive font-medium">
-                            ⚠️ Reason: {vehicle.rejectionReason}
+                        {['rejected', 'suspended'].includes((vehicle.lifecycleStatus || '').trim().toLowerCase()) && (
+                          <div className="mt-3 p-3 rounded-xl bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800 text-xs text-red-700 dark:text-red-300 flex flex-col gap-2 shadow-sm animate-fade-in">
+                            <div className="flex items-start gap-1.5">
+                              <AlertCircle className="h-4 w-4 shrink-0 mt-0.5 text-red-600 dark:text-red-400" />
+                              <span className="leading-snug">
+                                <strong>Admin Feedback:</strong> {vehicle.rejectionReason || 'Vehicle verification requires updating.'}
+                              </span>
+                            </div>
+                            <Button
+                              size="sm"
+                              className="w-full bg-amber-500 hover:bg-amber-600 text-slate-950 font-semibold gap-1.5 shadow-sm border-0 mt-1"
+                              onClick={() => handleEditVehicle(vehicle)}
+                            >
+                              <Pencil className="h-3.5 w-3.5" />
+                              Edit & Re-submit Vehicle
+                            </Button>
                           </div>
                         )}
                         <div className="mt-4 space-y-2 text-sm">
@@ -1369,6 +1383,7 @@ const Vehicles = () => {
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
               <div className="flex gap-4 w-full sm:w-auto">
                 <div className="flex bg-muted p-1 rounded-lg">
+                  <Button variant={driverFilter === 'all' ? 'secondary' : 'ghost'} size="sm" onClick={() => setDriverFilter('all')}>All Drivers</Button>
                   <Button variant={driverFilter === 'active' ? 'secondary' : 'ghost'} size="sm" onClick={() => setDriverFilter('active')}>Active</Button>
                   <Button variant={driverFilter === 'pending' ? 'secondary' : 'ghost'} size="sm" onClick={() => setDriverFilter('pending')}>Pending</Button>
                   <Button variant={driverFilter === 'suspended' ? 'secondary' : 'ghost'} size="sm" onClick={() => setDriverFilter('suspended')}>Suspended</Button>
@@ -1627,9 +1642,22 @@ const Vehicles = () => {
                           <h3 className="font-semibold text-foreground text-lg">{fullName}</h3>
                           <p className="text-sm text-muted-foreground">{driver.email || 'No email provided'}</p>
 
-                          {driver.lifecycleStatus === 'rejected' && driver.rejectionReason && (
-                            <div className="mt-3 p-2.5 bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800/50 rounded-lg text-xs text-destructive font-medium">
-                              ⚠️ Reason: {driver.rejectionReason}
+                          {['rejected', 'suspended'].includes((driver.lifecycleStatus || '').trim().toLowerCase()) && (
+                            <div className="mt-3 p-3 rounded-xl bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800 text-xs text-red-700 dark:text-red-300 flex flex-col gap-2 shadow-sm animate-fade-in">
+                              <div className="flex items-start gap-1.5">
+                                <AlertCircle className="h-4 w-4 shrink-0 mt-0.5 text-red-600 dark:text-red-400" />
+                                <span className="leading-snug">
+                                  <strong>Admin Feedback:</strong> {driver.rejectionReason || 'Driver profile requires updating.'}
+                                </span>
+                              </div>
+                              <Button
+                                size="sm"
+                                className="w-full bg-amber-500 hover:bg-amber-600 text-slate-950 font-semibold gap-1.5 shadow-sm border-0 mt-1"
+                                onClick={() => handleEditDriver(driver)}
+                              >
+                                <Pencil className="h-3.5 w-3.5" />
+                                Edit & Re-submit Driver
+                              </Button>
                             </div>
                           )}
 

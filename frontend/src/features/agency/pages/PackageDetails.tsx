@@ -20,7 +20,8 @@ import {
   Trash2,
   Upload,
   Info,
-  AlertCircle
+  AlertCircle,
+  Pencil
 } from 'lucide-react';
 import { Badge } from '@/components/common/ui/badge';
 import { api } from '@/features/agency/services/api';
@@ -515,13 +516,15 @@ const PackageDetails = () => {
                 <Button variant="outline" size="sm" className="gap-1.5" onClick={handleCancel}>
                   <X className="h-4 w-4" /> Cancel Edit
                 </Button>
-                <Button size="sm" className="gap-1.5" onClick={handleSave}>
-                  <Save className="h-4 w-4" /> Save Changes
+                <Button size="sm" className="gap-1.5 bg-primary" onClick={handleSave}>
+                  <Save className="h-4 w-4" />
+                  {['rejected', 'suspended'].includes(pkg.applicationStatus?.trim()?.toLowerCase()) ? 'Save & Re-submit Package' : 'Save Changes'}
                 </Button>
               </>
             ) : (
-              <Button className="h-10 w-10 rounded-lg" variant="outline" size="icon" onClick={() => setIsEditing(true)} title="Edit Package">
-                <Edit className="h-5 w-5" />
+              <Button size="sm" className="gap-1.5 font-medium" variant={['rejected', 'suspended'].includes(pkg.applicationStatus?.trim()?.toLowerCase()) ? 'default' : 'outline'} onClick={() => setIsEditing(true)}>
+                <Edit className="h-4 w-4" />
+                {['rejected', 'suspended'].includes(pkg.applicationStatus?.trim()?.toLowerCase()) ? 'Fix & Re-submit Package' : 'Edit Package'}
               </Button>
             )}
           </div>
@@ -561,28 +564,27 @@ const PackageDetails = () => {
             </div>
           )}
 
-          <div className="absolute top-4 right-4 flex gap-2">
-            <Badge
-              variant={pkg.available ? 'default' : 'destructive'}
-              className="text-sm shadow-sm animate-in fade-in"
-            >
+          <div className="absolute top-4 right-4 flex gap-2 z-10">
+            <span className={cn(
+              'text-xs font-semibold px-3 py-1 rounded-full border shadow-md backdrop-blur-md transition-all',
+              pkg.available
+                ? 'bg-emerald-50/95 text-emerald-700 border-emerald-300/90 dark:bg-emerald-950/90 dark:text-emerald-300 dark:border-emerald-700/80'
+                : 'bg-slate-100/95 text-slate-700 border-slate-300/90 dark:bg-slate-900/90 dark:text-slate-300 dark:border-slate-700/80'
+            )}>
               {pkg.available ? 'Active' : 'Inactive'}
-            </Badge>
+            </span>
             {pkg.applicationStatus && (
-              <Badge
-                variant="outline"
-                className={cn(
-                  'text-sm shadow-sm animate-in fade-in flex items-center gap-1.5 backdrop-blur-md bg-background/80',
-                  pkg.applicationStatus.trim().toLowerCase() === 'approved' ? 'text-green-600 border-green-500/30' :
-                  pkg.applicationStatus.trim().toLowerCase() === 'rejected' ? 'text-destructive border-destructive/30' :
-                  'text-warning-foreground border-warning/30'
-                )}
-              >
-                {pkg.applicationStatus.trim().toLowerCase() === 'approved' ? <CheckCircle className="h-3.5 w-3.5" /> :
-                 pkg.applicationStatus.trim().toLowerCase() === 'rejected' ? <X className="h-3.5 w-3.5" /> :
-                 <Clock className="h-3.5 w-3.5" />}
+              <span className={cn(
+                'text-xs font-bold px-3 py-1 rounded-full shadow-md flex items-center gap-1.5 border backdrop-blur-md',
+                pkg.applicationStatus.trim().toLowerCase() === 'approved' ? 'bg-emerald-500 text-white border-emerald-400/50' :
+                pkg.applicationStatus.trim().toLowerCase() === 'rejected' ? 'bg-red-600 text-white border-red-500/50' :
+                'bg-amber-500 text-slate-950 border-amber-400/50'
+              )}>
+                {pkg.applicationStatus.trim().toLowerCase() === 'approved' ? <CheckCircle className="h-3.5 w-3.5 text-white" /> :
+                 pkg.applicationStatus.trim().toLowerCase() === 'rejected' ? <X className="h-3.5 w-3.5 text-white" /> :
+                 <Clock className="h-3.5 w-3.5 text-slate-950" />}
                 {pkg.applicationStatus.trim().toLowerCase() === 'pending' ? 'Pending Approval' : pkg.applicationStatus.trim()}
-              </Badge>
+              </span>
             )}
           </div>
         </div>
@@ -697,21 +699,34 @@ const PackageDetails = () => {
 
                   {/* Admin Rejection / Feedback Banner */}
                   {pkg.rejectionReason && (
-                    <div className="p-4 rounded-xl bg-destructive/10 border border-destructive/20 flex items-start gap-3 text-sm animate-fade-in mt-4">
-                      <AlertCircle className="h-5 w-5 text-destructive shrink-0 mt-0.5" />
-                      <div className="space-y-1">
-                        <p className="font-bold text-destructive">
-                          {pkg.applicationStatus?.toLowerCase() === 'rejected' ? 'Rejection Reason from Admin' : 'Admin Note / Feedback'}
-                        </p>
-                        <p className="text-foreground/90 text-sm leading-relaxed">
-                          {pkg.rejectionReason}
-                        </p>
-                        {pkg.applicationStatus?.toLowerCase() === 'rejected' && (
-                          <p className="text-xs text-muted-foreground mt-1">
-                            💡 You can edit this package and click <strong>Save Changes</strong> to automatically resubmit it for admin approval.
+                    <div className="p-4 rounded-xl bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800 flex flex-col gap-3 text-sm animate-fade-in mt-4 shadow-sm">
+                      <div className="flex items-start gap-3">
+                        <AlertCircle className="h-5 w-5 text-red-600 dark:text-red-400 shrink-0 mt-0.5" />
+                        <div className="space-y-1">
+                          <p className="font-bold text-red-700 dark:text-red-300">
+                            {['rejected', 'suspended'].includes(pkg.applicationStatus?.trim()?.toLowerCase()) ? 'Admin Feedback & Instructions' : 'Admin Note / Feedback'}
                           </p>
-                        )}
+                          <p className="text-red-900 dark:text-red-200 text-sm leading-relaxed">
+                            {pkg.rejectionReason}
+                          </p>
+                        </div>
                       </div>
+
+                      {['rejected', 'suspended'].includes(pkg.applicationStatus?.trim()?.toLowerCase()) && !isEditing && (
+                        <div className="pt-2 border-t border-red-200/60 dark:border-red-800/60 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                          <p className="text-xs text-red-700 dark:text-red-300">
+                            💡 Click <strong>Fix & Re-submit Package</strong> to adjust itinerary/pricing details and submit for admin approval.
+                          </p>
+                          <Button
+                            size="sm"
+                            className="bg-amber-500 hover:bg-amber-600 text-slate-950 font-semibold gap-1.5 shadow-sm border-0 shrink-0"
+                            onClick={() => setIsEditing(true)}
+                          >
+                            <Pencil className="h-3.5 w-3.5" />
+                            Fix & Re-submit Package
+                          </Button>
+                        </div>
+                      )}
                     </div>
                   )}
                 </>

@@ -117,17 +117,30 @@ export function DashboardLayout({ children, title, subtitle, showSearch = true }
     const type = (notification.type || '').toLowerCase();
     const title = (notification.title || '').toLowerCase();
     const message = (notification.message || notification.content || '').toLowerCase();
+    const targetEntityId = notification.packageId || notification.bookingId || notification.relatedEntityId;
 
-    if (type.includes('driver') || title.includes('driver') || message.includes('driver')) {
-      navigate('/agency/vehicles?tab=drivers&filter=active');
+    if (type.includes('package') || title.includes('package') || message.includes('package')) {
+      if (targetEntityId) {
+        navigate(`/agency/packages/${targetEntityId}`);
+      } else if (title.includes('suspended') || title.includes('rejected') || message.includes('suspended') || message.includes('rejected')) {
+        navigate('/agency/packages');
+      } else {
+        navigate('/agency/packages');
+      }
+    } else if (type.includes('driver') || title.includes('driver') || message.includes('driver')) {
+      const filter = title.includes('rejected') || message.includes('rejected') ? 'rejected' : title.includes('suspended') ? 'suspended' : title.includes('pending') ? 'pending' : 'all';
+      navigate(`/agency/vehicles?tab=drivers&filter=${filter}`);
     } else if (type.includes('vehicle') || title.includes('vehicle') || message.includes('vehicle')) {
-      navigate('/agency/vehicles?tab=vehicles&filter=active');
+      const filter = title.includes('rejected') || message.includes('rejected') ? 'rejected' : title.includes('suspended') ? 'suspended' : title.includes('pending') ? 'pending' : 'all';
+      navigate(`/agency/vehicles?tab=vehicles&filter=${filter}`);
     } else if (type.includes('booking') || title.includes('booking') || message.includes('booking')) {
-      if (notification.bookingId || notification.relatedEntityId) {
-        navigate(`/agency/bookings/${notification.bookingId || notification.relatedEntityId}`);
+      if (targetEntityId) {
+        navigate(`/agency/bookings/${targetEntityId}`);
       } else {
         navigate('/agency/bookings');
       }
+    } else if (type.includes('account') || type.includes('verification') || title.includes('account') || title.includes('verified') || title.includes('rejected') || message.includes('account')) {
+      navigate('/agency/settings');
     } else if (notification.link) {
       navigate(notification.link);
     }

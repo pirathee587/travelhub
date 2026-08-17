@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Plus, Search, Edit, MapPin, Clock, Star, Trash2, Eye, CheckCircle, X, PackagePlus, SearchX, AlertCircle } from 'lucide-react';
+import { Plus, Search, Edit, MapPin, Clock, Star, Trash2, Eye, CheckCircle, X, PackagePlus, SearchX, AlertCircle, Pencil } from 'lucide-react';
 import { DashboardLayout } from '@/features/agency/components/dashboard/DashboardLayout';
 import { Button } from '@/components/common/ui/button';
 import { Input } from '@/components/common/ui/input';
@@ -32,6 +32,7 @@ const Packages = () => {
   /* Package State Management */
   const [search, setSearch] = useState('');
   const [typeFilter, setTypeFilter] = useState<'all' | 'single' | 'multi'>('all');
+  const [statusFilter, setStatusFilter] = useState<'all' | 'approved' | 'pending' | 'rejected'>('all');
   const [packagesList, setPackagesList] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -52,6 +53,11 @@ const Packages = () => {
     };
     fetchPackages();
   }, []);
+
+  // ── Counts ─────────────────────────────────────────────────
+  const approvedCount = packagesList.filter(p => (p.applicationStatus || 'Approved').trim().toLowerCase() === 'approved').length;
+  const pendingCount = packagesList.filter(p => (p.applicationStatus || '').trim().toLowerCase() === 'pending').length;
+  const rejectedCount = packagesList.filter(p => ['rejected', 'suspended'].includes((p.applicationStatus || '').trim().toLowerCase())).length;
 
   // ── Helper: Determine if package is Multi-District ──────────
   const isMulti = (pkg: any) => {
@@ -74,7 +80,17 @@ const Packages = () => {
       ? pkgIsMulti
       : !pkgIsMulti;
 
-    return matchesSearch && matchesType;
+    const appStatus = (pkg.applicationStatus || 'Approved').trim().toLowerCase();
+    let matchesStatus = true;
+    if (statusFilter === 'approved') {
+      matchesStatus = appStatus === 'approved';
+    } else if (statusFilter === 'pending') {
+      matchesStatus = appStatus === 'pending';
+    } else if (statusFilter === 'rejected') {
+      matchesStatus = ['rejected', 'suspended'].includes(appStatus);
+    }
+
+    return matchesSearch && matchesType && matchesStatus;
   });
 
   const handleEdit = async (pkg: any) => {
@@ -114,9 +130,79 @@ const Packages = () => {
       <div className="space-y-6">
         {/* 1. HEADER SECTION: Search Bar and Create New Package Button */}
         {/* Header */}
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto">
-            <div className="relative flex-1 sm:w-80">
+        {/* Status Sub-Tab Navigation Bar & Search Controls */}
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+          <div className="flex items-center gap-1 rounded-xl bg-muted/60 p-1.5 border border-border/60 self-start">
+            <button
+              type="button"
+              onClick={() => setStatusFilter('all')}
+              className={cn(
+                'px-4 py-2 text-xs font-semibold rounded-lg transition-all flex items-center gap-2',
+                statusFilter === 'all'
+                  ? 'bg-card text-foreground shadow-sm'
+                  : 'text-muted-foreground hover:text-foreground'
+              )}
+            >
+              All Packages
+              <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-muted font-normal text-muted-foreground">
+                {packagesList.length}
+              </span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setStatusFilter('approved')}
+              className={cn(
+                'px-4 py-2 text-xs font-semibold rounded-lg transition-all flex items-center gap-2',
+                statusFilter === 'approved'
+                  ? 'bg-card text-foreground shadow-sm'
+                  : 'text-muted-foreground hover:text-foreground'
+              )}
+            >
+              Approved
+              {approvedCount > 0 && (
+                <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 font-medium">
+                  {approvedCount}
+                </span>
+              )}
+            </button>
+            <button
+              type="button"
+              onClick={() => setStatusFilter('pending')}
+              className={cn(
+                'px-4 py-2 text-xs font-semibold rounded-lg transition-all flex items-center gap-2',
+                statusFilter === 'pending'
+                  ? 'bg-card text-foreground shadow-sm'
+                  : 'text-muted-foreground hover:text-foreground'
+              )}
+            >
+              Pending
+              {pendingCount > 0 && (
+                <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-amber-100 dark:bg-amber-950 text-amber-700 dark:text-amber-300 font-medium">
+                  {pendingCount}
+                </span>
+              )}
+            </button>
+            <button
+              type="button"
+              onClick={() => setStatusFilter('rejected')}
+              className={cn(
+                'px-4 py-2 text-xs font-semibold rounded-lg transition-all flex items-center gap-2',
+                statusFilter === 'rejected'
+                  ? 'bg-card text-foreground shadow-sm'
+                  : 'text-muted-foreground hover:text-foreground'
+              )}
+            >
+              Needs Action
+              {rejectedCount > 0 && (
+                <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-red-100 dark:bg-red-950 text-red-700 dark:text-red-300 font-medium">
+                  {rejectedCount}
+                </span>
+              )}
+            </button>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-3 w-full lg:w-auto">
+            <div className="relative flex-1 lg:w-72">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
                 placeholder="Search packages..."
@@ -126,7 +212,7 @@ const Packages = () => {
               />
             </div>
 
-            {/* Top-Right Filter Dropdown */}
+            {/* Top-Right District Type Filter Dropdown */}
             <Select value={typeFilter} onValueChange={(val: any) => setTypeFilter(val)}>
               <SelectTrigger className="w-44 rounded-xl border-border bg-card">
                 <SelectValue placeholder="All Package Types" />
@@ -137,16 +223,16 @@ const Packages = () => {
                 <SelectItem value="multi">Multi-District</SelectItem>
               </SelectContent>
             </Select>
-          </div>
 
-          <Button
-            id="create-package-btn"
-            className="gap-2 shrink-0"
-            onClick={() => { setEditingPkg(null); setShowCreateModal(true); }}
-          >
-            <Plus className="h-4 w-4" />
-            Create Package
-          </Button>
+            <Button
+              id="create-package-btn"
+              className="gap-2 shrink-0"
+              onClick={() => { setEditingPkg(null); setShowCreateModal(true); }}
+            >
+              <Plus className="h-4 w-4" />
+              Create Package
+            </Button>
+          </div>
         </div>
 
         {/* 2. MAIN SECTION: Grid of Package Cards */}
@@ -177,13 +263,44 @@ const Packages = () => {
               {search ? <SearchX className="h-8 w-8 text-primary" /> : <PackagePlus className="h-8 w-8 text-primary" />}
             </div>
             <h3 className="text-xl font-bold text-foreground">
-              {search ? 'No packages match your search' : 'No travel packages created yet'}
+              {search ? 'No packages match your search' :
+               statusFilter === 'approved' && pendingCount > 0 ? 'No approved packages yet' :
+               statusFilter === 'approved' && rejectedCount > 0 ? 'No approved packages yet' :
+               statusFilter === 'pending' ? 'No packages pending approval' :
+               statusFilter === 'rejected' ? 'No rejected or suspended packages' :
+               'No travel packages created yet'}
             </h3>
             <p className="mt-2 text-sm text-muted-foreground max-w-md">
               {search
                 ? 'Try adjusting your search query or clear the filter.'
+                : statusFilter === 'approved' && pendingCount > 0
+                ? 'You have submitted packages currently awaiting admin verification approval.'
+                : statusFilter === 'approved' && rejectedCount > 0
+                ? 'You have packages requiring update & re-submission.'
+                : statusFilter === 'pending'
+                ? 'All your submitted packages have been processed by admin.'
+                : statusFilter === 'rejected'
+                ? 'All your travel packages are currently in good standing.'
                 : "Start building your agency's travel offerings! Add custom itineraries, set pricing, and start accepting tourist bookings."}
             </p>
+            {statusFilter === 'approved' && pendingCount > 0 && (
+              <Button
+                variant="outline"
+                className="mt-6 gap-2 border-amber-300 text-amber-700 hover:bg-amber-50 dark:border-amber-700 dark:text-amber-300 dark:hover:bg-amber-950"
+                onClick={() => setStatusFilter('pending')}
+              >
+                <Clock className="h-4 w-4" /> View Pending Packages ({pendingCount})
+              </Button>
+            )}
+            {statusFilter === 'approved' && pendingCount === 0 && rejectedCount > 0 && (
+              <Button
+                variant="outline"
+                className="mt-6 gap-2 border-red-300 text-red-700 hover:bg-red-50 dark:border-red-700 dark:text-red-300 dark:hover:bg-red-950"
+                onClick={() => setStatusFilter('rejected')}
+              >
+                <AlertCircle className="h-4 w-4" /> View Packages Needing Action ({rejectedCount})
+              </Button>
+            )}
             {search && (
               <div className="mt-6 flex gap-3">
                 <Button variant="outline" onClick={() => setSearch('')} className="rounded-xl">
@@ -282,11 +399,21 @@ const Packages = () => {
 
                     {/* Admin Rejection / Suspension Reason */}
                     {pkg.rejectionReason && pkg.applicationStatus && pkg.applicationStatus.trim().toLowerCase() !== 'approved' && (
-                      <div className="mt-3 p-2.5 rounded-lg bg-destructive/10 border border-destructive/20 text-xs text-destructive flex items-start gap-1.5 animate-fade-in">
-                        <AlertCircle className="h-3.5 w-3.5 shrink-0 mt-0.5" />
-                        <span className="line-clamp-2">
-                          <strong>Admin Feedback:</strong> {pkg.rejectionReason}
-                        </span>
+                      <div className="mt-3 p-2.5 rounded-xl bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800 text-xs text-red-700 dark:text-red-300 flex items-center justify-between gap-2 shadow-sm animate-fade-in">
+                        <div className="flex items-start gap-1.5 min-w-0">
+                          <AlertCircle className="h-4 w-4 shrink-0 mt-0.5 text-red-600 dark:text-red-400" />
+                          <span className="leading-snug truncate">
+                            <strong>Admin Feedback:</strong> {pkg.rejectionReason}
+                          </span>
+                        </div>
+                        {['rejected', 'suspended'].includes(pkg.applicationStatus.trim().toLowerCase()) && (
+                          <Link
+                            to={`/agency/packages/${pkg.packageId || pkg.id}`}
+                            className="shrink-0 font-semibold text-amber-700 hover:text-amber-800 dark:text-amber-400 dark:hover:text-amber-300 hover:underline flex items-center gap-0.5 text-[11px]"
+                          >
+                            Review & Fix →
+                          </Link>
+                        )}
                       </div>
                     )}
 

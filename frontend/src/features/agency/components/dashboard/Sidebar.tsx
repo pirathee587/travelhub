@@ -58,20 +58,17 @@ export function Sidebar({ collapsed, onToggleCollapse }: { collapsed: boolean; o
       )}
     >
       {/* Logo */}
-      <div className="flex h-16 items-center border-b border-sidebar-border pl-8">
-        {!collapsed ? (
-          <div className="flex flex-col justify-center animate-fade-in">
-            <span className="text-2xl font-bold text-white tracking-tight leading-tight">
+      <div className={cn("h-16 flex items-center gap-3 border-b border-sidebar-border transition-all duration-300", collapsed ? "justify-center px-2" : "px-6")}>
+        <div className={cn("rounded-xl bg-primary flex items-center justify-center shadow-md shrink-0 transition-all duration-300", collapsed ? "h-9 w-9" : "h-10 w-10")}>
+          <Plane className="h-5 w-5 text-white" />
+        </div>
+        {!collapsed && (
+          <div className="flex flex-col justify-center animate-fade-in min-w-0">
+            <span className="text-xl font-bold text-white tracking-tight leading-tight truncate">
               TravelHub
             </span>
-            <span className="text-sm font-medium text-gray-400">
+            <span className="text-xs font-medium text-gray-400 truncate">
               Travel Agent
-            </span>
-          </div>
-        ) : (
-          <div className="flex w-full items-center justify-center animate-fade-in">
-            <span className="text-2xl font-bold text-white tracking-tight">
-              T
             </span>
           </div>
         )}

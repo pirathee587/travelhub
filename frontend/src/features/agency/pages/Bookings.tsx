@@ -25,6 +25,7 @@ import { toast } from 'sonner';
 import { api } from '@/features/agency/services/api';
 import { Skeleton } from '@/components/common/ui/skeleton';
 import { useCurrency } from '@/features/agency/hooks/CurrencyContext';
+import { downloadBookingInvoice } from '@/features/agency/utils/invoiceGenerator';
 
 // ── Status badge styles ───────────────────────────────────────────────────────
 // Each status maps to a unique color token so the badge is instantly readable.
@@ -74,61 +75,8 @@ const CANCEL_REASONS = [
 ];
 
 // ── Invoice helper ────────────────────────────────────────────────────────────
-const handleDownloadInvoice = (booking, formatPrice) => {
-  const invoiceHTML = `
-    <!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"/>
-    <title>Invoice - ${booking.bookingId || booking.id}</title>
-    <style>
-      *{margin:0;padding:0;box-sizing:border-box;}
-      body{font-family:sans-serif;color:#1a1a2e;padding:48px;background:#fff;}
-      .invoice-header{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:3px solid #0d9488;padding-bottom:24px;margin-bottom:32px;}
-      .brand h1{font-size:22px;font-weight:700;color:#0d9488;}
-      .brand p{font-size:12px;color:#64748b;margin-top:4px;}
-      .invoice-title{text-align:right;}
-      .invoice-title h2{font-size:28px;font-weight:700;color:#0d9488;letter-spacing:2px;}
-      .invoice-title p{font-size:13px;color:#64748b;margin-top:4px;}
-      .section{margin-bottom:28px;}
-      .section-title{font-size:14px;font-weight:700;color:#0d9488;text-transform:uppercase;letter-spacing:1px;margin-bottom:12px;padding-bottom:6px;border-bottom:1px solid #e2e8f0;}
-      .grid{display:grid;grid-template-columns:1fr 1fr;gap:12px 32px;}
-      .field label{font-size:11px;color:#94a3b8;text-transform:uppercase;letter-spacing:0.5px;}
-      .field p{font-size:14px;font-weight:500;margin-top:2px;}
-      .payment-box{background:#f0fdfa;border:1px solid #99f6e4;border-radius:8px;padding:20px;display:flex;justify-content:space-between;align-items:center;}
-      .payment-box .amount{font-size:28px;font-weight:700;color:#0d9488;}
-      .payment-box .status{background:#0d9488;color:#fff;padding:6px 16px;border-radius:20px;font-size:12px;font-weight:600;}
-      .footer{margin-top:48px;text-align:center;padding-top:24px;border-top:1px solid #e2e8f0;color:#94a3b8;font-size:13px;}
-    </style></head><body>
-    <div class="invoice-header">
-      <div class="brand"><h1>Sri Lanka Travel Experts</h1><p>Premium Travel &amp; Tour Services</p></div>
-      <div class="invoice-title">
-        <h2>OFFICIAL INVOICE</h2>
-        <p>Booking ID: ${booking.bookingId || booking.id}</p>
-        <p>Issue Date: ${new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
-      </div>
-    </div>
-    <div class="section">
-      <div class="section-title">Trip Details</div>
-      <div class="grid">
-
-        <div class="field"><label>Package</label><p>${booking.packageName || '-'}</p></div>
-        <div class="field"><label>Start Date</label><p>${booking.startDate || '-'}</p></div>
-        <div class="field"><label>End Date</label><p>${booking.endDate || '-'}</p></div>
-      </div>
-    </div>
-    <div class="section">
-      <div class="section-title">Payment</div>
-      <div class="payment-box">
-        <div><div style="font-size:12px;color:#64748b;margin-bottom:4px;">Total Amount</div>
-        <div class="amount">${formatPrice(booking.totalPrice || 0)}</div></div>
-        <div class="status">Paid</div>
-      </div>
-    </div>
-    <div class="footer"><p>Thank you for choosing Sri Lanka Travel Experts</p></div>
-    </body></html>`;
-  const printWindow = window.open('', '_blank', 'width=800,height=900');
-  printWindow.document.write(invoiceHTML);
-  printWindow.document.close();
-  printWindow.onload = () => printWindow.print();
-  toast.success('Invoice downloaded successfully');
+const handleDownloadInvoice = (booking, formatPrice, agencyProfile) => {
+  downloadBookingInvoice(booking, formatPrice, agencyProfile);
 };
 
 /* ── Booking Details Modal ──────────────────────────────────────────────────── */
@@ -659,70 +607,7 @@ const Bookings = () => {
     <DashboardLayout title="Booking Requests" subtitle="Manage and track all your travel bookings" showSearch={false}>
       <div className="space-y-6">
 
-        {/* 1. Interactive Metric Summary Cards */}
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <div 
-            onClick={() => { setStatusFilter('pending'); setUserChangedTab(true); }}
-            className={cn(
-              "rounded-xl border p-4 cursor-pointer transition-all duration-200 hover:scale-[1.02] hover:shadow-md",
-              statusFilter === 'pending'
-                ? "border-amber-400 bg-amber-500/10 ring-2 ring-amber-400/40 shadow-sm"
-                : "border-amber-200/60 bg-amber-50/50 hover:bg-amber-50 dark:border-amber-900/40 dark:bg-amber-950/20"
-            )}>
-            <div className="flex items-center justify-between">
-              <p className="text-xs font-bold uppercase tracking-wider text-amber-600 dark:text-amber-400">Pending Requests</p>
-              {pendingCount > 0 && (
-                <span className="relative flex h-2.5 w-2.5">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
-                  <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-amber-500"></span>
-                </span>
-              )}
-            </div>
-            <p className="mt-2 text-3xl font-extrabold text-slate-800 dark:text-slate-100">{pendingCount}</p>
-            <p className="text-xs text-muted-foreground mt-1">Requires review &amp; allocation</p>
-          </div>
 
-          <div 
-            onClick={() => { setStatusFilter('active'); setUserChangedTab(true); }}
-            className={cn(
-              "rounded-xl border p-4 cursor-pointer transition-all duration-200 hover:scale-[1.02] hover:shadow-md",
-              statusFilter === 'active'
-                ? "border-teal-500 bg-teal-500/10 ring-2 ring-teal-500/40 shadow-sm"
-                : "border-teal-200/60 bg-teal-50/50 hover:bg-teal-50 dark:border-teal-900/40 dark:bg-teal-950/20"
-            )}>
-            <p className="text-xs font-bold uppercase tracking-wider text-teal-600 dark:text-teal-400">Active Trips</p>
-            <p className="mt-2 text-3xl font-extrabold text-slate-800 dark:text-slate-100">{activeCount}</p>
-            <p className="text-xs text-muted-foreground mt-1">
-              {confirmedCount} confirmed · {inProgressCount} in progress
-            </p>
-          </div>
-
-          <div 
-            onClick={() => { setStatusFilter('completed'); setUserChangedTab(true); }}
-            className={cn(
-              "rounded-xl border p-4 cursor-pointer transition-all duration-200 hover:scale-[1.02] hover:shadow-md",
-              statusFilter === 'completed'
-                ? "border-emerald-500 bg-emerald-500/10 ring-2 ring-emerald-500/40 shadow-sm"
-                : "border-emerald-200/60 bg-emerald-50/50 hover:bg-emerald-50 dark:border-emerald-900/40 dark:bg-emerald-950/20"
-            )}>
-            <p className="text-xs font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">Completed Trips</p>
-            <p className="mt-2 text-3xl font-extrabold text-slate-800 dark:text-slate-100">{completedCount}</p>
-            <p className="text-xs text-muted-foreground mt-1">Successfully fulfilled</p>
-          </div>
-
-          <div 
-            onClick={() => { setStatusFilter('cancelled'); setUserChangedTab(true); }}
-            className={cn(
-              "rounded-xl border p-4 cursor-pointer transition-all duration-200 hover:scale-[1.02] hover:shadow-md",
-              statusFilter === 'cancelled'
-                ? "border-rose-400 bg-rose-500/10 ring-2 ring-rose-400/40 shadow-sm"
-                : "border-rose-200/60 bg-rose-50/50 hover:bg-rose-50 dark:border-rose-900/40 dark:bg-rose-950/20"
-            )}>
-            <p className="text-xs font-bold uppercase tracking-wider text-rose-600 dark:text-rose-400">Cancelled</p>
-            <p className="mt-2 text-3xl font-extrabold text-slate-800 dark:text-slate-100">{cancelledCount}</p>
-            <p className="text-xs text-muted-foreground mt-1">Declined or aborted</p>
-          </div>
-        </div>
 
         {/* 2. Segmented Status Tabs & Control Bar */}
         <div className="flex flex-col gap-4 border-b border-border pb-4">

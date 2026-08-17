@@ -43,10 +43,10 @@ public class AgentAnalyticsService {
         List<Booking> allBookings = bookingRepository.findByAgentId(realAgentId);
         List<Booking> filtered = filterByPeriod(allBookings, period);
 
-        // Stat cards: total revenue from completed trips (null-safe totalPrice).
+        // Stat cards: net revenue (95%) from completed trips.
         double totalRevenue = filtered.stream()
                 .filter(b -> b.getStatus().equals("completed"))
-                .mapToDouble(b -> b.getTotalPrice() != null ? b.getTotalPrice() : 0)
+                .mapToDouble(b -> b.getTotalPrice() != null ? b.getTotalPrice() * 0.95 : 0)
                 .sum();
 
         // Stat cards: total completed trips within the filtered period.
@@ -191,7 +191,7 @@ public class AgentAnalyticsService {
                         .filter(b -> b.getStatus().equals("completed") &&
                                 b.getCreatedAt() != null &&
                                 b.getCreatedAt().getMonthValue() == month)
-                        .mapToDouble(b -> b.getTotalPrice() != null ? b.getTotalPrice() : 0)
+                        .mapToDouble(b -> b.getTotalPrice() != null ? b.getTotalPrice() * 0.95 : 0)
                         .sum();
                 Map<String, Object> m = new LinkedHashMap<>();
                 m.put("label", months[i]);

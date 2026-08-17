@@ -17,26 +17,30 @@ const Analytics = () => {
   const { formatPrice, currency, rate } = useCurrency();
   /* --- ANALYTICS STATE MANAGEMENT --- */
   const [viewMode, setViewMode] = useState('monthly'); // Time period (monthly/quarterly/yearly)
-  const [analytics, setAnalytics] = useState(null);
+  const [analytics, setAnalytics] = useState<any>(null);
   const [profile, setProfile] = useState<any>(null);
+  const [wallet, setWallet] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
-  /* DATA FETCHING: Load analytics and agent profile data */
+  /* DATA FETCHING: Load analytics, profile, and wallet data */
   useEffect(() => {
     const fetchAnalyticsAndProfile = async () => {
       setLoading(true);
       try {
-        const [analyticsData, profileData] = await Promise.all([
+        const [analyticsData, profileData, walletData] = await Promise.all([
           api.getAnalytics(viewMode),
           api.getProfile().catch(err => {
             console.error('Failed to load profile in analytics:', err);
             return null;
+          }),
+          api.getAgentWallet().catch(err => {
+            console.error('Failed to load wallet in analytics:', err);
+            return null;
           })
         ]);
         setAnalytics(analyticsData);
-        if (profileData) {
-          setProfile(profileData);
-        }
+        if (profileData) setProfile(profileData);
+        if (walletData) setWallet(walletData);
       } catch (error) {
         console.error('Failed to load analytics data:', error);
       } finally {
@@ -74,17 +78,17 @@ const Analytics = () => {
   const maxVehicleTrips = Math.max(...vehicleUtilization.map(v => v.trips ?? 0), 1);
   const maxDestBookings = Math.max(...topDestinations.map(d => d.bookings ?? 0), 1);
 
-  // ── Download Personalized PDF Report ───────────────────────
+  // ── Download Professional Financial & Operational PDF Report ──
   const handleDownload = () => {
     const doc = new jsPDF();
     const agencyName = profile?.agencyName || profile?.agentName || 'TravelHub Agency Partner';
+    const reportRef = `TRH-FIN-${Date.now().toString().slice(-6)}`;
 
-    // ── PAGE DECORATION & BRANDING ────────────────────────────────
-    // Primary Header Background Bar (Teal color)
-    doc.setFillColor(13, 148, 136); // #0d9488
-    doc.rect(0, 0, 210, 42, 'F');
+    // ── PAGE DECORATION & EXECUTIVE BRANDING ──────────────────────
+    doc.setFillColor(13, 148, 136); // #0d9488 Primary Teal
+    doc.rect(0, 0, 210, 44, 'F');
 
-    // Header Content
+    // Brand Header Text
     doc.setTextColor(255, 255, 255);
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(22);
@@ -92,88 +96,120 @@ const Analytics = () => {
     
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(10);
-    doc.text('Business Intelligence Platform', 15, 24);
+    doc.text('Financial & Operational Statement', 15, 24);
 
-    // Agency Personalization Info
+    // Agency Info
     doc.setFont('helvetica', 'bold');
-    doc.setFontSize(12);
+    doc.setFontSize(11);
     doc.text(agencyName.toUpperCase(), 15, 33);
 
     doc.setFont('helvetica', 'normal');
-    doc.setFontSize(9);
+    doc.setFontSize(8.5);
     const contactInfo = `Email: ${profile?.email || 'N/A'}  |  Phone: ${profile?.phone || 'N/A'}`;
     doc.text(contactInfo, 15, 38);
 
-    // Right-aligned report period metadata in header
-    doc.setFontSize(10);
-    const periodLabel = `Period: ${viewMode.toUpperCase()}`;
-    const generatedDate = `Date: ${new Date().toLocaleDateString()}`;
-    doc.text(periodLabel, 195, 18, { align: 'right' });
-    doc.text(generatedDate, 195, 24, { align: 'right' });
+    // Right-aligned Metadata
+    doc.setFontSize(9);
+    doc.text(`Report Ref: ${reportRef}`, 195, 18, { align: 'right' });
+    doc.text(`Period: ${viewMode.toUpperCase()}`, 195, 24, { align: 'right' });
+    doc.text(`Generated: ${new Date().toLocaleDateString()}`, 195, 30, { align: 'right' });
 
     // ── SUBTITLE SECTION ──────────────────────────────────────────
     doc.setTextColor(51, 65, 85); // Slate-700
     doc.setFont('helvetica', 'bold');
-    doc.setFontSize(15);
-    doc.text('Business Performance & Analytics Report', 15, 55);
+    doc.setFontSize(14);
+    doc.text('1. Executive Financial Overview (Wallet & Escrow)', 15, 54);
 
-    // ── KPI SUMMARY CARDS ──────────────────────────────────────────
+    // ── 4 FINANCIAL KPI CARDS (Payment Implementation Upgrade) ────
     const cardWidth = 43;
     const cardHeight = 22;
-    const cardY = 62;
+    const cardY = 59;
     const spacing = 6;
     const startX = 15;
 
+    const pendingEscrow = wallet?.pendingEscrowBalance ?? 0;
+    const availableEarnings = wallet?.availableBalance ?? 0;
+    const totalWithdrawn = wallet?.totalWithdrawn ?? 0;
+
     const cards = [
-      { title: 'Total Revenue', value: formatPrice(totalRevenue), color: [13, 148, 136] },
-      { title: 'Total Trips', value: String(totalTrips), color: [16, 185, 129] },
-      { title: 'Average Rating', value: avgRating ? avgRating.toFixed(1) : '0.0', color: [245, 158, 11] },
-      { title: 'Cancellation Rate', value: `${cancelRate}%`, color: [239, 68, 68] }
+      { title: 'Gross Revenue', value: formatPrice(totalRevenue), color: [13, 148, 136] },
+      { title: 'Pending Escrow', value: formatPrice(pendingEscrow), color: [245, 158, 11] },
+      { title: 'Available Wallet', value: formatPrice(availableEarnings), color: [16, 185, 129] },
+      { title: 'Total Withdrawn', value: formatPrice(totalWithdrawn), color: [99, 102, 241] }
     ];
 
     cards.forEach((card, index) => {
       const cardX = startX + index * (cardWidth + spacing);
-      // Soft background box
-      doc.setFillColor(248, 250, 252); // Slate-50
-      doc.setDrawColor(226, 232, 240); // Slate-200
+      doc.setFillColor(248, 250, 252);
+      doc.setDrawColor(226, 232, 240);
       doc.rect(cardX, cardY, cardWidth, cardHeight, 'FD');
 
-      // Metric Title
       doc.setFont('helvetica', 'normal');
-      doc.setFontSize(8);
-      doc.setTextColor(100, 116, 139); // Slate-500
-      doc.text(card.title, cardX + 4, cardY + 6);
+      doc.setFontSize(7.5);
+      doc.setTextColor(100, 116, 139);
+      doc.text(card.title, cardX + 3.5, cardY + 6);
 
-      // Metric Value
       doc.setFont('helvetica', 'bold');
-      doc.setFontSize(12);
+      doc.setFontSize(10.5);
       doc.setTextColor(card.color[0], card.color[1], card.color[2]);
-      doc.text(card.value, cardX + 4, cardY + 16);
+      doc.text(card.value, cardX + 3.5, cardY + 16);
     });
 
-    // ── TABLES SECTION ────────────────────────────────────────────
-    let currentY = 94;
+    // ── FINANCIAL AUDIT STATEMENT TABLE ───────────────────────────
+    let currentY = 88;
 
-    // 1. Revenue breakdown Table
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(11);
-    doc.setTextColor(15, 23, 42); // Slate-900
-    doc.text('Revenue Breakdown by Period', 15, currentY);
+    doc.setTextColor(15, 23, 42);
+    doc.text('Payment & Escrow Summary', 15, currentY);
 
-    const revenueRows = revenueData.map(r => [r.name, formatPrice(r.revenue)]);
+    const walletSummaryRows = [
+      ['Gross Tourist Booking Revenue', formatPrice(totalRevenue), 'Total gross value of fulfilled tourist bookings'],
+      ['Pending Escrow Reserve', formatPrice(pendingEscrow), 'Funds held in Escrow awaiting trip completion'],
+      ['Available Wallet Earnings', formatPrice(availableEarnings), 'Cleared funds available for bank withdrawal'],
+      ['Total Withdrawn Payouts', formatPrice(totalWithdrawn), 'Total funds paid out to agency bank account']
+    ];
+
     autoTable(doc, {
       startY: currentY + 3,
-      head: [['Period', 'Revenue']],
-      body: revenueRows,
+      head: [['Financial Account Metric', 'Amount', 'Accounting Description']],
+      body: walletSummaryRows,
       theme: 'striped',
       headStyles: { fillColor: [13, 148, 136], textColor: [255, 255, 255], fontStyle: 'bold' },
-      styles: { fontSize: 9 },
+      styles: { fontSize: 8.5 },
       margin: { left: 15, right: 15 }
     });
 
     currentY = (doc as any).lastAutoTable.finalY + 10;
 
-    // 2. Driver Performance Table
+    // ── OPERATIONAL SECTION ───────────────────────────────────────
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(14);
+    doc.setTextColor(51, 65, 85);
+    doc.text('2. Operational Performance & Resource Utilization', 15, currentY);
+    currentY += 6;
+
+    // Revenue Breakdown Table
+    const revenueRows = revenueData.map(r => [r.name, formatPrice(r.revenue)]);
+    autoTable(doc, {
+      startY: currentY + 2,
+      head: [['Period Breakdown', 'Gross Revenue']],
+      body: revenueRows,
+      theme: 'striped',
+      headStyles: { fillColor: [15, 118, 110], textColor: [255, 255, 255], fontStyle: 'bold' },
+      styles: { fontSize: 8.5 },
+      margin: { left: 15, right: 15 }
+    });
+
+    currentY = (doc as any).lastAutoTable.finalY + 10;
+
+    // Page Break Check
+    if (currentY + 40 > 280) {
+      doc.addPage();
+      currentY = 20;
+    }
+
+    // Driver Performance Summary
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(11);
     doc.setTextColor(15, 23, 42);
@@ -181,53 +217,53 @@ const Analytics = () => {
 
     const driverRows = driverPerformance.map(d => [
       d.name,
-      d.rating ? d.rating.toFixed(1) : '—',
+      d.rating && d.rating > 0 ? d.rating.toFixed(1) : 'New',
       String(d.trips),
-      d.status || '—'
+      d.status || 'Active'
     ]);
+
     autoTable(doc, {
       startY: currentY + 3,
-      head: [['Driver Name', 'Rating', 'Completed Trips', 'Status']],
-      body: driverRows,
+      head: [['Driver Name', 'Rating', 'Completed Trips', 'Current Status']],
+      body: driverRows.length > 0 ? driverRows : [['No driver records', '—', '0', '—']],
       theme: 'striped',
       headStyles: { fillColor: [13, 148, 136], textColor: [255, 255, 255], fontStyle: 'bold' },
-      styles: { fontSize: 9 },
+      styles: { fontSize: 8.5 },
       margin: { left: 15, right: 15 }
     });
 
     currentY = (doc as any).lastAutoTable.finalY + 10;
 
-    // Page Break Check: If next table will overflow, add page
     if (currentY + 40 > 280) {
       doc.addPage();
       currentY = 20;
     }
 
-    // 3. Vehicle Utilization Table
+    // Vehicle Utilization Table
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(11);
     doc.setTextColor(15, 23, 42);
-    doc.text('Vehicle Utilization & Bookings', 15, currentY);
+    doc.text('Vehicle Utilization & Fleet Usage', 15, currentY);
 
     const vehicleRows = vehicleUtilization.map(v => [v.vehicle, String(v.trips)]);
     autoTable(doc, {
       startY: currentY + 3,
-      head: [['Vehicle Details', 'Trips Assigned']],
-      body: vehicleRows,
+      head: [['Vehicle Details', 'Trips Completed']],
+      body: vehicleRows.length > 0 ? vehicleRows : [['No vehicle records', '0']],
       theme: 'striped',
       headStyles: { fillColor: [13, 148, 136], textColor: [255, 255, 255], fontStyle: 'bold' },
-      styles: { fontSize: 9 },
+      styles: { fontSize: 8.5 },
       margin: { left: 15, right: 15 }
     });
 
     currentY = (doc as any).lastAutoTable.finalY + 10;
 
-    // 4. Top Destinations Table
     if (currentY + 40 > 280) {
       doc.addPage();
       currentY = 20;
     }
 
+    // Top Visited Districts Table
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(11);
     doc.setTextColor(15, 23, 42);
@@ -237,22 +273,22 @@ const Analytics = () => {
     autoTable(doc, {
       startY: currentY + 3,
       head: [['District Name', 'Total Bookings']],
-      body: destinationRows,
+      body: destinationRows.length > 0 ? destinationRows : [['No destination records', '0']],
       theme: 'striped',
       headStyles: { fillColor: [13, 148, 136], textColor: [255, 255, 255], fontStyle: 'bold' },
-      styles: { fontSize: 9 },
+      styles: { fontSize: 8.5 },
       margin: { left: 15, right: 15 }
     });
 
-    // ── FOOTER & WATERMARK ────────────────────────────────────────
+    // ── FOOTER & CONFIDENTIALITY NOTICE ────────────────────────────
     const pageCount = (doc as any).internal.getNumberOfPages();
     for (let i = 1; i <= pageCount; i++) {
       doc.setPage(i);
       doc.setFont('helvetica', 'normal');
-      doc.setFontSize(8);
+      doc.setFontSize(7.5);
       doc.setTextColor(148, 163, 184); // Slate-400
       doc.text(
-        `TravelHub Business Analytics Report — Generated for ${agencyName} on ${new Date().toLocaleDateString()}`,
+        `Confidential Financial Statement — Generated for ${agencyName} on ${new Date().toLocaleDateString()}`,
         15,
         288
       );
@@ -260,7 +296,7 @@ const Analytics = () => {
     }
 
     // Save the PDF
-    const filename = `${agencyName.toLowerCase().replace(/\s+/g, '_')}_analytics_${viewMode}.pdf`;
+    const filename = `${agencyName.toLowerCase().replace(/\s+/g, '_')}_financial_report_${viewMode}.pdf`;
     doc.save(filename);
   };
 
@@ -384,7 +420,18 @@ const Analytics = () => {
                       <BarChart data={revenueData}>
                         <CartesianGrid strokeDasharray="3 3" stroke="hsl(214, 25%, 90%)" />
                         <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: 'hsl(215, 15%, 50%)', fontSize: 12 }} />
-                        <YAxis axisLine={false} tickLine={false} tick={{ fill: 'hsl(215, 15%, 50%)', fontSize: 12 }} tickFormatter={(v) => currency === 'LKR' ? `Rs. ${Math.round(v / 1000)}k` : `$${v / 1000}k`} />
+                        <YAxis
+                          axisLine={false}
+                          tickLine={false}
+                          tick={{ fill: 'hsl(215, 15%, 50%)', fontSize: 12 }}
+                          tickFormatter={(v) => {
+                            if (!v) return currency === 'LKR' ? 'Rs. 0' : '$0';
+                            if (currency === 'LKR') {
+                              return v >= 1000 ? `Rs. ${Math.round(v / 1000)}k` : `Rs. ${Math.round(v)}`;
+                            }
+                            return v >= 1000 ? `$${(v / 1000).toFixed(v % 1000 === 0 ? 0 : 1)}k` : `$${Math.round(v)}`;
+                          }}
+                        />
                         <Tooltip contentStyle={{ backgroundColor: 'hsl(0,0%,100%)', border: '1px solid hsl(214,25%,90%)', borderRadius: '12px' }} formatter={(v) => [formatPrice(currency === 'LKR' ? v / rate : v), 'Revenue']} />
                         <Bar dataKey="revenue" fill="hsl(187, 75%, 35%)" radius={[6, 6, 0, 0]} />
                       </BarChart>
@@ -466,7 +513,8 @@ const Analytics = () => {
                           <div className="flex items-center gap-2 mb-1.5">
                             <p className="font-medium text-foreground truncate">{driver.name}</p>
                             <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-warning/10 px-2 py-0.5 text-xs font-semibold text-warning">
-                              <Star className="h-3 w-3 fill-warning" />{driver.rating ?? '-'}
+                              <Star className="h-3 w-3 fill-warning" />
+                              {driver.rating && driver.rating > 0 ? driver.rating.toFixed(1) : 'New'}
                             </span>
                           </div>
                           <p className="text-xs text-muted-foreground">{driver.status}</p>

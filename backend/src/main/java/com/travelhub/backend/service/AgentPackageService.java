@@ -212,7 +212,8 @@ public class AgentPackageService {
         pkg.getItinerary().clear();
         if (req.getDays() != null) buildItinerary(pkg, req.getDays());
 
-        if ("Rejected".equalsIgnoreCase(pkg.getApplicationStatus())) {
+        String currentStatus = pkg.getApplicationStatus();
+        if ("Rejected".equalsIgnoreCase(currentStatus) || "Suspended".equalsIgnoreCase(currentStatus)) {
             pkg.setApplicationStatus("Pending");
             pkg.setRejectionReason(null);
         }
