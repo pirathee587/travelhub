@@ -11,7 +11,8 @@ import {
 import { cn } from "@/features/tourist/services/utils";
 import { useTouristCurrency } from "@/features/tourist/hooks/TouristCurrencyContext";
 
-const CHATBOT_API_URL = "http://localhost:8080/api/chatbot/message";
+const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8080";
+const CHATBOT_API_URL = `${BASE_URL}/api/chatbot/message`;
 
 const WELCOME_MESSAGE = {
     role: "bot",

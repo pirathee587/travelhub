@@ -24,8 +24,9 @@ const AmenitiesGrid = ({ hotelId, isLocked = false }: { hotelId?: string; isLock
     }
     try {
       setLoading(true);
+      const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8080";
       const res = await fetch(
-        `http://localhost:8080/api/v1/amenities/hotel/${hotelId}`
+        `${BASE_URL}/api/v1/amenities/hotel/${hotelId}`
       );
       if (!res.ok) throw new Error("Failed to fetch amenities");
       const data = await res.json();
@@ -47,8 +48,9 @@ const AmenitiesGrid = ({ hotelId, isLocked = false }: { hotelId?: string; isLock
   const handleDelete = async (amenityId: string) => {
     if (!window.confirm("Delete this amenity?")) return;
     try {
+      const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8080";
       const res = await fetch(
-        `http://localhost:8080/api/v1/amenities/${amenityId}`,
+        `${BASE_URL}/api/v1/amenities/${amenityId}`,
         { method: "DELETE" }
       );
       if (res.ok) {

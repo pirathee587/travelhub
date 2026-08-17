@@ -45,7 +45,8 @@ export function EditAmenityDrawer({
 
     setLoading(true);
     try {
-      const res = await fetch(`http://localhost:8080/api/v1/amenities/${amenityId}`, {
+      const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8080";
+      const res = await fetch(`${BASE_URL}/api/v1/amenities/${amenityId}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",

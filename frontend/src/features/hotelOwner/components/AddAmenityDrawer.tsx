@@ -37,7 +37,8 @@ export function AddAmenityDrawer({ hotelId, onSuccess, children }: AddAmenityDra
 
     setLoading(true);
     try {
-      const res = await fetch("http://localhost:8080/api/v1/amenities", {
+      const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8080";
+      const res = await fetch(`${BASE_URL}/api/v1/amenities`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
