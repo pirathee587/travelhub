@@ -24,3 +24,6 @@ target/
 .env.local
 .env.*
 !.env.example
+
+# Mockups and design artifacts
+ui_mockups/
