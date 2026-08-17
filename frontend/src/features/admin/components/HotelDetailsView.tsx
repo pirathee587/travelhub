@@ -1,7 +1,9 @@
 import React, { useState } from 'react'
 import { mockPackages } from '../services/mock-data'
+import { useAdminCurrency } from '../hooks/AdminCurrencyContext'
 
 export default function HotelDetailsView({ hotel, onClose, showClose = true }) {
+  const { formatPrice } = useAdminCurrency()
   const [showNIC, setShowNIC] = useState(false)
 
   if (!hotel) return null
@@ -59,41 +61,62 @@ export default function HotelDetailsView({ hotel, onClose, showClose = true }) {
           </div>
         </div>
 
-        {/* Owner Info */}
-        <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
-          <h4 className="font-bold text-gray-900 mb-3">Owner Information</h4>
-          <div className="space-y-3">
-            <div>
-              <label className="text-xs text-gray-600 font-semibold">Owner Name</label>
-              <div className="text-sm font-semibold text-gray-900">{hotel.ownerName}</div>
-            </div>
-            <div>
-              <label className="text-xs text-gray-600 font-semibold">Email</label>
-              <div className="text-sm font-semibold text-gray-900 break-all">{hotel.email}</div>
-            </div>
-            <div>
-              <label className="text-xs text-gray-600 font-semibold">NIC Number</label>
-              <div className="text-sm font-semibold text-gray-900">{hotel.nicNumber}</div>
-            </div>
-          </div>
-        </div>
-
         {/* Contact Info */}
-        <div className="bg-green-50 p-4 rounded-lg border border-green-200">
+        <div className="bg-teal-50 p-4 rounded-lg border border-teal-200">
           <h4 className="font-bold text-gray-900 mb-3">Contact Information</h4>
           <div className="space-y-3">
             <div>
-              <label className="text-xs text-gray-600 font-semibold">Phone Number</label>
+              <label className="text-xs text-gray-600 font-semibold">Owner Name</label>
+              <div className="text-sm font-semibold text-gray-900">👤 {hotel.owner}</div>
+            </div>
+            <div>
+              <label className="text-xs text-gray-600 font-semibold">Owner Email</label>
               <div className="text-sm font-semibold text-gray-900">
-                <a href={`tel:${hotel.phone}`} className="text-teal-600 hover:underline">{hotel.phone}</a>
+                <a href={`mailto:${hotel.ownerEmail}`} className="text-teal-600 hover:underline">
+                  ✉️ {hotel.ownerEmail}
+                </a>
+              </div>
+            </div>
+            <div>
+              <label className="text-xs text-gray-600 font-semibold">Owner Mobile Number</label>
+              <div className="text-sm font-semibold text-gray-900">
+                <a href={`tel:${hotel.ownerPhone}`} className="text-teal-600 hover:underline">
+                  📞 {hotel.ownerPhone}
+                </a>
+              </div>
+            </div>
+            <div>
+              <label className="text-xs text-gray-600 font-semibold">Hotel Telephone Number</label>
+              <div className="text-sm font-semibold text-gray-900">
+                <a href={`tel:${hotel.phone}`} className="text-teal-600 hover:underline">
+                  ☎️ {hotel.phone}
+                </a>
               </div>
             </div>
             <div>
               <label className="text-xs text-gray-600 font-semibold">Hotline Number</label>
               <div className="text-sm font-semibold text-gray-900">
-                <a href={`tel:${hotel.hotline}`} className="text-teal-600 hover:underline">{hotel.hotline}</a>
+                <a href={`tel:${hotel.hotline}`} className="text-teal-600 hover:underline">
+                  🚨 {hotel.hotline}
+                </a>
               </div>
             </div>
+          </div>
+        </div>
+
+        {/* Status */}
+        <div className="bg-teal-50 p-4 rounded-lg border border-teal-200">
+          <label className="text-xs text-gray-600 font-semibold">Status</label>
+          <div className="mt-1">
+            {hotel.status === 'Suspended' ? (
+              <span className="inline-block px-3 py-1 rounded-full text-xs font-semibold bg-red-100 text-red-700">
+                Suspended
+              </span>
+            ) : (
+              <span className={`inline-block px-3 py-1 rounded-full text-xs font-semibold ${
+                hotel.status === 'Approved' ? 'bg-green-100 text-green-700' : 'bg-orange-100 text-orange-700'
+              }`}>{hotel.status}</span>
+            )}
           </div>
         </div>
 
@@ -111,22 +134,6 @@ export default function HotelDetailsView({ hotel, onClose, showClose = true }) {
           </div>
         )}
 
-        {/* Status Info */}
-        <div className="bg-orange-50 p-4 rounded-lg border border-orange-200">
-          <h4 className="font-bold text-gray-900 mb-3">Application Status</h4>
-          <div className="text-sm">
-            {hotel.isActive === false && hotel.status === 'Approved' ? (
-              <span className="inline-block px-3 py-1 rounded-full text-xs font-semibold bg-gray-100 text-gray-600">
-                Suspended
-              </span>
-            ) : (
-              <span className={`inline-block px-3 py-1 rounded-full text-xs font-semibold ${
-                hotel.status === 'Approved' ? 'bg-green-100 text-green-700' : 'bg-orange-100 text-orange-700'
-              }`}>{hotel.status}</span>
-            )}
-          </div>
-        </div>
-
         {/* Hotel Packages - Only show if Approved */}
         {hotel.status === 'Approved' && hotelPackages.length > 0 && (
           <div className="bg-indigo-50 p-4 rounded-lg border border-indigo-200">
@@ -141,7 +148,7 @@ export default function HotelDetailsView({ hotel, onClose, showClose = true }) {
                       <p className="text-xs text-gray-600">⏱️ {pkg.duration}</p>
                     </div>
                     <div className="text-right">
-                      <p className="font-bold text-indigo-600">${pkg.price}</p>
+                      <p className="font-bold text-indigo-600">{formatPrice(pkg.price)}</p>
                       <span className={`inline-block text-xs font-semibold px-2 py-1 rounded mt-1 ${
                         pkg.status === 'Approved' ? 'bg-green-100 text-green-700' : 'bg-orange-100 text-orange-700'
                       }`}>{pkg.status}</span>

@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react'
+import { useNavigate } from 'react-router-dom'
 import adminDriverApi from '../services/adminDriverApi'
 import { useModal } from '../components/ModalContext'
-import { User, Clock, CheckCircle, AlertTriangle, ShieldAlert, FileText, Star, Car, Search, Eye } from 'lucide-react'
+import { User, Clock, CheckCircle, AlertTriangle, ShieldAlert, FileText, Star, Car, Search, Eye, Building2, ExternalLink } from 'lucide-react'
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 const STATUSES = ['All', 'Pending', 'Approved', 'Rejected']
@@ -36,6 +37,7 @@ const CardSkeleton = () => (
 
 // ── Sub-component: Driver Detail View ────────────────────────────────────────
 const DriverDetailView = ({ driver, onBack, onApprove, onReject, loading }) => {
+  const navigate = useNavigate()
   if (!driver) return null
 
   const fullName = driver.firstName && driver.lastName ? `${driver.firstName} ${driver.lastName}` : (driver.firstName || 'Unknown')
@@ -66,6 +68,51 @@ const DriverDetailView = ({ driver, onBack, onApprove, onReject, loading }) => {
           <span className={`px-3 py-1 rounded-full text-xs font-semibold border ${STATUS_STYLES[driver.lifecycleStatus] || 'bg-gray-100 text-gray-700'}`}>
             {STATUS_LABELS[driver.lifecycleStatus] || driver.lifecycleStatus}
           </span>
+        </div>
+
+        {/* Assigned Travel Agency Box */}
+        <div className="bg-sky-50/60 rounded-xl p-6 border border-sky-100 space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-sky-100/80 pb-3">
+            <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2">
+              <Building2 className="h-5 w-5 text-sky-600" /> Assigned Travel Agency
+            </h3>
+            <button
+              type="button"
+              onClick={() => {
+                if (driver.agentId) {
+                  navigate(`/admin/agents/${driver.agentId}`)
+                } else {
+                  navigate('/admin/agents')
+                }
+              }}
+              className="inline-flex items-center gap-1.5 px-4 py-2 bg-[#0ea5e9] hover:bg-[#0284c7] text-white text-xs font-bold rounded-xl shadow-sm transition"
+            >
+              <span>View Agency Approvals</span>
+              <ExternalLink className="h-3.5 w-3.5" />
+            </button>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
+            <div>
+              <span className="block text-xs text-gray-500 font-medium">Agency Business Name</span>
+              <button
+                type="button"
+                onClick={() => {
+                  if (driver.agentId) {
+                    navigate(`/admin/agents/${driver.agentId}`)
+                  } else {
+                    navigate('/admin/agents')
+                  }
+                }}
+                className="font-bold text-base text-sky-600 hover:text-sky-800 hover:underline text-left mt-0.5"
+              >
+                {driver.agencyName || 'Agency Partner'}
+              </button>
+            </div>
+            <div>
+              <span className="block text-xs text-gray-500 font-medium">Agency Owner / Representative</span>
+              <span className="font-semibold text-gray-900 block mt-0.5">{driver.agentOwnerName || '—'}</span>
+            </div>
+          </div>
         </div>
 
         {/* Audit Details */}
@@ -356,9 +403,13 @@ export default function DriverApprovals() {
       (d.nic || '').toLowerCase().includes(q) ||
       (d.licenseNumber || d.license || '').toLowerCase().includes(q) ||
       (d.email || '').toLowerCase().includes(q) ||
-      (d.mobileNumber || '').includes(q)
+      (d.mobileNumber || '').includes(q) ||
+      (d.agencyName || '').toLowerCase().includes(q) ||
+      (d.agentOwnerName || '').toLowerCase().includes(q)
     )
   })
+
+  const navigate = useNavigate()
 
   return (
     <div className="p-8 bg-gray-50 min-h-screen">
@@ -380,7 +431,7 @@ export default function DriverApprovals() {
             <div className="relative flex-1 max-w-lg">
               <input
                 type="text"
-                placeholder="Search drivers by name, license, NIC or mobile..."
+                placeholder="Search drivers by name, license, NIC, agency or mobile..."
                 value={search}
                 onChange={e => setSearch(e.target.value)}
                 className="w-full pl-4 pr-11 py-2.5 bg-white border border-gray-200 rounded-2xl text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#0ea5e9]/20 focus:border-[#0ea5e9] shadow-sm transition"
@@ -507,6 +558,28 @@ export default function DriverApprovals() {
                           <div>
                             <span className="block text-[10px] uppercase font-bold text-gray-400">NIC</span>
                             <span className="font-semibold text-gray-800 truncate block mt-0.5">{driver.nic || '—'}</span>
+                          </div>
+                          <div className="col-span-2 mt-1 pt-2 border-t border-gray-100 flex items-center justify-between">
+                            <div className="min-w-0 flex-1">
+                              <span className="block text-[10px] uppercase font-bold text-gray-400">Assigned Agency</span>
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  if (driver.agentId) {
+                                    navigate(`/admin/agents/${driver.agentId}`)
+                                  } else {
+                                    navigate('/admin/agents')
+                                  }
+                                }}
+                                className="inline-flex items-center gap-1.5 font-bold text-xs text-sky-600 hover:text-sky-800 hover:underline transition mt-0.5 max-w-full text-left group/agency"
+                                title={`View ${driver.agencyName || 'Agency'} Approvals`}
+                              >
+                                <Building2 className="w-3.5 h-3.5 flex-shrink-0 text-sky-500 group-hover/agency:scale-110 transition-transform" />
+                                <span className="truncate">{driver.agencyName || 'Agency Partner'}</span>
+                                <ExternalLink className="w-3 h-3 flex-shrink-0 opacity-70 group-hover/agency:opacity-100" />
+                              </button>
+                            </div>
                           </div>
                         </div>
                       </div>

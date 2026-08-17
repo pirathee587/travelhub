@@ -5,11 +5,11 @@ import com.travelhub.backend.common.ResourceNotFoundException;
 import com.travelhub.backend.dto.response.AdminAgentDetailResponse;
 import com.travelhub.backend.dto.response.AdminAgentListResponse;
 import com.travelhub.backend.dto.response.AdminAgentPackageResponse;
-import com.travelhub.backend.entity.Agent;
+import com.travelhub.backend.entity.*;
 import com.travelhub.backend.entity.Package;
-import com.travelhub.backend.repository.AgentRepository;
-import com.travelhub.backend.repository.PackageRepository;
+import com.travelhub.backend.repository.*;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.time.format.DateTimeFormatter;
@@ -21,9 +21,20 @@ import java.util.Locale;
 @Transactional(readOnly = true)
 public class AdminAgentService {
 
-    private final AgentRepository   agentRepository;
-    private final PackageRepository packageRepository;
-    private final AgentRatingCalculator agentRatingCalculator;
+    private final jakarta.persistence.EntityManager entityManager;
+    private final AgentRepository         agentRepository;
+    private final PackageRepository       packageRepository;
+    private final AgentRatingCalculator   agentRatingCalculator;
+    private final ReviewRepository        reviewRepository;
+    private final NotificationRepository  notificationRepository;
+    private final DriverRepository        driverRepository;
+    private final VehicleRepository       vehicleRepository;
+    private final VehicleOwnerRepository  vehicleOwnerRepository;
+    private final AgentSettingsRepository agentSettingsRepository;
+    private final RefundRequestRepository refundRequestRepository;
+    private final PaymentRepository       paymentRepository;
+    private final PackageReportRepository packageReportRepository;
+    private final UserRepository          userRepository;
 
     // ── Get All Agents ────────────────────────────────
     public List<AdminAgentListResponse> getAllAgents() {
@@ -93,7 +104,7 @@ public class AdminAgentService {
                 submittedDate,
                 agent.getOwner() != null ? agent.getOwner().getNicNumber() : null,
                 agent.getOwner() != null ? agent.getOwner().getNicImage() : null,
-                agent.getOwner() != null ? agent.getOwner().getNicVerificationStatus() : "PENDING",
+                resolveNicStatus(agent.getOwner()),
                 agent.getOwner() != null ? agent.getOwner().getAdminMessage() : null,
                 agentRatingCalculator.getAgentRating(id),
                 agent.getTotalTrips(),
@@ -112,10 +123,14 @@ public class AdminAgentService {
                         new ResourceNotFoundException(
                                 "Agent", "id", agentId));
 
-        return packageRepository
-                .findByAgent_Id(agentId)
-                .stream()
-                .map(this::mapToPackageResponse)
+        List<Package> packages = packageRepository.findByAgent_Id(agentId);
+        if (packages.isEmpty()) return List.of();
+
+        List<Long> packageIds = packages.stream().map(Package::getId).toList();
+        java.util.Map<Long, Double> avgRatings = reviewRepository.getAverageRatingsByPackageIds(packageIds);
+
+        return packages.stream()
+                .map(p -> mapToPackageResponse(p, avgRatings.get(p.getId())))
                 .toList();
     }
 
@@ -127,6 +142,23 @@ public class AdminAgentService {
                 .orElseThrow(() ->
                         new ResourceNotFoundException(
                                 "Agent", "id", id));
+
+        // If currently active and attempting to deactivate, check for active bookings
+        if (Boolean.TRUE.equals(agent.getIsActive())) {
+            Number activeBookingsCount = (Number) entityManager.createNativeQuery(
+                    "SELECT COUNT(*) FROM bookings b " +
+                    "JOIN packages p ON b.package_id = p.id " +
+                    "WHERE p.agent_id = :id AND LOWER(b.status) NOT IN ('cancelled', 'rejected')"
+            ).setParameter("id", id).getSingleResult();
+
+            if (activeBookingsCount != null && activeBookingsCount.longValue() > 0) {
+                throw new BadRequestException(
+                        "Cannot deactivate agency: This agency currently has " + activeBookingsCount.longValue()
+                        + " active booking(s). Agencies with active bookings cannot be deactivated."
+                );
+            }
+        }
+
         agent.setIsActive(!agent.getIsActive());
         agentRepository.save(agent);
         return getAgentDetail(id);
@@ -134,12 +166,167 @@ public class AdminAgentService {
 
     // ── Delete Agent ──────────────────────────────────
     @Transactional
+    @CacheEvict(value = {"touristPackages", "touristPackageDetails"}, allEntries = true)
     public void deleteAgent(Long id) {
-        agentRepository.findById(id)
+        deleteAgent(id, null);
+    }
+
+    @Transactional
+    @CacheEvict(value = {"touristPackages", "touristPackageDetails"}, allEntries = true)
+    public void deleteAgent(Long id, String reason) {
+        Agent agent = agentRepository.findById(id)
                 .orElseThrow(() ->
                         new ResourceNotFoundException(
                                 "Agent", "id", id));
-        agentRepository.deleteById(id);
+
+        // ── Check for existing / active bookings ────────────────────────
+        Number activeBookingsCount = (Number) entityManager.createNativeQuery(
+                "SELECT COUNT(*) FROM bookings b " +
+                "JOIN packages p ON b.package_id = p.id " +
+                "WHERE p.agent_id = :id AND LOWER(b.status) NOT IN ('cancelled', 'rejected')"
+        ).setParameter("id", id).getSingleResult();
+
+        if (activeBookingsCount != null && activeBookingsCount.longValue() > 0) {
+            throw new BadRequestException(
+                    "Cannot delete agency: This agency currently has " + activeBookingsCount.longValue()
+                    + " active booking(s). Agencies with active bookings cannot be deleted."
+            );
+        }
+
+        Long ownerId = agent.getOwner() != null ? agent.getOwner().getId() : null;
+
+        // 1. Evidence of package reports
+        entityManager.createNativeQuery(
+                "DELETE FROM package_report_evidence WHERE report_id IN (" +
+                "  SELECT id FROM package_reports WHERE agent_id = :id " +
+                "  OR package_id IN (SELECT id FROM packages WHERE agent_id = :id)" +
+                ")"
+        ).setParameter("id", id).executeUpdate();
+
+        // 2. Package reports
+        entityManager.createNativeQuery(
+                "DELETE FROM package_reports WHERE agent_id = :id " +
+                "OR package_id IN (SELECT id FROM packages WHERE agent_id = :id)"
+        ).setParameter("id", id).executeUpdate();
+
+        // 3. Refund requests
+        entityManager.createNativeQuery(
+                "DELETE FROM refund_requests WHERE agent_id = :id " +
+                "OR booking_id IN (SELECT id FROM bookings WHERE package_id IN (SELECT id FROM packages WHERE agent_id = :id))"
+        ).setParameter("id", id).executeUpdate();
+
+        // 4. Payments
+        entityManager.createNativeQuery(
+                "UPDATE payments SET agent_id = NULL WHERE agent_id = :id"
+        ).setParameter("id", id).executeUpdate();
+        entityManager.createNativeQuery(
+                "DELETE FROM payments WHERE booking_id IN (" +
+                "  SELECT id FROM bookings WHERE package_id IN (SELECT id FROM packages WHERE agent_id = :id)" +
+                ")"
+        ).setParameter("id", id).executeUpdate();
+
+        // 5. Review images and reviews
+        entityManager.createNativeQuery(
+                "DELETE FROM review_images WHERE review_id IN (" +
+                "  SELECT id FROM reviews WHERE agent_id = :id " +
+                "  OR package_id IN (SELECT id FROM packages WHERE agent_id = :id)" +
+                ")"
+        ).setParameter("id", id).executeUpdate();
+        entityManager.createNativeQuery(
+                "DELETE FROM reviews WHERE agent_id = :id " +
+                "OR package_id IN (SELECT id FROM packages WHERE agent_id = :id)"
+        ).setParameter("id", id).executeUpdate();
+
+        // 6. Documents linked to bookings of this agent's packages
+        entityManager.createNativeQuery(
+                "DELETE FROM documents WHERE booking_id IN (" +
+                "  SELECT id FROM bookings WHERE package_id IN (SELECT id FROM packages WHERE agent_id = :id)" +
+                ")"
+        ).setParameter("id", id).executeUpdate();
+
+        // 7. Booking hotel preferences
+        entityManager.createNativeQuery(
+                "DELETE FROM booking_hotel_preferences WHERE booking_id IN (" +
+                "  SELECT id FROM bookings WHERE package_id IN (SELECT id FROM packages WHERE agent_id = :id)" +
+                ")"
+        ).setParameter("id", id).executeUpdate();
+
+        // 8. Bookings (unbind drivers/vehicles, then delete bookings of agent's packages)
+        entityManager.createNativeQuery(
+                "UPDATE bookings SET driver_id = NULL WHERE driver_id IN (SELECT id FROM drivers WHERE agent_id = :id)"
+        ).setParameter("id", id).executeUpdate();
+        entityManager.createNativeQuery(
+                "UPDATE bookings SET vehicle_id = NULL WHERE vehicle_id IN (SELECT id FROM vehicles WHERE agent_id = :id)"
+        ).setParameter("id", id).executeUpdate();
+        entityManager.createNativeQuery(
+                "DELETE FROM bookings WHERE package_id IN (SELECT id FROM packages WHERE agent_id = :id)"
+        ).setParameter("id", id).executeUpdate();
+
+        // 9. Package itinerary & package images & packages
+        entityManager.createNativeQuery(
+                "DELETE FROM package_itinerary WHERE package_id IN (SELECT id FROM packages WHERE agent_id = :id)"
+        ).setParameter("id", id).executeUpdate();
+        entityManager.createNativeQuery(
+                "DELETE FROM package_images WHERE package_id IN (SELECT id FROM packages WHERE agent_id = :id)"
+        ).setParameter("id", id).executeUpdate();
+        entityManager.createNativeQuery(
+                "DELETE FROM packages WHERE agent_id = :id"
+        ).setParameter("id", id).executeUpdate();
+
+        // 10. Drivers
+        entityManager.createNativeQuery(
+                "DELETE FROM drivers WHERE agent_id = :id"
+        ).setParameter("id", id).executeUpdate();
+
+        // 11. Vehicles & Vehicle Owners
+        entityManager.createNativeQuery(
+                "UPDATE vehicles SET owner_id = NULL WHERE agent_id = :id " +
+                "OR owner_id IN (SELECT id FROM vehicle_owners WHERE agent_id = :id)"
+        ).setParameter("id", id).executeUpdate();
+        entityManager.createNativeQuery(
+                "DELETE FROM vehicles WHERE agent_id = :id"
+        ).setParameter("id", id).executeUpdate();
+        entityManager.createNativeQuery(
+                "DELETE FROM vehicle_owners WHERE agent_id = :id"
+        ).setParameter("id", id).executeUpdate();
+
+        // 12. Agent settings
+        entityManager.createNativeQuery(
+                "DELETE FROM agent_settings WHERE agent_id = :id"
+        ).setParameter("id", id).executeUpdate();
+
+        // 13. Notifications
+        entityManager.createNativeQuery(
+                "DELETE FROM notifications WHERE agent_id = :id"
+        ).setParameter("id", id).executeUpdate();
+
+        // 14. Unlink legacy agent_id in users
+        entityManager.createNativeQuery(
+                "UPDATE users SET agent_id = NULL WHERE agent_id = :id"
+        ).setParameter("id", id).executeUpdate();
+
+        // 15. Delete the agent record
+        entityManager.createNativeQuery(
+                "DELETE FROM agents WHERE id = :id"
+        ).setParameter("id", id).executeUpdate();
+
+        // 16. Update owner user status if present
+        if (ownerId != null) {
+            if (reason != null && !reason.isBlank()) {
+                entityManager.createNativeQuery(
+                        "UPDATE users SET agent_approved = false, agent_id = NULL, " +
+                        "nic_verification_status = 'REJECTED', admin_message = :reason WHERE id = :ownerId"
+                ).setParameter("reason", reason)
+                 .setParameter("ownerId", ownerId)
+                 .executeUpdate();
+            } else {
+                entityManager.createNativeQuery(
+                        "UPDATE users SET agent_approved = false, agent_id = NULL, " +
+                        "nic_verification_status = 'REJECTED' WHERE id = :ownerId"
+                ).setParameter("ownerId", ownerId)
+                 .executeUpdate();
+            }
+        }
     }
 
     // ── Generate Initials ─────────────────────────────
@@ -160,6 +347,26 @@ public class AdminAgentService {
             }
         }
         return initials.toString();
+    }
+
+    // ── Resolve NIC Status ────────────────────────────
+    private String resolveNicStatus(com.travelhub.backend.entity.User owner) {
+        if (owner == null) return "PENDING";
+        boolean hasNicDoc = owner.getNicImage() != null && !owner.getNicImage().isBlank();
+        boolean hasNicNumber = owner.getNicNumber() != null && !owner.getNicNumber().isBlank() && !"—".equals(owner.getNicNumber().trim());
+        String status = owner.getNicVerificationStatus();
+
+        if ("SUSPENDED".equalsIgnoreCase(status)) return "SUSPENDED";
+        if ("REJECTED".equalsIgnoreCase(status)) return "REJECTED";
+
+        // ONLY verified if an actual NIC document image is uploaded AND approved
+        if (hasNicDoc && ("APPROVED".equalsIgnoreCase(status) || Boolean.TRUE.equals(owner.getAgentApproved()))) {
+            return "APPROVED";
+        }
+        if (hasNicDoc || hasNicNumber) {
+            return "PROVIDED";
+        }
+        return "PENDING";
     }
 
     // ── Map Agent → List Response ─────────────────────
@@ -199,7 +406,7 @@ public class AdminAgentService {
                 a.getOwner() != null && Boolean.TRUE.equals(a.getOwner().getAgentApproved())
                         ? "Approved"
                         : "Pending",
-                a.getOwner() != null ? a.getOwner().getNicVerificationStatus() : "PENDING",
+                resolveNicStatus(a.getOwner()),
                 submittedDate,
                 a.getIsActive() != null ? a.getIsActive() : true
         );
@@ -207,7 +414,7 @@ public class AdminAgentService {
 
     // ── Map Package → Response ────────────────────────
     private AdminAgentPackageResponse mapToPackageResponse(
-            Package p) {
+            Package p, Double computedRating) {
         // Resolve cover image: use imageUrl first, then fall back to first PackageImage
         String imgUrl = p.getImageUrl();
         if ((imgUrl == null || imgUrl.isEmpty())
@@ -221,15 +428,24 @@ public class AdminAgentService {
                     .map(img -> img.getImageUrl())
                     .orElse(null);
         }
+
+        Double priceFrom = p.getPriceFrom() != null && p.getPriceFrom() > 0
+                ? p.getPriceFrom()
+                : (p.getBasePriceAdult() != null ? p.getBasePriceAdult() : 0.0);
+
+        Double rating = computedRating != null && computedRating > 0
+                ? Math.round(computedRating * 10.0) / 10.0
+                : (p.getRating() != null ? p.getRating() : 0.0);
+
         return new AdminAgentPackageResponse(
                 p.getId(),
                 p.getPackageName(),
                 p.getDestination(),
-                p.getPriceFrom(),
+                priceFrom,
                 p.getPriceTo(),
                 p.getDuration(),
                 p.getCategory(),
-                p.getRating(),
+                rating,
                 p.getTrending(),
                 p.getIsActive(),
                 p.getApplicationStatus() != null

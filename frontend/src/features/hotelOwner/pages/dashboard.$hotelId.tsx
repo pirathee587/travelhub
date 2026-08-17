@@ -47,7 +47,12 @@ export default function HotelDashboardPage() {
     <AppShell>
       {/* Full-page lock when Pending or Suspended */}
       <div className={`relative h-[calc(100vh-180px)] flex flex-col ${isLocked ? "overflow-hidden" : ""}`}>
-        {isLocked && <LockedOverlay reason={isSuspended ? "suspended" : "pending"} />}
+        {isLocked && (
+          <LockedOverlay 
+            reason={isSuspended ? "suspended" : "pending"} 
+            adminReason={hotel?.rejectionReason} 
+          />
+        )}
 
         {/* Content — pointer-events disabled when pending or suspended */}
         <div className={`flex flex-col flex-1 min-h-0 ${isLocked ? "pointer-events-none select-none" : ""}`}>

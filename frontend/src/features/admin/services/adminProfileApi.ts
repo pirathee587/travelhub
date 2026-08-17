@@ -10,14 +10,22 @@ const adminProfileApi = {
     },
 
     // ── PUT /api/users/profile ─────────────────────
-    // Profile tab → Save changes button
-    // Body: { name, email, profileImage }
-    updateProfile: async (name, email, profileImage) => {
-        const res = await api.put('/users/profile', {
-            name,
-            email,
-            profileImage,
-        });
+    // Profile tab & Settings → Save changes button
+    // Accepts either individual arguments or an object payload
+    updateProfile: async (nameOrPayload: any, email?: string, profileImage?: string, telephone?: string, currencyPreference?: string) => {
+        let payload: any;
+        if (typeof nameOrPayload === 'object' && nameOrPayload !== null) {
+            payload = nameOrPayload;
+        } else {
+            payload = {
+                name: nameOrPayload,
+                email,
+                profileImage,
+                telephone,
+                currencyPreference
+            };
+        }
+        const res = await api.put('/users/profile', payload);
         return res.data;
     },
 

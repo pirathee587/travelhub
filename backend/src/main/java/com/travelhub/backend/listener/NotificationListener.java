@@ -141,9 +141,68 @@ public class NotificationListener {
     public void handleHotelEvent(HotelEvent event) {
         log.info("Handling hotel event: {} for hotel: {}", event.getType(), event.getHotel().getHotelName());
 
-        userRepository.findByHotelId(event.getHotel().getId()).ifPresent(user -> {
-            emailService.sendHotelStatusNotification(user.getEmail(), event.getHotel().getHotelName(), event.getType(), event.getReason());
-        });
+        com.travelhub.backend.entity.Hotel hotel = event.getHotel();
+        if (hotel == null) return;
+
+        com.travelhub.backend.entity.User owner = hotel.getOwner();
+        if (owner == null && hotel.getId() != null) {
+            owner = userRepository.findByHotelId(hotel.getId()).orElse(null);
+        }
+        if (owner == null && hotel.getOwnerId() != null) {
+            owner = userRepository.findById(hotel.getOwnerId()).orElse(null);
+        }
+
+        String email = null;
+        if (owner != null && owner.getEmail() != null) {
+            email = owner.getEmail();
+        } else if (hotel.getOwnerEmail() != null && !hotel.getOwnerEmail().trim().isEmpty()) {
+            email = hotel.getOwnerEmail();
+        } else if (hotel.getHotelEmail() != null && !hotel.getHotelEmail().trim().isEmpty()) {
+            email = hotel.getHotelEmail();
+        }
+
+        if (email != null && !email.trim().isEmpty()) {
+            try {
+                emailService.sendHotelStatusNotification(email, hotel.getHotelName(), event.getType(), event.getReason());
+            } catch (Exception e) {
+                log.warn("Failed to send hotel status email notification: {}", e.getMessage());
+            }
+        }
+
+        if (owner != null && owner.getId() != null) {
+            String type = event.getType();
+            String title;
+            String message;
+            String reasonText = (event.getReason() != null && !event.getReason().trim().isEmpty())
+                    ? " Reason: " + event.getReason()
+                    : "";
+
+            if ("APPROVED".equalsIgnoreCase(type)) {
+                title = "Hotel Application Approved";
+                message = "Congratulations! Your hotel \"" + hotel.getHotelName() + "\" has been approved by admin.";
+            } else if ("REJECTED".equalsIgnoreCase(type)) {
+                title = "Hotel Application Rejected";
+                message = "Your hotel application for \"" + hotel.getHotelName() + "\" was rejected." + reasonText;
+            } else if ("SUSPENDED".equalsIgnoreCase(type)) {
+                title = "Hotel Suspended";
+                message = "Your hotel \"" + hotel.getHotelName() + "\" has been suspended by admin." + reasonText;
+            } else if ("DELETED".equalsIgnoreCase(type)) {
+                title = "Hotel Deleted";
+                message = "Your hotel \"" + hotel.getHotelName() + "\" has been removed by admin." + reasonText;
+            } else if ("ACTIVATED".equalsIgnoreCase(type)) {
+                title = "Hotel Activated";
+                message = "Your hotel \"" + hotel.getHotelName() + "\" is now active and visible to travelers.";
+            } else {
+                title = "Hotel Status Updated";
+                message = "Your hotel \"" + hotel.getHotelName() + "\" status has been updated to " + type + "." + reasonText;
+            }
+
+            try {
+                userNotificationService.notifyUser(owner.getId(), "hotel", title, message, "/hotelowner");
+            } catch (Exception e) {
+                log.warn("Failed to create in-app notification for hotel owner: {}", e.getMessage());
+            }
+        }
     }
 
     @Async
@@ -155,9 +214,13 @@ public class NotificationListener {
             emailService.sendPackageStatusNotification(event.getPkg().getAgent().getOwner().getEmail(), event.getPkg().getPackageName(), event.getType(), event.getReason());
             
             if ("APPROVED".equals(event.getType())) {
-                agentNotificationService.createNotification(event.getPkg().getAgent(), "package", "Package Approved", "Your package " + event.getPkg().getPackageName() + " has been approved.");
+                agentNotificationService.createNotification(event.getPkg().getAgent(), "package", "Package Approved", "Your package \"" + event.getPkg().getPackageName() + "\" has been approved.");
             } else if ("REJECTED".equals(event.getType())) {
-                agentNotificationService.createNotification(event.getPkg().getAgent(), "package", "Package Rejected", "Your package " + event.getPkg().getPackageName() + " has been rejected. " + (event.getReason() != null ? event.getReason() : ""));
+                agentNotificationService.createNotification(event.getPkg().getAgent(), "package", "Package Application Rejected", "Your package \"" + event.getPkg().getPackageName() + "\" was rejected by admin. " + (event.getReason() != null && !event.getReason().isBlank() ? "Reason: " + event.getReason() : ""));
+            } else if ("SUSPENDED".equals(event.getType())) {
+                agentNotificationService.createNotification(event.getPkg().getAgent(), "package", "Package Suspended", "Your package \"" + event.getPkg().getPackageName() + "\" has been suspended by admin. " + (event.getReason() != null && !event.getReason().isBlank() ? "Reason: " + event.getReason() : ""));
+            } else if ("DELETED".equals(event.getType())) {
+                agentNotificationService.createNotification(event.getPkg().getAgent(), "package", "Package Deleted", "Your package \"" + event.getPkg().getPackageName() + "\" was deleted by admin. " + (event.getReason() != null && !event.getReason().isBlank() ? "Reason: " + event.getReason() : ""));
             }
         }
     }

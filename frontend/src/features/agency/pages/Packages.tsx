@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Plus, Search, Edit, MapPin, Clock, Star, Trash2, Eye, CheckCircle, X } from 'lucide-react';
+import { Plus, Search, Edit, MapPin, Clock, Star, Trash2, Eye, CheckCircle, X, AlertCircle } from 'lucide-react';
 import { DashboardLayout } from '@/features/agency/components/dashboard/DashboardLayout';
 import { Button } from '@/components/common/ui/button';
 import { Input } from '@/components/common/ui/input';
@@ -231,6 +231,16 @@ const Packages = () => {
                             {pkg.district}
                           </span>
                         )}
+                      </div>
+                    )}
+
+                    {/* Admin Rejection / Suspension Reason */}
+                    {pkg.rejectionReason && pkg.applicationStatus && pkg.applicationStatus.trim().toLowerCase() !== 'approved' && (
+                      <div className="mt-3 p-2.5 rounded-lg bg-destructive/10 border border-destructive/20 text-xs text-destructive flex items-start gap-1.5 animate-fade-in">
+                        <AlertCircle className="h-3.5 w-3.5 shrink-0 mt-0.5" />
+                        <span className="line-clamp-2">
+                          <strong>Admin Feedback:</strong> {pkg.rejectionReason}
+                        </span>
                       </div>
                     )}
 

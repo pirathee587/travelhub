@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react'
 import adminHotelApi from '../services/adminHotelApi'
 import { useModal } from '../components/ModalContext'
+import { useAdminCurrency } from '../hooks/AdminCurrencyContext'
 import { Badge } from '@/components/common/ui/badge'
-import { Switch } from '@/components/common/ui/switch'
 import { 
   Star, 
   MapPin, 
@@ -22,6 +22,7 @@ import {
   Sparkles, 
   Waves, 
   User, 
+  Mail,
   Wifi, 
   Utensils, 
   Car, 
@@ -42,7 +43,7 @@ import {
 } from 'lucide-react'
 
 // ── Constants ─────────────────────────────────────────────────────────────────
-const STATUSES = ['All', 'Pending', 'Approved', 'Rejected']
+const STATUSES = ['All', 'Pending', 'Approved', 'Suspended', 'Rejected']
 
 const SRI_LANKA_DISTRICTS = [
   'All Districts',
@@ -52,6 +53,20 @@ const SRI_LANKA_DISTRICTS = [
   'Matale', 'Matara', 'Monaragala', 'Mullaitivu', 'Nuwara Eliya',
   'Polonnaruwa', 'Puttalam', 'Ratnapura', 'Trincomalee', 'Vavuniya'
 ]
+
+// ── Helper to resolve hotel status consistently ──────────────────────────────
+export const getHotelStatusFlags = (hotel: any) => {
+  const rawStatus = String(hotel?.applicationStatus || hotel?.status || '').trim().toLowerCase()
+  const isActive = hotel?.isActive
+
+  // Suspended if explicitly marked 'suspended' in status, or explicitly false isActive on an approved record
+  const isSuspended = rawStatus === 'suspended' || (isActive === false && rawStatus !== 'pending' && rawStatus !== 'rejected') || hotel?.isSuspended === true
+  const isRejected = !isSuspended && rawStatus === 'rejected'
+  const isPending = !isSuspended && !isRejected && (rawStatus === 'pending' || rawStatus === '')
+  const isApproved = !isSuspended && !isRejected && !isPending
+
+  return { isApproved, isPending, isSuspended, isRejected }
+}
 
 // ── Skeleton ──────────────────────────────────────────────────────────────────
 const CardSkeleton = () => (
@@ -90,6 +105,7 @@ const getAmenityIcon = (amenity: string) => {
 
 // ── Hotel Detail View (Pure Real Database Data) ───────────────────────────────
 const HotelDetailView = ({ hotel, onBack, onApprove, onReject, onToggle, onDelete, loading }: any) => {
+  const { formatPrice } = useAdminCurrency()
   const [selectedImage, setSelectedImage] = useState<string | null>(null)
   const [lightboxIndex, setLightboxIndex] = useState(0)
   const [isLightboxOpen, setIsLightboxOpen] = useState(false)
@@ -125,12 +141,11 @@ const HotelDetailView = ({ hotel, onBack, onApprove, onReject, onToggle, onDelet
     rooms: rawRooms,
     roomTypes,
     applicationStatus,
-    isActive
+    isActive,
+    activeBookingsCount
   } = hotel
 
-  const isApproved = String(applicationStatus || '').trim().toLowerCase() === 'approved'
-  const isPending = String(applicationStatus || '').trim().toLowerCase() === 'pending'
-  const isRejected = String(applicationStatus || '').trim().toLowerCase() === 'rejected'
+  const { isApproved, isPending, isSuspended, isRejected } = getHotelStatusFlags(hotel)
 
   // Build images list from database
   const allImages: string[] = []
@@ -201,7 +216,7 @@ const HotelDetailView = ({ hotel, onBack, onApprove, onReject, onToggle, onDelet
     : (maxRoomPrice != null ? maxRoomPrice : effectivePriceFrom)
 
   const startingPriceText = effectivePriceFrom != null 
-    ? `$${Number(effectivePriceFrom).toFixed(0)}` 
+    ? formatPrice(effectivePriceFrom, { showCents: false }) 
     : 'Not Available'
 
   const formattedAddress = [location, district, destination].filter(Boolean).join(', ')
@@ -219,27 +234,22 @@ const HotelDetailView = ({ hotel, onBack, onApprove, onReject, onToggle, onDelet
             <ArrowLeft className="w-4 h-4" /> Back to Hotels
           </button>
 
-          {/* Status Badges */}
+          {/* Status Badge */}
           <div className="flex items-center gap-2">
-            <span className={`px-3.5 py-1 rounded-full text-xs font-semibold tracking-wide shadow-sm border ${
-              isActive 
-                ? 'bg-[#0ea5e9] text-white border-[#0ea5e9]' 
-                : 'bg-red-500 text-white border-red-500'
-            }`}>
-              {isActive ? 'Active' : 'Inactive'}
-            </span>
-
             <span className={`px-3.5 py-1 rounded-full text-xs font-semibold tracking-wide shadow-sm flex items-center gap-1.5 border ${
-              isApproved 
+              isSuspended
+                ? 'bg-slate-100 text-slate-700 border-slate-300'
+                : isApproved 
                 ? 'bg-emerald-50 text-emerald-700 border-emerald-200' 
                 : isPending 
                 ? 'bg-amber-50 text-amber-700 border-amber-200' 
                 : 'bg-rose-50 text-rose-700 border-rose-200'
             }`}>
-              {isApproved && <CheckCircle className="w-3.5 h-3.5 text-emerald-600" />}
+              {isSuspended && <Power className="w-3.5 h-3.5 text-slate-600" />}
+              {isApproved && !isSuspended && <CheckCircle className="w-3.5 h-3.5 text-emerald-600" />}
               {isPending && <Clock className="w-3.5 h-3.5 text-amber-600" />}
               {isRejected && <X className="w-3.5 h-3.5 text-rose-600" />}
-              {isApproved ? 'Approved' : (isPending ? 'Pending Approval' : 'Rejected')}
+              {isSuspended ? 'Suspended' : (isApproved ? 'Approved' : (isPending ? 'Pending Approval' : 'Rejected'))}
             </span>
           </div>
         </div>
@@ -390,14 +400,14 @@ const HotelDetailView = ({ hotel, onBack, onApprove, onReject, onToggle, onDelet
             <div>
               <span className="text-xs text-gray-400 font-medium block mb-1">Price From</span>
               <p className="font-bold text-gray-900">
-                {effectivePriceFrom != null ? `$${Number(effectivePriceFrom).toFixed(0)}` : 'Not Available'}
+                {effectivePriceFrom != null ? formatPrice(effectivePriceFrom, { showCents: false }) : 'Not Available'}
               </p>
             </div>
 
             <div>
               <span className="text-xs text-gray-400 font-medium block mb-1">Price To</span>
               <p className="font-bold text-gray-900">
-                {effectivePriceTo != null ? `$${Number(effectivePriceTo).toFixed(0)}` : 'Not Available'}
+                {effectivePriceTo != null ? formatPrice(effectivePriceTo, { showCents: false }) : 'Not Available'}
               </p>
             </div>
 
@@ -469,7 +479,7 @@ const HotelDetailView = ({ hotel, onBack, onApprove, onReject, onToggle, onDelet
               Submitted Verification Documents
             </span>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {/* NIC Front */}
               <div className="border border-gray-200 rounded-xl p-4 bg-white shadow-sm flex flex-col justify-between space-y-3">
                 <div className="flex items-center justify-between">
@@ -523,38 +533,27 @@ const HotelDetailView = ({ hotel, onBack, onApprove, onReject, onToggle, onDelet
                   </button>
                 )}
               </div>
-
-              {/* Business Registration */}
-              <div className="border border-gray-200 rounded-xl p-4 bg-white shadow-sm flex flex-col justify-between space-y-3">
-                <div className="flex items-center justify-between">
-                  <span className="font-semibold text-xs text-gray-700 flex items-center gap-1.5">
-                    <Building2 className="w-4 h-4 text-[#0ea5e9]" /> Business Registration
-                  </span>
-                  {businessRegistrationImageUrl ? (
-                    <span className="text-[10px] bg-emerald-100 text-emerald-700 font-bold px-2 py-0.5 rounded-full">Attached</span>
-                  ) : (
-                    <span className="text-[10px] bg-gray-100 text-gray-500 font-medium px-2 py-0.5 rounded-full">Missing</span>
-                  )}
-                </div>
-
-                {businessRegistrationImageUrl ? (
-                  <button
-                    onClick={() => setSelectedImage(businessRegistrationImageUrl)}
-                    className="w-full py-2 bg-[#0ea5e9] hover:bg-[#0284c7] text-white text-xs font-semibold rounded-lg shadow-sm transition flex items-center justify-center gap-1.5"
-                  >
-                    <Eye className="w-3.5 h-3.5" /> View Registration
-                  </button>
-                ) : (
-                  <button disabled className="w-full py-2 bg-gray-100 text-gray-400 text-xs font-medium rounded-lg cursor-not-allowed">
-                    No Registration Doc
-                  </button>
-                )}
-              </div>
             </div>
 
             {rejectionReason && (
-              <div className="bg-rose-50 border border-rose-200 text-rose-800 rounded-xl p-4 mt-4 text-xs">
-                <span className="font-bold">Prior Rejection Reason:</span> {rejectionReason}
+              <div className={`mt-4 p-4 rounded-xl border text-sm flex items-start gap-3 shadow-sm ${
+                isSuspended 
+                  ? 'bg-amber-50 border-amber-200 text-amber-900' 
+                  : 'bg-rose-50 border-rose-200 text-rose-900'
+              }`}>
+                <AlertCircle className={`h-5 w-5 flex-shrink-0 mt-0.5 ${isSuspended ? 'text-amber-600' : 'text-rose-600'}`} />
+                <div>
+                  <span className={`font-bold block mb-0.5 ${isSuspended ? 'text-amber-900' : 'text-rose-900'}`}>
+                    {isSuspended 
+                      ? 'Suspension Reason:' 
+                      : isRejected 
+                      ? 'Rejection Reason:' 
+                      : 'Prior Rejection Reason:'}
+                  </span>
+                  <span className={`leading-relaxed font-medium ${isSuspended ? 'text-amber-800' : 'text-rose-800'}`}>
+                    {rejectionReason}
+                  </span>
+                </div>
               </div>
             )}
           </div>
@@ -640,7 +639,7 @@ const HotelDetailView = ({ hotel, onBack, onApprove, onReject, onToggle, onDelet
                     
                     {room.price != null && Number(room.price) > 0 && (
                       <div className="absolute bottom-3 right-3 bg-white/95 backdrop-blur-md px-3 py-1 rounded-lg font-bold text-[#0ea5e9] shadow-sm text-xs border border-white/40">
-                        ${Number(room.price).toFixed(0)} <span className="text-[10px] font-normal text-gray-400 uppercase">/ NIGHT</span>
+                        {formatPrice(room.price, { showCents: false })} <span className="text-[10px] font-normal text-gray-400 uppercase">/ NIGHT</span>
                       </div>
                     )}
                   </div>
@@ -667,55 +666,76 @@ const HotelDetailView = ({ hotel, onBack, onApprove, onReject, onToggle, onDelet
 
         {/* ── Section 6: Admin Decision & Actions Panel ──────────────────────── */}
         <section className="bg-white rounded-2xl p-6 sm:p-7 border border-gray-200/80 shadow-sm space-y-4">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-gray-100 pb-4">
-            <div>
-              <h3 className="text-base font-bold text-gray-900">Admin Approval Decision</h3>
-              <p className="text-xs text-gray-500 mt-0.5">Review credentials, verify NIC & registration documents, and set status.</p>
-            </div>
-
-            <div className="flex items-center gap-3">
-              <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">HOTEL ACTIVE</span>
-              <Switch
-                checked={Boolean(isActive)}
-                onCheckedChange={() => onToggle(hotel)}
-                disabled={loading}
-              />
-            </div>
+          <div className="border-b border-gray-100 pb-3">
+            <h3 className="text-base font-bold text-gray-900">Admin Approval Decision</h3>
+            <p className="text-xs text-gray-500 mt-0.5">Review credentials, verify NIC documents, and set status.</p>
           </div>
 
+          {/* Active Bookings Warning */}
+          {Number(activeBookingsCount) > 0 && (
+            <div className="flex items-start gap-2.5 p-3.5 bg-amber-50 border border-amber-200/80 rounded-xl text-xs text-amber-900 font-medium">
+              <AlertCircle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+              <div>
+                <span className="font-bold block">Active Bookings Detected ({activeBookingsCount})</span>
+                <span className="text-amber-800 leading-relaxed">
+                  This hotel currently has {activeBookingsCount} active booking(s). Suspending or deleting this hotel is restricted while bookings are active.
+                </span>
+              </div>
+            </div>
+          )}
+
           <div className="flex flex-wrap items-center gap-3 pt-2">
-            {!isApproved && (
-              <button 
-                onClick={() => onApprove(hotel)} 
-                disabled={loading} 
-                className="py-2.5 px-6 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs sm:text-sm font-semibold shadow-sm transition disabled:opacity-60 flex items-center gap-2"
-              >
-                <Check className="w-4 h-4" /> Approve Hotel
-              </button>
-            )}
-
-            {!isRejected && (
-              <button 
-                onClick={() => onReject(hotel)} 
-                disabled={loading} 
-                className="py-2.5 px-6 bg-white hover:bg-rose-50 text-rose-600 border border-rose-200 rounded-xl text-xs sm:text-sm font-semibold shadow-sm transition disabled:opacity-60 flex items-center gap-2"
-              >
-                <X className="w-4 h-4" /> Reject Hotel
-              </button>
-            )}
-
-            {isApproved && (
+            {/* If Suspended: ONLY show Unsuspend Hotel in sky blue, removing Reject and Approve buttons */}
+            {isSuspended ? (
               <button 
                 onClick={() => onToggle(hotel)} 
                 disabled={loading} 
-                className={`py-2.5 px-6 rounded-xl text-xs sm:text-sm font-semibold border shadow-sm transition disabled:opacity-60 flex items-center gap-2 ${
-                  isActive 
-                    ? 'bg-white hover:bg-amber-50 text-amber-700 border-amber-200' 
-                    : 'bg-emerald-600 hover:bg-emerald-700 text-white border-emerald-600'
-                }`}
+                className="py-2.5 px-6 bg-[#0ea5e9] hover:bg-[#0284c7] text-white rounded-xl text-xs sm:text-sm font-semibold shadow-sm transition disabled:opacity-60 flex items-center gap-2"
               >
-                <Power className="w-4 h-4" /> {isActive ? 'Suspend Hotel' : 'Activate Hotel'}
+                <Check className="w-4 h-4" /> Unsuspend Hotel
               </button>
+            ) : (
+              <>
+                {isPending && (
+                  <>
+                    <button 
+                      onClick={() => onApprove(hotel)} 
+                      disabled={loading} 
+                      className="py-2.5 px-6 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs sm:text-sm font-semibold shadow-sm transition disabled:opacity-60 flex items-center gap-2"
+                    >
+                      <Check className="w-4 h-4" /> Approve Hotel
+                    </button>
+
+                    <button 
+                      onClick={() => onReject(hotel)} 
+                      disabled={loading} 
+                      className="py-2.5 px-6 bg-white hover:bg-rose-50 text-rose-600 border border-rose-200 rounded-xl text-xs sm:text-sm font-semibold shadow-sm transition disabled:opacity-60 flex items-center gap-2"
+                    >
+                      <X className="w-4 h-4" /> Reject Hotel
+                    </button>
+                  </>
+                )}
+
+                {isApproved && (
+                  <button 
+                    onClick={() => onToggle(hotel)} 
+                    disabled={loading} 
+                    className="py-2.5 px-6 bg-white hover:bg-amber-50 text-amber-700 border border-amber-200 rounded-xl text-xs sm:text-sm font-semibold shadow-sm transition disabled:opacity-60 flex items-center gap-2"
+                  >
+                    <Power className="w-4 h-4" /> Suspend Hotel
+                  </button>
+                )}
+
+                {isRejected && (
+                  <button 
+                    onClick={() => onApprove(hotel)} 
+                    disabled={loading} 
+                    className="py-2.5 px-6 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs sm:text-sm font-semibold shadow-sm transition disabled:opacity-60 flex items-center gap-2"
+                  >
+                    <Check className="w-4 h-4" /> Approve Hotel
+                  </button>
+                )}
+              </>
             )}
 
             <button 
@@ -779,12 +799,11 @@ const HotelDetailView = ({ hotel, onBack, onApprove, onReject, onToggle, onDelet
 
 // ── Hotel Card (Approvals Grid View) ──────────────────────────────────────────
 const HotelCard = ({ hotel, onView }: any) => {
+  const { formatPrice } = useAdminCurrency()
   const { hotelName, imageUrl, district, location, destination, rating, reviewCount,
-    priceFrom, numberOfRooms, applicationStatus, isActive } = hotel
+    priceFrom, numberOfRooms, rejectionReason } = hotel
 
-  const isApproved = ['active', 'approved'].includes(String(applicationStatus || '').trim().toLowerCase()) && isActive !== false
-  const isPending = String(applicationStatus || '').trim().toLowerCase() === 'pending'
-  const isSuspended = isActive === false || String(applicationStatus || '').trim().toLowerCase() === 'suspended'
+  const { isApproved, isPending, isSuspended, isRejected } = getHotelStatusFlags(hotel)
 
   const hasReview = rating != null && Number(rating) > 0
 
@@ -808,15 +827,15 @@ const HotelCard = ({ hotel, onView }: any) => {
           {/* Top-left Glass Status Pill */}
           <div className="absolute top-3.5 left-3.5">
             <span className={`backdrop-blur-md px-3.5 py-1 rounded-full text-xs font-semibold tracking-wide border shadow-sm ${
-              isApproved 
-                ? 'bg-[#0b2838]/85 text-[#38bdf8] border-[#38bdf8]/25' 
+              isSuspended 
+                ? 'bg-[#18181b]/85 text-[#f43f5e] border-[#f43f5e]/25' 
                 : isPending 
                 ? 'bg-[#2d1b06]/85 text-[#fbbf24] border-[#fbbf24]/25' 
-                : isSuspended 
-                ? 'bg-[#2b1111]/85 text-[#f87171] border-[#f87171]/25' 
+                : isApproved 
+                ? 'bg-[#062d1b]/85 text-[#34d399] border-[#34d399]/25' 
                 : 'bg-[#2b1111]/85 text-[#f87171] border-[#f87171]/25'
             }`}>
-              {isApproved ? 'Active' : (isPending ? 'Pending' : (isSuspended ? 'Suspended' : 'Rejected'))}
+              {isSuspended ? 'Suspended' : (isPending ? 'Pending' : (isApproved ? 'Approved' : 'Rejected'))}
             </span>
           </div>
         </div>
@@ -865,6 +884,21 @@ const HotelCard = ({ hotel, onView }: any) => {
             )}
           </div>
 
+          {/* Rejection / Suspension Alert on Card */}
+          {hotel.rejectionReason && (isSuspended || !isApproved) && (
+            <div className={`mt-3 p-2.5 rounded-xl border text-xs flex items-start gap-2 ${
+              isSuspended ? 'bg-amber-50 border-amber-200 text-amber-900' : 'bg-rose-50 border-rose-200 text-rose-900'
+            }`}>
+              <AlertCircle className={`h-4 w-4 flex-shrink-0 mt-0.5 ${isSuspended ? 'text-amber-600' : 'text-rose-600'}`} />
+              <div className="line-clamp-2">
+                <span className="font-bold mr-1">
+                  {isSuspended ? 'Suspension Reason:' : 'Rejection Reason:'}
+                </span>
+                <span>{hotel.rejectionReason}</span>
+              </div>
+            </div>
+          )}
+
           {/* Divider */}
           <div className="border-t border-gray-100 my-4" />
 
@@ -878,7 +912,7 @@ const HotelCard = ({ hotel, onView }: any) => {
             <div className="text-right">
               <span className="block text-[11px] text-gray-400 font-medium leading-none mb-0.5">Starts from</span>
               <span className="block text-base sm:text-lg font-bold text-gray-900 tracking-tight">
-                {priceFrom != null && Number(priceFrom) > 0 ? `$${Number(priceFrom).toFixed(2)}` : '—'}
+                {priceFrom != null && Number(priceFrom) > 0 ? formatPrice(priceFrom) : '—'}
               </span>
             </div>
           </div>
@@ -899,6 +933,163 @@ const HotelCard = ({ hotel, onView }: any) => {
   )
 }
 
+// ── Action Reason Modal (Reject / Suspend / Delete) ───────────────────────────
+interface HotelActionReasonModalProps {
+  type: 'reject' | 'suspend' | 'delete'
+  hotel: any
+  onConfirm: (reason: string) => Promise<void> | void
+  onCancel: () => void
+  loading: boolean
+}
+
+const HotelActionReasonModal: React.FC<HotelActionReasonModalProps> = ({
+  type,
+  hotel,
+  onConfirm,
+  onCancel,
+  loading
+}) => {
+  const [reason, setReason] = useState('')
+  const [error, setError] = useState('')
+
+  const isReject = type === 'reject'
+  const isSuspend = type === 'suspend'
+  const isDelete = type === 'delete'
+
+  const title = isReject
+    ? 'Reject Hotel Application'
+    : isSuspend
+    ? 'Suspend Hotel'
+    : 'Delete Hotel Permanently'
+
+  const subtitle = isReject
+    ? 'Please provide a clear reason for rejecting this hotel application.'
+    : isSuspend
+    ? 'Please provide a reason for temporarily suspending this hotel.'
+    : 'Please provide a reason for permanently deleting this hotel.'
+
+  const placeholder = isReject
+    ? 'e.g. Unclear or invalid NIC copy, incomplete verification details, or incorrect property address.'
+    : isSuspend
+    ? 'e.g. Policy violation, guest complaints regarding safety/standards, or temporary maintenance.'
+    : 'e.g. Duplicate property listing, business permanently closed, or requested by property owner.'
+
+  const actionLabel = isReject
+    ? 'Confirm Rejection'
+    : isSuspend
+    ? 'Confirm Suspension'
+    : 'Confirm Delete'
+
+  const actionButtonClass = isReject
+    ? 'bg-rose-600 hover:bg-rose-700 active:bg-rose-800'
+    : isSuspend
+    ? 'bg-amber-600 hover:bg-amber-700 active:bg-amber-800'
+    : 'bg-red-600 hover:bg-red-700 active:bg-red-800'
+
+  const ownerDisplayName = hotel?.ownerName || hotel?.owner?.name || hotel?.hotelEmail?.split('@')[0] || 'Hotel Owner'
+  const ownerDisplayEmail = hotel?.ownerEmail || hotel?.hotelEmail || hotel?.owner?.email || 'No email registered'
+
+  const handleConfirm = () => {
+    if (!reason.trim()) {
+      setError('Please enter a reason.')
+      return
+    }
+    setError('')
+    onConfirm(reason.trim())
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-fade-in">
+      <div 
+        className="bg-white w-full max-w-lg rounded-2xl p-6 sm:p-7 shadow-2xl space-y-5 border border-gray-200"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Header */}
+        <div className="flex items-center justify-between border-b border-gray-100 pb-3.5">
+          <div>
+            <h3 className="text-xl font-bold text-gray-900">{title}</h3>
+            <p className="text-xs text-gray-500 mt-0.5">{subtitle}</p>
+          </div>
+          <button 
+            onClick={onCancel}
+            disabled={loading}
+            className="w-8 h-8 flex items-center justify-center rounded-full border border-gray-200 text-gray-400 hover:bg-gray-50 hover:text-gray-700 transition"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+
+        {/* Hotel & Recipient Hotel Owner Details Card */}
+        <div className="bg-slate-50 border border-slate-200/80 rounded-xl p-4 space-y-2.5">
+          <div className="flex items-center justify-between text-xs">
+            <span className="text-gray-500 font-medium flex items-center gap-1.5">
+              <Building2 className="w-3.5 h-3.5 text-[#0ea5e9]" /> Target Hotel:
+            </span>
+            <span className="font-bold text-gray-900 truncate max-w-[240px]" title={hotel?.hotelName}>
+              {hotel?.hotelName}
+            </span>
+          </div>
+
+          <div className="border-t border-slate-200/60 pt-2.5 flex items-start justify-between text-xs">
+            <span className="text-gray-500 font-medium flex items-center gap-1.5">
+              <User className="w-3.5 h-3.5 text-[#0ea5e9]" /> Hotel Owner:
+            </span>
+            <div className="text-right">
+              <span className="font-bold text-gray-900 block">{ownerDisplayName}</span>
+              <span className="text-[11px] text-gray-500 font-mono flex items-center gap-1 justify-end mt-0.5">
+                <Mail className="w-3 h-3 text-gray-400" /> {ownerDisplayEmail}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* Textarea */}
+        <div className="space-y-1.5">
+          <label className="block text-xs font-bold text-gray-700 uppercase tracking-wide">
+            Reason <span className="text-red-500">*</span>
+          </label>
+          <textarea
+            className={`w-full min-h-[110px] p-3.5 border rounded-xl text-sm focus:outline-none focus:ring-2 resize-none transition ${
+              error
+                ? 'border-red-400 focus:ring-red-200 focus:border-red-500'
+                : 'border-gray-200 focus:ring-[#0ea5e9]/20 focus:border-[#0ea5e9]'
+            }`}
+            placeholder={placeholder}
+            value={reason}
+            onChange={(e) => {
+              setReason(e.target.value)
+              if (error) setError('')
+            }}
+            disabled={loading}
+          />
+          {error && <p className="text-xs text-red-600 font-medium">{error}</p>}
+        </div>
+
+        {/* Actions */}
+        <div className="flex gap-3 justify-end pt-2 border-t border-gray-100">
+          <button
+            className="px-4 py-2.5 border border-gray-200 text-gray-700 font-semibold text-sm rounded-xl hover:bg-gray-50 transition"
+            onClick={onCancel}
+            disabled={loading}
+          >
+            Cancel
+          </button>
+          <button
+            className={`px-5 py-2.5 text-white font-semibold text-sm rounded-xl shadow-sm transition disabled:opacity-50 flex items-center gap-2 ${actionButtonClass}`}
+            onClick={handleConfirm}
+            disabled={loading || !reason.trim()}
+          >
+            {loading ? (
+              <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+            ) : null}
+            {actionLabel}
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 // ── Main Component ────────────────────────────────────────────────────────────
 export default function HotelApprovals() {
   const modal = useModal()
@@ -913,9 +1104,10 @@ export default function HotelApprovals() {
   const [selectedHotel, setSelectedHotel] = useState<any>(null)
   const [drawerDetail, setDrawerDetail] = useState<any>(null)
   const [detailLoading, setDetailLoading] = useState(false)
-  const [isRejectModalOpen, setIsRejectModalOpen] = useState(false)
-  const [rejectReason, setRejectReason] = useState('')
-  const [rejectingHotel, setRejectingHotel] = useState<any>(null)
+  const [actionModal, setActionModal]   = useState<{
+    type: 'reject' | 'suspend' | 'delete'
+    hotel: any
+  } | null>(null)
 
   // ── Fetch ─────────────────────────────────────────────────────────────────
   const fetchHotels = useCallback(async (status = 'All') => {
@@ -980,74 +1172,85 @@ export default function HotelApprovals() {
   }
 
   const handleReject = (hotel: any) => {
-    setRejectingHotel(hotel)
-    setRejectReason('')
-    setIsRejectModalOpen(true)
+    setActionModal({ type: 'reject', hotel: drawerDetail?.id === hotel.id ? drawerDetail : hotel })
   }
 
-  const submitRejection = async () => {
-    if (!rejectReason.trim()) {
-      modal.addToast('⚠️ Rejection reason is required')
+  const handleDelete = (hotel: any) => {
+    const target = drawerDetail?.id === hotel.id ? drawerDetail : hotel
+    if (Number(target?.activeBookingsCount) > 0) {
+      modal.addToast(`❌ Cannot delete: "${target.hotelName}" has ${target.activeBookingsCount} active booking(s).`)
       return
     }
-    const hotel = rejectingHotel
-    if (!hotel) return
-
-    try {
-      setActionLoading(true)
-      setIsRejectModalOpen(false)
-      await adminHotelApi.rejectHotel(hotel.id, rejectReason)
-      modal.addToast(`🚫 "${hotel.hotelName}" rejected`)
-      setHotels(prev => prev.map(h =>
-        h.id === hotel.id ? { ...h, applicationStatus: 'Rejected' } : h
-      ))
-      if (drawerDetail?.id === hotel.id)
-        setDrawerDetail((d: any) => ({ ...d, applicationStatus: 'Rejected', rejectionReason: rejectReason }))
-    } catch (err: any) {
-      modal.addToast(`❌ ${err?.response?.data?.message || 'Rejection failed'}`)
-    } finally {
-      setActionLoading(false)
-      setRejectingHotel(null)
-    }
-  }
-
-  const handleDelete = async (hotel: any) => {
-    const ok = await modal.showConfirm({
-      title:   'Delete Hotel',
-      message: `Permanently delete "${hotel.hotelName}"? This cannot be undone.`,
-    })
-    if (!ok) return
-    try {
-      setActionLoading(true)
-      await adminHotelApi.deleteHotel(hotel.id)
-      modal.addToast(`🗑 "${hotel.hotelName}" deleted`)
-      setHotels(prev => prev.filter(h => h.id !== hotel.id))
-      closeDrawer()
-    } catch (err: any) {
-      modal.addToast(`❌ ${err?.response?.data?.message || 'Delete failed'}`)
-    } finally {
-      setActionLoading(false)
-    }
+    setActionModal({ type: 'delete', hotel: target })
   }
 
   const handleToggle = async (hotel: any) => {
-    const isSuspending = hotel.isActive !== false
-    const action = isSuspending ? 'Suspend' : 'Activate'
-    const ok = await modal.showConfirm({
-      title:   `${action} Hotel`,
-      message: `${action} "${hotel.hotelName}"?`,
-    })
-    if (!ok) return
+    const target = drawerDetail?.id === hotel.id ? drawerDetail : hotel
+    const isSuspending = target.isActive !== false
+    if (isSuspending) {
+      if (Number(target?.activeBookingsCount) > 0) {
+        modal.addToast(`❌ Cannot suspend: "${target.hotelName}" has ${target.activeBookingsCount} active booking(s).`)
+        return
+      }
+      // Suspending requires a reason!
+      setActionModal({ type: 'suspend', hotel: target })
+    } else {
+      // Unsuspending / Activating hotel
+      const ok = await modal.showConfirm({
+        title: 'Unsuspend Hotel',
+        message: `Unsuspend "${hotel.hotelName}"? Their property status will be restored to Approved and made live on the platform.`,
+      })
+      if (!ok) return
+      try {
+        setActionLoading(true)
+        const res = await adminHotelApi.toggleHotelActive(hotel.id)
+        const updatedIsActive = res?.data?.isActive ?? res?.isActive ?? true
+        modal.addToast(`✅ "${hotel.hotelName}" unsuspended successfully`)
+        setHotels(prev => prev.map(h => h.id === hotel.id ? { ...h, isActive: updatedIsActive, applicationStatus: 'Approved', rejectionReason: null } : h))
+        if (drawerDetail?.id === hotel.id)
+          setDrawerDetail((d: any) => ({ ...d, isActive: updatedIsActive, applicationStatus: 'Approved', rejectionReason: null }))
+      } catch (err: any) {
+        modal.addToast(`❌ ${err?.response?.data?.message || 'Unsuspend failed'}`)
+      } finally {
+        setActionLoading(false)
+      }
+    }
+  }
+
+  const handleActionConfirm = async (reason: string) => {
+    if (!actionModal) return
+    const { type, hotel } = actionModal
+
     try {
       setActionLoading(true)
-      const res = await adminHotelApi.toggleHotelActive(hotel.id)
-      const updatedIsActive = res?.data?.isActive ?? res?.isActive ?? !isSuspending
-      modal.addToast(`✅ "${hotel.hotelName}" ${isSuspending ? 'suspended' : 'activated'}`)
-      setHotels(prev => prev.map(h => h.id === hotel.id ? { ...h, isActive: updatedIsActive, applicationStatus: updatedIsActive ? 'Approved' : 'Suspended' } : h))
-      if (drawerDetail?.id === hotel.id)
-        setDrawerDetail((d: any) => ({ ...d, isActive: updatedIsActive, applicationStatus: updatedIsActive ? 'Approved' : 'Suspended' }))
+      if (type === 'reject') {
+        await adminHotelApi.rejectHotel(hotel.id, reason)
+        modal.addToast(`🚫 "${hotel.hotelName}" rejected. Notification sent to owner.`)
+        setHotels(prev => prev.map(h =>
+          h.id === hotel.id ? { ...h, applicationStatus: 'Rejected', rejectionReason: reason, isActive: false } : h
+        ))
+        if (drawerDetail?.id === hotel.id) {
+          setDrawerDetail((d: any) => ({ ...d, applicationStatus: 'Rejected', rejectionReason: reason, isActive: false }))
+        }
+      } else if (type === 'suspend') {
+        const res = await adminHotelApi.toggleHotelActive(hotel.id, reason)
+        const updatedIsActive = res?.data?.isActive ?? res?.isActive ?? false
+        modal.addToast(`⚠️ "${hotel.hotelName}" suspended. Notification sent to owner.`)
+        setHotels(prev => prev.map(h =>
+          h.id === hotel.id ? { ...h, isActive: updatedIsActive, applicationStatus: 'Suspended', rejectionReason: reason } : h
+        ))
+        if (drawerDetail?.id === hotel.id) {
+          setDrawerDetail((d: any) => ({ ...d, isActive: updatedIsActive, applicationStatus: 'Suspended', rejectionReason: reason }))
+        }
+      } else if (type === 'delete') {
+        await adminHotelApi.deleteHotel(hotel.id, reason)
+        modal.addToast(`🗑 "${hotel.hotelName}" deleted. Notification sent to owner.`)
+        setHotels(prev => prev.filter(h => h.id !== hotel.id))
+        closeDrawer()
+      }
+      setActionModal(null)
     } catch (err: any) {
-      modal.addToast(`❌ ${err?.response?.data?.message || 'Toggle failed'}`)
+      modal.addToast(`❌ ${err?.response?.data?.message || `${type} action failed`}`)
     } finally {
       setActionLoading(false)
     }
@@ -1196,38 +1399,15 @@ export default function HotelApprovals() {
         </>
       )}
 
-      {/* ── Rejection Reason Modal ──────────────────────────────────────────── */}
-      {isRejectModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-fade-in">
-          <div className="bg-white w-full max-w-md rounded-2xl p-6 shadow-xl space-y-4 border border-gray-200">
-            <h3 className="text-xl font-bold text-gray-900">Provide Rejection Reason</h3>
-            <p className="text-sm text-gray-500">
-              Please enter the reason for rejecting this hotel application.
-            </p>
-            <textarea
-              className="w-full min-h-[110px] p-3.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#0ea5e9]/20 focus:border-[#0ea5e9] resize-none"
-              placeholder="e.g. Invalid or expired business registration document, or unclear NIC copy."
-              value={rejectReason}
-              onChange={(e) => setRejectReason(e.target.value)}
-            />
-            <div className="flex gap-3 justify-end pt-2">
-              <button
-                className="px-4 py-2 border border-gray-200 text-gray-700 font-semibold text-sm rounded-xl hover:bg-gray-50 transition"
-                onClick={() => setIsRejectModalOpen(false)}
-                disabled={actionLoading}
-              >
-                Cancel
-              </button>
-              <button
-                className="px-5 py-2 bg-rose-600 text-white font-semibold text-sm rounded-xl hover:bg-rose-700 active:bg-rose-800 transition disabled:opacity-50"
-                onClick={submitRejection}
-                disabled={actionLoading}
-              >
-                Confirm Rejection
-              </button>
-            </div>
-          </div>
-        </div>
+      {/* ── Action Reason Modal (Reject / Suspend / Delete) ─────────────────── */}
+      {actionModal && (
+        <HotelActionReasonModal
+          type={actionModal.type}
+          hotel={actionModal.hotel}
+          loading={actionLoading}
+          onConfirm={handleActionConfirm}
+          onCancel={() => setActionModal(null)}
+        />
       )}
     </div>
   )

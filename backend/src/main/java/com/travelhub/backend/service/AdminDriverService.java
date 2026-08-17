@@ -2,6 +2,7 @@ package com.travelhub.backend.service;
 
 import com.travelhub.backend.common.ResourceNotFoundException;
 import com.travelhub.backend.dto.response.DriverResponse;
+import com.travelhub.backend.entity.Agent;
 import com.travelhub.backend.entity.Driver;
 import com.travelhub.backend.repository.DriverRepository;
 import lombok.RequiredArgsConstructor;
@@ -74,8 +75,25 @@ public class AdminDriverService {
     }
 
     private DriverResponse toResponse(Driver d) {
+        Long agentId = null;
+        String agencyName = null;
+        String agentOwnerName = null;
+        try {
+            Agent agent = d.getAgent();
+            if (agent != null) {
+                agentId = agent.getId();
+                agencyName = agent.getAgencyName();
+                if (agent.getOwner() != null) {
+                    agentOwnerName = agent.getOwner().getName();
+                }
+            }
+        } catch (Exception ignored) {}
+
         return DriverResponse.builder()
                 .id(d.getId())
+                .agentId(agentId)
+                .agencyName(agencyName)
+                .agentOwnerName(agentOwnerName)
                 .firstName(d.getFirstName())
                 .lastName(d.getLastName())
                 .nic(d.getNic())

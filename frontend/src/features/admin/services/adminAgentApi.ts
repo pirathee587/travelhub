@@ -111,9 +111,11 @@ const adminAgentApi = {
     },
 
     // DELETE /api/admin/agents/{id}
-    deleteAgent: async (id: number | string) => {
+    deleteAgent: async (id: number | string, reason?: string) => {
         const res = await api.delete(
-            `/admin/agents/${id}`);
+            `/admin/agents/${id}`, {
+            params: reason ? { reason } : undefined,
+        });
         return res.data;
     },
 

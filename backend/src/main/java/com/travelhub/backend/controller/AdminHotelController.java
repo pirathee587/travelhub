@@ -63,16 +63,24 @@ public class AdminHotelController {
 
     @PatchMapping("/{id}/toggle-active")
     public ResponseEntity<?> toggleActive(
-            @PathVariable Long id) {
+            @PathVariable Long id,
+            @RequestBody(required = false) Map<String, String> body) {
+        String reason = body != null ? body.getOrDefault("reason", null) : null;
         return ResponseEntity.ok(
                 new ApiResponse(true, "Hotel status updated",
-                        adminHotelService.toggleActive(id)));
+                        adminHotelService.toggleActive(id, reason)));
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<?> deleteHotel(
-            @PathVariable Long id) {
-        adminHotelService.deleteHotel(id);
+            @PathVariable Long id,
+            @RequestParam(required = false) String reason,
+            @RequestBody(required = false) Map<String, String> body) {
+        String effectiveReason = reason;
+        if (effectiveReason == null && body != null) {
+            effectiveReason = body.getOrDefault("reason", null);
+        }
+        adminHotelService.deleteHotel(id, effectiveReason);
         return ResponseEntity.ok(
                 new ApiResponse(true, "Hotel deleted", null));
     }

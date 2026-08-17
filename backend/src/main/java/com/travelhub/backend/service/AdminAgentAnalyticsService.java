@@ -140,6 +140,26 @@ public class AdminAgentAnalyticsService {
         );
     }
 
+    // ── Resolve NIC Status ────────────────────────────
+    private String resolveNicStatus(com.travelhub.backend.entity.User owner) {
+        if (owner == null) return "PENDING";
+        boolean hasNicDoc = owner.getNicImage() != null && !owner.getNicImage().isBlank();
+        boolean hasNicNumber = owner.getNicNumber() != null && !owner.getNicNumber().isBlank() && !"—".equals(owner.getNicNumber().trim());
+        String status = owner.getNicVerificationStatus();
+
+        if ("SUSPENDED".equalsIgnoreCase(status)) return "SUSPENDED";
+        if ("REJECTED".equalsIgnoreCase(status)) return "REJECTED";
+
+        // ONLY verified if an actual NIC document image is uploaded AND approved
+        if (hasNicDoc && ("APPROVED".equalsIgnoreCase(status) || Boolean.TRUE.equals(owner.getAgentApproved()))) {
+            return "APPROVED";
+        }
+        if (hasNicDoc || hasNicNumber) {
+            return "PROVIDED";
+        }
+        return "PENDING";
+    }
+
     // ── Map Agent → List Response ─────────────────────
     private AdminAgentListResponse mapToListResponse(
             Agent a) {
@@ -160,7 +180,7 @@ public class AdminAgentAnalyticsService {
                 a.getExperienceYears() != null ? a.getExperienceYears() : 0,
                 a.getOwner() != null ? a.getOwner().getNicNumber() : null,
                 a.getOwner() != null && Boolean.TRUE.equals(a.getOwner().getAgentApproved()) ? "Approved" : "Pending",
-                a.getOwner() != null ? a.getOwner().getNicVerificationStatus() : "PENDING",
+                resolveNicStatus(a.getOwner()),
                 a.getSubmittedDate() != null ? a.getSubmittedDate().toString() : null,
                 a.getIsActive() != null ? a.getIsActive() : true
         );

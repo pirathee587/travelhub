@@ -2,6 +2,7 @@ package com.travelhub.backend.service;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.travelhub.backend.common.BadRequestException;
 import com.travelhub.backend.common.ResourceNotFoundException;
 import com.travelhub.backend.dto.response.AdminPackageDetailResponse;
 import com.travelhub.backend.dto.response.AdminPackageResponse;
@@ -30,6 +31,15 @@ public class AdminPackageService {
     private final ApplicationEventPublisher eventPublisher;
     private final BookingRepository bookingRepository;
     private final ObjectMapper objectMapper;
+
+    public long countActiveBookings(Long packageId) {
+        try {
+            Long count = bookingRepository.countByPkg_Id(packageId);
+            return count != null ? count : 0L;
+        } catch (Exception e) {
+            return 0L;
+        }
+    }
 
     // ── Get All Packages ──────────────────────────────
     public List<AdminPackageResponse> getAllPackages() {
@@ -110,6 +120,7 @@ public class AdminPackageService {
                 pkg.getDuration(),
                 providerName,
                 pkg.getApplicationStatus() != null ? pkg.getApplicationStatus() : "Pending",
+                pkg.getRejectionReason(),
                 pkg.getDescription(),
                 pkg.getFestivalDetails(),
                 inclusions,
@@ -131,6 +142,7 @@ public class AdminPackageService {
                 .orElseThrow(() -> new ResourceNotFoundException("Package", "id", id));
         pkg.setApplicationStatus("Approved");
         pkg.setIsActive(true);
+        pkg.setRejectionReason(null);
         packageRepository.save(pkg);
 
         eventPublisher.publishEvent(new PackageEvent(this, pkg, "APPROVED"));
@@ -145,6 +157,8 @@ public class AdminPackageService {
         Package pkg = packageRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Package", "id", id));
         pkg.setApplicationStatus("Rejected");
+        pkg.setIsActive(false);
+        pkg.setRejectionReason(reason);
         packageRepository.save(pkg);
 
         eventPublisher.publishEvent(new PackageEvent(this, pkg, "REJECTED", reason));
@@ -155,23 +169,49 @@ public class AdminPackageService {
     // ── Toggle Active ─────────────────────────────────
     @Transactional
     @CacheEvict(value = {"touristPackages", "touristPackageDetails"}, allEntries = true)
-    public AdminPackageDetailResponse toggleActive(Long id) {
+    public AdminPackageDetailResponse toggleActive(Long id, String reason) {
         Package pkg = packageRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Package", "id", id));
-        boolean newActive = !Boolean.TRUE.equals(pkg.getIsActive());
+        boolean currentlyActive = Boolean.TRUE.equals(pkg.getIsActive());
+        boolean newActive = !currentlyActive;
         pkg.setIsActive(newActive);
-        packageRepository.save(pkg);
+
+        if (newActive) {
+            pkg.setApplicationStatus("Approved");
+            pkg.setRejectionReason(null);
+            packageRepository.save(pkg);
+            eventPublisher.publishEvent(new PackageEvent(this, pkg, "APPROVED"));
+        } else {
+            long activeBookings = countActiveBookings(id);
+            if (activeBookings > 0) {
+                throw new BadRequestException("Cannot suspend package: This package currently has " + activeBookings + " active booking(s).");
+            }
+            pkg.setApplicationStatus("Suspended");
+            pkg.setRejectionReason(reason);
+            packageRepository.save(pkg);
+            eventPublisher.publishEvent(new PackageEvent(this, pkg, "SUSPENDED", reason));
+        }
+
         return getPackageDetail(id);
     }
 
     // ── Delete Package ────────────────────────────────
     @Transactional
     @CacheEvict(value = {"touristPackages", "touristPackageDetails"}, allEntries = true)
-    public void deletePackage(Long id) {
+    public void deletePackage(Long id, String reason) {
         Package pkg = packageRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Package", "id", id));
 
-        eventPublisher.publishEvent(new PackageEvent(this, pkg, "DELETED"));
+        long activeBookings = countActiveBookings(id);
+        if (activeBookings > 0) {
+            throw new BadRequestException(
+                    "Cannot delete package: This package currently has " + activeBookings
+                    + " booking(s). Packages with existing bookings cannot be removed."
+            );
+        }
+
+        String effectiveReason = (reason != null && !reason.trim().isEmpty()) ? reason : "Deleted by admin";
+        eventPublisher.publishEvent(new PackageEvent(this, pkg, "DELETED", effectiveReason));
 
         packageRepository.deleteById(id);
     }
@@ -250,6 +290,12 @@ public class AdminPackageService {
                     .orElse(null);
         }
 
+        Long bookingsCount = 0L;
+        try {
+            bookingsCount = bookingRepository.countByPkg_Id(p.getId());
+            if (bookingsCount == null) bookingsCount = 0L;
+        } catch (Exception ignored) {}
+
         return new AdminPackageResponse(
                 p.getId(),
                 p.getPackageName(),
@@ -266,7 +312,9 @@ public class AdminPackageService {
                 p.getIsActive(),
                 p.getAgent() != null ? p.getAgent().getAgencyName() : "",
                 p.getApplicationStatus() != null ? p.getApplicationStatus() : "Pending",
-                imageUrl
+                p.getRejectionReason(),
+                imageUrl,
+                bookingsCount
         );
     }
 }

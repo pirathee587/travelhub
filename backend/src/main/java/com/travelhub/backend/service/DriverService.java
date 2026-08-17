@@ -228,8 +228,25 @@ public class DriverService {
      * Maps Driver entity -> API response DTO.
      */
     private DriverResponse toResponse(Driver d) {
+        Long agentId = null;
+        String agencyName = null;
+        String agentOwnerName = null;
+        try {
+            Agent agent = d.getAgent();
+            if (agent != null) {
+                agentId = agent.getId();
+                agencyName = agent.getAgencyName();
+                if (agent.getOwner() != null) {
+                    agentOwnerName = agent.getOwner().getName();
+                }
+            }
+        } catch (Exception ignored) {}
+
         return DriverResponse.builder()
                 .id(d.getId())
+                .agentId(agentId)
+                .agencyName(agencyName)
+                .agentOwnerName(agentOwnerName)
                 .firstName(d.getFirstName())
                 .lastName(d.getLastName())
                 .nic(d.getNic())

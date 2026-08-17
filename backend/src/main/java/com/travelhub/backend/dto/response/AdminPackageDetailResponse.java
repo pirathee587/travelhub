@@ -28,6 +28,7 @@ public record AdminPackageDetailResponse(
         String duration,
         String providerName,
         String applicationStatus,
+        String rejectionReason,
 
         // ── Description & Details ──────────────────────
         String description,

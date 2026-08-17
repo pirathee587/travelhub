@@ -17,7 +17,10 @@ const api = axios.create({
 // Attach JWT token automatically on every request
 api.interceptors.request.use(
     (config) => {
-        const token = localStorage.getItem('token');
+        const token = localStorage.getItem('travelhub_token')
+            || localStorage.getItem('token')
+            || sessionStorage.getItem('travelhub_token')
+            || sessionStorage.getItem('token');
         if (token) {
             config.headers.Authorization = `Bearer ${token}`;
         }
@@ -30,19 +33,11 @@ api.interceptors.request.use(
 );
 
 // ── Response Interceptor ───────────────────────────
-// On 401 Unauthorized or 403 Forbidden → clear session and redirect to /login
+// Handle API errors gracefully
 api.interceptors.response.use(
     (response) => response,
     (error) => {
-        if (error.response?.status === 401 || error.response?.status === 403) {
-            localStorage.removeItem('token');
-            localStorage.removeItem('user');
-            // Only redirect if not already on login page
-            const currentPath = window.location.pathname;
-            if (!currentPath.includes('/auth')) {
-                window.location.href = '/login';
-            }
-        }
+        // Return rejected promise for component-level error handling
         return Promise.reject(error);
     }
 );
