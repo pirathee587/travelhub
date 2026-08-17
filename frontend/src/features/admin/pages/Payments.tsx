@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react'
 import adminPaymentApi from '../services/adminPaymentApi'
 import { useModal } from '../components/ModalContext'
+import { useAdminCurrency } from '../hooks/AdminCurrencyContext'
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 const TYPES    = ['All', 'Payment', 'Refund']
@@ -14,9 +15,6 @@ const STATUS_STYLES = {
   Completed: 'bg-emerald-100 text-emerald-700',
   Pending:   'bg-orange-100 text-orange-700',
 }
-
-const fmtCurrency = (v) =>
-  v != null ? `$${Number(v).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '—'
 
 const fmtDate = (s) => {
   try { return s ? new Date(s).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }) : '—' }
@@ -36,6 +34,7 @@ const Skeleton = () => (
 
 // ── Payment Drawer ────────────────────────────────────────────────────────────
 const PaymentDrawer = ({ payment, onClose, onUpdateStatus, loading }) => {
+  const { formatPrice } = useAdminCurrency()
   if (!payment) return null
   const { id, transactionId, bookingRef, bookingDate, touristName,
     agentName, type, amount, status } = payment
@@ -67,7 +66,7 @@ const PaymentDrawer = ({ payment, onClose, onUpdateStatus, loading }) => {
           <div className="bg-gray-50 rounded-2xl p-5 text-center">
             <div className="text-xs text-gray-400 mb-1">Amount</div>
             <div className={`text-4xl font-bold ${type === 'Refund' ? 'text-orange-600' : 'text-teal-700'}`}>
-              {type === 'Refund' ? '-' : '+'}{fmtCurrency(amount)}
+              {type === 'Refund' ? '-' : '+'}{formatPrice(amount)}
             </div>
           </div>
 
@@ -104,7 +103,7 @@ const PaymentDrawer = ({ payment, onClose, onUpdateStatus, loading }) => {
               <button
                 onClick={() => onUpdateStatus(payment, 'Pending')}
                 disabled={loading}
-                className="w-full py-2.5 rounded-xl font-semibold text-sm bg-orange-50 text-orange-700 border border-orange-200 hover:bg-orange-100 transition disabled:opacity-60"
+                className="w-full py-2.5 rounded-xl font-semibold text-sm bg-orange-500 text-white border border-orange-200 hover:bg-orange-600 transition disabled:opacity-60"
               >
                 ⏳ Mark as Pending
               </button>
@@ -119,6 +118,7 @@ const PaymentDrawer = ({ payment, onClose, onUpdateStatus, loading }) => {
 // ── Main Component ────────────────────────────────────────────────────────────
 export default function Payments() {
   const modal = useModal()
+  const { formatPrice } = useAdminCurrency()
 
   const [payments, setPayments]           = useState([])
   const [stats, setStats]                 = useState(null)
@@ -202,7 +202,7 @@ export default function Payments() {
         {[
           {
             title: 'Total Revenue',
-            value: fmtCurrency(stats?.totalRevenue),
+            value: formatPrice(stats?.totalRevenue),
             subtext: '+18% from last month',
             subColor: 'text-emerald-500',
             icon: '💰',
@@ -210,7 +210,7 @@ export default function Payments() {
           },
           {
             title: 'Pending Payments',
-            value: fmtCurrency(stats?.pendingAmount),
+            value: formatPrice(stats?.pendingAmount),
             subtext: `${stats?.pendingCount ?? 0} transactions`,
             subColor: 'text-teal-500',
             icon: '📦',
@@ -218,7 +218,7 @@ export default function Payments() {
           },
           {
             title: 'Total Refunds',
-            value: fmtCurrency(stats?.totalRefunds),
+            value: formatPrice(stats?.totalRefunds),
             subtext: '-5% from last month',
             subColor: 'text-red-500',
             icon: '📉',
@@ -335,7 +335,7 @@ export default function Payments() {
                           {p.type === 'Payment' ? '↓ Payment' : '↑ Refund'}
                         </span>
                       </td>
-                      <td className="py-4 px-6 text-sm font-bold text-gray-900">{fmtCurrency(p.amount)}</td>
+                      <td className="py-4 px-6 text-sm font-bold text-gray-900">{formatPrice(p.amount)}</td>
                       <td className="py-4 px-6">
                         <span className={`px-3 py-1 rounded-full text-xs font-medium ${p.status === 'Completed' ? 'bg-[#ccfbf1] text-[#0f766e]' : 'bg-[#fef0db] text-[#e37400]'}`}>
                           {p.status}

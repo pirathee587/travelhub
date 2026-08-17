@@ -1,5 +1,9 @@
 import { useState, useEffect } from 'react';
+<<<<<<< HEAD
 import { Plus, Search, Edit, MapPin, Clock, Star, Trash2, Eye, CheckCircle, X, PackagePlus, SearchX } from 'lucide-react';
+=======
+import { Plus, Search, Edit, MapPin, Clock, Star, Trash2, Eye, CheckCircle, X, AlertCircle } from 'lucide-react';
+>>>>>>> origin/main
 import { DashboardLayout } from '@/features/agency/components/dashboard/DashboardLayout';
 import { Button } from '@/components/common/ui/button';
 import { Input } from '@/components/common/ui/input';
@@ -197,119 +201,113 @@ const Packages = () => {
             {filteredPackages.map((pkg) => {
               const displayImage = pkg.coverImageUrl || (pkg.images && pkg.images.length > 0 ? pkg.images[0].imageUrl : null);
               return (
-              <div
-                key={pkg.packageId || Math.random()}
-                className={cn(
-                  'group relative overflow-hidden rounded-xl border bg-card transition-all hover:shadow-lg',
-                  (pkg.isActive !== false) ? 'border-border' : 'border-muted opacity-70'
-                )}
-              >
-                {/* Package Image */}
-                <div className="aspect-video w-full relative overflow-hidden bg-muted">
-                  {displayImage ? (
-                    <img
-                      src={displayImage}
-                      alt={pkg.name}
-                      className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
-                    />
-                  ) : (
-                    <div className="h-full w-full bg-gradient-to-br from-primary via-primary to-accent/80 flex items-center justify-center">
-                      <MapPin className="h-8 w-8 text-primary-foreground opacity-50" />
-                    </div>
+                <div
+                  key={pkg.packageId || pkg.id || Math.random()}
+                  className={cn(
+                    'group relative overflow-hidden rounded-xl border bg-card transition-all hover:shadow-lg',
+                    (pkg.isActive !== false) ? 'border-border' : 'border-muted opacity-70'
                   )}
-
-                  {/* Badges container */}
-                  <div className="absolute top-3 left-3 flex flex-col gap-2 items-start z-10">
-                    {/* Active badge */}
-                    <span className={cn(
-                      'text-xs font-semibold px-3 py-0.5 rounded-full border shadow-sm backdrop-blur-md transition-all',
-                      (pkg.isActive !== false)
-                        ? 'bg-emerald-50/95 text-emerald-700 border-emerald-300/90 dark:bg-emerald-950/90 dark:text-emerald-300 dark:border-emerald-700/80'
-                        : 'bg-slate-100/95 text-slate-700 border-slate-300/90 dark:bg-slate-900/90 dark:text-slate-300 dark:border-slate-700/80'
-                    )}>
-                      {(pkg.isActive !== false) ? 'Active' : 'Inactive'}
-                    </span>
-
-                    {/* Approval Status badge (Only show if not Approved) */}
-                    {pkg.applicationStatus && pkg.applicationStatus.trim().toLowerCase() !== 'approved' && (
-                      <span className={cn(
-                        'text-xs font-bold px-2.5 py-1 rounded-full shadow-md flex items-center gap-1.5 border',
-                        pkg.applicationStatus.trim().toLowerCase() === 'rejected'
-                          ? 'bg-red-600 text-white border-red-500/50'
-                          : 'bg-amber-500 text-slate-950 border-amber-400/50'
-                      )}>
-                        {pkg.applicationStatus.trim().toLowerCase() === 'rejected' ? <X className="h-3 w-3 text-white" /> :
-                         <Clock className="h-3 w-3 text-slate-950" />}
-                        {pkg.applicationStatus.trim().toLowerCase() === 'pending' ? 'Pending Approval' : pkg.applicationStatus.trim()}
-                      </span>
+                >
+                  {/* Package Image */}
+                  <div className="aspect-video w-full relative overflow-hidden bg-muted">
+                    {displayImage ? (
+                      <img
+                        src={displayImage}
+                        alt={pkg.name}
+                        className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                      />
+                    ) : (
+                      <div className="h-full w-full bg-gradient-to-br from-primary via-primary to-accent/80 flex items-center justify-center">
+                        <MapPin className="h-8 w-8 text-primary-foreground opacity-50" />
+                      </div>
                     )}
-                  </div>
 
-                </div>
-
-                {/* Content */}
-                <div className="p-5">
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="min-w-0">
-                      <Link to={`/agency/packages/${pkg.packageId || pkg.id}`} className="hover:underline">
-                        <h3 className="font-semibold text-foreground truncate">
-                          {pkg.name}
-                        </h3>
-                      </Link>
-                      <div className="mt-1 flex items-center gap-1 text-sm text-muted-foreground">
-                        <MapPin className="h-3.5 w-3.5 shrink-0" />
-                        <span className="truncate">{pkg.district}</span>
-                      </div>
-                    </div>
-
-                    {/* Rating & Review Count & District Badge */}
-                    <div className="flex flex-col items-end shrink-0">
-                      <div className="flex items-center gap-1">
-                        <Star className={`h-3.5 w-3.5 ${pkg.rating ? 'fill-warning text-warning' : 'text-muted-foreground'}`} />
-                        {pkg.rating ? (
-                          <span className="text-sm font-medium">
-                            {pkg.rating.toFixed(1)}
-                            <span className="text-xs text-muted-foreground font-normal ml-1">({pkg.reviewCount ?? 0})</span>
-                          </span>
-                        ) : (
-                          <span className="text-xs text-muted-foreground">No reviews yet</span>
-                        )}
-                      </div>
-                      <span className="mt-1.5 inline-flex items-center rounded-full bg-sky-50 px-3 py-0.5 text-xs font-medium text-sky-700 dark:bg-sky-950/60 dark:text-sky-300">
-                        {isMulti(pkg) ? 'Multi District' : 'Single District'}
+                    {/* Badges container */}
+                    <div className="absolute top-3 left-3 flex flex-col gap-2 items-start z-10">
+                      {/* Active badge */}
+                      <span className={cn(
+                        'text-xs font-semibold px-3 py-0.5 rounded-full border shadow-sm backdrop-blur-md transition-all',
+                        (pkg.isActive !== false)
+                          ? 'bg-emerald-50/95 text-emerald-700 border-emerald-300/90 dark:bg-emerald-950/90 dark:text-emerald-300 dark:border-emerald-700/80'
+                          : 'bg-slate-100/95 text-slate-700 border-slate-300/90 dark:bg-slate-900/90 dark:text-slate-300 dark:border-slate-700/80'
+                      )}>
+                        {(pkg.isActive !== false) ? 'Active' : 'Inactive'}
                       </span>
+
+                      {/* Approval Status badge (Only show if not Approved) */}
+                      {pkg.applicationStatus && pkg.applicationStatus.trim().toLowerCase() !== 'approved' && (
+                        <span className={cn(
+                          'text-xs font-bold px-2.5 py-1 rounded-full shadow-md flex items-center gap-1.5 border',
+                          pkg.applicationStatus.trim().toLowerCase() === 'rejected'
+                            ? 'bg-red-600 text-white border-red-500/50'
+                            : 'bg-amber-500 text-slate-950 border-amber-400/50'
+                        )}>
+                          {pkg.applicationStatus.trim().toLowerCase() === 'rejected' ? <X className="h-3 w-3 text-white" /> :
+                           <Clock className="h-3 w-3 text-slate-950" />}
+                          {pkg.applicationStatus.trim().toLowerCase() === 'pending' ? 'Pending Approval' : pkg.applicationStatus.trim()}
+                        </span>
+                      )}
                     </div>
                   </div>
 
-                  {/* Category & District */}
-                  {(pkg.category || pkg.district) && (
-                    <div className="mt-2 flex gap-2 flex-wrap">
-                      {pkg.category && (
-                        <span className="text-xs px-2 py-0.5 rounded-full bg-muted text-muted-foreground capitalize">
-                          {pkg.category.toLowerCase()}
-                        </span>
-                      )}
-                      {pkg.district && (
-                        <span className="text-xs px-2 py-0.5 rounded-full bg-muted text-muted-foreground">
-                          {pkg.district}
-                        </span>
-                      )}
-                    </div>
-                  )}
+                  {/* Content */}
+                  <div className="p-5">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <Link to={`/agency/packages/${pkg.packageId || pkg.id}`} className="hover:underline">
+                          <h3 className="font-semibold text-foreground truncate">
+                            {pkg.name}
+                          </h3>
+                        </Link>
+                        <div className="mt-1 flex items-center gap-1 text-sm text-muted-foreground">
+                          <MapPin className="h-3.5 w-3.5 shrink-0" />
+                          <span className="truncate">{pkg.district}</span>
+                        </div>
+                      </div>
 
-                  <div className="mt-4 flex items-center justify-between border-t border-border pt-4">
-                    <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                      <Clock className="h-4 w-4" />
-                      {pkg.duration || '-'}
+                      {/* Rating & Review Count & District Badge */}
+                      <div className="flex flex-col items-end shrink-0">
+                        <div className="flex items-center gap-1">
+                          <Star className={`h-3.5 w-3.5 ${pkg.rating ? 'fill-warning text-warning' : 'text-muted-foreground'}`} />
+                          {pkg.rating ? (
+                            <span className="text-sm font-medium">
+                              {pkg.rating.toFixed(1)}
+                              <span className="text-xs text-muted-foreground font-normal ml-1">({pkg.reviewCount ?? 0})</span>
+                            </span>
+                          ) : (
+                            <span className="text-xs text-muted-foreground">No reviews yet</span>
+                          )}
+                        </div>
+                        <span className="mt-1.5 inline-flex items-center rounded-full bg-sky-50 px-3 py-0.5 text-xs font-medium text-sky-700 dark:bg-sky-950/60 dark:text-sky-300">
+                          {isMulti(pkg) ? 'Multi District' : 'Single District'}
+                        </span>
+                      </div>
                     </div>
-                    <div className="text-right">
-                      <p className="text-xs text-muted-foreground">Starts from</p>
-                      <p className="text-sm font-semibold text-foreground">
-                        {formatPrice(pkg.basePriceAdult ?? 0)}
-                      </p>
-                    </div>
-                  </div>
 
+                    {/* Admin Rejection / Suspension Reason */}
+                    {pkg.rejectionReason && pkg.applicationStatus && pkg.applicationStatus.trim().toLowerCase() !== 'approved' && (
+                      <div className="mt-3 p-2.5 rounded-lg bg-destructive/10 border border-destructive/20 text-xs text-destructive flex items-start gap-1.5 animate-fade-in">
+                        <AlertCircle className="h-3.5 w-3.5 shrink-0 mt-0.5" />
+                        <span className="line-clamp-2">
+                          <strong>Admin Feedback:</strong> {pkg.rejectionReason}
+                        </span>
+                      </div>
+                    )}
+
+                    <div className="mt-4 flex items-center justify-between border-t border-border pt-4">
+                      <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                        <Clock className="h-4 w-4" />
+                        {pkg.duration || '-'}
+                      </div>
+                      <div className="text-right">
+                        <p className="text-xs text-muted-foreground">Starts from</p>
+                        <p className="text-sm font-semibold text-foreground">
+                          {formatPrice(pkg.basePriceAdult ?? 0)}
+                        </p>
+                      </div>
+                    </div>
+
+<<<<<<< HEAD
                   <div className="mt-4 flex gap-2">
                     <Button variant="outline" size="sm" className="gap-1.5" asChild>
                       <Link to={`/agency/packages/${pkg.packageId || pkg.id}`}>
@@ -347,15 +345,54 @@ const Packages = () => {
                               }
                             }}
                           >
+=======
+                    <div className="mt-4 flex gap-2">
+                      <Button variant="outline" size="sm" className="gap-1.5" asChild>
+                        <Link to={`/agency/packages/${pkg.packageId}`}>
+                          <Eye className="h-3.5 w-3.5" />
+                          View Details
+                        </Link>
+                      </Button>
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button variant="outline" size="sm" className="gap-1.5 text-destructive hover:text-destructive hover:bg-destructive/10 border-destructive/20">
+                            <Trash2 className="h-3.5 w-3.5" />
+>>>>>>> origin/main
                             Delete
-                          </AlertDialogAction>
-                        </AlertDialogFooter>
-                      </AlertDialogContent>
-                    </AlertDialog>
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Are you sure you want to delete this package?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              This action cannot be undone. This will permanently delete the travel package and remove it from our servers.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <AlertDialogAction
+                              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                              onClick={async () => {
+                                try {
+                                  await api.deleteAgentPackage(pkg.packageId);
+                                  setPackagesList(prev => prev.filter(p => p.packageId !== pkg.packageId));
+                                  toast.success('Package deleted successfully');
+                                } catch (err) {
+                                  console.error(err);
+                                  toast.error('Failed to delete package');
+                                }
+                              }}
+                            >
+                              Delete
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    </div>
                   </div>
                 </div>
-              </div>
-            )})}
+              )
+            })}
           </div>
         )}
       </div>

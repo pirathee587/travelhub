@@ -140,10 +140,20 @@ export const useAdminNotifications = () => {
         fetchUnreadCount();
 
         const interval = setInterval(() => {
+            fetchNotifications();
             fetchUnreadCount();
         }, 30000);
 
-        return () => clearInterval(interval);
+        const handleNotifsUpdated = () => {
+            fetchNotifications();
+            fetchUnreadCount();
+        };
+        window.addEventListener('admin-notifications-updated', handleNotifsUpdated);
+
+        return () => {
+            clearInterval(interval);
+            window.removeEventListener('admin-notifications-updated', handleNotifsUpdated);
+        };
     }, [fetchNotifications, fetchUnreadCount]);
 
     return {

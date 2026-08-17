@@ -140,9 +140,32 @@ public class AdminAgentAnalyticsService {
         );
     }
 
+    // ── Resolve NIC Status ────────────────────────────
+    private String resolveNicStatus(com.travelhub.backend.entity.User owner) {
+        if (owner == null) return "PENDING";
+        boolean hasNicDoc = owner.getNicImage() != null && !owner.getNicImage().isBlank();
+        boolean hasNicNumber = owner.getNicNumber() != null && !owner.getNicNumber().isBlank() && !"—".equals(owner.getNicNumber().trim());
+        String status = owner.getNicVerificationStatus();
+
+        if ("SUSPENDED".equalsIgnoreCase(status)) return "SUSPENDED";
+        if ("REJECTED".equalsIgnoreCase(status)) return "REJECTED";
+
+        // ONLY verified if an actual NIC document image is uploaded AND approved
+        if (hasNicDoc && ("APPROVED".equalsIgnoreCase(status) || Boolean.TRUE.equals(owner.getAgentApproved()))) {
+            return "APPROVED";
+        }
+        if (hasNicDoc || hasNicNumber) {
+            return "PROVIDED";
+        }
+        return "PENDING";
+    }
+
     // ── Map Agent → List Response ─────────────────────
     private AdminAgentListResponse mapToListResponse(
             Agent a) {
+        Long dbTotalTrips = agentRepository.getTotalTripsByAgentId(a.getId());
+        Integer totalTripsVal = dbTotalTrips != null ? dbTotalTrips.intValue() : 0;
+
         return new AdminAgentListResponse(
                 a.getId(),
                 a.getOwner() != null ? a.getOwner().getId() : null,
@@ -152,10 +175,17 @@ public class AdminAgentAnalyticsService {
                 a.getOwner() != null ? a.getOwner().getEmail() : null,
                 a.getOwner() != null ? a.getOwner().getTelephone() : null,
                 a.getLocation(),
+                a.getOwner() != null ? a.getOwner().getProfileImage() : null,
+                a.getBio(),
+                a.getRating() != null ? a.getRating() : 0.0,
+                totalTripsVal,
+                0,
+                a.getExperienceYears() != null ? a.getExperienceYears() : 0,
+                a.getOwner() != null ? a.getOwner().getNicNumber() : null,
                 a.getOwner() != null && Boolean.TRUE.equals(a.getOwner().getAgentApproved()) ? "Approved" : "Pending",
-                a.getOwner() != null ? a.getOwner().getNicVerificationStatus() : "PENDING",
+                resolveNicStatus(a.getOwner()),
                 a.getSubmittedDate() != null ? a.getSubmittedDate().toString() : null,
-                a.getIsActive()
+                a.getIsActive() != null ? a.getIsActive() : true
         );
     }
 }

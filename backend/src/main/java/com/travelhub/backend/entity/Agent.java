@@ -20,6 +20,7 @@ public class Agent {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
+    @org.hibernate.annotations.NotFound(action = org.hibernate.annotations.NotFoundAction.IGNORE)
     private User owner;
 
     // ── Company / Agent Info ───────────────────────────

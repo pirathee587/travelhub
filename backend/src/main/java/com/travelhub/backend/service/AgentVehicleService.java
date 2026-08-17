@@ -317,26 +317,49 @@ public class AgentVehicleService {
      * Maps Vehicle entity -> API response DTO.
      */
     private VehicleResponse toResponse(Vehicle v) {
-        VehicleOwner owner = v.getOwner();
+        VehicleOwner owner = null;
         VehicleOwnerResponse ownerRes = null;
-        if (owner != null) {
-            ownerRes = VehicleOwnerResponse.builder()
-                    .id(owner.getId())
-                    .firstName(owner.getFirstName())
-                    .lastName(owner.getLastName())
-                    .nicNumber(owner.getNicNumber())
-                    .nicFrontImage(owner.getNicFrontImage())
-                    .nicRearImage(owner.getNicRearImage())
-                    .addressLine1(owner.getAddressLine1())
-                    .addressLine2(owner.getAddressLine2())
-                    .mobileNumber(owner.getMobileNumber())
-                    .secondaryMobileNumber(owner.getSecondaryMobileNumber())
-                    .email(owner.getEmail())
-                    .build();
+        try {
+            owner = v.getOwner();
+            if (owner != null) {
+                ownerRes = VehicleOwnerResponse.builder()
+                        .id(owner.getId())
+                        .firstName(owner.getFirstName())
+                        .lastName(owner.getLastName())
+                        .nicNumber(owner.getNicNumber())
+                        .nicFrontImage(owner.getNicFrontImage())
+                        .nicRearImage(owner.getNicRearImage())
+                        .addressLine1(owner.getAddressLine1())
+                        .addressLine2(owner.getAddressLine2())
+                        .mobileNumber(owner.getMobileNumber())
+                        .secondaryMobileNumber(owner.getSecondaryMobileNumber())
+                        .email(owner.getEmail())
+                        .build();
+            }
+        } catch (Exception ignored) {
+            owner = null;
+            ownerRes = null;
         }
+
+        Long agentId = null;
+        String agencyName = null;
+        String agentOwnerName = null;
+        try {
+            Agent agent = v.getAgent();
+            if (agent != null) {
+                agentId = agent.getId();
+                agencyName = agent.getAgencyName();
+                if (agent.getOwner() != null) {
+                    agentOwnerName = agent.getOwner().getName();
+                }
+            }
+        } catch (Exception ignored) {}
 
         return VehicleResponse.builder()
                 .id(v.getId())
+                .agentId(agentId)
+                .agencyName(agencyName)
+                .agentOwnerName(agentOwnerName)
                 .owner(ownerRes)
                 .ownerFirstName(owner != null ? owner.getFirstName() : null)
                 .ownerLastName(owner != null ? owner.getLastName() : null)

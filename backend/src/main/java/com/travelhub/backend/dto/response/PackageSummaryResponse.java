@@ -19,6 +19,7 @@ public class PackageSummaryResponse {
     private Double basePriceChild;
     private Boolean isActive;
     private String applicationStatus;
+    private String rejectionReason;
 
     private String coverImageUrl;
     private LocalDateTime createdAt;

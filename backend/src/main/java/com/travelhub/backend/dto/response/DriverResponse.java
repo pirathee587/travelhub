@@ -7,6 +7,9 @@ import lombok.Data;
 @Builder
 public class DriverResponse {
     private Long id;
+    private Long agentId;
+    private String agencyName;
+    private String agentOwnerName;
     private String firstName;
     private String lastName;
     private String nic;

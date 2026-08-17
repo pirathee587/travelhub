@@ -23,6 +23,7 @@ export type Hotel = {
   hotlineNumber?: string;
   applicationStatus: "Pending" | "Approved" | "Rejected";
   isActive: boolean;
+  rejectionReason?: string | null;
 };
 
 export type HotelSummary = {

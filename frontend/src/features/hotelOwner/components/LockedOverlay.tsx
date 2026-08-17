@@ -5,9 +5,10 @@ import { useNavigate } from "react-router-dom";
 
 interface LockedOverlayProps {
   reason?: "pending" | "suspended";
+  adminReason?: string | null;
 }
 
-const LockedOverlay: React.FC<LockedOverlayProps> = ({ reason = "pending" }) => {
+const LockedOverlay: React.FC<LockedOverlayProps> = ({ reason = "pending", adminReason }) => {
   const navigate = useNavigate();
   const pending = reason === "pending";
   const title = pending ? "Dashboard Locked" : "Hotel Suspended";
@@ -39,12 +40,23 @@ const LockedOverlay: React.FC<LockedOverlayProps> = ({ reason = "pending" }) => 
         </div>
 
         <h2 className="mb-3 text-2xl font-bold text-foreground">
-          Dashboard Locked
+          {title}
         </h2>
 
-        <p className="mb-8 text-[15px] leading-relaxed text-muted-foreground">
+        <p className="mb-6 text-[15px] leading-relaxed text-muted-foreground">
           {description}
         </p>
+
+        {adminReason && (
+          <div className="mb-6 rounded-2xl border border-red-200 bg-red-50/90 p-4 text-left">
+            <p className="text-[11px] font-bold uppercase tracking-wider text-red-700 mb-1">
+              {pending ? "Admin Feedback" : "Suspension Reason"}
+            </p>
+            <p className="text-xs text-red-900 leading-relaxed font-medium">
+              {adminReason}
+            </p>
+          </div>
+        )}
 
         <div className="space-y-3">
           <div className="flex items-center gap-3 rounded-xl bg-amber-50 p-4 text-left">

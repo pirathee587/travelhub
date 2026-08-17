@@ -60,16 +60,21 @@ public class AdminPackageController {
 
     @PatchMapping("/{id}/toggle-active")
     public ResponseEntity<?> toggleActive(
-            @PathVariable Long id) {
+            @PathVariable Long id,
+            @RequestBody(required = false) Map<String, String> body) {
+        String reason = body != null ? body.getOrDefault("reason", null) : null;
         return ResponseEntity.ok(
                 new ApiResponse(true, "Package updated",
-                        adminPackageService.toggleActive(id)));
+                        adminPackageService.toggleActive(id, reason)));
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<?> deletePackage(
-            @PathVariable Long id) {
-        adminPackageService.deletePackage(id);
+            @PathVariable Long id,
+            @RequestParam(required = false) String reason,
+            @RequestBody(required = false) Map<String, String> body) {
+        String finalReason = reason != null ? reason : (body != null ? body.getOrDefault("reason", null) : null);
+        adminPackageService.deletePackage(id, finalReason);
         return ResponseEntity.ok(
                 new ApiResponse(true, "Package deleted", null));
     }

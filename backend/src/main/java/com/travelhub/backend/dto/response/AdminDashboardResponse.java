@@ -13,6 +13,8 @@ public record AdminDashboardResponse(
         Long   pendingBookings,
         Long   pendingHotels,
         Long   pendingPackages,
+        Long   pendingDrivers,
+        Long   pendingVehicles,
         java.util.List<String> months,
         java.util.List<Integer> monthlyBookings,
         Double totalRevenue,

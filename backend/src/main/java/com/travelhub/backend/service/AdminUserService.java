@@ -18,8 +18,9 @@ import java.util.List;
 @Transactional(readOnly = true)
 public class AdminUserService {
 
-    private final UserRepository         userRepository;
-    private final ApplicationEventPublisher eventPublisher; // ← சேர்க்கணும்
+    private final UserRepository            userRepository;
+    private final ApplicationEventPublisher eventPublisher;
+    private final jakarta.persistence.EntityManager entityManager;
 
     // ── Get All Users ─────────────────────────────────
     public List<AdminUserResponse> getAllUsers() {
@@ -161,6 +162,21 @@ public class AdminUserService {
         if (user.getRole() != Role.AGENT)
             throw new BadRequestException(
                     "User is not an Agent");
+
+        // ── Check if this agency has active bookings ──
+        Number activeBookings = (Number) entityManager.createNativeQuery(
+                "SELECT COUNT(*) FROM bookings b " +
+                "JOIN packages p ON b.package_id = p.id " +
+                "JOIN agents a ON p.agent_id = a.id " +
+                "WHERE a.user_id = :userId AND LOWER(b.status) NOT IN ('cancelled', 'rejected')"
+        ).setParameter("userId", id).getSingleResult();
+
+        if (activeBookings != null && activeBookings.longValue() > 0) {
+            throw new BadRequestException(
+                    "Cannot suspend agency: This agency currently has " + activeBookings.longValue()
+                    + " active booking(s). Agencies with active bookings cannot be suspended."
+            );
+        }
 
         user.setIsActive(false);
         user.setAgentApproved(false);

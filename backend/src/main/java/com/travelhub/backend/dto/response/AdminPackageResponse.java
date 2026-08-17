@@ -16,5 +16,7 @@ public record AdminPackageResponse(
         boolean isActive,
         String  agentName,
         String  applicationStatus,
-        String  imageUrl
+        String  rejectionReason,
+        String  imageUrl,
+        Long    bookings
 ) {}

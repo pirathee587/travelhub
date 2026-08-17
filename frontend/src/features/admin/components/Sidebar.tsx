@@ -10,6 +10,7 @@ import {
   Package,
   CreditCard,
   BarChart3,
+  AlertTriangle,
   Settings,
   LogOut,
   Plane,
@@ -27,6 +28,7 @@ const navItems = [
   { icon: UserCheck,       label: 'Drivers',   path: '/admin/drivers' },
   { icon: Package,         label: 'Packages',  path: '/admin/packages' },
   { icon: CreditCard,      label: 'Payments',  path: '/admin/payments' },
+  { icon: AlertTriangle,   label: 'Reports',   path: '/admin/reports' },
   { icon: BarChart3,       label: 'Analytics', path: '/admin/analytics' },
 ]
 
@@ -72,7 +74,7 @@ export default function Sidebar({ collapsed, setCollapsed }: SidebarProps) {
         {!collapsed && (
           <div className="animate-fade-in">
             <h1 className="font-bold text-lg text-sidebar-foreground">TravelHub</h1>
-            <p className="text-xs text-sidebar-foreground/60">Dashboard</p>
+            <p className="text-xs text-sidebar-foreground/60">Admin Dashboard</p>
           </div>
         )}
       </div>
@@ -104,22 +106,21 @@ export default function Sidebar({ collapsed, setCollapsed }: SidebarProps) {
 
       {/* Bottom Actions */}
       <div className={cn("px-3 py-4 border-t border-sidebar-border space-y-1 transition-all duration-300", collapsed && "px-1")}>
-        <button
-          onClick={() => {
-            setMobileOpen(false)
-            showAdminProfile()
-          }}
+        <NavLink
+          to="/admin/settings"
+          onClick={() => setMobileOpen(false)}
           className={cn(
             "w-full flex items-center rounded-xl transition-all duration-300",
             collapsed ? "justify-center px-0 py-3" : "px-4 py-3 gap-3",
             "text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-sidebar-accent",
-            !collapsed && "hover:translate-x-1"
+            !collapsed && "hover:translate-x-1",
+            isActive('/admin/settings') && (collapsed ? "bg-sidebar-primary text-sidebar-primary-foreground shadow-glow" : "bg-sidebar-primary text-sidebar-primary-foreground shadow-glow translate-x-1")
           )}
           title={collapsed ? "Settings" : undefined}
         >
           <Settings className="h-5 w-5 flex-shrink-0" />
           {!collapsed && <span className="font-semibold">Settings</span>}
-        </button>
+        </NavLink>
 
         <button
           onClick={handleLogout}

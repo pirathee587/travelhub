@@ -13,7 +13,7 @@ const AuthContext = createContext<AuthContextType | null>(null);
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState(() => {
     try {
-      const stored = localStorage.getItem('travelhub_user');
+      const stored = localStorage.getItem('travelhub_user') || localStorage.getItem('user');
       return stored ? JSON.parse(stored) : null;
     } catch (e) {
       console.error('Failed to parse travelhub_user from localStorage', e);
@@ -21,7 +21,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   });
 
-  const [token, setToken] = useState(() => localStorage.getItem('travelhub_token'));
+  const [token, setToken] = useState(() => localStorage.getItem('travelhub_token') || localStorage.getItem('token'));
 
   const login = (userData: any, authToken: string) => {
     setUser(userData);

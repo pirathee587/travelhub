@@ -8,21 +8,28 @@ public record AdminHotelDetailResponse(
         Long   id,
         String hotelName,
         Double rating,
+        Integer reviewCount,
         String imageUrl,
+        List<String> images,
+        Double priceFrom,
+        Double priceTo,
 
         // ── Location Details ───────────────────────────
         String  district,
+        String  destination,
         String  location,
+        String  description,
         Integer numberOfRooms,
 
-        // Room Types list
-        List<RoomTypeResponse> roomTypes,
+        // ── Rooms ──────────────────────────────────────
+        List<RoomDetailResponse> rooms,
 
         // ── Owner Information ──────────────────────────
         String ownerName,
         String ownerEmail,
         String ownerNic,
         String nicImageUrl,
+        String nicRearImageUrl,
         String businessRegistrationImageUrl,
         Long   ownerId,
 
@@ -33,18 +40,23 @@ public record AdminHotelDetailResponse(
         String hotelContactNumber,
 
         // ── Amenities ──────────────────────────────────
-
         List<String> amenities,
 
         // ── Application Status ─────────────────────────
-        // Pending, Approved, Rejected
         String applicationStatus,
-        String rejectionReason
+        String rejectionReason,
+        Boolean isActive,
+        Long activeBookingsCount
 
 ) {
-    // Room type inner record
-    public record RoomTypeResponse(
+    // Room detail inner record
+    public record RoomDetailResponse(
+            String id,
             String name,
-            String description
+            String type,
+            Double price,
+            String description,
+            String imageUrl,
+            Boolean availability
     ) {}
 }

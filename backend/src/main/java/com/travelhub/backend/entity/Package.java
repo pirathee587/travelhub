@@ -81,6 +81,9 @@ public class Package {
     @Builder.Default
     private String applicationStatus = "Pending";
 
+    @Column(name = "rejection_reason", length = 1000)
+    private String rejectionReason;
+
     @Builder.Default
     private Boolean trending = false;
 

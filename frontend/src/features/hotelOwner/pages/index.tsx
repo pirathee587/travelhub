@@ -366,14 +366,30 @@ function HotelCard({ hotel, onDelete, onRefresh }: { hotel: Hotel; onDelete: () 
           )}
         </div>
 
-        <div className="space-y-1.5 p-5">
-          <h3 className="font-display text-lg font-semibold leading-tight text-foreground">
-            {hotel.hotelName}
-          </h3>
-          <div className="flex items-start gap-1.5 text-sm text-muted-foreground">
-            <MapPin className="mt-0.5 h-3.5 w-3.5 shrink-0" strokeWidth={1.75} />
-            <span className="line-clamp-1">{hotel.location}</span>
+        <div className="space-y-2 p-5">
+          <div>
+            <h3 className="font-display text-lg font-semibold leading-tight text-foreground">
+              {hotel.hotelName}
+            </h3>
+            <div className="flex items-start gap-1.5 text-sm text-muted-foreground mt-1">
+              <MapPin className="mt-0.5 h-3.5 w-3.5 shrink-0" strokeWidth={1.75} />
+              <span className="line-clamp-1">{hotel.location}</span>
+            </div>
           </div>
+
+          {isRejected && hotel.rejectionReason && (
+            <div className="rounded-xl border border-red-200 bg-red-50/90 p-2.5 text-xs text-red-800 space-y-0.5">
+              <span className="font-bold block text-[10px] uppercase tracking-wider text-red-600">Rejection Reason:</span>
+              <p className="leading-relaxed">{hotel.rejectionReason}</p>
+            </div>
+          )}
+
+          {isSuspended && hotel.rejectionReason && (
+            <div className="rounded-xl border border-amber-200 bg-amber-50/90 p-2.5 text-xs text-amber-800 space-y-0.5">
+              <span className="font-bold block text-[10px] uppercase tracking-wider text-amber-600">Suspension Reason:</span>
+              <p className="leading-relaxed">{hotel.rejectionReason}</p>
+            </div>
+          )}
         </div>
       </div>
 

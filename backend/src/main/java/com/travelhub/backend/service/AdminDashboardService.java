@@ -3,14 +3,18 @@ package com.travelhub.backend.service;
 import com.travelhub.backend.dto.response.AdminDashboardResponse;
 import com.travelhub.backend.enums.Role;
 import com.travelhub.backend.repository.BookingRepository;
+import com.travelhub.backend.repository.DriverRepository;
 import com.travelhub.backend.repository.HotelRepository;
 import com.travelhub.backend.repository.PackageRepository;
 import com.travelhub.backend.repository.ReviewRepository;
 import com.travelhub.backend.repository.UserRepository;
+import com.travelhub.backend.repository.VehicleRepository;
 import com.travelhub.backend.repository.PaymentRepository;
 import com.travelhub.backend.entity.Booking;
 import com.travelhub.backend.entity.Payment;
 import com.travelhub.backend.entity.Package;
+import com.travelhub.backend.entity.User;
+import com.travelhub.backend.entity.Hotel;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -34,6 +38,8 @@ public class AdminDashboardService {
     private final BookingRepository bookingRepository;
     private final ReviewRepository  reviewRepository;
     private final PaymentRepository paymentRepository;
+    private final DriverRepository  driverRepository;
+    private final VehicleRepository vehicleRepository;
 
     public AdminDashboardResponse getDashboardStats() {
 
@@ -56,6 +62,12 @@ public class AdminDashboardService {
                 .size();
         Long pendingPackages = (long) packageRepository
                 .findByApplicationStatus("Pending")
+                .size();
+        Long pendingDrivers = (long) driverRepository
+                .findByLifecycleStatus("pending")
+                .size();
+        Long pendingVehicles = (long) vehicleRepository
+                .findByLifecycleStatus("pending")
                 .size();
 
         // ── Totals ──────────────────────────────────────
@@ -112,23 +124,81 @@ public class AdminDashboardService {
             }
         }
 
-        // ── Recent Activities ──────────────────────────
-        List<AdminDashboardResponse.RecentActivityDto> recentActivities = allBookings.stream()
-            .sorted((a, b) -> {
-                if (a.getCreatedAt() == null) return 1;
-                if (b.getCreatedAt() == null) return -1;
-                return b.getCreatedAt().compareTo(a.getCreatedAt());
-            })
-            .limit(5)
-            .map(b -> new AdminDashboardResponse.RecentActivityDto(
-                "New Booking",
-                "Booking ID: " + b.getId(),
-                b.getStatus(),
-                b.getCreatedAt() != null ? b.getCreatedAt().toString() : "",
-                "🎫",
-                "text-blue-500"
-            ))
-            .collect(Collectors.toList());
+        // ── Recent Activities (Approved Agencies & Hotels) ─────────────
+        record ActivityCandidate(
+                String title,
+                String desc,
+                String status,
+                java.time.LocalDateTime timestamp,
+                String icon,
+                String color
+        ) {}
+
+        List<ActivityCandidate> candidates = new ArrayList<>();
+
+        // 1. Approved Agencies
+        List<User> approvedAgents = userRepository.findByRole(Role.AGENT).stream()
+                .filter(u -> Boolean.TRUE.equals(u.getAgentApproved()))
+                .toList();
+
+        for (User agent : approvedAgents) {
+            java.time.LocalDateTime ts = agent.getUpdatedAt() != null ? agent.getUpdatedAt() : agent.getCreatedAt();
+            String desc = agent.getName() != null && !agent.getName().isBlank() 
+                    ? agent.getName() 
+                    : "Agency Partner";
+            if (agent.getEmail() != null && !agent.getEmail().isBlank()) {
+                desc += " • " + agent.getEmail();
+            }
+            candidates.add(new ActivityCandidate(
+                    "Agency Approved",
+                    desc,
+                    "APPROVED",
+                    ts,
+                    "🏢",
+                    "bg-emerald-50 text-emerald-600 border border-emerald-100"
+            ));
+        }
+
+        // 2. Approved Hotels
+        List<Hotel> approvedHotels = hotelRepository.findByApplicationStatus("Approved");
+        for (Hotel hotel : approvedHotels) {
+            java.time.LocalDateTime ts = null;
+            if (hotel.getOwner() != null) {
+                ts = hotel.getOwner().getUpdatedAt() != null ? hotel.getOwner().getUpdatedAt() : hotel.getOwner().getCreatedAt();
+            }
+            String desc = hotel.getHotelName() != null ? hotel.getHotelName() : "Partner Hotel";
+            if (hotel.getDistrict() != null && !hotel.getDistrict().isBlank()) {
+                desc += " • " + hotel.getDistrict();
+            } else if (hotel.getDestination() != null && !hotel.getDestination().isBlank()) {
+                desc += " • " + hotel.getDestination();
+            }
+            candidates.add(new ActivityCandidate(
+                    "Hotel Approved",
+                    desc,
+                    "APPROVED",
+                    ts,
+                    "🏨",
+                    "bg-sky-50 text-sky-600 border border-sky-100"
+            ));
+        }
+
+        List<AdminDashboardResponse.RecentActivityDto> recentActivities = candidates.stream()
+                .sorted((a, b) -> {
+                    if (a.timestamp() == null && b.timestamp() == null) return 0;
+                    if (a.timestamp() == null) return 1;
+                    if (b.timestamp() == null) return -1;
+                    return b.timestamp().compareTo(a.timestamp());
+                })
+                .limit(5)
+                .map(c -> new AdminDashboardResponse.RecentActivityDto(
+                        c.title(),
+                        c.desc(),
+                        c.status(),
+                        c.timestamp() != null ? c.timestamp().toString() : "",
+                        c.icon(),
+                        c.color()
+                ))
+                .collect(Collectors.toList());
 
         return new AdminDashboardResponse(
                 totalUsers,
@@ -143,6 +213,8 @@ public class AdminDashboardService {
                 pendingBookings,
                 pendingHotels,
                 pendingPackages,
+                pendingDrivers,
+                pendingVehicles,
                 months,
                 monthlyBookings,
                 totalRevenue,

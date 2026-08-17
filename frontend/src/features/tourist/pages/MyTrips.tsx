@@ -55,9 +55,17 @@ const MyTrips = () => {
     }, []);
 
     const pendingTrips = trips.filter((t) => t.status?.toLowerCase() === "pending");           //Pending
-    const confirmedTrips = trips.filter((t) => t.status?.toLowerCase() === "confirmed");       //Confirmed
-    const paidTrips = trips.filter((t) => 
-        ["paid", "refund_requested", "refunded"].includes(t.status?.toLowerCase())
+    const confirmedTrips = trips.filter(
+        (t) =>
+            t.status?.toLowerCase() === "confirmed" &&
+            t.paymentStatus?.toLowerCase() !== "paid" &&
+            !["paid", "refund_requested", "refunded"].includes(t.paymentStatus?.toLowerCase() || "")
+    );                                                                                         //Confirmed (Unpaid)
+    const paidTrips = trips.filter(
+        (t) =>
+            !["in_progress", "completed", "cancelled"].includes(t.status?.toLowerCase() || "") &&
+            (["paid", "refund_requested", "refunded"].includes(t.paymentStatus?.toLowerCase() || "") ||
+             ["paid", "refund_requested", "refunded"].includes(t.status?.toLowerCase() || ""))
     );                                                                                         //Paid
     const inProgressTrips = trips.filter((t) => t.status?.toLowerCase() === "in_progress");   //In Progress
     const completedTrips = trips.filter((t) => t.status?.toLowerCase() === "completed");      //Completed

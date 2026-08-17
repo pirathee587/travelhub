@@ -26,6 +26,7 @@ import { cn } from "@/features/tourist/services/utils";
 import { useHotelById } from "@/features/tourist/hooks/useApi";
 import { useNavigate } from "react-router-dom";
 import { useTouristCurrency } from "@/features/tourist/hooks/TouristCurrencyContext";
+import PackageReportDialog from "./PackageReportDialog";
 
 const statusConfig = {
     pending: {
@@ -66,10 +67,17 @@ const statusConfig = {
     },
 };
 
-export function TripDetailsSheet({ trip, open, onOpenChange }: { trip: any, open: boolean, onOpenChange: (open: boolean) => void }) {
+interface TripDetailsSheetProps {
+    trip: any;
+    open: boolean;
+    onOpenChange: (open: boolean) => void;
+}
+
+export function TripDetailsSheet({ trip, open, onOpenChange }: TripDetailsSheetProps) {
     const navigate = useNavigate();
     
     const [refundDialogOpen, setRefundDialogOpen] = useState(false);
+    const [reportDialogOpen, setReportDialogOpen] = useState(false);
     const [bankName, setBankName] = useState("");
     const [accountNo, setAccountNo] = useState("");
     const [accountHolderName, setAccountHolderName] = useState("");
@@ -409,7 +417,7 @@ export function TripDetailsSheet({ trip, open, onOpenChange }: { trip: any, open
                                 <span>Total</span>
                                 <span className="text-primary"><TripPriceDisplay amount={trip.totalPrice} /></span>
                             </div>
-                            {trip.status?.toLowerCase() === "confirmed" && (
+                            {trip.status?.toLowerCase() === "confirmed" && trip.paymentStatus?.toUpperCase() !== "PAID" && (
                                 <div className="mt-4">
                                     <Button
                                         className="w-full"
@@ -423,7 +431,9 @@ export function TripDetailsSheet({ trip, open, onOpenChange }: { trip: any, open
                                     </Button>
                                 </div>
                             )}
-                            {trip.status?.toLowerCase() === "paid" && (
+                            {(trip.paymentStatus?.toUpperCase() === "PAID" || trip.status?.toLowerCase() === "paid") &&
+                             !["refund_requested", "refunded"].includes(trip.status?.toLowerCase() || "") &&
+                             !["REFUND_REQUESTED", "REFUNDED"].includes(trip.paymentStatus?.toUpperCase() || "") && (
                                 <div className="mt-4">
                                     <Button
                                         className="w-full bg-orange-600 hover:bg-orange-700 text-white font-bold"
@@ -433,7 +443,7 @@ export function TripDetailsSheet({ trip, open, onOpenChange }: { trip: any, open
                                     </Button>
                                 </div>
                             )}
-                            {trip.status?.toLowerCase() === "refund_requested" && (
+                            {(trip.status?.toLowerCase() === "refund_requested" || trip.paymentStatus?.toUpperCase() === "REFUND_REQUESTED") && (
                                 <div className="mt-4">
                                     <Button
                                         className="w-full"
@@ -444,7 +454,7 @@ export function TripDetailsSheet({ trip, open, onOpenChange }: { trip: any, open
                                     </Button>
                                 </div>
                             )}
-                            {trip.status?.toLowerCase() === "refunded" && (
+                            {(trip.status?.toLowerCase() === "refunded" || trip.paymentStatus?.toUpperCase() === "REFUNDED") && (
                                 <div className="mt-4">
                                     <Button
                                         className="w-full bg-orange-500/10 text-orange-500 border border-orange-500/20"
@@ -454,12 +464,29 @@ export function TripDetailsSheet({ trip, open, onOpenChange }: { trip: any, open
                                     </Button>
                                 </div>
                             )}
+                            {trip.status?.toLowerCase() === "completed" && (
+                                <div className="mt-4">
+                                    <Button
+                                        className="w-full bg-destructive/10 text-destructive hover:bg-destructive hover:text-white border border-destructive/30 font-bold transition-colors"
+                                        onClick={() => setReportDialogOpen(true)}
+                                    >
+                                        Report Issue / Dispute
+                                    </Button>
+                                </div>
+                            )}
                         </div>
                     </div>
 
 
                 </div>
             </SheetContent>
+
+            <PackageReportDialog
+                open={reportDialogOpen}
+                onOpenChange={setReportDialogOpen}
+                bookingId={trip.id}
+                packageName={trip.destination || trip.packageName || "Package"}
+            />
 
             <Dialog open={refundDialogOpen} onOpenChange={setRefundDialogOpen}>
                 <DialogContent className="sm:max-w-md">

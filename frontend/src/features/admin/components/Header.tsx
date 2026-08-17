@@ -1,13 +1,15 @@
 import React, { useState, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useModal } from './ModalContext'
 import { Settings, LogOut, Bell, Check, CheckCheck } from 'lucide-react'
 import { useAdminNotifications } from '../hooks/useAdminNotifications'
 import { useAuth } from '@/context/AuthContext'
 
 export default function Header() {
+  const navigate = useNavigate()
   const [showNotifications, setShowNotifications] = useState(false)
   const [showUserMenu, setShowUserMenu]           = useState(false)
-  const { showAdminProfile, showConfirm } = useModal()
+  const { showConfirm } = useModal()
   const { logout } = useAuth()
 
   // ── Real notification data from backend ─────────────
@@ -17,6 +19,7 @@ export default function Header() {
     loading: notifLoading,
     markAsRead,
     markAllAsRead,
+    refetch,
   } = useAdminNotifications()
 
   // Read real user info from localStorage (set on login)
@@ -42,7 +45,7 @@ export default function Header() {
     }
   }, [])
 
-  const displayName = storedUser?.name || 'Admin User'
+  const displayName = storedUser?.name || 'Piratheepan'
   const displayRole = storedUser?.role ? storedUser.role.replace('ROLE_', '') : 'Super Admin'
 
   const handleLogout = async () => {
@@ -58,7 +61,7 @@ export default function Header() {
   }
 
   // Notification type → colour mapping
-  const typeColor = {
+  const typeColor: Record<string, string> = {
     booking:              'bg-blue-100 text-blue-700',
     payment:              'bg-green-100 text-green-700',
     agent_registration:   'bg-purple-100 text-purple-700',
@@ -66,27 +69,43 @@ export default function Header() {
     package_registration: 'bg-teal-100 text-teal-700',
     review:               'bg-yellow-100 text-yellow-700',
     cancellation:         'bg-red-100 text-red-700',
+    report:               'bg-rose-100 text-rose-700',
     system:               'bg-gray-100 text-gray-700',
   }
 
-  const handleMarkAsRead = async (id, isRead) => {
-    if (!isRead) await markAsRead(id)
+  const handleMarkAsRead = async (notification: any) => {
+    if (!notification.read) await markAsRead(notification.id)
+    if (notification.actionUrl) {
+      setShowNotifications(false)
+      navigate(notification.actionUrl)
+    }
   }
 
   return (
     <header className="h-20 flex items-center justify-between px-6 bg-white border-b border-gray-200 gap-6">
 
-      <div className="flex items-center gap-3">
-        <div className="w-10 h-10 bg-teal-900 rounded-lg flex items-center justify-center text-white font-bold text-base">AP</div>
-        <div className="text-2xl font-bold text-gray-900">Admin Portal</div>
+      <div className="flex flex-col min-w-0">
+        <h1 className="text-xl sm:text-2xl font-bold text-gray-900 tracking-tight flex items-center gap-2">
+          Welcome back, {displayName}! <span className="text-xl sm:text-2xl">👋</span>
+        </h1>
+        <p className="text-xs sm:text-sm text-gray-500 mt-0.5">
+          Manage and monitor Sri Lanka's tourism ecosystem from one powerful platform
+        </p>
       </div>
 
-      <div className="flex items-center gap-5">
+      <div className="flex items-center gap-5 shrink-0">
         {/* ── Notifications Bell ── */}
         <div className="relative">
           <button
             className="text-gray-500 hover:text-gray-700 transition relative p-2 rounded-lg hover:bg-gray-100"
-            onClick={() => { setShowNotifications(!showNotifications); setShowUserMenu(false) }}
+            onClick={() => {
+              const nextVal = !showNotifications;
+              setShowNotifications(nextVal);
+              setShowUserMenu(false);
+              if (nextVal) {
+                refetch();
+              }
+            }}
             aria-label="Notifications"
           >
             <Bell size={22} />
@@ -124,7 +143,7 @@ export default function Header() {
                   notifications.map(n => (
                     <div
                       key={n.id}
-                      onClick={() => handleMarkAsRead(n.id, n.read)}
+                      onClick={() => handleMarkAsRead(n)}
                       className={`flex items-start gap-3 px-4 py-3 cursor-pointer hover:bg-gray-50 transition ${!n.read ? 'bg-blue-50/40' : ''}`}
                     >
                       <span className={`mt-0.5 text-xs font-semibold px-2 py-0.5 rounded-full capitalize shrink-0 ${typeColor[n.type] || 'bg-gray-100 text-gray-600'}`}>
@@ -184,7 +203,7 @@ export default function Header() {
           {showUserMenu && (
             <div className="absolute right-0 mt-3 w-48 bg-white border border-gray-200 rounded-lg shadow-xl z-50 flex flex-col p-1 animate-in fade-in zoom-in duration-200">
               <button
-                onClick={() => { setShowUserMenu(false); showAdminProfile() }}
+                onClick={() => { setShowUserMenu(false); navigate('/admin/settings') }}
                 className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left rounded-t-md"
               >
                 <Settings size={16} /> Settings
