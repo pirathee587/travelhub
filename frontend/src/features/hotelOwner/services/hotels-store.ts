@@ -61,7 +61,8 @@ export const DISTRICTS: District[] = [
   "Vavuniya",
 ];
 
-const API_BASE = "http://localhost:8080/api/v1/owner/hotels";
+const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8080";
+const API_BASE = `${BASE_URL}/api/v1/owner/hotels`;
 
 export function useHotels(status: string = "Approved") {
   const [hotels, setHotels] = useState<Hotel[]>([]);

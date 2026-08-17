@@ -36,7 +36,8 @@ const ReviewsList = ({ hotelId }: { hotelId?: string }) => {
     }
     try {
       setLoading(true);
-      const res = await fetch(`http://localhost:8080/api/reviews/hotel/${hotelId}`);
+      const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8080";
+      const res = await fetch(`${BASE_URL}/api/reviews/hotel/${hotelId}`);
       if (!res.ok) throw new Error("Failed to fetch reviews");
       const data = await res.json();
       setReviews(Array.isArray(data) ? data : []);

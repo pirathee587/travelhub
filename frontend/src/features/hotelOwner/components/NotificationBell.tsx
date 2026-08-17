@@ -3,7 +3,8 @@ import { Bell, CheckCheck, Trash2, Hotel, XCircle, Lock } from "lucide-react";
 import { getOwnerAuthHeaders } from "@/features/hotelOwner/services/owner-auth-headers";
 import { motion, AnimatePresence } from "framer-motion";
 
-const API_BASE = "http://localhost:8080/api/v1/owner/notifications";
+const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8080";
+const API_BASE = `${BASE_URL}/api/v1/owner/notifications`;
 
 type OwnerNotification = {
   id: number;
