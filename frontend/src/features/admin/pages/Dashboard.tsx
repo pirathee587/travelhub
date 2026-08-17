@@ -3,6 +3,12 @@ import { Link } from 'react-router-dom';
 import adminDashboardApi from '../services/adminDashboardApi';
 import adminAgentApi from '../services/adminAgentApi';
 import adminHotelApi from '../services/adminHotelApi';
+import adminPackageApi from '../services/adminPackageApi';
+import adminVehicleApi from '../services/adminVehicleApi';
+import adminDriverApi from '../services/adminDriverApi';
+import adminUserApi from '../services/adminUserApi';
+import adminBookingApi from '../services/adminBookingApi';
+import { adminPayoutApi } from '../services/payouts';
 import { useAdminCurrency } from '../hooks/AdminCurrencyContext';
 import { 
   Users, 
@@ -70,6 +76,8 @@ const fallbackRecentActivities = [
 export default function Dashboard() {
   const { formatPrice, convertPrice, currencySymbol, currency } = useAdminCurrency();
   const [stats, setStats] = useState<any>(null);
+  const [financeStats, setFinanceStats] = useState<any>(null);
+  const [liveCounts, setLiveCounts] = useState<any>({});
   const [recentActivity, setRecentActivity] = useState<any[]>(fallbackRecentActivities);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -80,21 +88,81 @@ export default function Dashboard() {
       setLoading(true);
       setError(null);
       
-      const [dashRes, agentsRes, hotelsRes] = await Promise.allSettled([
+      const [dashRes, agentsRes, hotelsRes, packagesRes, vehiclesRes, driversRes, financeRes, usersRes, bookingsRes] = await Promise.allSettled([
         adminDashboardApi.getDashboard(),
         adminAgentApi.getAllAgents(),
-        adminHotelApi.getAllHotels()
+        adminHotelApi.getAllHotels(),
+        adminPackageApi.getAllPackages(),
+        adminVehicleApi.getAllVehicles(),
+        adminDriverApi.getAllDrivers(),
+        adminPayoutApi.getFinanceStats(),
+        adminUserApi.getAllUsers(),
+        adminBookingApi.getAllBookings()
       ]);
 
-      const dStats = dashRes.status === 'fulfilled' ? (dashRes.value?.data ?? dashRes.value) : null;
-      if (dStats) {
-        setStats(dStats);
+      // 1. Dashboard API stats
+      let dStats: any = null;
+      if (dashRes.status === 'fulfilled' && dashRes.value) {
+        dStats = dashRes.value?.data ?? dashRes.value;
+        if (dStats) {
+          setStats(dStats);
+        }
       }
+
+      // 2. Finance API stats
+      if (financeRes.status === 'fulfilled' && financeRes.value) {
+        const fStats = financeRes.value?.data ?? financeRes.value ?? null;
+        if (fStats) {
+          setFinanceStats(fStats);
+        }
+      }
+
+      // 3. Fallback Resource Arrays
+      const agentsList = (agentsRes.status === 'fulfilled' && (agentsRes.value?.data ?? agentsRes.value)) || [];
+      const hotelsList = (hotelsRes.status === 'fulfilled' && (hotelsRes.value?.data ?? hotelsRes.value)) || [];
+      const packagesList = (packagesRes.status === 'fulfilled' && (packagesRes.value?.data ?? packagesRes.value)) || [];
+      const vehiclesList = (vehiclesRes.status === 'fulfilled' && (vehiclesRes.value?.data ?? vehiclesRes.value)) || [];
+      const driversList = (driversRes.status === 'fulfilled' && (driversRes.value?.data ?? driversRes.value)) || [];
+      const usersList = (usersRes.status === 'fulfilled' && (usersRes.value?.data ?? usersRes.value)) || [];
+      const bookingsList = (bookingsRes.status === 'fulfilled' && (bookingsRes.value?.data ?? bookingsRes.value)) || [];
+
+      const rawAgents: any[] = Array.isArray(agentsList) ? agentsList : [];
+      const rawHotels: any[] = Array.isArray(hotelsList) ? hotelsList : [];
+      const rawPackages: any[] = Array.isArray(packagesList) ? packagesList : [];
+      const rawVehicles: any[] = Array.isArray(vehiclesList) ? vehiclesList : [];
+      const rawDrivers: any[] = Array.isArray(driversList) ? driversList : [];
+      const rawUsers: any[] = Array.isArray(usersList) ? usersList.filter((u: any) => String(u.role || '').toUpperCase() !== 'ADMIN') : [];
+      const rawBookings: any[] = Array.isArray(bookingsList) ? bookingsList : [];
+
+      const approvedAgentsCount = rawAgents.filter(a => String(a.status || a.applicationStatus || '').toLowerCase() === 'approved' || String(a.nicStatus || '').toUpperCase() === 'APPROVED' || a.agentApproved === true).length;
+      const pendingAgentsCount = rawAgents.filter(a => String(a.status || a.applicationStatus || '').toLowerCase() === 'pending').length;
+
+      const approvedHotelsCount = rawHotels.filter(h => String(h.applicationStatus || h.status || '').toLowerCase() === 'approved').length;
+      const pendingHotelsCount = rawHotels.filter(h => String(h.applicationStatus || h.status || '').toLowerCase() === 'pending').length;
+
+      const approvedPackagesCount = rawPackages.filter(p => String(p.applicationStatus || p.status || '').toLowerCase() === 'approved').length;
+      const pendingPackagesCount = rawPackages.filter(p => String(p.applicationStatus || p.status || '').toLowerCase() === 'pending').length;
+
+      const pendingVehiclesCount = rawVehicles.filter(v => String(v.lifecycleStatus || v.status || '').toLowerCase() === 'pending').length;
+      const pendingDriversCount = rawDrivers.filter(d => String(d.lifecycleStatus || d.status || '').toLowerCase() === 'pending').length;
+
+      setLiveCounts({
+        totalUsers: rawUsers.length > 0 ? rawUsers.length : (rawAgents.length + rawHotels.length + 1),
+        totalBookings: rawBookings.length,
+        activeAgents: approvedAgentsCount,
+        partnerHotels: approvedHotelsCount,
+        activePackages: approvedPackagesCount,
+        pendingAgents: pendingAgentsCount,
+        pendingHotels: pendingHotelsCount,
+        pendingPackages: pendingPackagesCount,
+        pendingVehicles: pendingVehiclesCount,
+        pendingDrivers: pendingDriversCount,
+      });
 
       let activities: any[] = [];
 
-      // 1. If backend returned clean non-booking recentActivities, use them
-      if (dStats?.recentActivities && Array.isArray(dStats.recentActivities)) {
+      // 4. If backend returned clean non-booking recentActivities, use them
+      if (dStats?.recentActivities && Array.isArray(dStats.recentActivities) && dStats.recentActivities.length > 0) {
         const validActivities = dStats.recentActivities.filter((act: any) => {
           const t = (act.title || '').toLowerCase();
           const d = (act.desc || '').toLowerCase();
@@ -115,54 +183,45 @@ export default function Dashboard() {
         }
       }
 
-      // 2. If dashboard API had old booking items, extract from live approved agents & hotels
+      // 5. If dashboard API had no recent activities, extract from live approved agents & hotels
       if (activities.length === 0) {
         const list: any[] = [];
 
-        if (agentsRes.status === 'fulfilled') {
-          const agentsData = agentsRes.value?.data ?? agentsRes.value ?? [];
-          const approvedAgents = Array.isArray(agentsData)
-            ? agentsData.filter((a: any) => 
-                a.status?.toLowerCase() === 'approved' || 
-                a.agentApproved === true || 
-                a.nicVerificationStatus === 'APPROVED')
-            : [];
-          
-          approvedAgents.forEach((a: any) => {
-            const timeStr = a.submitted || a.updatedAt || a.createdAt;
-            list.push({
-              title: 'Agency Approved',
-              desc: `${a.agencyName || a.name || 'Travel Agency'}${a.owner ? ` • ${a.owner}` : (a.email ? ` • ${a.email}` : '')}`,
-              status: 'APPROVED',
-              time: formatTimeAgo(timeStr),
-              rawTime: timeStr ? new Date(timeStr).getTime() : 0,
-              icon: '🏢',
-              color: 'bg-emerald-50 text-emerald-600 border border-emerald-100'
-            });
+        const approvedAgents = rawAgents.filter(a => 
+          String(a.status || a.applicationStatus || '').toLowerCase() === 'approved' || 
+          a.agentApproved === true || 
+          String(a.nicStatus || '').toUpperCase() === 'APPROVED'
+        );
+        
+        approvedAgents.forEach(a => {
+          const timeStr = a.submitted || a.updatedAt || a.createdAt;
+          list.push({
+            title: 'Agency Approved',
+            desc: `${a.agencyName || a.name || 'Travel Agency'}${a.owner ? ` • ${a.owner}` : (a.email ? ` • ${a.email}` : '')}`,
+            status: 'APPROVED',
+            time: formatTimeAgo(timeStr),
+            rawTime: timeStr ? new Date(timeStr).getTime() : 0,
+            icon: '🏢',
+            color: 'bg-emerald-50 text-emerald-600 border border-emerald-100'
           });
-        }
+        });
 
-        if (hotelsRes.status === 'fulfilled') {
-          const hotelsData = hotelsRes.value?.data ?? hotelsRes.value ?? [];
-          const approvedHotels = Array.isArray(hotelsData)
-            ? hotelsData.filter((h: any) => 
-                h.status?.toLowerCase() === 'approved' || 
-                h.applicationStatus?.toLowerCase() === 'approved')
-            : [];
-          
-          approvedHotels.forEach((h: any) => {
-            const timeStr = h.submitted || h.updatedAt || h.createdAt;
-            list.push({
-              title: 'Hotel Approved',
-              desc: `${h.hotelName || h.name || 'Hotel Partner'}${h.district ? ` • ${h.district}` : (h.destination ? ` • ${h.destination}` : '')}`,
-              status: 'APPROVED',
-              time: formatTimeAgo(timeStr),
-              rawTime: timeStr ? new Date(timeStr).getTime() : 0,
-              icon: '🏨',
-              color: 'bg-sky-50 text-sky-600 border border-sky-100'
-            });
+        const approvedHotels = rawHotels.filter(h => 
+          String(h.applicationStatus || h.status || '').toLowerCase() === 'approved'
+        );
+        
+        approvedHotels.forEach(h => {
+          const timeStr = h.submitted || h.updatedAt || h.createdAt;
+          list.push({
+            title: 'Hotel Approved',
+            desc: `${h.hotelName || h.name || 'Hotel Partner'}${h.district ? ` • ${h.district}` : (h.destination ? ` • ${h.destination}` : '')}`,
+            status: 'APPROVED',
+            time: formatTimeAgo(timeStr),
+            rawTime: timeStr ? new Date(timeStr).getTime() : 0,
+            icon: '🏨',
+            color: 'bg-sky-50 text-sky-600 border border-sky-100'
           });
-        }
+        });
 
         if (list.length > 0) {
           list.sort((a, b) => (b.rawTime || 0) - (a.rawTime || 0));
@@ -170,7 +229,6 @@ export default function Dashboard() {
         }
       }
 
-      // 3. Guaranteed fallback to approved agencies and hotels if no database records yet
       if (activities.length === 0) {
         activities = fallbackRecentActivities;
       }
@@ -189,64 +247,112 @@ export default function Dashboard() {
     load(); 
   }, [load]);
 
-  // Dynamic values with sensible defaults matching platform stats
-  const totalUsers = stats?.totalUsers ?? 39;
-  const activeAgents = stats?.totalAgents ?? 6;
-  const partnerHotels = stats?.totalHotels ?? 22;
-  const activePackages = stats?.totalPackages ?? 15;
-  const totalBookings = stats?.totalBookings ?? 39;
-  const totalRevenue = stats?.totalRevenue ?? 2065.00;
+  // Dynamic values with priority: stats -> live resource lists -> fallback 0
+  const totalUsers = stats?.totalUsers !== undefined ? stats.totalUsers : (liveCounts.totalUsers ?? 0);
+  const activeAgents = stats?.totalAgents !== undefined ? stats.totalAgents : (liveCounts.activeAgents ?? 0);
+  const partnerHotels = stats?.totalHotels !== undefined ? stats.totalHotels : (liveCounts.partnerHotels ?? 0);
+  const activePackages = stats?.totalPackages !== undefined ? stats.totalPackages : (liveCounts.activePackages ?? 0);
+  const totalBookings = stats?.totalBookings !== undefined ? stats.totalBookings : (liveCounts.totalBookings ?? 0);
+  const totalRevenue = stats?.totalRevenue ?? 0;
+  const netPlatformRevenue = financeStats?.totalPlatformNetRevenue ?? totalRevenue;
 
-  const pendingAgents = stats?.pendingAgents ?? 0;
-  const pendingHotels = stats?.pendingHotels ?? 6;
-  const pendingPackages = stats?.pendingPackages ?? 1;
-  const pendingVehicles = stats?.pendingVehicles ?? 0;
-  const pendingDrivers = stats?.pendingDrivers ?? 0;
+  const pendingAgents = stats?.pendingAgents !== undefined ? stats.pendingAgents : (liveCounts.pendingAgents ?? 0);
+  const pendingHotels = stats?.pendingHotels !== undefined ? stats.pendingHotels : (liveCounts.pendingHotels ?? 0);
+  const pendingPackages = stats?.pendingPackages !== undefined ? stats.pendingPackages : (liveCounts.pendingPackages ?? 0);
+  const pendingVehicles = stats?.pendingVehicles !== undefined ? stats.pendingVehicles : (liveCounts.pendingVehicles ?? 0);
+  const pendingDrivers = stats?.pendingDrivers !== undefined ? stats.pendingDrivers : (liveCounts.pendingDrivers ?? 0);
   const totalPending = pendingAgents + pendingHotels + pendingPackages + pendingVehicles + pendingDrivers;
 
-  // 12 Months Graph Data (Jan to Dec) matching the screenshot curve
+  // Monthly Performance Chart Data
   const months12 = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
   
-  const performanceChartData = months12.map((month, index) => {
-    let rev = 0;
-    let bCount = 0;
+  const performanceChartData = React.useMemo(() => {
+    if (stats?.months && Array.isArray(stats.months) && stats.months.length > 0) {
+      return stats.months.map((monthName: string, index: number) => {
+        const rev = stats?.monthlyRevenues?.[index] ? Number(stats.monthlyRevenues[index]) : 0;
+        const bCount = stats?.monthlyBookings?.[index] ? Number(stats.monthlyBookings[index]) : 0;
+        const convertedRev = convertPrice(rev);
 
-    if (stats?.monthlyRevenues && stats.monthlyRevenues[index] !== undefined && Number(stats.monthlyRevenues[index]) > 0) {
-      rev = Number(stats.monthlyRevenues[index]);
-    } else {
-      // Natural peak in Jun matching screenshot ($260)
-      if (index === 5) rev = 260;
-      else rev = 0;
+        return {
+          name: monthName,
+          revenue: convertedRev,
+          rawRevenue: rev,
+          bookings: bCount,
+          value: chartViewMode === 'revenue' ? convertedRev : bCount
+        };
+      });
     }
 
-    if (stats?.monthlyBookings && stats.monthlyBookings[index] !== undefined && Number(stats.monthlyBookings[index]) > 0) {
-      bCount = Number(stats.monthlyBookings[index]);
-    } else {
-      // Natural peak in Jun matching screenshot (28 bookings)
-      if (index === 5) bCount = 28;
-      else bCount = 0;
-    }
+    return months12.map((month, index) => {
+      const rev = stats?.monthlyRevenues?.[index] ? Number(stats.monthlyRevenues[index]) : 0;
+      const bCount = stats?.monthlyBookings?.[index] ? Number(stats.monthlyBookings[index]) : 0;
+      const convertedRev = convertPrice(rev);
 
-    const convertedRev = convertPrice(rev);
-
-    return {
-      name: month,
-      revenue: convertedRev,
-      rawRevenue: rev,
-      bookings: bCount,
-      value: chartViewMode === 'revenue' ? convertedRev : bCount
-    };
-  });
+      return {
+        name: month,
+        revenue: convertedRev,
+        rawRevenue: rev,
+        bookings: bCount,
+        value: chartViewMode === 'revenue' ? convertedRev : bCount
+      };
+    });
+  }, [stats, chartViewMode, convertPrice]);
 
   // Package Distribution Donut Data
-  const packageDistributionData = [
-    { name: 'Culture Tours', value: 40, color: '#10B981' },
-    { name: 'Beach Tours', value: 27, color: '#0EA5E9' },
-    { name: 'Mountain Tours', value: 20, color: '#F59E0B' },
-    { name: 'City Tours', value: 7, color: '#8B5CF6' },
-    { name: 'Wildlife Tours', value: 7, color: '#EC4899' },
-  ];
+  const packageDistributionData = React.useMemo(() => {
+    if (stats?.packageDistribution && typeof stats.packageDistribution === 'object' && Object.keys(stats.packageDistribution).length > 0) {
+      const colors = ['#10B981', '#0EA5E9', '#F59E0B', '#8B5CF6', '#EC4899', '#6366F1'];
+      const entries = Object.entries(stats.packageDistribution);
+      const total = entries.reduce((sum, [, count]) => sum + Number(count), 0);
+      return entries.map(([cat, count], idx) => ({
+        name: cat.charAt(0).toUpperCase() + cat.slice(1).toLowerCase() + (cat.toLowerCase().includes('tour') || cat.toLowerCase().includes('package') ? '' : ' Tours'),
+        value: total > 0 ? Math.round((Number(count) / total) * 100) : 0,
+        count: Number(count),
+        color: colors[idx % colors.length]
+      }));
+    }
+    return [
+      { name: 'Culture Tours', value: 40, color: '#10B981' },
+      { name: 'Beach Tours', value: 27, color: '#0EA5E9' },
+      { name: 'Mountain Tours', value: 20, color: '#F59E0B' },
+      { name: 'City Tours', value: 7, color: '#8B5CF6' },
+      { name: 'Wildlife Tours', value: 7, color: '#EC4899' },
+    ];
+  }, [stats?.packageDistribution]);
 
+  // Growth metrics from API
+  const userGrowth = stats?.userGrowth ?? 0;
+  const agentGrowth = stats?.agentGrowth ?? 0;
+  const hotelGrowth = stats?.hotelGrowth ?? 0;
+  const packageGrowth = stats?.packageGrowth ?? 0;
+  const bookingGrowth = stats?.bookingGrowth ?? 0;
+  const revenueGrowth = stats?.revenueGrowth ?? 0;
+
+  const renderTrend = (growthVal?: number | null, isWhiteCard = true) => {
+    const g = growthVal !== undefined && growthVal !== null ? Number(growthVal) : 0;
+    const isPositive = g > 0;
+    const isNegative = g < 0;
+    const isZero = g === 0;
+
+    const arrow = isPositive ? '↑' : isNegative ? '↓' : '';
+    const label = isZero ? '0%' : `${arrow} ${Math.abs(g)}%`;
+
+    if (!isWhiteCard) {
+      const textColor = isPositive ? 'text-white' : isNegative ? 'text-rose-200' : 'text-white/80';
+      return (
+        <span className={`text-[11px] font-semibold flex items-center gap-0.5 mt-1 ${textColor}`}>
+          {label} <span className="text-white/70 font-normal">vs last month</span>
+        </span>
+      );
+    }
+
+    const textColor = isPositive ? 'text-emerald-600' : isNegative ? 'text-rose-600' : 'text-gray-500';
+    return (
+      <span className={`text-[11px] font-semibold flex items-center gap-0.5 mt-1 ${textColor}`}>
+        {label} <span className="text-gray-400 font-normal">vs last month</span>
+      </span>
+    );
+  };
 
   return (
     <div className="p-6 sm:p-8 bg-[#F8FAFC] min-h-screen animate-fade-in space-y-7 font-sans">
@@ -276,7 +382,13 @@ export default function Dashboard() {
           <div>
             <h3 className="text-lg font-bold text-gray-900 tracking-tight">Pending Approvals</h3>
             <p className="text-sm text-gray-500 mt-0.5 font-medium">
-              <span className="font-bold text-amber-600">{totalPending} items</span> require your immediate attention
+              {loading && !stats ? (
+                <span className="inline-block w-36 h-4 bg-amber-200/60 rounded animate-pulse align-middle" />
+              ) : (
+                <>
+                  <span className="font-bold text-amber-600">{totalPending} items</span> require your immediate attention
+                </>
+              )}
             </p>
           </div>
         </div>
@@ -286,55 +398,55 @@ export default function Dashboard() {
           {/* Agents */}
           <Link 
             to="/admin/agents" 
-            className="bg-white hover:bg-amber-50/50 border border-orange-100 hover:border-amber-300 rounded-2xl p-3 text-center transition group shadow-2xs flex flex-col justify-center"
+            className="bg-white hover:bg-amber-50/50 border border-orange-100 hover:border-amber-300 rounded-2xl p-3 text-center transition group shadow-2xs flex flex-col justify-center min-w-[70px]"
           >
             <span className="text-[11px] font-bold text-gray-400 uppercase tracking-wider block">Agents</span>
-            <span className="text-xl font-bold text-gray-900 group-hover:text-amber-600 transition mt-0.5">
-              {pendingAgents}
+            <span className="text-xl font-bold text-gray-900 group-hover:text-amber-600 transition mt-0.5 flex justify-center">
+              {loading && !stats ? <span className="inline-block w-5 h-6 bg-gray-200 rounded animate-pulse" /> : pendingAgents}
             </span>
           </Link>
 
           {/* Hotels */}
           <Link 
             to="/admin/hotels" 
-            className="bg-white hover:bg-amber-50/50 border border-orange-100 hover:border-amber-300 rounded-2xl p-3 text-center transition group shadow-2xs flex flex-col justify-center"
+            className="bg-white hover:bg-amber-50/50 border border-orange-100 hover:border-amber-300 rounded-2xl p-3 text-center transition group shadow-2xs flex flex-col justify-center min-w-[70px]"
           >
             <span className="text-[11px] font-bold text-gray-400 uppercase tracking-wider block">Hotels</span>
-            <span className="text-xl font-bold text-gray-900 group-hover:text-amber-600 transition mt-0.5">
-              {pendingHotels}
+            <span className="text-xl font-bold text-gray-900 group-hover:text-amber-600 transition mt-0.5 flex justify-center">
+              {loading && !stats ? <span className="inline-block w-5 h-6 bg-gray-200 rounded animate-pulse" /> : pendingHotels}
             </span>
           </Link>
 
           {/* Packages */}
           <Link 
             to="/admin/packages" 
-            className="bg-white hover:bg-amber-50/50 border border-orange-100 hover:border-amber-300 rounded-2xl p-3 text-center transition group shadow-2xs flex flex-col justify-center"
+            className="bg-white hover:bg-amber-50/50 border border-orange-100 hover:border-amber-300 rounded-2xl p-3 text-center transition group shadow-2xs flex flex-col justify-center min-w-[70px]"
           >
             <span className="text-[11px] font-bold text-gray-400 uppercase tracking-wider block">Packages</span>
-            <span className="text-xl font-bold text-gray-900 group-hover:text-amber-600 transition mt-0.5">
-              {pendingPackages}
+            <span className="text-xl font-bold text-gray-900 group-hover:text-amber-600 transition mt-0.5 flex justify-center">
+              {loading && !stats ? <span className="inline-block w-5 h-6 bg-gray-200 rounded animate-pulse" /> : pendingPackages}
             </span>
           </Link>
 
           {/* Vehicles */}
           <Link 
             to="/admin/vehicles" 
-            className="bg-white hover:bg-amber-50/50 border border-orange-100 hover:border-amber-300 rounded-2xl p-3 text-center transition group shadow-2xs flex flex-col justify-center"
+            className="bg-white hover:bg-amber-50/50 border border-orange-100 hover:border-amber-300 rounded-2xl p-3 text-center transition group shadow-2xs flex flex-col justify-center min-w-[70px]"
           >
             <span className="text-[11px] font-bold text-gray-400 uppercase tracking-wider block">Vehicles</span>
-            <span className="text-xl font-bold text-gray-900 group-hover:text-amber-600 transition mt-0.5">
-              {pendingVehicles}
+            <span className="text-xl font-bold text-gray-900 group-hover:text-amber-600 transition mt-0.5 flex justify-center">
+              {loading && !stats ? <span className="inline-block w-5 h-6 bg-gray-200 rounded animate-pulse" /> : pendingVehicles}
             </span>
           </Link>
 
           {/* Drivers */}
           <Link 
             to="/admin/drivers" 
-            className="bg-white hover:bg-amber-50/50 border border-orange-100 hover:border-amber-300 rounded-2xl p-3 text-center transition group shadow-2xs flex flex-col justify-center"
+            className="bg-white hover:bg-amber-50/50 border border-orange-100 hover:border-amber-300 rounded-2xl p-3 text-center transition group shadow-2xs flex flex-col justify-center min-w-[70px]"
           >
             <span className="text-[11px] font-bold text-gray-400 uppercase tracking-wider block">Drivers</span>
-            <span className="text-xl font-bold text-gray-900 group-hover:text-amber-600 transition mt-0.5">
-              {pendingDrivers}
+            <span className="text-xl font-bold text-gray-900 group-hover:text-amber-600 transition mt-0.5 flex justify-center">
+              {loading && !stats ? <span className="inline-block w-5 h-6 bg-gray-200 rounded animate-pulse" /> : pendingDrivers}
             </span>
           </Link>
         </div>
@@ -353,11 +465,9 @@ export default function Dashboard() {
           </div>
           <div className="mt-3">
             <span className="text-2xl sm:text-3xl font-bold text-gray-900 tracking-tight block">
-              {fmt(totalUsers)}
+              {loading && !stats ? <span className="inline-block w-12 h-7 bg-gray-200 rounded animate-pulse" /> : fmt(totalUsers)}
             </span>
-            <span className="text-[11px] font-semibold text-emerald-600 flex items-center gap-0.5 mt-1">
-              ↑ 12% <span className="text-gray-400 font-normal">vs last month</span>
-            </span>
+            {renderTrend(userGrowth, true)}
           </div>
         </div>
 
@@ -371,11 +481,9 @@ export default function Dashboard() {
           </div>
           <div className="mt-3">
             <span className="text-2xl sm:text-3xl font-bold text-white tracking-tight block">
-              {fmt(activeAgents)}
+              {loading && !stats ? <span className="inline-block w-12 h-7 bg-white/30 rounded animate-pulse" /> : fmt(activeAgents)}
             </span>
-            <span className="text-[11px] font-semibold text-sky-100 flex items-center gap-0.5 mt-1">
-              ↑ 8% <span className="text-sky-200 font-normal">vs last month</span>
-            </span>
+            {renderTrend(agentGrowth, false)}
           </div>
         </div>
 
@@ -389,11 +497,9 @@ export default function Dashboard() {
           </div>
           <div className="mt-3">
             <span className="text-2xl sm:text-3xl font-bold text-white tracking-tight block">
-              {fmt(partnerHotels)}
+              {loading && !stats ? <span className="inline-block w-12 h-7 bg-white/30 rounded animate-pulse" /> : fmt(partnerHotels)}
             </span>
-            <span className="text-[11px] font-semibold text-emerald-100 flex items-center gap-0.5 mt-1">
-              ↑ 5% <span className="text-emerald-200 font-normal">vs last month</span>
-            </span>
+            {renderTrend(hotelGrowth, false)}
           </div>
         </div>
 
@@ -407,11 +513,9 @@ export default function Dashboard() {
           </div>
           <div className="mt-3">
             <span className="text-2xl sm:text-3xl font-bold text-gray-900 tracking-tight block">
-              {fmt(activePackages)}
+              {loading && !stats ? <span className="inline-block w-12 h-7 bg-gray-200 rounded animate-pulse" /> : fmt(activePackages)}
             </span>
-            <span className="text-[11px] font-semibold text-emerald-600 flex items-center gap-0.5 mt-1">
-              ↑ 15% <span className="text-gray-400 font-normal">vs last month</span>
-            </span>
+            {renderTrend(packageGrowth, true)}
           </div>
         </div>
 
@@ -425,29 +529,29 @@ export default function Dashboard() {
           </div>
           <div className="mt-3">
             <span className="text-2xl sm:text-3xl font-bold text-white tracking-tight block">
-              {fmt(totalBookings)}
+              {loading && !stats ? <span className="inline-block w-12 h-7 bg-white/30 rounded animate-pulse" /> : fmt(totalBookings)}
             </span>
-            <span className="text-[11px] font-semibold text-orange-100 flex items-center gap-0.5 mt-1">
-              ↑ 23% <span className="text-orange-200 font-normal">vs last month</span>
-            </span>
+            {renderTrend(bookingGrowth, false)}
           </div>
         </div>
 
-        {/* 6. Monthly Revenue */}
+        {/* 6. Total Revenue (Net Platform Revenue) */}
         <div className="bg-white rounded-3xl p-5 border border-gray-200/80 shadow-sm hover:shadow-md transition flex flex-col justify-between">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-gray-500">Monthly Revenue</span>
+            <span className="text-xs font-semibold text-gray-500">Total Revenue</span>
             <div className="w-10 h-10 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
               <DollarSign className="w-5 h-5" />
             </div>
           </div>
           <div className="mt-3">
             <span className="text-2xl sm:text-3xl font-bold text-gray-900 tracking-tight block">
-              {formatPrice(totalRevenue, { showCents: false })}
+              {loading && !stats && !financeStats ? (
+                <span className="inline-block w-16 h-7 bg-gray-200 rounded animate-pulse" />
+              ) : (
+                formatPrice(netPlatformRevenue, { showCents: false })
+              )}
             </span>
-            <span className="text-[11px] font-semibold text-emerald-600 flex items-center gap-0.5 mt-1">
-              ↑ 18% <span className="text-gray-400 font-normal">vs last month</span>
-            </span>
+            {renderTrend(revenueGrowth, true)}
           </div>
         </div>
       </div>

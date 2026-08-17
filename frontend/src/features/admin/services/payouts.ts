@@ -1,30 +1,15 @@
-const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8080";
-
-const getAuthHeaders = (): Record<string, string> => {
-  const token = localStorage.getItem('travelhub_token') || localStorage.getItem('token');
-  return token ? { Authorization: `Bearer ${token}` } : {};
-};
+import api from '@/services/axios';
 
 export const adminPayoutApi = {
   getFinanceStats: async () => {
-    const res = await fetch(`${BASE_URL}/api/admin/payouts/stats`, {
-      headers: {
-        'Content-Type': 'application/json',
-        ...getAuthHeaders()
-      }
-    });
-    return res.json();
+    const res = await api.get('/admin/payouts/stats');
+    return res.data;
   },
 
   getAllPayouts: async (status?: string) => {
     const query = status ? `?status=${status}` : '';
-    const res = await fetch(`${BASE_URL}/api/admin/payouts${query}`, {
-      headers: {
-        'Content-Type': 'application/json',
-        ...getAuthHeaders()
-      }
-    });
-    return res.json();
+    const res = await api.get(`/admin/payouts${query}`);
+    return res.data;
   },
 
   approvePayout: async (id: number, slipFile?: File) => {
@@ -32,28 +17,13 @@ export const adminPayoutApi = {
     if (slipFile) {
       form.append('file', slipFile);
     }
-    const token = localStorage.getItem('travelhub_token') || localStorage.getItem('token');
-    const headers: Record<string, string> = {};
-    if (token) {
-      headers.Authorization = `Bearer ${token}`;
-    }
-    const res = await fetch(`${BASE_URL}/api/admin/payouts/${id}/approve`, {
-      method: 'PATCH',
-      headers,
-      body: form
-    });
-    return res.json();
+    const res = await api.patch(`/admin/payouts/${id}/approve`, form);
+    return res.data;
   },
 
   rejectPayout: async (id: number, reason: string) => {
-    const res = await fetch(`${BASE_URL}/api/admin/payouts/${id}/reject`, {
-      method: 'PATCH',
-      headers: {
-        'Content-Type': 'application/json',
-        ...getAuthHeaders()
-      },
-      body: JSON.stringify({ reason })
-    });
-    return res.json();
+    const res = await api.patch(`/admin/payouts/${id}/reject`, { reason });
+    return res.data;
   }
 };
+

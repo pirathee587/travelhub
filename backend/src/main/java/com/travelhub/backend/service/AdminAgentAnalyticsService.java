@@ -114,11 +114,11 @@ public class AdminAgentAnalyticsService {
     }
 
     // ── Get Trip Status ───────────────────────────────
-    // Pie chart — Completed, Pending, Cancelled
+    // Pie chart — Completed, Active, Pending, Cancelled
     public AdminAgentTripStatusResponse
     getTripStatus(Long agentId) {
 
-        agentRepository.findById(agentId)
+        Agent agent = agentRepository.findById(agentId)
                 .orElseThrow(() ->
                         new ResourceNotFoundException(
                                 "Agent", "id", agentId));
@@ -126,15 +126,19 @@ public class AdminAgentAnalyticsService {
         Long completed = bookingRepository
                 .countByAgentIdAndStatus(
                         agentId, "completed");
+        Long active = bookingRepository
+                .countByAgentIdAndStatusIn(
+                        agentId, List.of("confirmed", "in_progress", "active", "paid"));
         Long pending = bookingRepository
                 .countByAgentIdAndStatus(
                         agentId, "pending");
         Long cancelled = bookingRepository
-                .countByAgentIdAndStatus(
-                        agentId, "cancelled");
+                .countByAgentIdAndStatusIn(
+                        agentId, List.of("cancelled", "rejected", "refund_requested"));
 
         return new AdminAgentTripStatusResponse(
                 completed != null ? completed : 0L,
+                active    != null ? active    : 0L,
                 pending   != null ? pending   : 0L,
                 cancelled != null ? cancelled : 0L
         );

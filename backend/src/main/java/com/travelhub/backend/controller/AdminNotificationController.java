@@ -178,7 +178,14 @@ public class AdminNotificationController {
         boolean sysPref    = pref.getNotifySystemAlerts()        != null ? pref.getNotifySystemAlerts()       : true;
 
         if (agentPref) {
-            for (User agent : userRepository.findByRoleAndAgentApprovedFalse(Role.AGENT)) {
+            List<User> pendingAgentUsers = userRepository.findByRole(Role.AGENT).stream()
+                    .filter(u -> !Boolean.TRUE.equals(u.getAgentApproved())
+                            && !"APPROVED".equalsIgnoreCase(u.getNicVerificationStatus())
+                            && !"REJECTED".equalsIgnoreCase(u.getNicVerificationStatus())
+                            && !"SUSPENDED".equalsIgnoreCase(u.getNicVerificationStatus())
+                            && !Boolean.FALSE.equals(u.getIsActive()))
+                    .toList();
+            for (User agent : pendingAgentUsers) {
                 long nid = agent.getId() + 1_000_000L;
                 if (!deletedIds.contains(nid)) {
                     notifications.add(build(nid, "agent_registration", "New Agent Approval",

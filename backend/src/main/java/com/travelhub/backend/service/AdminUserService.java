@@ -63,8 +63,13 @@ public class AdminUserService {
     // ── Get Pending Agents ────────────────────────────
     public List<AdminUserResponse> getPendingAgents() {
         return userRepository
-                .findByRoleAndAgentApprovedFalse(Role.AGENT)
+                .findByRole(Role.AGENT)
                 .stream()
+                .filter(u -> !Boolean.TRUE.equals(u.getAgentApproved())
+                        && !"APPROVED".equalsIgnoreCase(u.getNicVerificationStatus())
+                        && !"REJECTED".equalsIgnoreCase(u.getNicVerificationStatus())
+                        && !"SUSPENDED".equalsIgnoreCase(u.getNicVerificationStatus())
+                        && !Boolean.FALSE.equals(u.getIsActive()))
                 .map(this::mapToResponse)
                 .toList();
     }
