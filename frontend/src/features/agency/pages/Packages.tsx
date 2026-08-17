@@ -1,9 +1,5 @@
 import { useState, useEffect } from 'react';
-<<<<<<< HEAD
-import { Plus, Search, Edit, MapPin, Clock, Star, Trash2, Eye, CheckCircle, X, PackagePlus, SearchX } from 'lucide-react';
-=======
-import { Plus, Search, Edit, MapPin, Clock, Star, Trash2, Eye, CheckCircle, X, AlertCircle } from 'lucide-react';
->>>>>>> origin/main
+import { Plus, Search, Edit, MapPin, Clock, Star, Trash2, Eye, CheckCircle, X, PackagePlus, SearchX, AlertCircle } from 'lucide-react';
 import { DashboardLayout } from '@/features/agency/components/dashboard/DashboardLayout';
 import { Button } from '@/components/common/ui/button';
 import { Input } from '@/components/common/ui/input';
@@ -307,7 +303,6 @@ const Packages = () => {
                       </div>
                     </div>
 
-<<<<<<< HEAD
                   <div className="mt-4 flex gap-2">
                     <Button variant="outline" size="sm" className="gap-1.5" asChild>
                       <Link to={`/agency/packages/${pkg.packageId || pkg.id}`}>
@@ -345,54 +340,16 @@ const Packages = () => {
                               }
                             }}
                           >
-=======
-                    <div className="mt-4 flex gap-2">
-                      <Button variant="outline" size="sm" className="gap-1.5" asChild>
-                        <Link to={`/agency/packages/${pkg.packageId}`}>
-                          <Eye className="h-3.5 w-3.5" />
-                          View Details
-                        </Link>
-                      </Button>
-                      <AlertDialog>
-                        <AlertDialogTrigger asChild>
-                          <Button variant="outline" size="sm" className="gap-1.5 text-destructive hover:text-destructive hover:bg-destructive/10 border-destructive/20">
-                            <Trash2 className="h-3.5 w-3.5" />
->>>>>>> origin/main
                             Delete
-                          </Button>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent>
-                          <AlertDialogHeader>
-                            <AlertDialogTitle>Are you sure you want to delete this package?</AlertDialogTitle>
-                            <AlertDialogDescription>
-                              This action cannot be undone. This will permanently delete the travel package and remove it from our servers.
-                            </AlertDialogDescription>
-                          </AlertDialogHeader>
-                          <AlertDialogFooter>
-                            <AlertDialogCancel>Cancel</AlertDialogCancel>
-                            <AlertDialogAction
-                              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                              onClick={async () => {
-                                try {
-                                  await api.deleteAgentPackage(pkg.packageId);
-                                  setPackagesList(prev => prev.filter(p => p.packageId !== pkg.packageId));
-                                  toast.success('Package deleted successfully');
-                                } catch (err) {
-                                  console.error(err);
-                                  toast.error('Failed to delete package');
-                                }
-                              }}
-                            >
-                              Delete
-                            </AlertDialogAction>
-                          </AlertDialogFooter>
-                        </AlertDialogContent>
-                      </AlertDialog>
-                    </div>
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
                   </div>
                 </div>
-              )
-            })}
+              </div>
+            )
+          })}
           </div>
         )}
       </div>
