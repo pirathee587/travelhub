@@ -24,7 +24,7 @@ public interface AgentRepository extends JpaRepository<Agent, Long> {
     @Query("SELECT COALESCE(SUM(b.totalPrice), 0) " +
             "FROM Booking b " +
             "WHERE b.pkg.agent.id = :agentId " +
-            "AND b.status = 'completed'")
+            "AND LOWER(b.status) = 'completed'")
     Double getTotalRevenueByAgentId(@Param("agentId") Long agentId);
 
     @Query("SELECT COUNT(b) FROM Booking b " +
@@ -38,7 +38,7 @@ public interface AgentRepository extends JpaRepository<Agent, Long> {
 
     @Query("SELECT COUNT(b) FROM Booking b " +
             "WHERE b.pkg.agent.id = :agentId " +
-            "AND b.status = 'cancelled'")
+            "AND LOWER(b.status) IN ('cancelled', 'rejected', 'refund_requested')")
     Long getCancelledTripsByAgentId(@Param("agentId") Long agentId);
 
     @Query("SELECT COALESCE(SUM(b.totalPrice), 0) " +
@@ -46,7 +46,7 @@ public interface AgentRepository extends JpaRepository<Agent, Long> {
             "WHERE b.pkg.agent.id = :agentId " +
             "AND MONTH(b.createdAt) = :month " +
             "AND YEAR(b.createdAt) = :year " +
-            "AND b.status = 'completed'")
+            "AND LOWER(b.status) = 'completed'")
     Double getMonthlyRevenueByAgentId(
             @Param("agentId") Long agentId,
             @Param("month") int month,

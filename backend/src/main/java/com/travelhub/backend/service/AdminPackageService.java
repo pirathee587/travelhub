@@ -12,6 +12,7 @@ import com.travelhub.backend.entity.PackageItinerary;
 import com.travelhub.backend.event.PackageEvent;
 import com.travelhub.backend.repository.BookingRepository;
 import com.travelhub.backend.repository.PackageRepository;
+import com.travelhub.backend.repository.ReviewRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.context.ApplicationEventPublisher;
@@ -21,6 +22,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
@@ -30,6 +32,7 @@ public class AdminPackageService {
     private final PackageRepository packageRepository;
     private final ApplicationEventPublisher eventPublisher;
     private final BookingRepository bookingRepository;
+    private final ReviewRepository reviewRepository;
     private final ObjectMapper objectMapper;
 
     public long countActiveBookings(Long packageId) {
@@ -43,18 +46,25 @@ public class AdminPackageService {
 
     // ── Get All Packages ──────────────────────────────
     public List<AdminPackageResponse> getAllPackages() {
-        return packageRepository.findAll()
-                .stream()
-                .map(this::mapToResponse)
-                .toList();
+        List<Package> packages = packageRepository.findAll();
+        return mapPackagesToResponses(packages);
     }
 
     // ── Get Packages By Status ────────────────────────
     public List<AdminPackageResponse> getByStatus(String status) {
-        return packageRepository
-                .findByApplicationStatus(status)
-                .stream()
-                .map(this::mapToResponse)
+        List<Package> packages = packageRepository.findByApplicationStatus(status);
+        return mapPackagesToResponses(packages);
+    }
+
+    private List<AdminPackageResponse> mapPackagesToResponses(List<Package> packages) {
+        if (packages.isEmpty()) return List.of();
+
+        List<Long> packageIds = packages.stream().map(Package::getId).toList();
+        Map<Long, Double> ratingMap = reviewRepository.getAverageRatingsByPackageIds(packageIds);
+        Map<Long, Long> reviewCountMap = reviewRepository.getReviewCountsByPackageIds(packageIds);
+
+        return packages.stream()
+                .map(p -> mapToResponse(p, ratingMap.get(p.getId()), reviewCountMap.getOrDefault(p.getId(), 0L)))
                 .toList();
     }
 
@@ -102,6 +112,11 @@ public class AdminPackageService {
             if (bookingsCount == null) bookingsCount = 0L;
         } catch (Exception ignored) {}
 
+        Double avgRating = reviewRepository.getAverageRatingByPackageId(id);
+        Long reviewCount = reviewRepository.getReviewCountByPackageId(id);
+        if (avgRating == null && pkg.getRating() != null) avgRating = pkg.getRating();
+        int finalReviewCount = reviewCount != null ? reviewCount.intValue() : (pkg.getReviewCount() != null ? pkg.getReviewCount() : 0);
+
         return new AdminPackageDetailResponse(
                 pkg.getId(),
                 pkg.getPackageId(),
@@ -125,8 +140,8 @@ public class AdminPackageService {
                 pkg.getFestivalDetails(),
                 inclusions,
                 itinerary,
-                pkg.getRating(),
-                pkg.getReviewCount(),
+                avgRating,
+                finalReviewCount,
                 pkg.getCategory(),
                 pkg.getTrending(),
                 pkg.getIsActive(),
@@ -279,7 +294,7 @@ public class AdminPackageService {
     }
 
     // ── Map Entity → List Response ────────────────────
-    private AdminPackageResponse mapToResponse(Package p) {
+    private AdminPackageResponse mapToResponse(Package p, Double dynamicRating, Long dynamicReviewCount) {
         String imageUrl = p.getImageUrl();
         if ((imageUrl == null || imageUrl.isEmpty()) && p.getImages() != null && !p.getImages().isEmpty()) {
             imageUrl = p.getImages().stream()
@@ -296,6 +311,9 @@ public class AdminPackageService {
             if (bookingsCount == null) bookingsCount = 0L;
         } catch (Exception ignored) {}
 
+        Double finalRating = dynamicRating != null ? dynamicRating : p.getRating();
+        Integer finalReviewCount = dynamicReviewCount != null ? dynamicReviewCount.intValue() : (p.getReviewCount() != null ? p.getReviewCount() : 0);
+
         return new AdminPackageResponse(
                 p.getId(),
                 p.getPackageName(),
@@ -306,8 +324,8 @@ public class AdminPackageService {
                 p.getBasePriceChild(),
                 p.getDuration(),
                 p.getCategory(),
-                p.getRating(),
-                p.getReviewCount(),
+                finalRating,
+                finalReviewCount,
                 p.getTrending(),
                 p.getIsActive(),
                 p.getAgent() != null ? p.getAgent().getAgencyName() : "",

@@ -414,6 +414,16 @@ const PackageDetailView = ({ pkg, onBack, onApprove, onReject, onToggle, onDelet
 
           {/* Floating Badges on Top Right of Cover */}
           <div className="absolute top-4 right-4 flex items-center gap-2 z-10">
+            {/* Rating Pill: hide if pending, show rating or 0.0 if not pending */}
+            {!isPending && (
+              <div className="flex items-center gap-1.5 bg-white/95 backdrop-blur-md px-3 py-1 rounded-full shadow-md border border-white/40">
+                <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
+                <span className="text-xs font-bold text-gray-900">
+                  {rating != null && Number(rating) >= 0 ? Number(rating).toFixed(1) : '0.0'}
+                </span>
+              </div>
+            )}
+
             <span className={`backdrop-blur-md px-3.5 py-1 rounded-full text-xs font-semibold tracking-wide shadow-md ${isActive
                 ? 'bg-[#0ea5e9] text-white border border-white/20'
                 : 'bg-red-500 text-white border border-white/20'
@@ -836,12 +846,22 @@ const PackageCard = ({ pkg, onView, onApprove, onReject, onToggle, onDelete, act
             {isApproved ? 'Active' : (isPending ? 'Pending' : (isSuspended ? 'Suspended' : 'Rejected'))}
           </span>
         </div>
+
+        {/* Rating Pill on Top-Right: Hide if pending, show rating or 0.0 if not pending */}
+        {!isPending && (
+          <div className="absolute top-3.5 right-3.5 flex items-center gap-1.5 bg-white/95 backdrop-blur-md px-3 py-1 rounded-full shadow-md border border-white/40">
+            <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
+            <span className="text-xs font-bold text-gray-900">
+              {rating != null && Number(rating) >= 0 ? Number(rating).toFixed(1) : '0.0'}
+            </span>
+          </div>
+        )}
       </div>
 
       {/* 2. Content Info */}
       <div className="p-5 flex-1 flex flex-col justify-between bg-white">
         <div>
-          {/* Header Row: Title & Rating */}
+          {/* Header Row: Title */}
           <div className="flex items-start justify-between gap-3">
             <h3
               onClick={() => onView(pkg)}
@@ -850,20 +870,11 @@ const PackageCard = ({ pkg, onView, onApprove, onReject, onToggle, onDelete, act
               {packageName}
             </h3>
 
-            <div className="shrink-0 flex items-center gap-1">
-              {rating && Number(rating) > 0 ? (
-                <div className="flex items-center gap-1 text-xs font-semibold text-gray-900">
-                  <Star className="h-4 w-4 fill-amber-400 text-amber-400" />
-                  <span>{Number(rating).toFixed(1)}</span>
-                  <span className="text-gray-400 font-normal">({reviewCount ?? 1})</span>
-                </div>
-              ) : (
-                <div className="flex items-center gap-1 text-xs text-gray-400 font-normal">
-                  <Star className="h-3.5 w-3.5 text-gray-300" />
-                  <span>No reviews yet</span>
-                </div>
-              )}
-            </div>
+            {reviewCount && Number(reviewCount) > 0 ? (
+              <span className="shrink-0 text-xs text-gray-400 font-normal">
+                ({reviewCount} review{Number(reviewCount) > 1 ? 's' : ''})
+              </span>
+            ) : null}
           </div>
 
           {/* Location */}

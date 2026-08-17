@@ -20,7 +20,13 @@ public record AdminDashboardResponse(
         Double totalRevenue,
         java.util.List<Double> monthlyRevenues,
         java.util.Map<String, Long> packageDistribution,
-        java.util.List<RecentActivityDto> recentActivities
+        java.util.List<RecentActivityDto> recentActivities,
+        Double userGrowth,
+        Double agentGrowth,
+        Double hotelGrowth,
+        Double packageGrowth,
+        Double bookingGrowth,
+        Double revenueGrowth
 ) {
     public record RecentActivityDto(
             String title,

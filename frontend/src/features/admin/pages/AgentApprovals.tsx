@@ -564,11 +564,13 @@ const PackageCardItem = ({ pkg, onViewDetails }: PackageCardItemProps) => {
         )}
         <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
 
-        {/* Rating badge on top right */}
-        <div className="absolute top-3 right-3 flex items-center gap-1 bg-white/90 backdrop-blur-md rounded-full px-2.5 py-1 text-xs font-bold text-gray-900 shadow-sm">
-          <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400" />
-          <span>{rating > 0 ? rating.toFixed(1) : '0'}</span>
-        </div>
+        {/* Rating badge on top right: only show if package has rating */}
+        {rating > 0 && (
+          <div className="absolute top-3 right-3 flex items-center gap-1 bg-white/90 backdrop-blur-md rounded-full px-2.5 py-1 text-xs font-bold text-gray-900 shadow-sm">
+            <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400" />
+            <span>{rating.toFixed(1)}</span>
+          </div>
+        )}
       </div>
 
       {/* Content Section */}
