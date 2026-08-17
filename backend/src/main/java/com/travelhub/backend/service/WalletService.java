@@ -41,7 +41,7 @@ public class WalletService {
                         .build()));
     }
 
-    @Transactional(readOnly = true)
+    @Transactional
     public WalletResponseDto getAgencyWalletResponse(Long agentUserId) {
         Agent agent = agentRepository.findByOwnerId(agentUserId)
                 .orElseThrow(() -> new ResourceNotFoundException("Agent", "userId", agentUserId));
