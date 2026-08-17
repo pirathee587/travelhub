@@ -399,13 +399,7 @@ const PackageDetailView = ({ pkg, onBack, onApprove, onReject, onToggle, onDelet
           </button>
 
           {/* Quick Header Badges / Status */}
-          <div className="flex items-center gap-2">
-            {trending && (
-              <span className="bg-amber-500 text-white px-3 py-1 rounded-full text-xs font-bold shadow-sm flex items-center gap-1">
-                🔥 Trending
-              </span>
-            )}
-          </div>
+          <div className="flex items-center gap-2" />
         </div>
 
         {/* ── 1. Big Hero Image Banner with Floating Pills ──────────────────── */}
