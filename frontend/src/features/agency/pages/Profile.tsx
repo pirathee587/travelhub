@@ -22,14 +22,20 @@ import { Skeleton } from '@/components/common/ui/skeleton';
 const uploadImage = async (file: File) => {
   const formData = new FormData();
   formData.append('file', file);
+  const token = localStorage.getItem('travelhub_token') || localStorage.getItem('token') || sessionStorage.getItem('token');
+  const headers: Record<string, string> = {};
+  if (token) {
+    headers['Authorization'] = token.startsWith('Bearer ') ? token : `Bearer ${token}`;
+  }
   const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:8080';
   const response = await fetch(`${apiBase}/api/upload/agent`, {
     method: 'POST',
+    headers,
     body: formData,
   });
   const result = await response.json();
   if (result.success && result.data?.imageUrl) return result.data.imageUrl;
-  throw new Error('Upload failed');
+  throw new Error(result.message || 'Upload failed');
 };
 
 const Profile = () => {
@@ -103,8 +109,9 @@ const Profile = () => {
       const url = await uploadImage(file); 
       setEditForm(prev => ({ ...prev, profileImage: url }));
       toast.success('Photo uploaded successfully');
-    } catch (error) {
-      toast.error('Failed to upload photo');
+    } catch (error: any) {
+      console.error('Profile photo upload error:', error);
+      toast.error(`Failed to upload photo: ${error.message || error}`);
     } finally {
       setUploadingPhoto(false);
       if (fileInputRef.current) fileInputRef.current.value = '';

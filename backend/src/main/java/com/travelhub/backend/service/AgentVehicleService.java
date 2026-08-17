@@ -106,9 +106,15 @@ public class AgentVehicleService {
         if (request.getOwnerId() != null) {
             owner = vehicleOwnerRepository.findById(request.getOwnerId())
                     .orElseThrow(() -> new ResourceNotFoundException("VehicleOwner", "id", request.getOwnerId()));
+            updateOwnerFields(owner, request);
+            vehicleOwnerRepository.save(owner);
         } else if (request.getNicNumber() != null && !request.getNicNumber().trim().isEmpty()) {
             final String nic = request.getNicNumber().trim();
             owner = vehicleOwnerRepository.findByNicNumber(nic)
+                    .map(o -> {
+                        updateOwnerFields(o, request);
+                        return vehicleOwnerRepository.save(o);
+                    })
                     .orElseGet(() -> {
                         VehicleOwner newOwner = VehicleOwner.builder()
                                 .agent(agent)
@@ -190,13 +196,16 @@ public class AgentVehicleService {
         }
 
         // Handle owner update or change
+        VehicleOwner owner = null;
         if (request.getOwnerId() != null) {
-            VehicleOwner owner = vehicleOwnerRepository.findById(request.getOwnerId())
+            owner = vehicleOwnerRepository.findById(request.getOwnerId())
                     .orElseThrow(() -> new ResourceNotFoundException("VehicleOwner", "id", request.getOwnerId()));
             vehicle.setOwner(owner);
         } else if (vehicle.getOwner() != null) {
-            // Update the existing linked owner details
-            VehicleOwner owner = vehicle.getOwner();
+            owner = vehicle.getOwner();
+        }
+
+        if (owner != null) {
             if (request.getNicNumber() != null && !request.getNicNumber().trim().isEmpty() && !request.getNicNumber().equals(owner.getNicNumber())) {
                 owner.setNicNumber(request.getNicNumber());
                 complianceChanged = true;
@@ -209,13 +218,7 @@ public class AgentVehicleService {
                 owner.setNicRearImage(request.getNicRearImage());
                 complianceChanged = true;
             }
-            owner.setFirstName(request.getOwnerFirstName());
-            owner.setLastName(request.getOwnerLastName());
-            owner.setAddressLine1(request.getAddressLine1());
-            owner.setAddressLine2(request.getAddressLine2());
-            owner.setMobileNumber(request.getMobileNumber());
-            owner.setSecondaryMobileNumber(request.getSecondaryMobileNumber());
-            owner.setEmail(request.getOwnerEmail());
+            updateOwnerFields(owner, request);
             vehicleOwnerRepository.save(owner);
         }
 
@@ -350,7 +353,11 @@ public class AgentVehicleService {
                 .capacity(v.getCapacity())
                 .yearOfManufacture(v.getYearOfManufacture())
                 .registration(v.getRegistration())
+                .insuranceCardFront(v.getInsuranceCardFront())
                 .insuranceExpiryDate(v.getInsuranceExpiryDate())
+                .revenueLicenseImage(v.getRevenueLicenseImage())
+                .nicFrontImage(owner != null ? owner.getNicFrontImage() : null)
+                .nicRearImage(owner != null ? owner.getNicRearImage() : null)
                 .vehicleImageFront(v.getVehicleImageFront())
                 .vehicleImageBack(v.getVehicleImageBack())
                 .vehicleImageSide(v.getVehicleImageSide())
@@ -360,5 +367,29 @@ public class AgentVehicleService {
                 .assignedDriverName(v.getAssignedDriverName())
                 .rejectionReason(v.getRejectionReason())
                 .build();
+    }
+
+    private void updateOwnerFields(VehicleOwner owner, VehicleRequest request) {
+        if (request.getOwnerFirstName() != null && !request.getOwnerFirstName().trim().isEmpty()) {
+            owner.setFirstName(request.getOwnerFirstName().trim());
+        }
+        if (request.getOwnerLastName() != null && !request.getOwnerLastName().trim().isEmpty()) {
+            owner.setLastName(request.getOwnerLastName().trim());
+        }
+        if (request.getAddressLine1() != null) {
+            owner.setAddressLine1(request.getAddressLine1());
+        }
+        if (request.getAddressLine2() != null) {
+            owner.setAddressLine2(request.getAddressLine2());
+        }
+        if (request.getMobileNumber() != null) {
+            owner.setMobileNumber(request.getMobileNumber());
+        }
+        if (request.getSecondaryMobileNumber() != null) {
+            owner.setSecondaryMobileNumber(request.getSecondaryMobileNumber());
+        }
+        if (request.getOwnerEmail() != null) {
+            owner.setEmail(request.getOwnerEmail());
+        }
     }
 }

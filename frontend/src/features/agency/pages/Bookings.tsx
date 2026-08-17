@@ -3,6 +3,7 @@ import {
   Search, Filter, Check, X, CheckCircle, Eye,
   Download, MapPin, Calendar, DollarSign, SearchX, Car,
   Users, Clock, FileText, Hotel, Package, Play, AlertTriangle,
+  LayoutGrid, List, User, Sparkles,
 } from 'lucide-react';
 import { DashboardLayout } from '@/features/agency/components/dashboard/DashboardLayout';
 import { Button } from '@/components/common/ui/button';
@@ -322,9 +323,23 @@ const Bookings = () => {
   const [bookings, setBookings]     = useState([]);
   const [loading, setLoading]       = useState(true);
 
-  // Filters
+  // Filters & Views
   const [search, setSearch]         = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [userChangedTab, setUserChangedTab] = useState(false);
+
+  /* ── Intelligent Initial Tab Selection ────────────────────────────────────── */
+  useEffect(() => {
+    if (bookings.length > 0 && !userChangedTab) {
+      const pCount = bookings.filter(b => b.status === 'pending').length;
+      const aCount = bookings.filter(b => b.status === 'confirmed' || b.status === 'in_progress').length;
+      if (pCount > 0) {
+        setStatusFilter('pending');
+      } else if (aCount > 0) {
+        setStatusFilter('active');
+      }
+    }
+  }, [bookings]);
 
   // Details modal state
   const [detailsModalOpen, setDetailsModalOpen] = useState(false);
@@ -644,51 +659,166 @@ const Bookings = () => {
     <DashboardLayout title="Booking Requests" subtitle="Manage and track all your travel bookings" showSearch={false}>
       <div className="space-y-6">
 
-        {/* 1. Quick Stats */}
+        {/* 1. Interactive Metric Summary Cards */}
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <div className="rounded-xl border border-warning/30 bg-warning/5 p-4">
-            <p className="text-sm font-medium text-warning">Pending Requests</p>
-            <p className="mt-1 text-2xl font-bold text-foreground">{pendingCount}</p>
+          <div 
+            onClick={() => { setStatusFilter('pending'); setUserChangedTab(true); }}
+            className={cn(
+              "rounded-xl border p-4 cursor-pointer transition-all duration-200 hover:scale-[1.02] hover:shadow-md",
+              statusFilter === 'pending'
+                ? "border-amber-400 bg-amber-500/10 ring-2 ring-amber-400/40 shadow-sm"
+                : "border-amber-200/60 bg-amber-50/50 hover:bg-amber-50 dark:border-amber-900/40 dark:bg-amber-950/20"
+            )}>
+            <div className="flex items-center justify-between">
+              <p className="text-xs font-bold uppercase tracking-wider text-amber-600 dark:text-amber-400">Pending Requests</p>
+              {pendingCount > 0 && (
+                <span className="relative flex h-2.5 w-2.5">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-amber-500"></span>
+                </span>
+              )}
+            </div>
+            <p className="mt-2 text-3xl font-extrabold text-slate-800 dark:text-slate-100">{pendingCount}</p>
+            <p className="text-xs text-muted-foreground mt-1">Requires review &amp; allocation</p>
           </div>
-          <div className="rounded-xl border border-primary/30 bg-primary/5 p-4">
-            <p className="text-sm font-medium text-primary">Active Trips</p>
-            <p className="mt-1 text-2xl font-bold text-foreground">{activeCount}</p>
-            <p className="text-xs text-muted-foreground mt-0.5">
+
+          <div 
+            onClick={() => { setStatusFilter('active'); setUserChangedTab(true); }}
+            className={cn(
+              "rounded-xl border p-4 cursor-pointer transition-all duration-200 hover:scale-[1.02] hover:shadow-md",
+              statusFilter === 'active'
+                ? "border-teal-500 bg-teal-500/10 ring-2 ring-teal-500/40 shadow-sm"
+                : "border-teal-200/60 bg-teal-50/50 hover:bg-teal-50 dark:border-teal-900/40 dark:bg-teal-950/20"
+            )}>
+            <p className="text-xs font-bold uppercase tracking-wider text-teal-600 dark:text-teal-400">Active Trips</p>
+            <p className="mt-2 text-3xl font-extrabold text-slate-800 dark:text-slate-100">{activeCount}</p>
+            <p className="text-xs text-muted-foreground mt-1">
               {confirmedCount} confirmed · {inProgressCount} in progress
             </p>
           </div>
-          <div className="rounded-xl border border-success/30 bg-success/5 p-4">
-            <p className="text-sm font-medium text-success">Completed</p>
-            <p className="mt-1 text-2xl font-bold text-foreground">{completedCount}</p>
+
+          <div 
+            onClick={() => { setStatusFilter('completed'); setUserChangedTab(true); }}
+            className={cn(
+              "rounded-xl border p-4 cursor-pointer transition-all duration-200 hover:scale-[1.02] hover:shadow-md",
+              statusFilter === 'completed'
+                ? "border-emerald-500 bg-emerald-500/10 ring-2 ring-emerald-500/40 shadow-sm"
+                : "border-emerald-200/60 bg-emerald-50/50 hover:bg-emerald-50 dark:border-emerald-900/40 dark:bg-emerald-950/20"
+            )}>
+            <p className="text-xs font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">Completed Trips</p>
+            <p className="mt-2 text-3xl font-extrabold text-slate-800 dark:text-slate-100">{completedCount}</p>
+            <p className="text-xs text-muted-foreground mt-1">Successfully fulfilled</p>
           </div>
-          <div className="rounded-xl border border-destructive/30 bg-destructive/5 p-4">
-            <p className="text-sm font-medium text-destructive">Cancelled</p>
-            <p className="mt-1 text-2xl font-bold text-foreground">{cancelledCount}</p>
+
+          <div 
+            onClick={() => { setStatusFilter('cancelled'); setUserChangedTab(true); }}
+            className={cn(
+              "rounded-xl border p-4 cursor-pointer transition-all duration-200 hover:scale-[1.02] hover:shadow-md",
+              statusFilter === 'cancelled'
+                ? "border-rose-400 bg-rose-500/10 ring-2 ring-rose-400/40 shadow-sm"
+                : "border-rose-200/60 bg-rose-50/50 hover:bg-rose-50 dark:border-rose-900/40 dark:bg-rose-950/20"
+            )}>
+            <p className="text-xs font-bold uppercase tracking-wider text-rose-600 dark:text-rose-400">Cancelled</p>
+            <p className="mt-2 text-3xl font-extrabold text-slate-800 dark:text-slate-100">{cancelledCount}</p>
+            <p className="text-xs text-muted-foreground mt-1">Declined or aborted</p>
           </div>
         </div>
 
-        {/* 2. Search & Filters */}
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input placeholder="Search bookings..." value={search}
-              onChange={e => setSearch(e.target.value)}
-              className="input-search w-full sm:w-80 pl-9" />
+        {/* 2. Segmented Status Tabs & Control Bar */}
+        <div className="flex flex-col gap-4 border-b border-border pb-4">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            
+            {/* Segmented Pills */}
+            <div className="flex items-center gap-1.5 p-1 rounded-xl bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700/60 overflow-x-auto max-w-full">
+              <button
+                onClick={() => { setStatusFilter('all'); setUserChangedTab(true); }}
+                className={cn(
+                  "px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all duration-150 flex items-center gap-1.5 whitespace-nowrap",
+                  statusFilter === 'all'
+                    ? "bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 shadow-sm"
+                    : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100"
+                )}>
+                All Bookings
+                <span className="rounded-full bg-slate-200 dark:bg-slate-700 px-2 py-0.5 text-[10px] font-bold">
+                  {bookings.length}
+                </span>
+              </button>
+
+              <button
+                onClick={() => { setStatusFilter('pending'); setUserChangedTab(true); }}
+                className={cn(
+                  "px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all duration-150 flex items-center gap-1.5 whitespace-nowrap",
+                  statusFilter === 'pending'
+                    ? "bg-amber-500 text-white shadow-sm font-bold"
+                    : "text-slate-600 dark:text-slate-400 hover:text-amber-600 dark:hover:text-amber-400"
+                )}>
+                Pending Requests
+                {pendingCount > 0 ? (
+                  <span className="rounded-full bg-amber-400 text-amber-950 px-2 py-0.5 text-[10px] font-extrabold animate-pulse">
+                    {pendingCount}
+                  </span>
+                ) : (
+                  <span className="rounded-full bg-slate-200 dark:bg-slate-700 px-2 py-0.5 text-[10px] font-bold">0</span>
+                )}
+              </button>
+
+              <button
+                onClick={() => { setStatusFilter('active'); setUserChangedTab(true); }}
+                className={cn(
+                  "px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all duration-150 flex items-center gap-1.5 whitespace-nowrap",
+                  statusFilter === 'active'
+                    ? "bg-teal-600 text-white shadow-sm font-bold"
+                    : "text-slate-600 dark:text-slate-400 hover:text-teal-600 dark:hover:text-teal-400"
+                )}>
+                Active &amp; Confirmed
+                <span className="rounded-full bg-slate-200 dark:bg-slate-700 px-2 py-0.5 text-[10px] font-bold">
+                  {activeCount}
+                </span>
+              </button>
+
+              <button
+                onClick={() => { setStatusFilter('completed'); setUserChangedTab(true); }}
+                className={cn(
+                  "px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all duration-150 flex items-center gap-1.5 whitespace-nowrap",
+                  statusFilter === 'completed'
+                    ? "bg-emerald-600 text-white shadow-sm font-bold"
+                    : "text-slate-600 dark:text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400"
+                )}>
+                Completed
+                <span className="rounded-full bg-slate-200 dark:bg-slate-700 px-2 py-0.5 text-[10px] font-bold">
+                  {completedCount}
+                </span>
+              </button>
+
+              <button
+                onClick={() => { setStatusFilter('cancelled'); setUserChangedTab(true); }}
+                className={cn(
+                  "px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all duration-150 flex items-center gap-1.5 whitespace-nowrap",
+                  statusFilter === 'cancelled'
+                    ? "bg-rose-600 text-white shadow-sm font-bold"
+                    : "text-slate-600 dark:text-slate-400 hover:text-rose-600 dark:hover:text-rose-400"
+                )}>
+                Cancelled
+                <span className="rounded-full bg-slate-200 dark:bg-slate-700 px-2 py-0.5 text-[10px] font-bold">
+                  {cancelledCount}
+                </span>
+              </button>
+            </div>
+
+            {/* Right Tools: Search */}
+            <div className="flex items-center gap-2 w-full sm:w-auto justify-between sm:justify-end">
+              <div className="relative flex-1 sm:flex-initial">
+                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <Input 
+                  placeholder="Search bookings or guests..." 
+                  value={search}
+                  onChange={e => setSearch(e.target.value)}
+                  className="w-full sm:w-64 pl-9 text-xs rounded-xl h-9" 
+                />
+              </div>
+            </div>
+
           </div>
-          <Select value={statusFilter} onValueChange={setStatusFilter}>
-            <SelectTrigger className="w-44">
-              <Filter className="mr-2 h-4 w-4" />
-              <SelectValue placeholder="Filter by status" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Status</SelectItem>
-              <SelectItem value="pending">Pending</SelectItem>
-              <SelectItem value="confirmed">Confirmed</SelectItem>
-              <SelectItem value="in_progress">In Progress</SelectItem>
-              <SelectItem value="completed">Completed</SelectItem>
-              <SelectItem value="cancelled">Cancelled</SelectItem>
-            </SelectContent>
-          </Select>
         </div>
 
         {/* 3. Booking Cards Grid */}
@@ -721,10 +851,31 @@ const Bookings = () => {
             ))}
           </div>
         ) : filteredBookings.length === 0 ? (
-          <div className="flex flex-col items-center justify-center rounded-xl border border-border bg-card py-16">
-            <SearchX className="h-12 w-12 text-muted-foreground/50" />
-            <p className="mt-4 text-lg font-semibold text-foreground">No bookings found</p>
-            <p className="mt-1 text-sm text-muted-foreground">Try adjusting your search or filter</p>
+          <div className="flex flex-col items-center justify-center rounded-2xl border border-border bg-card p-12 text-center shadow-sm">
+            <div className="flex h-16 w-16 items-center justify-center rounded-full bg-primary/10 mb-4">
+              {search ? <SearchX className="h-8 w-8 text-primary" /> : <Calendar className="h-8 w-8 text-primary" />}
+            </div>
+            <h3 className="text-xl font-bold text-foreground">
+              {search
+                ? 'No bookings match your search'
+                : statusFilter !== 'all'
+                ? `No ${statusFilter} bookings found`
+                : 'No booking requests received yet'}
+            </h3>
+            <p className="mt-2 text-sm text-muted-foreground max-w-md">
+              {search
+                ? 'Try adjusting your search query or status filter.'
+                : statusFilter !== 'all'
+                ? 'No bookings currently match the selected status filter.'
+                : 'Your tourist booking requests will appear here once travelers reserve your travel packages. Keep your packages active to attract tourist bookings!'}
+            </p>
+            {search && (
+              <div className="mt-6 flex gap-3">
+                <Button variant="outline" onClick={() => setSearch('')} className="rounded-xl">
+                  Clear Search
+                </Button>
+              </div>
+            )}
           </div>
         ) : (
           <div className="grid gap-4 lg:grid-cols-2">
@@ -833,25 +984,37 @@ const Bookings = () => {
                         </div>
                       </div>
 
-                      {/* Info Chips */}
+                      {/* Info Chips & Allocation Badges */}
                       <div className="mt-4 flex flex-wrap gap-2">
                         {(booking.startDate || booking.endDate) && (
-                          <div className="inline-flex items-center gap-1.5 rounded-full bg-slate-100/80 px-3 py-1.5 text-xs font-medium text-slate-700 border border-slate-200/30">
-                            <Calendar className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                          <div className="inline-flex items-center gap-1.5 rounded-full bg-slate-100/80 dark:bg-slate-800/80 px-3 py-1 text-xs font-medium text-slate-700 dark:text-slate-300 border border-slate-200/50 dark:border-slate-700/50">
+                            <Calendar className="h-3.5 w-3.5 shrink-0 text-slate-400" />
                             <span>
                               {booking.startDate} → {booking.endDate}
                             </span>
                           </div>
                         )}
                         {(booking.adults != null || booking.children != null) && (
-                          <div className="inline-flex items-center gap-1.5 rounded-full bg-slate-100/80 px-3 py-1.5 text-xs font-medium text-slate-700 border border-slate-200/30">
-                            <Users className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                          <div className="inline-flex items-center gap-1.5 rounded-full bg-slate-100/80 dark:bg-slate-800/80 px-3 py-1 text-xs font-medium text-slate-700 dark:text-slate-300 border border-slate-200/50 dark:border-slate-700/50">
+                            <Users className="h-3.5 w-3.5 shrink-0 text-slate-400" />
                             <span>
                               {[
                                 booking.adults != null ? `${booking.adults} Adult${booking.adults !== 1 ? 's' : ''}` : null,
                                 booking.children != null && booking.children > 0 ? `${booking.children} Child${booking.children !== 1 ? 'ren' : ''}` : null,
                               ].filter(Boolean).join(' · ')}
                             </span>
+                          </div>
+                        )}
+                        {(booking.vehicleModel || booking.vehicleType || booking.vehicle) && (
+                          <div className="inline-flex items-center gap-1.5 rounded-full bg-teal-50 dark:bg-teal-950/40 px-3 py-1 text-xs font-semibold text-teal-700 dark:text-teal-300 border border-teal-200 dark:border-teal-800">
+                            <Car className="h-3.5 w-3.5 shrink-0 text-teal-500" />
+                            <span>{booking.vehicleModel || booking.vehicleType || (booking.vehicle ? `${booking.vehicle.brand || ''} ${booking.vehicle.model || ''}`.trim() : 'Vehicle')}</span>
+                          </div>
+                        )}
+                        {(booking.driverName || booking.driver) && (
+                          <div className="inline-flex items-center gap-1.5 rounded-full bg-indigo-50 dark:bg-indigo-950/40 px-3 py-1 text-xs font-semibold text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800">
+                            <User className="h-3.5 w-3.5 shrink-0 text-indigo-500" />
+                            <span>{booking.driverName || (booking.driver ? `${booking.driver.firstName || ''} ${booking.driver.lastName || ''}`.trim() : 'Driver')}</span>
                           </div>
                         )}
                       </div>

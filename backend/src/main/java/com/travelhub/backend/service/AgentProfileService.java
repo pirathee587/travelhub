@@ -59,10 +59,19 @@ public class AgentProfileService {
         if (request.getProfileImage() != null) {
             user.setProfileImage(request.getProfileImage());
         }
-        if (request.getNicImage() != null) {
-            user.setNicImage(request.getNicImage());
-            // When updating NIC, if it was rejected, reset to pending for review
-            if ("REJECTED".equals(user.getNicVerificationStatus())) {
+        if (request.getNicImage() != null || request.getNicFrontImage() != null || request.getNicRearImage() != null) {
+            if (request.getNicFrontImage() != null) {
+                user.setNicFrontImage(request.getNicFrontImage());
+            }
+            if (request.getNicRearImage() != null) {
+                user.setNicRearImage(request.getNicRearImage());
+            }
+            String primaryNic = request.getNicFrontImage() != null ? request.getNicFrontImage() : request.getNicImage();
+            if (primaryNic != null) {
+                user.setNicImage(primaryNic);
+            }
+            // Reset status to PENDING when new documents are submitted
+            if (user.getNicVerificationStatus() == null || "REJECTED".equals(user.getNicVerificationStatus()) || "NOT_SUBMITTED".equals(user.getNicVerificationStatus())) {
                 user.setNicVerificationStatus("PENDING");
             }
         }
@@ -95,9 +104,11 @@ public class AgentProfileService {
                 .operatingDistricts(agent.getOperatingDistricts())
                 .websiteUrl(agent.getWebsiteUrl())
                 .profileImage(user != null ? user.getProfileImage() : null)
-                .nicImage(user != null ? user.getNicImage() : null)
+                .nicImage(user != null ? (user.getNicImage() != null ? user.getNicImage() : user.getNicFrontImage()) : null)
+                .nicFrontImage(user != null ? (user.getNicFrontImage() != null ? user.getNicFrontImage() : user.getNicImage()) : null)
+                .nicRearImage(user != null ? user.getNicRearImage() : null)
                 .nicNumber(user != null ? user.getNicNumber() : null)
-                .nicVerificationStatus(user != null ? user.getNicVerificationStatus() : "PENDING")
+                .nicVerificationStatus(user != null && user.getNicVerificationStatus() != null ? user.getNicVerificationStatus() : "NOT_SUBMITTED")
                 .adminMessage(user != null ? user.getAdminMessage() : null)
                 .memberSince(agent.getMemberSince() != null ? agent.getMemberSince().toString() : null)
                 .rating(agentRatingCalculator.getAgentRating(agent.getId()))

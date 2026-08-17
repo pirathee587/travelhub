@@ -155,10 +155,10 @@ const getTimelineSteps = (booking) => {
       today.setHours(0, 0, 0, 0);
       start.setHours(0, 0, 0, 0);
       
-      const diffTime = today - start;
+      const diffTime = today.getTime() - start.getTime();
       const daysPassed = Math.floor(diffTime / (1000 * 60 * 60 * 24));
-      if (daysPassed >= 0) {
-        completedDays = Math.min(daysPassed, totalDays);
+      if (daysPassed > 0) {
+        completedDays = Math.min(daysPassed, totalDays - 1);
       }
     }
   }
@@ -420,7 +420,7 @@ const BookingDetails = () => {
 
   // ── Derived values ─────────────────────────────────────────
   const timeline = getTimelineSteps(booking);
-  const isPaid = !!booking.isPaid;
+  const isPaid = (booking.paymentStatus || '').toUpperCase() === 'PAID' || !!booking.isPaid || (booking.status || '').toLowerCase() === 'paid';
 
   const duration = (() => {
     if (booking.duration) return `${booking.duration} days`;
@@ -1170,7 +1170,13 @@ const BookingDetails = () => {
                         ? 'bg-success/10 text-success border border-success/30'
                         : 'bg-warning/10 text-warning border border-warning/30'
                   )}>
-                    {booking.status === 'cancelled' ? 'Cancelled' : isPaid ? 'Paid' : 'Pending'}
+                    {booking.status === 'cancelled'
+                      ? 'Cancelled'
+                      : (booking.paymentStatus || '').toUpperCase() === 'REFUNDED'
+                        ? 'Refunded'
+                        : isPaid
+                          ? 'Paid'
+                          : 'Unpaid'}
                   </span>
                 </div>
               </div>

@@ -7,7 +7,7 @@ const AGENT_ID = {
     if (userStr) {
       try {
         const user = JSON.parse(userStr);
-        return String(user.id || '');
+        return String(user.id || user.userId || user.agentId || user.ownerId || '');
       } catch (e) {
         return '';
       }
@@ -59,17 +59,34 @@ export const api = {
             body: form,
         }).then(r => r.json());
     },
-    deleteAgentPackage: (packageId) =>
-        fetch(`${BASE_URL}/agent/${AGENT_ID}/packages/${packageId}`, {
+    deleteAgentPackage: async (packageId: any) => {
+        const headers = getAuthHeaders();
+        const res = await fetch(`${BASE_URL}/agent/${AGENT_ID}/packages/${packageId}`, {
             method: 'DELETE',
-        }),
-    uploadPackageImage: (imageFile) => {
+            headers,
+        });
+        if (!res.ok) {
+            const json = await res.json().catch(() => null);
+            const msg = json?.message || json?.error || `Failed to delete package (Status ${res.status})`;
+            throw new Error(msg);
+        }
+        return true;
+    },
+    uploadPackageImage: async (imageFile: File) => {
         const form = new FormData();
         form.append('image', imageFile);
-        return fetch(`${BASE_URL}/agent/${AGENT_ID}/packages/upload-image`, {
+        const headers = getAuthHeaders();
+        const res = await fetch(`${BASE_URL}/agent/${AGENT_ID}/packages/upload-image`, {
             method: 'POST',
+            headers,
             body: form,
-        }).then(r => r.json());
+        });
+        const data = await res.json().catch(() => null);
+        if (!res.ok || !data || !data.imageUrl) {
+            const errorMsg = data?.message || data?.error || `Upload failed with status ${res.status}`;
+            throw new Error(errorMsg);
+        }
+        return data;
     },
     searchHotels: (query: string, district: string) => {
         const params = new URLSearchParams();
@@ -90,34 +107,65 @@ export const api = {
         if (endDate) params.append('endDate', endDate);
         return fetch(`${BASE_URL}/agent/${AGENT_ID}/vehicles?${params.toString()}`).then(r => r.json());
     },
-    createVehicle: (data) =>
-        fetch(`${BASE_URL}/agent/${AGENT_ID}/vehicles`, {
+    createVehicle: async (data: any) => {
+        const headers = getAuthHeaders();
+        const res = await fetch(`${BASE_URL}/agent/${AGENT_ID}/vehicles`, {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
+            headers: { "Content-Type": "application/json", ...headers },
             body: JSON.stringify(data)
-        }).then(r => r.json()),
-    updateVehicle: (vehicleId, data) =>
-        fetch(`${BASE_URL}/agent/${AGENT_ID}/vehicles/${vehicleId}`, {
+        });
+        const json = await res.json().catch(() => null);
+        if (!res.ok || (json && (json.success === false || json.error))) {
+            const msg = json?.message || json?.error || `Vehicle creation failed (Status ${res.status})`;
+            throw new Error(msg);
+        }
+        return json;
+    },
+    updateVehicle: async (vehicleId: any, data: any) => {
+        const headers = getAuthHeaders();
+        const res = await fetch(`${BASE_URL}/agent/${AGENT_ID}/vehicles/${vehicleId}`, {
             method: "PUT",
-            headers: { "Content-Type": "application/json" },
+            headers: { "Content-Type": "application/json", ...headers },
             body: JSON.stringify(data)
-        }).then(r => r.json()),
-    updateVehicleStatus: (vehicleId, status) =>
-        fetch(`${BASE_URL}/agent/${AGENT_ID}/vehicles/${vehicleId}/status`, {
+        });
+        const json = await res.json().catch(() => null);
+        if (!res.ok || (json && (json.success === false || json.error))) {
+            const msg = json?.message || json?.error || `Vehicle update failed (Status ${res.status})`;
+            throw new Error(msg);
+        }
+        return json;
+    },
+    updateVehicleStatus: async (vehicleId: any, status: any) => {
+        const headers = getAuthHeaders();
+        const res = await fetch(`${BASE_URL}/agent/${AGENT_ID}/vehicles/${vehicleId}/status`, {
             method: "PATCH",
-            headers: { "Content-Type": "application/json" },
+            headers: { "Content-Type": "application/json", ...headers },
             body: JSON.stringify({ status })
-        }).then(r => r.json()),
-    updateVehicleLifecycle: (vehicleId, lifecycleStatus) =>
-        fetch(`${BASE_URL}/agent/${AGENT_ID}/vehicles/${vehicleId}/lifecycle`, {
+        });
+        return res.json();
+    },
+    updateVehicleLifecycle: async (vehicleId: any, lifecycleStatus: any) => {
+        const headers = getAuthHeaders();
+        const res = await fetch(`${BASE_URL}/agent/${AGENT_ID}/vehicles/${vehicleId}/lifecycle`, {
             method: "PATCH",
-            headers: { "Content-Type": "application/json" },
+            headers: { "Content-Type": "application/json", ...headers },
             body: JSON.stringify({ lifecycleStatus })
-        }).then(r => r.json()),
-    deleteVehicle: (vehicleId) =>
-        fetch(`${BASE_URL}/agent/${AGENT_ID}/vehicles/${vehicleId}`, {
-            method: "DELETE"
-        }),
+        });
+        return res.json();
+    },
+    deleteVehicle: async (vehicleId: any) => {
+        const headers = getAuthHeaders();
+        const res = await fetch(`${BASE_URL}/agent/${AGENT_ID}/vehicles/${vehicleId}`, {
+            method: "DELETE",
+            headers
+        });
+        const json = await res.json().catch(() => null);
+        if (!res.ok || (json && (json.success === false || json.error))) {
+            const msg = json?.message || json?.error || `Vehicle delete failed (Status ${res.status})`;
+            throw new Error(msg);
+        }
+        return json;
+    },
 
     // Owners
     getOwners: () =>
@@ -149,22 +197,37 @@ export const api = {
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(data)
         }).then(r => r.json()),
-    updateDriverStatus: (driverId, status) =>
-        fetch(`${BASE_URL}/agent/${AGENT_ID}/drivers/${driverId}/status`, {
+    updateDriverStatus: async (driverId: any, status: any) => {
+        const headers = getAuthHeaders();
+        const res = await fetch(`${BASE_URL}/agent/${AGENT_ID}/drivers/${driverId}/status`, {
             method: "PATCH",
-            headers: { "Content-Type": "application/json" },
+            headers: { "Content-Type": "application/json", ...headers },
             body: JSON.stringify({ status })
-        }).then(r => r.json()),
-    updateDriverLifecycle: (driverId, lifecycleStatus) =>
-        fetch(`${BASE_URL}/agent/${AGENT_ID}/drivers/${driverId}/lifecycle`, {
+        });
+        return res.json();
+    },
+    updateDriverLifecycle: async (driverId: any, lifecycleStatus: any) => {
+        const headers = getAuthHeaders();
+        const res = await fetch(`${BASE_URL}/agent/${AGENT_ID}/drivers/${driverId}/lifecycle`, {
             method: "PATCH",
-            headers: { "Content-Type": "application/json" },
+            headers: { "Content-Type": "application/json", ...headers },
             body: JSON.stringify({ lifecycleStatus })
-        }).then(r => r.json()),
-    deleteDriver: (driverId) =>
-        fetch(`${BASE_URL}/agent/${AGENT_ID}/drivers/${driverId}`, {
-            method: "DELETE"
-        }),
+        });
+        return res.json();
+    },
+    deleteDriver: async (driverId: any) => {
+        const headers = getAuthHeaders();
+        const res = await fetch(`${BASE_URL}/agent/${AGENT_ID}/drivers/${driverId}`, {
+            method: "DELETE",
+            headers
+        });
+        const json = await res.json().catch(() => null);
+        if (!res.ok || (json && (json.success === false || json.error))) {
+            const msg = json?.message || json?.error || `Driver delete failed (Status ${res.status})`;
+            throw new Error(msg);
+        }
+        return json;
+    },
 
     // Bookings
     getBookings: (status) =>

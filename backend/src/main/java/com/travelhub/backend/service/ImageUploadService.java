@@ -80,11 +80,31 @@ public class ImageUploadService {
     }
 
     public ImageUploadResponse uploadPackageImage(MultipartFile file) {
-        return uploadToBucket(file, packageBucket);
+        try {
+            return uploadToBucket(file, packageBucket);
+        } catch (Exception e) {
+            log.warn("[ImageUpload] Package bucket '{}' failed ({}), trying fallback to userBucket '{}'", packageBucket, e.getMessage(), userBucket);
+            try {
+                return uploadToBucket(file, userBucket);
+            } catch (Exception ex) {
+                log.warn("[ImageUpload] Bucket '{}' failed ({}), trying fallback to roomBucket '{}'", userBucket, ex.getMessage(), roomBucket);
+                return uploadToBucket(file, roomBucket);
+            }
+        }
     }
 
     public ImageUploadResponse uploadAgentImage(MultipartFile file) {
-        return uploadToBucket(file, agentBucket);
+        try {
+            return uploadToBucket(file, agentBucket);
+        } catch (Exception e) {
+            log.warn("[ImageUpload] Bucket '{}' failed ({}), trying fallback to userBucket '{}'", agentBucket, e.getMessage(), userBucket);
+            try {
+                return uploadToBucket(file, userBucket);
+            } catch (Exception ex) {
+                log.warn("[ImageUpload] Bucket '{}' failed ({}), trying fallback to roomBucket '{}'", userBucket, ex.getMessage(), roomBucket);
+                return uploadToBucket(file, roomBucket);
+            }
+        }
     }
 
     private ImageUploadResponse uploadToBucket(MultipartFile file, String bucketName) {

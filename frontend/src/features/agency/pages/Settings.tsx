@@ -26,9 +26,15 @@ import authApi from '@/services/authApi';
 const uploadImage = async (file: File) => {
   const formData = new FormData();
   formData.append('file', file);
+  const token = localStorage.getItem('travelhub_token') || localStorage.getItem('token') || sessionStorage.getItem('token');
+  const headers: Record<string, string> = {};
+  if (token) {
+    headers['Authorization'] = token.startsWith('Bearer ') ? token : `Bearer ${token}`;
+  }
   const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:8080';
   const response = await fetch(`${apiBase}/api/upload/identity`, {
     method: 'POST',
+    headers,
     body: formData,
   });
   const result = await response.json();
@@ -309,15 +315,19 @@ const Settings = () => {
     if (!fullProfile) return;
     setSavingNic(true);
     try {
-      const updatedProfile = {
+      const payload = {
         ...fullProfile,
         nicImage: tempNicFront || tempNicRear || '',
         nicFrontImage: tempNicFront,
         nicRearImage: tempNicRear,
         nicStatus: 'PENDING',
+        nicVerificationStatus: 'PENDING',
       };
-      await api.updateProfile(updatedProfile);
-      setFullProfile(updatedProfile);
+      const res = await api.updateProfile(payload);
+      const merged = { ...payload, ...res };
+      setFullProfile(merged);
+      setTempNicFront(merged.nicFrontImage || merged.nicImage || tempNicFront);
+      setTempNicRear(merged.nicRearImage || tempNicRear);
       toast.success('Identity verification submitted successfully! Awaiting admin review.');
     } catch (error) {
       toast.error('Failed to save identity verification');
@@ -757,20 +767,20 @@ const Settings = () => {
 
             {/* 4-State Verification Badge */}
             <div>
-              {fullProfile?.agentApproved || fullProfile?.nicStatus === 'APPROVED' ? (
+              {fullProfile?.nicVerificationStatus === 'APPROVED' || fullProfile?.nicStatus === 'APPROVED' ? (
                 <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-50/95 text-emerald-700 border border-emerald-300/90 backdrop-blur-md shadow-sm">
                   Verified & Approved
                 </span>
-              ) : fullProfile?.nicStatus === 'REJECTED' || fullProfile?.nicVerificationStatus === 'rejected' ? (
+              ) : fullProfile?.nicVerificationStatus === 'REJECTED' || fullProfile?.nicStatus === 'REJECTED' || fullProfile?.nicVerificationStatus === 'rejected' ? (
                 <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-rose-50/95 text-rose-700 border border-rose-300/90 backdrop-blur-md shadow-sm">
                   Action Required
                 </span>
-              ) : (tempNicFront || tempNicRear || fullProfile?.nicImage) ? (
+              ) : (fullProfile?.nicVerificationStatus === 'PENDING' || fullProfile?.nicStatus === 'PENDING' || tempNicFront || tempNicRear || fullProfile?.nicImage) ? (
                 <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-amber-50/95 text-amber-800 border border-amber-300/90 backdrop-blur-md shadow-sm">
                   Pending Verification
                 </span>
               ) : (
-                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-700 border border-slate-300">
+                <span className="inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold bg-slate-100 text-slate-700 border border-slate-300">
                   Not Submitted
                 </span>
               )}

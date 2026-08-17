@@ -77,7 +77,7 @@ public class BookingService {
                 .endDate(booking.getEndDate())
                 .status(booking.getStatus())
                 .paymentStatus(booking.getPaymentStatus() != null ? booking.getPaymentStatus() : "UNPAID")
-                .progress(booking.getProgress())
+                .progress(calculateProgress(booking))
                 .imageUrl(booking.getPkg() != null ? booking.getPkg().getImageUrl() : null)
                 .price(booking.getTotalPrice())
                 .category(booking.getPkg() != null ? booking.getPkg().getCategory() : null)
@@ -151,7 +151,7 @@ public class BookingService {
                 .status(booking.getStatus())
                 .paymentStatus(booking.getPaymentStatus() != null ? booking.getPaymentStatus() : "UNPAID")
                 .totalPrice(booking.getTotalPrice())
-                .progress(booking.getProgress())
+                .progress(calculateProgress(booking))
                 .touristName(touristName)
                 .touristEmail(touristEmail)
                 .touristPhone(touristPhone)
@@ -186,5 +186,29 @@ public class BookingService {
                 .itineraryHotels(itineraryHotels)
                 .hotelPreferences(hotelPrefDetails)
                 .build();
+    }
+
+    private Integer calculateProgress(Booking booking) {
+        if (booking == null || booking.getStatus() == null) return 0;
+        String status = booking.getStatus().toLowerCase();
+        if ("completed".equals(status)) return 100;
+        if ("cancelled".equals(status) || "pending".equals(status) || "confirmed".equals(status)) return 0;
+
+        if ("in_progress".equals(status) || "active".equals(status)) {
+            if (booking.getStartDate() == null) return 0;
+            java.time.LocalDate start = booking.getStartDate();
+            java.time.LocalDate end = booking.getEndDate() != null ? booking.getEndDate() : start;
+            long totalDays = java.time.temporal.ChronoUnit.DAYS.between(start, end);
+            if (totalDays <= 0) totalDays = 1;
+
+            java.time.LocalDate today = java.time.LocalDate.now();
+            long daysPassed = java.time.temporal.ChronoUnit.DAYS.between(start, today);
+            if (daysPassed <= 0) return 0; // Day 1 underway, 0 full days finished
+
+            long completedDays = Math.min(daysPassed, totalDays - 1);
+            int calc = (int) Math.round(((double) completedDays / totalDays) * 100.0);
+            return Math.min(99, Math.max(0, calc));
+        }
+        return booking.getProgress() != null ? booking.getProgress() : 0;
     }
 }

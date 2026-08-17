@@ -372,6 +372,29 @@ public class AgentPackageService {
                 ? pkg.getPackageId()
                 : String.valueOf(pkg.getId());
 
+        String pkgType = pkg.getPackageType();
+        if (pkgType == null || "SINGLE_DISTRICT".equalsIgnoreCase(pkgType)) {
+            if (pkg.getItinerary() != null && !pkg.getItinerary().isEmpty()) {
+                long distinctDistricts = pkg.getItinerary().stream()
+                        .map(day -> day.getDistrict())
+                        .filter(d -> d != null && !d.isBlank())
+                        .map(d -> d.trim().toLowerCase())
+                        .distinct()
+                        .count();
+                if (distinctDistricts > 1) {
+                    pkgType = "MULTI_DISTRICT";
+                }
+            }
+            if ("SINGLE_DISTRICT".equalsIgnoreCase(pkgType) && pkg.getDistrict() != null) {
+                if (pkg.getDistrict().contains(",") || pkg.getDistrict().contains("&")) {
+                    pkgType = "MULTI_DISTRICT";
+                }
+            }
+        }
+        if (pkgType == null) {
+            pkgType = "SINGLE_DISTRICT";
+        }
+
         return PackageSummaryResponse.builder()
                 .packageId(resolvedPackageId)
                 .name(pkg.getPackageName())
@@ -384,6 +407,7 @@ public class AgentPackageService {
                 .applicationStatus(pkg.getApplicationStatus())
                 .coverImageUrl(coverUrl)
                 .createdAt(pkg.getCreatedAt())
+                .packageType(pkgType)
                 .build();
     }
 

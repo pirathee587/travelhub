@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Plus, Search, Edit, MapPin, Clock, Star, Trash2, Eye, CheckCircle, X } from 'lucide-react';
+import { Plus, Search, Edit, MapPin, Clock, Star, Trash2, Eye, CheckCircle, X, PackagePlus, SearchX } from 'lucide-react';
 import { DashboardLayout } from '@/features/agency/components/dashboard/DashboardLayout';
 import { Button } from '@/components/common/ui/button';
 import { Input } from '@/components/common/ui/input';
@@ -10,6 +10,9 @@ import { toast } from 'sonner';
 import { api } from '@/features/agency/services/api';
 import { Skeleton } from '@/components/common/ui/skeleton';
 import { useCurrency } from '@/features/agency/hooks/CurrencyContext';
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from '@/components/common/ui/select';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -28,6 +31,7 @@ const Packages = () => {
   const { formatPrice } = useCurrency();
   /* Package State Management */
   const [search, setSearch] = useState('');
+  const [typeFilter, setTypeFilter] = useState<'all' | 'single' | 'multi'>('all');
   const [packagesList, setPackagesList] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -49,11 +53,29 @@ const Packages = () => {
     fetchPackages();
   }, []);
 
+  // ── Helper: Determine if package is Multi-District ──────────
+  const isMulti = (pkg: any) => {
+    const type = (pkg.packageType || pkg.tourType || '').toString().toUpperCase();
+    if (type === 'MULTI_DISTRICT' || pkg.isMultiDistrict === true) return true;
+    if (Array.isArray(pkg.districts) && pkg.districts.length > 1) return true;
+    if (typeof pkg.district === 'string' && (pkg.district.includes(',') || pkg.district.includes('&'))) return true;
+    return false;
+  };
+
   // ── Filter ─────────────────────────────────────────────────
-  const filteredPackages = packagesList.filter(pkg =>
-    (pkg.name || '').toLowerCase().includes(search.toLowerCase()) ||
-    (pkg.district || '').toLowerCase().includes(search.toLowerCase())
-  );
+  const filteredPackages = packagesList.filter(pkg => {
+    const matchesSearch = (pkg.name || '').toLowerCase().includes(search.toLowerCase()) ||
+      (pkg.district || '').toLowerCase().includes(search.toLowerCase());
+
+    const pkgIsMulti = isMulti(pkg);
+    const matchesType = typeFilter === 'all'
+      ? true
+      : typeFilter === 'multi'
+      ? pkgIsMulti
+      : !pkgIsMulti;
+
+    return matchesSearch && matchesType;
+  });
 
   const handleEdit = async (pkg: any) => {
     try {
@@ -93,18 +115,33 @@ const Packages = () => {
         {/* 1. HEADER SECTION: Search Bar and Create New Package Button */}
         {/* Header */}
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              placeholder="Search packages..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="input-search w-full sm:w-80 pl-9"
-            />
+          <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto">
+            <div className="relative flex-1 sm:w-80">
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                placeholder="Search packages..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="input-search w-full pl-9"
+              />
+            </div>
+
+            {/* Top-Right Filter Dropdown */}
+            <Select value={typeFilter} onValueChange={(val: any) => setTypeFilter(val)}>
+              <SelectTrigger className="w-44 rounded-xl border-border bg-card">
+                <SelectValue placeholder="All Package Types" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Packages</SelectItem>
+                <SelectItem value="single">Single District</SelectItem>
+                <SelectItem value="multi">Multi-District</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
+
           <Button
             id="create-package-btn"
-            className="gap-2"
+            className="gap-2 shrink-0"
             onClick={() => { setEditingPkg(null); setShowCreateModal(true); }}
           >
             <Plus className="h-4 w-4" />
@@ -135,7 +172,26 @@ const Packages = () => {
             ))}
           </div>
         ) : filteredPackages.length === 0 ? (
-          <p className="text-muted-foreground">No packages found.</p>
+          <div className="flex flex-col items-center justify-center rounded-2xl border border-border bg-card p-12 text-center shadow-sm">
+            <div className="flex h-16 w-16 items-center justify-center rounded-full bg-primary/10 mb-4">
+              {search ? <SearchX className="h-8 w-8 text-primary" /> : <PackagePlus className="h-8 w-8 text-primary" />}
+            </div>
+            <h3 className="text-xl font-bold text-foreground">
+              {search ? 'No packages match your search' : 'No travel packages created yet'}
+            </h3>
+            <p className="mt-2 text-sm text-muted-foreground max-w-md">
+              {search
+                ? 'Try adjusting your search query or clear the filter.'
+                : "Start building your agency's travel offerings! Add custom itineraries, set pricing, and start accepting tourist bookings."}
+            </p>
+            {search && (
+              <div className="mt-6 flex gap-3">
+                <Button variant="outline" onClick={() => setSearch('')} className="rounded-xl">
+                  Clear Search
+                </Button>
+              </div>
+            )}
+          </div>
         ) : (
           <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
             {filteredPackages.map((pkg) => {
@@ -206,17 +262,22 @@ const Packages = () => {
                       </div>
                     </div>
 
-                    {/* Rating & Review Count */}
-                    <div className="flex items-center gap-1 shrink-0">
-                      <Star className={`h-3.5 w-3.5 ${pkg.rating ? 'fill-warning text-warning' : 'text-muted-foreground'}`} />
-                      {pkg.rating ? (
-                        <span className="text-sm font-medium">
-                          {pkg.rating.toFixed(1)}
-                          <span className="text-xs text-muted-foreground font-normal ml-1">({pkg.reviewCount ?? 0})</span>
-                        </span>
-                      ) : (
-                        <span className="text-xs text-muted-foreground">No reviews yet</span>
-                      )}
+                    {/* Rating & Review Count & District Badge */}
+                    <div className="flex flex-col items-end shrink-0">
+                      <div className="flex items-center gap-1">
+                        <Star className={`h-3.5 w-3.5 ${pkg.rating ? 'fill-warning text-warning' : 'text-muted-foreground'}`} />
+                        {pkg.rating ? (
+                          <span className="text-sm font-medium">
+                            {pkg.rating.toFixed(1)}
+                            <span className="text-xs text-muted-foreground font-normal ml-1">({pkg.reviewCount ?? 0})</span>
+                          </span>
+                        ) : (
+                          <span className="text-xs text-muted-foreground">No reviews yet</span>
+                        )}
+                      </div>
+                      <span className="mt-1.5 inline-flex items-center rounded-full bg-sky-50 px-3 py-0.5 text-xs font-medium text-sky-700 dark:bg-sky-950/60 dark:text-sky-300">
+                        {isMulti(pkg) ? 'Multi District' : 'Single District'}
+                      </span>
                     </div>
                   </div>
 
@@ -280,9 +341,9 @@ const Packages = () => {
                                 await api.deleteAgentPackage(targetId);
                                 setPackagesList(prev => prev.filter(p => (p.packageId || p.id) !== targetId));
                                 toast.success('Package deleted successfully');
-                              } catch (err) {
-                                console.error(err);
-                                toast.error('Failed to delete package');
+                              } catch (err: any) {
+                                console.error('Delete package error:', err);
+                                toast.error(err.message || 'Failed to delete package');
                               }
                             }}
                           >

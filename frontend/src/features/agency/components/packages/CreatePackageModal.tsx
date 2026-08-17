@@ -272,10 +272,29 @@ export function CreatePackageModal({ open, onClose, editData = null, onSave, onC
     try {
       updateActivity(dayId, actIdx, 'isUploading', true);
       const res = await api.uploadPackageImage(file);
-      updateActivity(dayId, actIdx, 'imageUrl', res.imageUrl);
+      if (res && res.imageUrl) {
+        updateActivity(dayId, actIdx, 'imageUrl', res.imageUrl);
+        toast.success('Activity image uploaded successfully');
+      } else {
+        throw new Error('Image URL not returned');
+      }
     } catch (err: any) {
-      console.error(err);
-      toast.error('Failed to upload activity image');
+      console.warn('Cloud upload failed, using local preview fallback:', err);
+      // Fallback to reading file as Data URL
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const dataUrl = e.target?.result as string;
+        if (dataUrl) {
+          updateActivity(dayId, actIdx, 'imageUrl', dataUrl);
+          toast.success('Image attached successfully');
+        } else {
+          toast.error('Failed to process image');
+        }
+      };
+      reader.onerror = () => {
+        toast.error('Failed to read image file');
+      };
+      reader.readAsDataURL(file);
     } finally {
       updateActivity(dayId, actIdx, 'isUploading', false);
     }

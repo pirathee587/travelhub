@@ -24,4 +24,5 @@ public class PackageSummaryResponse {
     private LocalDateTime createdAt;
     private Double rating;
     private Long reviewCount;
+    private String packageType;
 }

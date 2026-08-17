@@ -3,7 +3,7 @@ import { useSearchParams } from 'react-router-dom';
 import { createWorker } from 'tesseract.js';
 import {
   Car, Plus, Search, Edit, Trash2, User,
-  CheckCircle, Clock, AlertTriangle, Upload, Star, Lock,
+  CheckCircle, Clock, AlertTriangle, Upload, Star, Lock, SearchX, Loader2, AlertCircle,
 } from 'lucide-react';
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
@@ -33,9 +33,15 @@ import { Skeleton } from '@/components/common/ui/skeleton';
 const uploadImage = async (file: File) => {
   const formData = new FormData();
   formData.append('file', file);
+  const token = localStorage.getItem('travelhub_token') || localStorage.getItem('token') || sessionStorage.getItem('token');
+  const headers: Record<string, string> = {};
+  if (token) {
+    headers['Authorization'] = token.startsWith('Bearer ') ? token : `Bearer ${token}`;
+  }
   const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:8080';
   const response = await fetch(`${apiBase}/api/upload/image`, {
     method: 'POST',
+    headers,
     body: formData,
   });
   const result = await response.json();
@@ -184,6 +190,9 @@ const Vehicles = () => {
   const [newVehicle, setNewVehicle] = useState(defaultNewVehicle);
   const [newDriver, setNewDriver] = useState(defaultNewDriver);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [isSavingVehicle, setIsSavingVehicle] = useState(false);
+  const [vehicleSubmitError, setVehicleSubmitError] = useState<string | null>(null);
+  const vehicleModalScrollRef = useRef<HTMLDivElement>(null);
   const [changeRequestModalOpen, setChangeRequestModalOpen] = useState(false);
   const [changeRequestData, setChangeRequestData] = useState({ fieldName: '', currentValue: '', newValue: '', reason: '' });
   const [driverPhotoUploading, setDriverPhotoUploading] = useState(false);
@@ -615,10 +624,14 @@ const Vehicles = () => {
   };
 
   const handleSaveVehicle = async () => {
-    if (!validateForm()) {
-      toast.error('Please correct the errors in the form before saving.');
+    setVehicleSubmitError(null);
+    if (!validateVehicleForm()) {
+      toast.error('Please correct the highlighted errors in the form before saving.');
+      setVehicleSubmitError('Validation failed: Please check the highlighted fields above.');
+      vehicleModalScrollRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
       return;
     }
+    setIsSavingVehicle(true);
     try {
       const payload = {
         ownerId: isNewOwner ? null : (parseInt(newVehicle.ownerId) || null),
@@ -668,8 +681,13 @@ const Vehicles = () => {
       setIsAddVehicleOpen(false);
       setNewVehicle(defaultNewVehicle);
       setEditingVehicle(null);
-    } catch (error) {
-      toast.error(error.message || 'Failed to save vehicle');
+    } catch (error: any) {
+      console.error('Save vehicle failed:', error);
+      const errMsg = error.message || 'Failed to save vehicle';
+      setVehicleSubmitError(errMsg);
+      toast.error(errMsg);
+    } finally {
+      setIsSavingVehicle(false);
     }
   };
 
@@ -703,7 +721,10 @@ const Vehicles = () => {
       setVehicles(prev => prev.filter(v => v.id !== id));
       toast.success('Vehicle permanently deleted');
       setDeleteActionVehicle(null);
-    } catch (error) { toast.error('Cannot delete — vehicle may have active bookings'); }
+    } catch (error: any) {
+      console.error('Delete vehicle error:', error);
+      toast.error(error.message || 'Cannot delete — vehicle may have active bookings');
+    }
   };
 
   // ── Driver handlers ────────────────────────────────────────
@@ -829,7 +850,10 @@ const Vehicles = () => {
       setDrivers(prev => prev.filter(d => d.id !== id));
       toast.success('Driver permanently deleted');
       setDeleteActionDriver(null);
-    } catch (error) { toast.error('Cannot delete — driver may be on an active trip'); }
+    } catch (error: any) {
+      console.error('Delete driver error:', error);
+      toast.error(error.message || 'Cannot delete — driver may be on an active trip');
+    }
   };
 
   // ── Driver photo upload → drivers/profile folder ───────────
@@ -960,9 +984,15 @@ const Vehicles = () => {
 
               {/* Add/Edit Vehicle Dialog */}
               <Dialog open={isAddVehicleOpen} onOpenChange={setIsAddVehicleOpen}>
-                <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-[700px]">
+                <DialogContent ref={vehicleModalScrollRef} className="max-h-[85vh] overflow-y-auto sm:max-w-[700px]">
                   <DialogHeader><DialogTitle>{editingVehicle ? 'Edit Vehicle' : 'Add New Vehicle'}</DialogTitle></DialogHeader>
                   <div className="space-y-8 py-4">
+                    {vehicleSubmitError && (
+                      <div className="p-3 rounded-lg bg-destructive/10 border border-destructive/20 text-destructive flex items-center gap-2.5 text-xs font-medium animate-in fade-in">
+                        <AlertCircle className="h-4 w-4 shrink-0" />
+                        <span>{vehicleSubmitError}</span>
+                      </div>
+                    )}
 
                     {/* Section 1: Owner Information */}
                     <div className="space-y-4">
@@ -1166,7 +1196,8 @@ const Vehicles = () => {
                       </div>
                     </div>
 
-                    <Button className="w-full mt-8" onClick={handleSaveVehicle}>
+                    <Button className="w-full mt-8" onClick={handleSaveVehicle} disabled={isSavingVehicle}>
+                      {isSavingVehicle ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
                       {editingVehicle ? 'Update Vehicle' : 'Register Vehicle'}
                     </Button>
                   </div>
@@ -1192,7 +1223,38 @@ const Vehicles = () => {
                 ))}
               </div>
             ) : filteredVehicles.length === 0 ? (
-              <p className="text-muted-foreground">No vehicles found.</p>
+              <div className="flex flex-col items-center justify-center rounded-2xl border border-border bg-card p-12 text-center shadow-sm">
+                <div className="flex h-16 w-16 items-center justify-center rounded-full bg-primary/10 mb-4">
+                  {searchVehicle ? <SearchX className="h-8 w-8 text-primary" /> : <Car className="h-8 w-8 text-primary" />}
+                </div>
+                <h3 className="text-xl font-bold text-foreground">
+                  {searchVehicle
+                    ? 'No vehicles match your search'
+                    : vehicleFilter === 'active' && vehicles.some(v => v.lifecycleStatus === 'pending')
+                    ? 'No active vehicles yet'
+                    : `No ${vehicleFilter} vehicles found`}
+                </h3>
+                <p className="mt-2 text-sm text-muted-foreground max-w-md">
+                  {searchVehicle
+                    ? 'Try adjusting your search query or vehicle status filter.'
+                    : vehicleFilter === 'active' && vehicles.some(v => v.lifecycleStatus === 'pending')
+                    ? 'You have registered vehicles currently awaiting admin verification approval.'
+                    : 'Add your fleet of cars, vans, or buses to allocate them to confirmed tourist bookings.'}
+                </p>
+                {searchVehicle ? (
+                  <div className="mt-6 flex gap-3">
+                    <Button variant="outline" onClick={() => setSearchVehicle('')} className="rounded-xl">
+                      Clear Search
+                    </Button>
+                  </div>
+                ) : vehicleFilter === 'active' && vehicles.some(v => v.lifecycleStatus === 'pending') ? (
+                  <div className="mt-6 flex gap-3">
+                    <Button variant="outline" onClick={() => setVehicleFilter('pending')} className="rounded-xl gap-2">
+                      <Clock className="h-4 w-4 text-amber-500" /> View Pending Vehicles
+                    </Button>
+                  </div>
+                ) : null}
+              </div>
             ) : (
               <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 {filteredVehicles.map((vehicle) => {
@@ -1478,7 +1540,38 @@ const Vehicles = () => {
                 ))}
               </div>
             ) : filteredDrivers.length === 0 ? (
-              <p className="text-muted-foreground">No drivers found.</p>
+              <div className="flex flex-col items-center justify-center rounded-2xl border border-border bg-card p-12 text-center shadow-sm">
+                <div className="flex h-16 w-16 items-center justify-center rounded-full bg-primary/10 mb-4">
+                  {searchDriver ? <SearchX className="h-8 w-8 text-primary" /> : <User className="h-8 w-8 text-primary" />}
+                </div>
+                <h3 className="text-xl font-bold text-foreground">
+                  {searchDriver
+                    ? 'No drivers match your search'
+                    : driverFilter === 'active' && drivers.some(d => d.lifecycleStatus === 'pending')
+                    ? 'No active drivers yet'
+                    : `No ${driverFilter} drivers found`}
+                </h3>
+                <p className="mt-2 text-sm text-muted-foreground max-w-md">
+                  {searchDriver
+                    ? 'Try adjusting your search query or driver status filter.'
+                    : driverFilter === 'active' && drivers.some(d => d.lifecycleStatus === 'pending')
+                    ? 'You have registered drivers currently awaiting admin verification approval.'
+                    : 'Register your team of professional drivers to assign them to upcoming tourist trips.'}
+                </p>
+                {searchDriver ? (
+                  <div className="mt-6 flex gap-3">
+                    <Button variant="outline" onClick={() => setSearchDriver('')} className="rounded-xl">
+                      Clear Search
+                    </Button>
+                  </div>
+                ) : driverFilter === 'active' && drivers.some(d => d.lifecycleStatus === 'pending') ? (
+                  <div className="mt-6 flex gap-3">
+                    <Button variant="outline" onClick={() => setDriverFilter('pending')} className="rounded-xl gap-2">
+                      <Clock className="h-4 w-4 text-amber-500" /> View Pending Drivers
+                    </Button>
+                  </div>
+                ) : null}
+              </div>
             ) : (
               <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
                 {filteredDrivers.map((driver) => {

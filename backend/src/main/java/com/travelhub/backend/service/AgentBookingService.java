@@ -273,7 +273,7 @@ public class AgentBookingService {
             throw new BadRequestException("Only confirmed bookings can be started");
         }
         booking.setStatus("in_progress");
-        booking.setProgress(50);
+        booking.setProgress(0);
         Booking saved = bookingRepository.save(booking);
         eventPublisher.publishEvent(new BookingEvent(this, saved, "STARTED"));
         return toResponse(saved);

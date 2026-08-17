@@ -23,7 +23,11 @@ public class VehicleResponse {
     private String capacity;
     private String yearOfManufacture;
     private String registration;
+    private String insuranceCardFront;
     private String insuranceExpiryDate;
+    private String revenueLicenseImage;
+    private String nicFrontImage;
+    private String nicRearImage;
     private String vehicleImageFront;
     private String vehicleImageBack;
     private String vehicleImageSide;

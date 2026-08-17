@@ -42,6 +42,10 @@ public class User {
     private String nationality;           // Tourist
     private String nicNumber;             // Agent + Hotel Owner (Captured at Signup)
     private String nicImage;              // Agent + Hotel Owner (Captured in Profile / Hotel Setup)
+    @Column(name = "nic_front_image")
+    private String nicFrontImage;
+    @Column(name = "nic_rear_image")
+    private String nicRearImage;
 
     // ── NIC Verification ──────────────────────────────
     // Values: PENDING | APPROVED | REJECTED | SUSPENDED
