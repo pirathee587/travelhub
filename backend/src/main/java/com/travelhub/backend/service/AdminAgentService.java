@@ -86,6 +86,9 @@ public class AdminAgentService {
                             "dd/MM/yyyy"));
         }
 
+        Long dbTotalTrips = agentRepository.getTotalTripsByAgentId(id);
+        Integer totalTripsVal = dbTotalTrips != null ? dbTotalTrips.intValue() : 0;
+
         return new AdminAgentDetailResponse(
                 agent.getId(),
                 agent.getOwner() != null ? agent.getOwner().getId() : null,
@@ -107,7 +110,7 @@ public class AdminAgentService {
                 resolveNicStatus(agent.getOwner()),
                 agent.getOwner() != null ? agent.getOwner().getAdminMessage() : null,
                 agentRatingCalculator.getAgentRating(id),
-                agent.getTotalTrips(),
+                totalTripsVal,
                 agent.getExperienceYears(),
                 agent.getIsActive()
         );
@@ -386,6 +389,8 @@ public class AdminAgentService {
         } catch (Exception ignored) {}
 
         Double computedRating = agentRatingCalculator.getAgentRating(a.getId());
+        Long dbTotalTrips = agentRepository.getTotalTripsByAgentId(a.getId());
+        Integer totalTripsVal = dbTotalTrips != null ? dbTotalTrips.intValue() : 0;
 
         return new AdminAgentListResponse(
                 a.getId(),
@@ -399,7 +404,7 @@ public class AdminAgentService {
                 a.getOwner() != null ? a.getOwner().getProfileImage() : null,
                 a.getBio(),
                 computedRating != null ? computedRating : (a.getRating() != null ? a.getRating() : 0.0),
-                a.getTotalTrips() != null ? a.getTotalTrips() : 0,
+                totalTripsVal,
                 pkgCount,
                 a.getExperienceYears() != null ? a.getExperienceYears() : 0,
                 a.getOwner() != null ? a.getOwner().getNicNumber() : null,

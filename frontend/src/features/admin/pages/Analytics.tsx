@@ -522,9 +522,10 @@ export default function Analytics() {
     const avatarUrl = selectedAgent.profileImage || selectedAgent.imageUrl || selectedAgent.logoUrl
     const avatarInitials = getInitials(companyName)
 
-    const isApproved = String(selectedAgent.applicationStatus || selectedAgent.status || '').toLowerCase() === 'approved' || selectedAgent.isActive === true
+    const isActive = selectedAgent.isActive === true
+    const isApproved = String(selectedAgent.applicationStatus || selectedAgent.status || '').toLowerCase() === 'approved' || isActive
     const isPending = String(selectedAgent.applicationStatus || selectedAgent.status || '').toLowerCase() === 'pending'
-    const isSuspended = selectedAgent.nicVerificationStatus === 'SUSPENDED' || (selectedAgent.isActive === false && isApproved)
+    const isSuspended = selectedAgent.nicVerificationStatus === 'SUSPENDED' || (isActive === false && isApproved)
 
     const cachedInfo = agentStatsMap[selectedAgent.id]
     const cachedStats = cachedInfo?.stats

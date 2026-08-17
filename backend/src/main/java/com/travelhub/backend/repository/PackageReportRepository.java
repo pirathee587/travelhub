@@ -1,6 +1,7 @@
 package com.travelhub.backend.repository;
 
 import com.travelhub.backend.entity.PackageReport;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
@@ -22,10 +23,13 @@ public interface PackageReportRepository extends JpaRepository<PackageReport, Lo
 
     Optional<PackageReport> findByUserIdAndBookingId(Long userId, Long bookingId);
 
+    @EntityGraph(attributePaths = {"user", "pkg", "agent", "booking"})
     List<PackageReport> findAllByOrderByCreatedAtDesc();
 
+    @EntityGraph(attributePaths = {"user", "pkg", "agent", "booking"})
     List<PackageReport> findTop10ByStatusOrderByCreatedAtDesc(String status);
 
+    @EntityGraph(attributePaths = {"user", "pkg", "agent", "booking"})
     List<PackageReport> findTop10ByStatusInOrderByCreatedAtDesc(List<String> statuses);
 
     boolean existsByUserIdAndBookingIdAndStatusIn(Long userId, Long bookingId, List<String> statuses);

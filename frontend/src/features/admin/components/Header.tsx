@@ -19,6 +19,7 @@ export default function Header() {
     loading: notifLoading,
     markAsRead,
     markAllAsRead,
+    refetch,
   } = useAdminNotifications()
 
   // Read real user info from localStorage (set on login)
@@ -97,7 +98,14 @@ export default function Header() {
         <div className="relative">
           <button
             className="text-gray-500 hover:text-gray-700 transition relative p-2 rounded-lg hover:bg-gray-100"
-            onClick={() => { setShowNotifications(!showNotifications); setShowUserMenu(false) }}
+            onClick={() => {
+              const nextVal = !showNotifications;
+              setShowNotifications(nextVal);
+              setShowUserMenu(false);
+              if (nextVal) {
+                refetch();
+              }
+            }}
             aria-label="Notifications"
           >
             <Bell size={22} />

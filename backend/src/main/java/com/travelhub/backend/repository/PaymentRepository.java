@@ -59,7 +59,9 @@ public interface PaymentRepository
     // User-ஆல் தேடு
     List<Payment> findByUserId(Long userId);
 
+    @org.springframework.data.jpa.repository.EntityGraph(attributePaths = {"user", "agent", "booking"})
     List<Payment> findTop10ByStatusOrderByCreatedAtDesc(String status);
 
+    @org.springframework.data.jpa.repository.EntityGraph(attributePaths = {"user", "agent", "booking"})
     List<Payment> findTop10ByOrderByCreatedAtDesc();
 }
