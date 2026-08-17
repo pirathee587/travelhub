@@ -140,6 +140,7 @@ export const useAdminNotifications = () => {
         fetchUnreadCount();
 
         const interval = setInterval(() => {
+            fetchNotifications();
             fetchUnreadCount();
         }, 30000);
 

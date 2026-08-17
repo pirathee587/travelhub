@@ -29,7 +29,7 @@ public class AdminNotificationPreferenceService {
                 .orElseGet(() -> AdminNotificationPreferenceDto.builder().build());
     }
 
-    @Transactional(readOnly = true)
+    @Transactional
     public AdminNotificationPreference getPreferencesEntity(Long adminId) {
         if (adminId == null) {
             return AdminNotificationPreference.builder()
@@ -42,14 +42,32 @@ public class AdminNotificationPreferenceService {
                     .build();
         }
         return preferenceRepository.findByAdminId(adminId)
-                .orElseGet(() -> AdminNotificationPreference.builder()
-                        .notifyAgentRegistrations(true)
-                        .notifyHotelRegistrations(true)
-                        .notifyPackageApprovals(true)
-                        .notifyPaymentReceived(true)
-                        .notifyTouristReports(true)
-                        .notifySystemAlerts(true)
-                        .build());
+                .orElseGet(() -> {
+                    // Auto-create a preference row for this admin on first access
+                    User admin = userRepository.findById(adminId).orElse(null);
+                    if (admin == null) {
+                        // Admin not found — return safe in-memory default
+                        return AdminNotificationPreference.builder()
+                                .notifyAgentRegistrations(true)
+                                .notifyHotelRegistrations(true)
+                                .notifyPackageApprovals(true)
+                                .notifyPaymentReceived(true)
+                                .notifyTouristReports(true)
+                                .notifySystemAlerts(true)
+                                .build();
+                    }
+                    AdminNotificationPreference newPref = AdminNotificationPreference.builder()
+                            .admin(admin)
+                            .notifyAgentRegistrations(true)
+                            .notifyHotelRegistrations(true)
+                            .notifyPackageApprovals(true)
+                            .notifyPaymentReceived(true)
+                            .notifyTouristReports(true)
+                            .notifySystemAlerts(true)
+                            .build();
+                    log.info("Auto-creating notification preferences for admin ID: {}", adminId);
+                    return preferenceRepository.save(newPref);
+                });
     }
 
     @Transactional

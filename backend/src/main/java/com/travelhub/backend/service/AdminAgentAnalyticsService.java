@@ -163,6 +163,9 @@ public class AdminAgentAnalyticsService {
     // ── Map Agent → List Response ─────────────────────
     private AdminAgentListResponse mapToListResponse(
             Agent a) {
+        Long dbTotalTrips = agentRepository.getTotalTripsByAgentId(a.getId());
+        Integer totalTripsVal = dbTotalTrips != null ? dbTotalTrips.intValue() : 0;
+
         return new AdminAgentListResponse(
                 a.getId(),
                 a.getOwner() != null ? a.getOwner().getId() : null,
@@ -175,7 +178,7 @@ public class AdminAgentAnalyticsService {
                 a.getOwner() != null ? a.getOwner().getProfileImage() : null,
                 a.getBio(),
                 a.getRating() != null ? a.getRating() : 0.0,
-                a.getTotalTrips() != null ? a.getTotalTrips() : 0,
+                totalTripsVal,
                 0,
                 a.getExperienceYears() != null ? a.getExperienceYears() : 0,
                 a.getOwner() != null ? a.getOwner().getNicNumber() : null,
