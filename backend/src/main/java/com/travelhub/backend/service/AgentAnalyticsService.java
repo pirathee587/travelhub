@@ -51,12 +51,12 @@ public class AgentAnalyticsService {
 
         // Stat cards: total completed trips within the filtered period.
         long totalTrips = filtered.stream()
-                .filter(b -> b.getStatus().equals("completed"))
+                .filter(b -> b.getStatus() != null && b.getStatus().equalsIgnoreCase("completed"))
                 .count();
 
         // Stat cards: cancellation count + cancellation rate (% of filtered bookings).
         long cancelled = filtered.stream()
-                .filter(b -> b.getStatus().equals("cancelled"))
+                .filter(b -> b.getStatus() != null && (b.getStatus().equalsIgnoreCase("cancelled") || b.getStatus().equalsIgnoreCase("rejected") || b.getStatus().equalsIgnoreCase("refund_requested")))
                 .count();
 
         double cancellationRate = filtered.isEmpty() ? 0 :
@@ -70,9 +70,9 @@ public class AgentAnalyticsService {
 
         // Trip status breakdown (for pie/donut charts).
         Map<String, Long> tripStatusData = new LinkedHashMap<>();
-        tripStatusData.put("completed", filtered.stream().filter(b -> b.getStatus().equals("completed")).count());
-        tripStatusData.put("active", filtered.stream().filter(b -> b.getStatus().equals("active")).count());
-        tripStatusData.put("pending", filtered.stream().filter(b -> b.getStatus().equals("pending")).count());
+        tripStatusData.put("completed", filtered.stream().filter(b -> b.getStatus() != null && b.getStatus().equalsIgnoreCase("completed")).count());
+        tripStatusData.put("active", filtered.stream().filter(b -> b.getStatus() != null && (b.getStatus().equalsIgnoreCase("active") || b.getStatus().equalsIgnoreCase("confirmed") || b.getStatus().equalsIgnoreCase("in_progress") || b.getStatus().equalsIgnoreCase("paid"))).count());
+        tripStatusData.put("pending", filtered.stream().filter(b -> b.getStatus() != null && b.getStatus().equalsIgnoreCase("pending")).count());
         tripStatusData.put("cancelled", cancelled);
 
         // Top destinations: group bookings by package destination and take the top 5 by count.

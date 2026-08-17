@@ -54,6 +54,22 @@ public class AdminAgentService {
                 .toList();
     }
 
+    // ── Get Agents By Status ─────────────────────────
+    public List<AdminAgentListResponse> getAgentsByStatus(String status) {
+        List<Agent> agents = agentRepository.findAll();
+        if (status == null || status.isBlank() || "All".equalsIgnoreCase(status)) {
+            return agents.stream().map(this::mapToListResponse).toList();
+        }
+
+        return agents.stream()
+                .filter(a -> {
+                    String appStatus = resolveApplicationStatus(a.getOwner(), a);
+                    return appStatus.equalsIgnoreCase(status);
+                })
+                .map(this::mapToListResponse)
+                .toList();
+    }
+
     // ── Get Agent Detail ──────────────────────────────
     // View Button click → Full detail page
     public AdminAgentDetailResponse getAgentDetail(
@@ -101,9 +117,7 @@ public class AdminAgentService {
                 agent.getOwner() != null ? agent.getOwner().getTelephone() : null,
                 agent.getLocation(),
                 memberSince,
-                agent.getOwner() != null && Boolean.TRUE.equals(agent.getOwner().getAgentApproved())
-                        ? "Approved"
-                        : "Pending",
+                resolveApplicationStatus(agent.getOwner(), agent),
                 submittedDate,
                 agent.getOwner() != null ? agent.getOwner().getNicNumber() : null,
                 agent.getOwner() != null ? agent.getOwner().getNicImage() : null,
@@ -352,6 +366,21 @@ public class AdminAgentService {
         return initials.toString();
     }
 
+    // ── Resolve Application Status ───────────────────
+    private String resolveApplicationStatus(com.travelhub.backend.entity.User owner, Agent agent) {
+        if (owner == null) return "Pending";
+        if (Boolean.FALSE.equals(owner.getIsActive()) || (agent != null && Boolean.FALSE.equals(agent.getIsActive())) || "SUSPENDED".equalsIgnoreCase(owner.getNicVerificationStatus())) {
+            return "Suspended";
+        }
+        if ("REJECTED".equalsIgnoreCase(owner.getNicVerificationStatus())) {
+            return "Rejected";
+        }
+        if (Boolean.TRUE.equals(owner.getAgentApproved()) || "APPROVED".equalsIgnoreCase(owner.getNicVerificationStatus())) {
+            return "Approved";
+        }
+        return "Pending";
+    }
+
     // ── Resolve NIC Status ────────────────────────────
     private String resolveNicStatus(com.travelhub.backend.entity.User owner) {
         if (owner == null) return "PENDING";
@@ -408,9 +437,7 @@ public class AdminAgentService {
                 pkgCount,
                 a.getExperienceYears() != null ? a.getExperienceYears() : 0,
                 a.getOwner() != null ? a.getOwner().getNicNumber() : null,
-                a.getOwner() != null && Boolean.TRUE.equals(a.getOwner().getAgentApproved())
-                        ? "Approved"
-                        : "Pending",
+                resolveApplicationStatus(a.getOwner(), a),
                 resolveNicStatus(a.getOwner()),
                 submittedDate,
                 a.getIsActive() != null ? a.getIsActive() : true

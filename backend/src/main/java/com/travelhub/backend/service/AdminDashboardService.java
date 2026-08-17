@@ -2,6 +2,7 @@ package com.travelhub.backend.service;
 
 import com.travelhub.backend.dto.response.AdminDashboardResponse;
 import com.travelhub.backend.enums.Role;
+import com.travelhub.backend.repository.AgentRepository;
 import com.travelhub.backend.repository.BookingRepository;
 import com.travelhub.backend.repository.DriverRepository;
 import com.travelhub.backend.repository.HotelRepository;
@@ -10,11 +11,16 @@ import com.travelhub.backend.repository.ReviewRepository;
 import com.travelhub.backend.repository.UserRepository;
 import com.travelhub.backend.repository.VehicleRepository;
 import com.travelhub.backend.repository.PaymentRepository;
+import com.travelhub.backend.repository.WalletTransactionRepository;
+import com.travelhub.backend.entity.WalletTransaction;
+import com.travelhub.backend.entity.Agent;
 import com.travelhub.backend.entity.Booking;
 import com.travelhub.backend.entity.Payment;
 import com.travelhub.backend.entity.Package;
 import com.travelhub.backend.entity.User;
 import com.travelhub.backend.entity.Hotel;
+import com.travelhub.backend.entity.Driver;
+import com.travelhub.backend.entity.Vehicle;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -33,6 +39,7 @@ import java.util.stream.Collectors;
 public class AdminDashboardService {
 
     private final UserRepository    userRepository;
+    private final AgentRepository   agentRepository;
     private final HotelRepository   hotelRepository;
     private final PackageRepository packageRepository;
     private final BookingRepository bookingRepository;
@@ -40,47 +47,84 @@ public class AdminDashboardService {
     private final PaymentRepository paymentRepository;
     private final DriverRepository  driverRepository;
     private final VehicleRepository vehicleRepository;
+    private final WalletTransactionRepository walletTransactionRepository;
 
     public AdminDashboardResponse getDashboardStats() {
 
-        // ── Users ───────────────────────────────────────
-        Long totalTourists =
-                userRepository.countByRole(Role.TOURIST);
-        Long totalAgents =
-                userRepository.countByRole(Role.AGENT);
-        Long totalHotelManagers =
-                userRepository.countByRole(Role.HOTEL_OWNER);
-        Long totalUsers =
-                totalTourists + totalAgents + totalHotelManagers;
+        // ── Users (Excluding ADMIN) ─────────────────────
+        Long totalTourists = userRepository.countByRole(Role.TOURIST);
+        if (totalTourists == null) totalTourists = 0L;
+
+        List<Agent> allAgents = agentRepository.findAll();
+        Long totalAgents = allAgents.stream()
+                .filter(a -> "Approved".equalsIgnoreCase(resolveAgentStatus(a.getOwner(), a)))
+                .count();
+
+        Long totalHotelManagers = userRepository.countByRole(Role.HOTEL_OWNER);
+        if (totalHotelManagers == null) totalHotelManagers = 0L;
+
+        Long totalUsers = userRepository.countByRoleNot(Role.ADMIN);
+        if (totalUsers == null) totalUsers = totalTourists + totalAgents + totalHotelManagers;
 
         // ── Pending Items ──────────────────────────────
-        Long pendingAgents = (long) userRepository
-                .findByRoleAndAgentApprovedFalse(Role.AGENT)
-                .size();
-        Long pendingHotels = (long) hotelRepository
-                .findByApplicationStatus("Pending")
-                .size();
-        Long pendingPackages = (long) packageRepository
-                .findByApplicationStatus("Pending")
-                .size();
-        Long pendingDrivers = (long) driverRepository
-                .findByLifecycleStatus("pending")
-                .size();
-        Long pendingVehicles = (long) vehicleRepository
-                .findByLifecycleStatus("pending")
-                .size();
+        Long pendingAgents = allAgents.stream()
+                .filter(a -> "Pending".equalsIgnoreCase(resolveAgentStatus(a.getOwner(), a)))
+                .count();
+
+        List<Hotel> allHotels = hotelRepository.findAll();
+        Long pendingHotels = allHotels.stream()
+                .filter(h -> "Pending".equalsIgnoreCase(h.getApplicationStatus()))
+                .count();
+
+        List<Package> allPackages = packageRepository.findAll();
+        Long pendingPackages = allPackages.stream()
+                .filter(p -> "Pending".equalsIgnoreCase(p.getApplicationStatus()))
+                .count();
+
+        List<Driver> allDrivers = driverRepository.findAll();
+        Long pendingDrivers = allDrivers.stream()
+                .filter(d -> "pending".equalsIgnoreCase(d.getLifecycleStatus()))
+                .count();
+
+        List<Vehicle> allVehicles = vehicleRepository.findAll();
+        Long pendingVehicles = allVehicles.stream()
+                .filter(v -> "pending".equalsIgnoreCase(v.getLifecycleStatus()))
+                .count();
 
         // ── Totals ──────────────────────────────────────
-        Long totalHotels = hotelRepository.count();
-        Long totalPackages = packageRepository.count();
-        Long totalBookings  = bookingRepository.count();
-        Long pendingBookings =
-                bookingRepository.countByStatus("pending");
-        Long totalReviews = reviewRepository.count();
+        Long totalHotels = allHotels.stream()
+                .filter(h -> "Approved".equalsIgnoreCase(h.getApplicationStatus()))
+                .count();
 
-        // ── Revenue ─────────────────────────────────────
-        Double totalRevenue = paymentRepository.getTotalRevenue();
-        if (totalRevenue == null) totalRevenue = 0.0;
+        Long totalPackages = allPackages.stream()
+                .filter(p -> "Approved".equalsIgnoreCase(p.getApplicationStatus()))
+                .count();
+
+        Long totalBookings  = bookingRepository.count();
+        if (totalBookings == null) totalBookings = 0L;
+
+        Long pendingBookings = (long) bookingRepository.findAll().stream()
+                .filter(b -> "pending".equalsIgnoreCase(b.getStatus()))
+                .count();
+
+        Long totalReviews = reviewRepository.count();
+        if (totalReviews == null) totalReviews = 0L;
+
+        // ── Revenue (Platform Net Revenue = Commission + Cancellation Fees) ──────
+        List<WalletTransaction> allTxns = walletTransactionRepository.findAll();
+
+        double totalPlatformCommission = allTxns.stream()
+                .filter(t -> "COMMISSION_DEDUCTION".equalsIgnoreCase(t.getType()))
+                .mapToDouble(t -> t.getAmount() != null ? t.getAmount() : 0.0)
+                .sum();
+
+        double totalCancellationCompensation = allTxns.stream()
+                .filter(t -> "CANCELLATION_COMPENSATION".equalsIgnoreCase(t.getType()))
+                .mapToDouble(t -> t.getAmount() != null ? t.getAmount() : 0.0)
+                .sum();
+
+        double totalPlatformCancellationFees = Math.round((totalCancellationCompensation / 4.0) * 100.0) / 100.0;
+        Double totalRevenue = Math.round((totalPlatformCommission + totalPlatformCancellationFees) * 100.0) / 100.0;
 
         // ── Last 6 Months Stats ────────────────────────
         List<String> months = new ArrayList<>();
@@ -90,7 +134,6 @@ public class AdminDashboardService {
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MMM");
 
         List<Booking> allBookings = bookingRepository.findAll();
-        List<Payment> allPayments = paymentRepository.findAll();
 
         for (int i = 5; i >= 0; i--) {
             LocalDate monthDate = now.minusMonths(i);
@@ -103,15 +146,24 @@ public class AdminDashboardService {
                 .count();
             monthlyBookings.add((int) bCount);
 
-            double rSum = allPayments.stream()
-                .filter(p -> p.getCreatedAt() != null && 
-                             "Payment".equals(p.getType()) &&
-                             "Completed".equals(p.getStatus()) &&
-                             p.getCreatedAt().getYear() == monthDate.getYear() && 
-                             p.getCreatedAt().getMonthValue() == monthDate.getMonthValue())
-                .mapToDouble(p -> p.getAmount() != null ? p.getAmount() : 0.0)
+            double mCommission = allTxns.stream()
+                .filter(t -> t.getCreatedAt() != null && 
+                             "COMMISSION_DEDUCTION".equalsIgnoreCase(t.getType()) &&
+                             t.getCreatedAt().getYear() == monthDate.getYear() && 
+                             t.getCreatedAt().getMonthValue() == monthDate.getMonthValue())
+                .mapToDouble(t -> t.getAmount() != null ? t.getAmount() : 0.0)
                 .sum();
-            monthlyRevenues.add(rSum);
+
+            double mCancel = allTxns.stream()
+                .filter(t -> t.getCreatedAt() != null && 
+                             "CANCELLATION_COMPENSATION".equalsIgnoreCase(t.getType()) &&
+                             t.getCreatedAt().getYear() == monthDate.getYear() && 
+                             t.getCreatedAt().getMonthValue() == monthDate.getMonthValue())
+                .mapToDouble(t -> t.getAmount() != null ? t.getAmount() : 0.0)
+                .sum();
+
+            double mPlatformNetRev = Math.round((mCommission + (mCancel / 4.0)) * 100.0) / 100.0;
+            monthlyRevenues.add(mPlatformNetRev);
         }
 
         // ── Package Distribution ───────────────────────
@@ -200,6 +252,68 @@ public class AdminDashboardService {
                 ))
                 .collect(Collectors.toList());
 
+        // ── Month-over-Month Growth Calculations ───────────────────────
+        int curYear = now.getYear();
+        int curMonth = now.getMonthValue();
+        LocalDate lastMonthDate = now.minusMonths(1);
+        int prevYear = lastMonthDate.getYear();
+        int prevMonth = lastMonthDate.getMonthValue();
+
+        List<User> allUsers = userRepository.findAll();
+        long curUsersCount = allUsers.stream()
+                .filter(u -> u.getRole() != Role.ADMIN && u.getCreatedAt() != null && u.getCreatedAt().getYear() == curYear && u.getCreatedAt().getMonthValue() == curMonth)
+                .count();
+        long prevUsersCount = allUsers.stream()
+                .filter(u -> u.getRole() != Role.ADMIN && u.getCreatedAt() != null && u.getCreatedAt().getYear() == prevYear && u.getCreatedAt().getMonthValue() == prevMonth)
+                .count();
+        Double userGrowth = calculateGrowth(curUsersCount, prevUsersCount);
+
+        long curAgentsCount = allAgents.stream()
+                .filter(a -> {
+                    java.time.LocalDateTime ts = a.getSubmittedDate();
+                    if (ts == null && a.getOwner() != null) ts = a.getOwner().getCreatedAt();
+                    return ts != null && ts.getYear() == curYear && ts.getMonthValue() == curMonth;
+                })
+                .count();
+        long prevAgentsCount = allAgents.stream()
+                .filter(a -> {
+                    java.time.LocalDateTime ts = a.getSubmittedDate();
+                    if (ts == null && a.getOwner() != null) ts = a.getOwner().getCreatedAt();
+                    return ts != null && ts.getYear() == prevYear && ts.getMonthValue() == prevMonth;
+                })
+                .count();
+        Double agentGrowth = calculateGrowth(curAgentsCount, prevAgentsCount);
+
+        long curHotelsCount = allHotels.stream()
+                .filter(h -> {
+                    java.time.LocalDateTime ts = h.getOwner() != null ? h.getOwner().getCreatedAt() : null;
+                    return ts != null && ts.getYear() == curYear && ts.getMonthValue() == curMonth;
+                })
+                .count();
+        long prevHotelsCount = allHotels.stream()
+                .filter(h -> {
+                    java.time.LocalDateTime ts = h.getOwner() != null ? h.getOwner().getCreatedAt() : null;
+                    return ts != null && ts.getYear() == prevYear && ts.getMonthValue() == prevMonth;
+                })
+                .count();
+        Double hotelGrowth = calculateGrowth(curHotelsCount, prevHotelsCount);
+
+        long curPackagesCount = allPackages.stream()
+                .filter(p -> p.getCreatedAt() != null && p.getCreatedAt().getYear() == curYear && p.getCreatedAt().getMonthValue() == curMonth)
+                .count();
+        long prevPackagesCount = allPackages.stream()
+                .filter(p -> p.getCreatedAt() != null && p.getCreatedAt().getYear() == prevYear && p.getCreatedAt().getMonthValue() == prevMonth)
+                .count();
+        Double packageGrowth = calculateGrowth(curPackagesCount, prevPackagesCount);
+
+        int curBookingsVal = monthlyBookings.size() >= 12 ? monthlyBookings.get(11) : 0;
+        int prevBookingsVal = monthlyBookings.size() >= 12 ? monthlyBookings.get(10) : 0;
+        Double bookingGrowth = calculateGrowth((long) curBookingsVal, (long) prevBookingsVal);
+
+        double curRevenueVal = monthlyRevenues.size() >= 12 ? monthlyRevenues.get(11) : 0.0;
+        double prevRevenueVal = monthlyRevenues.size() >= 12 ? monthlyRevenues.get(10) : 0.0;
+        Double revenueGrowth = calculateGrowth(curRevenueVal, prevRevenueVal);
+
         return new AdminDashboardResponse(
                 totalUsers,
                 totalTourists,
@@ -220,7 +334,41 @@ public class AdminDashboardService {
                 totalRevenue,
                 monthlyRevenues,
                 packageDistribution,
-                recentActivities
+                recentActivities,
+                userGrowth,
+                agentGrowth,
+                hotelGrowth,
+                packageGrowth,
+                bookingGrowth,
+                revenueGrowth
         );
+    }
+
+    private double calculateGrowth(long currentCount, long previousCount) {
+        if (previousCount == 0 && currentCount == 0) return 0.0;
+        if (previousCount == 0) return 100.0;
+        double change = ((double) (currentCount - previousCount) / (double) previousCount) * 100.0;
+        return Math.round(change * 10.0) / 10.0;
+    }
+
+    private double calculateGrowth(double currentAmount, double previousAmount) {
+        if (previousAmount == 0.0 && currentAmount == 0.0) return 0.0;
+        if (previousAmount == 0.0) return 100.0;
+        double change = ((currentAmount - previousAmount) / previousAmount) * 100.0;
+        return Math.round(change * 10.0) / 10.0;
+    }
+
+    private String resolveAgentStatus(com.travelhub.backend.entity.User owner, Agent agent) {
+        if (owner == null) return "Pending";
+        if (Boolean.FALSE.equals(owner.getIsActive()) || (agent != null && Boolean.FALSE.equals(agent.getIsActive())) || "SUSPENDED".equalsIgnoreCase(owner.getNicVerificationStatus())) {
+            return "Suspended";
+        }
+        if ("REJECTED".equalsIgnoreCase(owner.getNicVerificationStatus())) {
+            return "Rejected";
+        }
+        if (Boolean.TRUE.equals(owner.getAgentApproved()) || "APPROVED".equalsIgnoreCase(owner.getNicVerificationStatus())) {
+            return "Approved";
+        }
+        return "Pending";
     }
 }

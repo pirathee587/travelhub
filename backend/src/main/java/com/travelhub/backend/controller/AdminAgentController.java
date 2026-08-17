@@ -26,6 +26,15 @@ public class AdminAgentController {
                         adminAgentService.getAllAgents()));
     }
 
+    // ── GET /api/admin/agents/status?status= ──────────
+    @GetMapping("/status")
+    public ResponseEntity<?> getAgentsByStatus(
+            @RequestParam String status) {
+        return ResponseEntity.ok(
+                new ApiResponse(true, "Agents found",
+                        adminAgentService.getAgentsByStatus(status)));
+    }
+
     // ── GET /api/admin/agents/search?keyword= ─────────
     @GetMapping("/search")
     public ResponseEntity<?> searchAgents(

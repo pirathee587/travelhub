@@ -33,7 +33,7 @@ public interface BookingRepository
 
     @Query("SELECT b FROM Booking b " +
             "WHERE b.pkg.agent.id = :agentId " +
-            "AND b.status = :status")
+            "AND LOWER(b.status) = LOWER(:status)")
     List<Booking> findByAgentIdAndStatus(
             @Param("agentId") Long agentId,
             @Param("status") String status);
@@ -41,10 +41,17 @@ public interface BookingRepository
 
     @Query("SELECT COUNT(b) FROM Booking b " +
             "WHERE b.pkg.agent.id = :agentId " +
-            "AND b.status = :status")
+            "AND LOWER(b.status) = LOWER(:status)")
     Long countByAgentIdAndStatus(
             @Param("agentId") Long agentId,
             @Param("status") String status);
+
+    @Query("SELECT COUNT(b) FROM Booking b " +
+            "WHERE b.pkg.agent.id = :agentId " +
+            "AND LOWER(b.status) IN :statuses")
+    Long countByAgentIdAndStatusIn(
+            @Param("agentId") Long agentId,
+            @Param("statuses") List<String> statuses);
 
     // Vehicle Agent Bookings
     @Query("SELECT b FROM Booking b " +

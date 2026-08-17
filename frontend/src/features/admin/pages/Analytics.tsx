@@ -137,7 +137,7 @@ const AgencyAnalyticsCard = ({ agent, index, statsInfo, onView }: AgencyAnalytic
 
   const completedPct = totalTrips > 0
     ? Math.min(100, Math.round((completedTripsCount / totalTrips) * 100))
-    : (stats?.completionRate ? Math.round(stats.completionRate) : (completedTripsCount > 0 ? 100 : (stats?.completionPercentage ?? 80)))
+    : (stats?.completionRate ? Math.round(stats.completionRate) : 0)
 
   return (
     <div
@@ -591,24 +591,21 @@ export default function Analytics() {
 
     const totalStatusCount = completedCount + activeCount + pendingCount + cancelledCount
 
-    const tripStatusPieData = totalStatusCount > 0 ? [
+    const tripStatusPieData = [
       { name: 'Completed', value: completedCount, color: '#10B981' },
       { name: 'Active', value: activeCount, color: '#06B6D4' },
       { name: 'Pending', value: pendingCount, color: '#F59E0B' },
       { name: 'Cancelled', value: cancelledCount, color: '#EF4444' },
-    ] : [
-      { name: 'Completed', value: Number(totalTrips) > 0 ? Number(totalTrips) : 1, color: '#10B981' },
-      { name: 'Active', value: 0, color: '#06B6D4' },
-      { name: 'Pending', value: 0, color: '#F59E0B' },
-      { name: 'Cancelled', value: 0, color: '#EF4444' },
     ]
 
-    const vehicleUtilization = detailAnalytics?.vehicleUtilization && detailAnalytics.vehicleUtilization.length > 0
+    const pieDataToRender = totalStatusCount > 0
+      ? tripStatusPieData.filter(d => d.value > 0)
+      : [{ name: 'No Bookings', value: 1, color: '#E2E8F0' }]
+
+    const vehicleUtilization = detailAnalytics?.vehicleUtilization && Array.isArray(detailAnalytics.vehicleUtilization) && detailAnalytics.vehicleUtilization.length > 0
       ? detailAnalytics.vehicleUtilization
-      : [
-        { name: 'Toyota Hiace', registration: 'WPND2001', trips: 4 }
-      ]
-    const maxVehicleTrips = Math.max(...vehicleUtilization.map((v: any) => v.trips), 1)
+      : []
+    const maxVehicleTrips = vehicleUtilization.length > 0 ? Math.max(...vehicleUtilization.map((v: any) => v.trips || 0), 1) : 1
 
     return (
       <div className="max-w-[1600px] mx-auto p-6 sm:p-8 bg-gray-50 min-h-screen space-y-6 animate-fade-in pb-16 font-sans">
@@ -885,21 +882,21 @@ export default function Analytics() {
                   <ResponsiveContainer width="100%" height="100%">
                     <PieChart>
                       <Pie
-                        data={tripStatusPieData}
+                        data={pieDataToRender}
                         innerRadius={55}
                         outerRadius={75}
-                        paddingAngle={4}
+                        paddingAngle={totalStatusCount > 0 ? 4 : 0}
                         dataKey="value"
                       >
-                        {tripStatusPieData.map((entry, index) => (
+                        {pieDataToRender.map((entry, index) => (
                           <Cell key={`cell-${index}`} fill={entry.color} />
                         ))}
                       </Pie>
-                      <Tooltip />
+                      {totalStatusCount > 0 && <Tooltip />}
                     </PieChart>
                   </ResponsiveContainer>
                   <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-                    <span className="text-xl font-bold text-gray-900 leading-none">{totalTrips}</span>
+                    <span className="text-xl font-bold text-gray-900 leading-none">{totalStatusCount || totalTrips || 0}</span>
                     <span className="text-[10px] text-gray-400 font-medium mt-0.5 uppercase tracking-wider">Total</span>
                   </div>
                 </div>
@@ -925,29 +922,35 @@ export default function Analytics() {
                 Trips completed per registered fleet vehicle
               </p>
 
-              <div className="mt-6 space-y-4">
-                {vehicleUtilization.map((vehicle: any, idx: number) => (
-                  <div key={idx} className="flex items-center gap-4">
-                    <span className="w-8 h-8 rounded-xl bg-sky-50 text-[#0ea5e9] font-bold flex items-center justify-center text-xs flex-shrink-0">
-                      {idx + 1}
-                    </span>
-                    <div className="flex-1">
-                      <div className="flex items-center justify-between mb-1.5 text-xs font-bold text-gray-800">
-                        <span>
-                          {vehicle.name} <span className="text-gray-400 font-normal">({vehicle.registration || 'Fleet'})</span>
-                        </span>
-                        <span className="text-gray-500 font-medium">{vehicle.trips} trips</span>
-                      </div>
-                      <div className="w-full bg-gray-100 rounded-full h-2 overflow-hidden">
-                        <div
-                          className="bg-[#0ea5e9] h-full rounded-full transition-all duration-500"
-                          style={{ width: `${(vehicle.trips / maxVehicleTrips) * 100}%` }}
-                        />
+              {vehicleUtilization.length === 0 ? (
+                <div className="mt-4 p-6 bg-gray-50 rounded-xl text-center border border-gray-100">
+                  <p className="text-xs text-gray-400 font-medium">No vehicle fleet utilization data recorded for this agency.</p>
+                </div>
+              ) : (
+                <div className="mt-6 space-y-4">
+                  {vehicleUtilization.map((vehicle: any, idx: number) => (
+                    <div key={idx} className="flex items-center gap-4">
+                      <span className="w-8 h-8 rounded-xl bg-sky-50 text-[#0ea5e9] font-bold flex items-center justify-center text-xs flex-shrink-0">
+                        {idx + 1}
+                      </span>
+                      <div className="flex-1">
+                        <div className="flex items-center justify-between mb-1.5 text-xs font-bold text-gray-800">
+                          <span>
+                            {vehicle.name} <span className="text-gray-400 font-normal">({vehicle.registration || 'Fleet'})</span>
+                          </span>
+                          <span className="text-gray-500 font-medium">{vehicle.trips} trips</span>
+                        </div>
+                        <div className="w-full bg-gray-100 rounded-full h-2 overflow-hidden">
+                          <div
+                            className="bg-[#0ea5e9] h-full rounded-full transition-all duration-500"
+                            style={{ width: `${(vehicle.trips / maxVehicleTrips) * 100}%` }}
+                          />
+                        </div>
                       </div>
                     </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              )}
             </div>
           </>
         )}
