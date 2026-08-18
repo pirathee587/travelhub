@@ -7,6 +7,7 @@ on:
       - master
     paths:
       - 'frontend/**'
+      - 'netlify.toml'
       - '.github/workflows/frontend-deploy.yml'
   pull_request:
     branches:
@@ -14,6 +15,7 @@ on:
       - master
     paths:
       - 'frontend/**'
+      - 'netlify.toml'
       - '.github/workflows/frontend-deploy.yml'
   workflow_dispatch:
 
@@ -54,7 +56,8 @@ jobs:
         if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
         uses: nwtgck/actions-netlify@v3.0
         with:
-          publish-dir: './frontend/dist'
+          # Path is relative to repo root (not the job working-directory)
+          publish-dir: 'frontend/dist'
           production-branch: ${{ github.ref_name }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
           deploy-message: "Deploy from GitHub Actions [Commit: ${{ github.sha }}]"
