@@ -1,4 +1,6 @@
-const BASE_URL = (import.meta.env.VITE_API_URL || "http://localhost:8080") + "/api";
+const BASE_URL = import.meta.env.VITE_API_URL
+    ? import.meta.env.VITE_API_URL          // e.g. "/api" — already includes /api
+    : "http://localhost:8080/api";           // local dev fallback
 
 const handleResponse = async (res: Response) => {
     const data = await res.json();

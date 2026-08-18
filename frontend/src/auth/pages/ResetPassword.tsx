@@ -3,7 +3,7 @@ import { useSearchParams, useNavigate, Link } from 'react-router-dom';
 import { KeyRound, Eye, EyeOff, ArrowLeft, XCircle } from 'lucide-react';
 import { toast } from 'sonner';
 
-const BASE_URL = (import.meta.env.VITE_API_URL || 'http://localhost:8080') + '/api';
+const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080/api';
 
 export default function ResetPassword() {
   const [searchParams] = useSearchParams();

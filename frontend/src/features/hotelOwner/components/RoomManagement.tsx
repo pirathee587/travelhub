@@ -33,9 +33,9 @@ const RoomManagement = ({ searchQuery, hotelId, isLocked = false }: RoomManageme
     }
     try {
       setLoading(true);
-      const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8080";
+      const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8080/api";
       const res = await fetch(
-        `${BASE_URL}/api/rooms/hotel/${hotelId}`
+        `${BASE_URL}/rooms/hotel/${hotelId}`
       );
       if (!res.ok) throw new Error("Failed to fetch rooms");
       const data = await res.json();
@@ -55,8 +55,8 @@ const RoomManagement = ({ searchQuery, hotelId, isLocked = false }: RoomManageme
   const handleDelete = async (roomId: string) => {
     if (!window.confirm("Are you sure you want to delete this room?")) return;
     try {
-      const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8080";
-      const res = await fetch(`${BASE_URL}/api/rooms/${roomId}`, {
+      const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8080/api";
+      const res = await fetch(`${BASE_URL}/rooms/${roomId}`, {
         method: "DELETE",
       });
       if (res.ok) {
