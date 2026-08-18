@@ -341,67 +341,77 @@ const PackageDetails = () => {
 
                 {/* Content Section */}
                 <div className="relative z-10 w-full space-y-12 mt-10 lg:mt-14">
+                    {/* About This Package / Description */}
+                    {pkg.description && (
+                        <section className="bg-card rounded-xl p-6 border shadow-sm border-l-4 border-l-primary">
+                            <h3 className="text-xl font-bold mb-3 flex items-center gap-2 text-foreground">
+                                <Sparkles className="h-5 w-5 text-primary" /> About This Package
+                            </h3>
+                            <p className="text-foreground text-base md:text-lg font-semibold leading-relaxed whitespace-pre-line">
+                                {pkg.description}
+                            </p>
+                        </section>
+                    )}
+
                     <section className="bg-card rounded-xl p-6 border shadow-sm">
-                        <h3 className="text-xl font-semibold mb-4 flex items-center gap-2">
+                        <h3 className="text-xl font-bold mb-4 flex items-center gap-2 text-foreground">
                             <Clock className="h-5 w-5 text-primary" /> Trip Overview
                         </h3>
                         <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
                             <div>
-                                <label className="text-sm text-muted-foreground block mb-1">Duration</label>
-                                <p className="font-medium">{pkg.duration}</p>                               {/* Duration */}
+                                <label className="text-sm font-semibold text-muted-foreground block mb-1">Duration</label>
+                                <p className="font-semibold text-base md:text-lg text-foreground">{pkg.duration}</p>
                             </div>
                             <div>
-                                <label className="text-sm text-muted-foreground block mb-1">Start Place</label>
-                                <p className="font-medium">{pkg.startPlace || "Not specified"}</p>             {/* Start Place*/}
+                                <label className="text-sm font-semibold text-muted-foreground block mb-1">Start Place</label>
+                                <p className="font-semibold text-base md:text-lg text-foreground">{pkg.startPlace || "Not specified"}</p>
                             </div>
                             <div>
-                                <label className="text-sm text-muted-foreground block mb-1">End Place</label>
-                                <p className="font-medium">{pkg.endPlace || "Not specified"}</p>                 {/* End Place*/}
+                                <label className="text-sm font-semibold text-muted-foreground block mb-1">End Place</label>
+                                <p className="font-semibold text-base md:text-lg text-foreground">{pkg.endPlace || "Not specified"}</p>
                             </div>
                             <div>
-                                <label className="text-sm text-muted-foreground block mb-1">Agency</label>
+                                <label className="text-sm font-semibold text-muted-foreground block mb-1">Agency</label>
                                 {pkg.agentId ? (
                                     <button
                                         id="pkg-agent-link"
                                         onClick={() => navigate(`/tourist/agents/${pkg.agentId}`)}
-                                        className="font-medium flex items-center gap-1 text-primary hover:underline hover:text-primary/80 transition-colors"
+                                        className="font-semibold text-base md:text-lg flex items-center gap-1 text-primary hover:underline transition-colors"
                                     >
-                                        <User className="h-3 w-3" /> {pkg.agentName || "View Agent"}  {/* Clickable Agent Name*/}
+                                        <User className="h-4 w-4" /> {pkg.agentName || "View Agent"}
                                     </button>
                                 ) : (
-                                    <p className="font-medium flex items-center gap-1">
-                                        <User className="h-3 w-3" /> {pkg.agentName || "Premium Travel"}
+                                    <p className="font-semibold text-base md:text-lg text-foreground flex items-center gap-1">
+                                        <User className="h-4 w-4" /> {pkg.agentName || "Premium Travel"}
                                     </p>
                                 )}
                             </div>
                             <div>
-                                <label className="text-sm text-muted-foreground block mb-1">District</label>
-                                <p className="font-medium">{pkg.district || "Not specified"}</p>               {/* District*/}
+                                <label className="text-sm font-semibold text-muted-foreground block mb-1">District</label>
+                                <p className="font-semibold text-base md:text-lg text-foreground">{pkg.district || "Not specified"}</p>
                             </div>
                             {pkg.basePriceAdult != null && (
                                 <div>
-                                    <label className="text-sm text-muted-foreground block mb-1">Starts From (Per Adult)</label>
-                                    <p className="font-medium text-primary text-lg">{formatPrice(pkg.basePriceAdult)}</p>
+                                    <label className="text-sm font-semibold text-muted-foreground block mb-1">Starts From (Per Adult)</label>
+                                    <p className="font-bold text-primary text-xl">{formatPrice(pkg.basePriceAdult)}</p>
                                 </div>
                             )}
                         </div>
                     </section>
 
-
-
                     {/* What's Included */}
                     {pkg.inclusions && pkg.inclusions.length > 0 && (
                         <section className="space-y-6">
-                            <h3 className="text-2xl font-bold flex items-center gap-3">
+                            <h3 className="text-2xl font-bold flex items-center gap-3 text-foreground">
                                 <Sparkles className="h-6 w-6 text-primary" /> What's Included
                             </h3>
                             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                                 {pkg.inclusions.map((inclusion, idx) => (
-                                    <div key={idx} className="flex items-center gap-3 bg-card p-4 rounded-xl border border-border shadow-sm">
-                                        <div className="h-8 w-8 rounded-full bg-orange-100/80 text-orange-600 flex items-center justify-center flex-shrink-0">
+                                    <div key={idx} className="flex items-center gap-3 bg-card p-4 rounded-xl border border-border shadow-sm hover:shadow-md transition-shadow">
+                                        <div className="h-9 w-9 rounded-full bg-orange-100/90 text-orange-600 flex items-center justify-center flex-shrink-0">
                                             {getInclusionIcon(inclusion)}
                                         </div>
-                                        <span className="text-base font-medium">{inclusion}</span>
+                                        <span className="text-base font-semibold text-foreground">{inclusion}</span>
                                     </div>
                                 ))}
                             </div>
@@ -433,8 +443,8 @@ const PackageDetails = () => {
                                             </Badge>
                                             
                                         </div>
-                                        <p className="text-muted-foreground leading-relaxed mb-6 italic">
-                                            {item.description}                                                                {/* Description*/}
+                                        <p className="text-foreground/90 font-medium text-base leading-relaxed mb-6">
+                                            {item.description}
                                         </p>
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                              {item.activities?.map((activity, aIdx) => {

@@ -1,4 +1,4 @@
-const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8080";
+const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8080/api";
 
 const getAgentUserId = (): string => {
   const userStr = localStorage.getItem('travelhub_user') || localStorage.getItem('user');
@@ -21,7 +21,7 @@ const getAuthHeaders = (): Record<string, string> => {
 export const walletApi = {
   getWallet: async () => {
     const userId = getAgentUserId();
-    const res = await fetch(`${BASE_URL}/api/agency/wallet/${userId}`, {
+    const res = await fetch(`${BASE_URL}/agency/wallet/${userId}`, {
       headers: {
         'Content-Type': 'application/json',
         ...getAuthHeaders()
@@ -32,7 +32,7 @@ export const walletApi = {
 
   getPayoutRequests: async () => {
     const userId = getAgentUserId();
-    const res = await fetch(`${BASE_URL}/api/agency/wallet/${userId}/payouts`, {
+    const res = await fetch(`${BASE_URL}/agency/wallet/${userId}/payouts`, {
       headers: {
         'Content-Type': 'application/json',
         ...getAuthHeaders()
@@ -43,7 +43,7 @@ export const walletApi = {
 
   requestPayout: async (data: { amount: number; bankName: string; accountNo: string; accountHolderName: string; branchName?: string }) => {
     const userId = getAgentUserId();
-    const res = await fetch(`${BASE_URL}/api/agency/wallet/${userId}/payouts`, {
+    const res = await fetch(`${BASE_URL}/agency/wallet/${userId}/payouts`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

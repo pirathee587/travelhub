@@ -2,7 +2,8 @@ import { useEffect, useState } from "react";
 import { getOwnerAuthHeaders } from "./owner-auth-headers";
 import { MOCK_USER_ID, isUsingMockAuth } from "./mock-auth";
 
-const API_BASE = "http://localhost:8080/api/v1/owner/session";
+const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8080/api";
+const API_BASE = `${BASE_URL}/v1/owner/session`;
 const SESSION_EVENT = "travelhub:owner-session-changed";
 
 export type OwnerSession = {

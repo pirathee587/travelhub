@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
 import { CheckCircle, XCircle, Loader2, Mail, Send } from 'lucide-react';
 
-const BASE_URL = (import.meta.env.VITE_API_URL || 'http://localhost:8080') + '/api';
+const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080/api';
 
 export default function VerifyEmail() {
   const [searchParams] = useSearchParams();
@@ -155,11 +155,10 @@ export default function VerifyEmail() {
 
               {resendStatus && (
                 <div
-                  className={`mt-3 p-3 rounded-lg text-xs font-medium ${
-                    resendStatus.type === 'success'
+                  className={`mt-3 p-3 rounded-lg text-xs font-medium ${resendStatus.type === 'success'
                       ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
                       : 'bg-red-50 text-red-700 border border-red-200'
-                  }`}
+                    }`}
                 >
                   {resendStatus.text}
                 </div>

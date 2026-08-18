@@ -1,19 +1,21 @@
-const BASE_URL = (import.meta.env.VITE_API_URL || "http://localhost:8080") + "/api/v1";
+const BASE_URL = import.meta.env.VITE_API_URL
+    ? import.meta.env.VITE_API_URL + "/v1"  // e.g. "/api/v1"
+    : "http://localhost:8080/api/v1";        // local dev fallback
 
 // Dynamically retrieve the logged-in agent ID (User ID) from localStorage, no fallback
 const AGENT_ID = {
-  toString() {
-    const userStr = localStorage.getItem('travelhub_user') || localStorage.getItem('user');
-    if (userStr) {
-      try {
-        const user = JSON.parse(userStr);
-        return String(user.id || user.userId || user.agentId || user.ownerId || '');
-      } catch (e) {
+    toString() {
+        const userStr = localStorage.getItem('travelhub_user') || localStorage.getItem('user');
+        if (userStr) {
+            try {
+                const user = JSON.parse(userStr);
+                return String(user.id || user.userId || user.agentId || user.ownerId || '');
+            } catch (e) {
+                return '';
+            }
+        }
         return '';
-      }
     }
-    return '';
-  }
 };
 
 const getAuthHeaders = () => {
@@ -39,7 +41,7 @@ export const api = {
         const query = params.toString() ? `?${params}` : '';
         return fetch(`${BASE_URL}/agent/${AGENT_ID}/packages${query}`).then(r => r.json());
     },
-    getAgentPackage: (packageId) => 
+    getAgentPackage: (packageId) =>
         fetch(`${BASE_URL}/agent/${AGENT_ID}/packages/${packageId}`).then(r => r.json()),
     createPackage: (dataJson, imageFiles = []) => {
         const form = new FormData();
@@ -94,8 +96,8 @@ export const api = {
         if (district) params.append('district', district);
         const qString = params.toString() ? `?${params.toString()}` : '';
         // Note: Hotel search is at /api/hotels/search, not /api/v1/hotels/search
-        const apiBase = import.meta.env.VITE_API_URL || "http://localhost:8080";
-        return fetch(`${apiBase}/api/hotels/search${qString}`).then(r => r.json());
+        const apiBase = import.meta.env.VITE_API_URL || "http://localhost:8080/api";
+        return fetch(`${apiBase}/hotels/search${qString}`).then(r => r.json());
     },
 
     // Vehicles

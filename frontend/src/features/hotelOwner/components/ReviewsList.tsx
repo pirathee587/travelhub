@@ -15,11 +15,10 @@ const Stars = ({ rating }: { rating: number }) => (
     {Array.from({ length: 5 }).map((_, i) => (
       <Star
         key={i}
-        className={`h-3 w-3 ${
-          i < Math.floor(rating)
+        className={`h-3 w-3 ${i < Math.floor(rating)
             ? "fill-amber-400 text-amber-400"
             : "text-muted-foreground/20"
-        }`}
+          }`}
       />
     ))}
   </div>
@@ -36,7 +35,8 @@ const ReviewsList = ({ hotelId }: { hotelId?: string }) => {
     }
     try {
       setLoading(true);
-      const res = await fetch(`http://localhost:8080/api/reviews/hotel/${hotelId}`);
+      const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8080/api";
+      const res = await fetch(`${BASE_URL}/reviews/hotel/${hotelId}`);
       if (!res.ok) throw new Error("Failed to fetch reviews");
       const data = await res.json();
       setReviews(Array.isArray(data) ? data : []);

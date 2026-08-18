@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { Plane, ArrowLeft, CheckCircle } from 'lucide-react';
 import { toast } from 'sonner';
 
-const BASE_URL = (import.meta.env.VITE_API_URL || 'http://localhost:8080') + '/api';
+const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080/api';
 
 export default function ForgotPassword() {
   const navigate = useNavigate();
@@ -35,7 +35,7 @@ export default function ForgotPassword() {
 
   return (
     <div className="min-h-screen w-full flex flex-col lg:flex-row font-display bg-white overflow-x-hidden relative">
-      
+
       {/* Left Column: Fixed Viewport Full-Height Hero Image & Motivation Panel */}
       <div className="w-full lg:w-1/2 h-[350px] sm:h-[420px] lg:h-full lg:fixed lg:top-0 lg:bottom-0 lg:left-0 relative flex flex-col justify-between p-6 sm:p-10 lg:p-14 text-white overflow-hidden bg-slate-900 z-10">
         {/* Background Image */}
@@ -71,7 +71,7 @@ export default function ForgotPassword() {
       {/* Right Column: Full Screen Authentication Form */}
       <div className="w-full lg:w-1/2 lg:ml-auto min-h-screen bg-white p-6 sm:p-10 lg:p-16 flex flex-col justify-center overflow-y-auto font-display">
         <div className="max-w-2xl w-full mx-auto py-8">
-          
+
           {/* Navigation Header */}
           <div className="mb-8">
             <button

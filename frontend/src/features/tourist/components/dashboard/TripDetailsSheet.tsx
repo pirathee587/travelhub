@@ -21,8 +21,9 @@ import {
     Circle,
     Building2,
     Phone,
+    ExternalLink,
 } from "lucide-react";
-import { cn } from "@/features/tourist/services/utils";
+import { cn, formatDate, RenderDateRange } from "@/features/tourist/services/utils";
 import { useHotelById } from "@/features/tourist/hooks/useApi";
 import { useNavigate } from "react-router-dom";
 import { useTouristCurrency } from "@/features/tourist/hooks/TouristCurrencyContext";
@@ -47,7 +48,7 @@ const statusConfig = {
     },
     refunded: {
         label: "Refunded",
-        className: "bg-orange-500/10 text-orange-500 border-orange-500/20",
+        className: "bg-destructive/10 text-destructive border-destructive/20",
     },
     in_progress: {
         label: "In Progress",
@@ -87,6 +88,14 @@ export function TripDetailsSheet({ trip, open, onOpenChange }: TripDetailsSheetP
 
     if (!trip) return null;
 
+    const handlePackageNavigate = () => {
+        const targetPackageId = trip.packageId || trip.pkgId || trip.pkg?.id;
+        if (targetPackageId) {
+            onOpenChange(false);
+            navigate(`/tourist/explore/package/${targetPackageId}`);
+        }
+    };
+
     const handleRequestRefund = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!bankName || !accountNo || !accountHolderName || !branchName) {
@@ -118,6 +127,7 @@ export function TripDetailsSheet({ trip, open, onOpenChange }: TripDetailsSheetP
     };
 
     const status = statusConfig[trip.status?.toLowerCase()] || statusConfig.pending;
+    const targetPackageId = trip.packageId || trip.pkgId || trip.pkg?.id;
 
     return (
         <Sheet open={open} onOpenChange={onOpenChange}>
@@ -128,14 +138,21 @@ export function TripDetailsSheet({ trip, open, onOpenChange }: TripDetailsSheetP
                 </SheetHeader>
 
                 <div className="mt-6 space-y-6">
-                    {/* Trip Image */}
-                    <div className="relative h-56 rounded-xl overflow-hidden shadow-sm border border-border/50">
+                    {/* Trip Image - Hyperlinked to Package Details */}
+                    <div 
+                        onClick={handlePackageNavigate}
+                        className={cn(
+                            "relative h-56 rounded-xl overflow-hidden shadow-sm border border-border/50 group transition-all duration-300",
+                            targetPackageId ? "cursor-pointer hover:shadow-lg hover:border-primary/40" : ""
+                        )}
+                        title={targetPackageId ? "Click to view package details" : undefined}
+                    >
                         <img                                                                    
                             src={trip.imageUrl}
                             alt={trip.destination}
-                            className="w-full h-full object-cover"
+                            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                         />
-                        <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-transparent to-black/80" />
+                        <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-transparent to-black/80 group-hover:opacity-90 transition-opacity" />
                         
                         {/* Top Overlay: Badges and Agent */}
                         <div className="absolute top-4 left-4 right-4 flex justify-between items-start gap-2">
@@ -154,7 +171,8 @@ export function TripDetailsSheet({ trip, open, onOpenChange }: TripDetailsSheetP
                             {trip.agencyName && (
                                 <div 
                                     className="bg-black/40 backdrop-blur-md border border-white/10 rounded-full pl-2.5 pr-3 py-1.5 flex items-center gap-1.5 cursor-pointer hover:bg-black/60 transition-all shadow-sm"
-                                    onClick={() => {
+                                    onClick={(e) => {
+                                        e.stopPropagation();
                                         if (trip.agentId) {
                                             navigate(`/tourist/agents/${trip.agentId}`);
                                             onOpenChange(false);
@@ -168,12 +186,19 @@ export function TripDetailsSheet({ trip, open, onOpenChange }: TripDetailsSheetP
                             )}
                         </div>
 
-                        {/* Bottom Overlay: Dates */}
-                        <div className="absolute bottom-4 left-4 text-white">
+                        {/* Bottom Overlay: Dates and View Package Badge */}
+                        <div className="absolute bottom-4 left-4 right-4 flex items-center justify-between text-white">
                             <div className="flex items-center gap-2">
                                 <Calendar className="h-4 w-4" />
-                                <span className="text-sm">{trip.startDate} - {trip.endDate}</span>          {/*Start Date and End Date*/}
+                                <RenderDateRange startDateStr={trip.startDate} endDateStr={trip.endDate} />
                             </div>
+
+                            {targetPackageId && (
+                                <div className="flex items-center gap-1.5 bg-white/20 group-hover:bg-primary backdrop-blur-md px-3 py-1 rounded-full text-white text-xs font-medium transition-all shadow-md">
+                                    <span>View Package</span>
+                                    <ExternalLink className="h-3.5 w-3.5 text-white" />
+                                </div>
+                            )}
                         </div>
                     </div>
 
@@ -191,7 +216,7 @@ export function TripDetailsSheet({ trip, open, onOpenChange }: TripDetailsSheetP
                                 Booking Requirements
                             </h3>
                             <div className="grid grid-cols-2 gap-3">
-                                <InfoItem label="Start Date" value={trip.startDate} />
+                                <InfoItem label="Start Date" value={formatDate(trip.startDate)} />
                                 <InfoItem label="Duration" value={trip.duration || "-"} />
                                 <InfoItem label="Adults" value={trip.adults || 0} />
                                 <InfoItem label="Children" value={trip.children || 0} />

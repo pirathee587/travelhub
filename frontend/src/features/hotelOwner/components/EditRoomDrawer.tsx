@@ -76,7 +76,8 @@ export function EditRoomDrawer({
         data.append("image", image);
       }
 
-      const res = await fetch(`http://localhost:8080/api/rooms/${roomId}`, {
+      const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8080/api";
+      const res = await fetch(`${BASE_URL}/rooms/${roomId}`, {
         method: "PUT",
         headers: {
           Authorization: `Bearer ${localStorage.getItem("token")}`,

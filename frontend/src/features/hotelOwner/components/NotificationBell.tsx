@@ -3,7 +3,8 @@ import { Bell, CheckCheck, Trash2, Hotel, XCircle, Lock } from "lucide-react";
 import { getOwnerAuthHeaders } from "@/features/hotelOwner/services/owner-auth-headers";
 import { motion, AnimatePresence } from "framer-motion";
 
-const API_BASE = "http://localhost:8080/api/v1/owner/notifications";
+const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8080/api";
+const API_BASE = `${BASE_URL}/v1/owner/notifications`;
 
 type OwnerNotification = {
   id: number;
@@ -192,9 +193,8 @@ export function NotificationBell() {
                     <div
                       key={n.id}
                       onClick={() => !n.read && markAsRead(n.id)}
-                      className={`group flex cursor-pointer gap-3 border-b border-border/50 px-4 py-3 transition hover:bg-muted/40 ${
-                        !n.read ? "bg-primary/[0.03]" : ""
-                      }`}
+                      className={`group flex cursor-pointer gap-3 border-b border-border/50 px-4 py-3 transition hover:bg-muted/40 ${!n.read ? "bg-primary/[0.03]" : ""
+                        }`}
                     >
                       {/* Icon + unread dot */}
                       <div className="relative mt-0.5 flex-shrink-0">

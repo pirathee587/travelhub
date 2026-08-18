@@ -11,7 +11,8 @@ import {
 import { cn } from "@/features/tourist/services/utils";
 import { useTouristCurrency } from "@/features/tourist/hooks/TouristCurrencyContext";
 
-const CHATBOT_API_URL = "http://localhost:8080/api/chatbot/message";
+const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8080/api";
+const CHATBOT_API_URL = `${BASE_URL}/chatbot/message`;
 
 const WELCOME_MESSAGE = {
     role: "bot",
@@ -145,8 +146,8 @@ export function ChatbotButton() {
                                 </div>
                                 <div className={cn(
                                     "rounded-lg p-3 shadow-sm max-w-[80%] text-sm whitespace-pre-wrap",
-                                    msg.role === "user" 
-                                        ? "bg-primary text-primary-foreground" 
+                                    msg.role === "user"
+                                        ? "bg-primary text-primary-foreground"
                                         : "bg-card text-foreground"
                                 )}>
                                     {msg.text}
@@ -182,8 +183,8 @@ export function ChatbotButton() {
                             )}
                             disabled={isLoading}
                         />
-                        <Button 
-                            onClick={sendMessage} 
+                        <Button
+                            onClick={sendMessage}
                             disabled={isLoading || !inputValue.trim()}
                             size="icon"
                             className="h-10 w-10 flex-shrink-0"

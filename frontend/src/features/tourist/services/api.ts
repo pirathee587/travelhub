@@ -1,4 +1,6 @@
-const BASE_URL = "http://localhost:8080/api";
+const BASE_URL = import.meta.env.VITE_API_URL
+    ? import.meta.env.VITE_API_URL          // e.g. "/api" — already includes /api
+    : "http://localhost:8080/api";           // local dev fallback
 
 const handleResponse = async (res: Response) => {
     const data = await res.json();
@@ -56,8 +58,8 @@ export const api = {
 
     // Hotels
     getAllHotels: (district: string | null = null) => {
-        const url = district && district !== "all" 
-            ? `${BASE_URL}/hotels?district=${encodeURIComponent(district)}` 
+        const url = district && district !== "all"
+            ? `${BASE_URL}/hotels?district=${encodeURIComponent(district)}`
             : `${BASE_URL}/hotels`;
         return fetch(url).then(handleResponse).catch(() => []);
     },
@@ -90,7 +92,7 @@ export const api = {
                 console.error(`[API] Error fetching rooms for hotel ${hotelId}:`, err);
                 return [];
             }),
-    
+
 
     //Calculate Hotel Min, Max price from room's prices
     getHotelPriceRanges: async (hotelIds: any[] = []) => {
@@ -160,19 +162,19 @@ export const api = {
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(data)
         }).then(handleResponse)
-        .catch((err) => {
-            console.error("[API] Booking request failed:", err);
-            throw err;  // ← Re-throw to ensure frontend catches it
-        }),
+            .catch((err) => {
+                console.error("[API] Booking request failed:", err);
+                throw err;  // ← Re-throw to ensure frontend catches it
+            }),
 
     cancelBooking: (id: string | number, userId: string | number) =>
         fetch(`${BASE_URL}/tourist/bookings/${id}/cancel?userId=${userId}`, {
             method: "PUT"
         }).then(handleResponse)
-        .catch((err) => {
-            console.error("[API] Cancel booking failed:", err);
-            throw err;
-        }),
+            .catch((err) => {
+                console.error("[API] Cancel booking failed:", err);
+                throw err;
+            }),
 
     //package reviews
     getPackageReviews: (packageId: string | number) =>
@@ -211,7 +213,7 @@ export const api = {
     getTopicRecommendations: (userId: string | number) =>
         fetch(`${BASE_URL}/tourist/recommendations/topics?userId=${userId}`).then(handleResponse).catch(() => []),
 
-                                                                // Add Package Reviews
+    // Add Package Reviews
     addPackageReview: (packageId: string | number, data: any, images: any[] = []) => {
         const formData = new FormData();
         formData.append("review", JSON.stringify(data));
@@ -225,7 +227,7 @@ export const api = {
             throw err;
         });
     },
-                                                                //Add Hotel Reviews
+    //Add Hotel Reviews
     addHotelReview: (hotelId: string | number, data: any, images: any[] = []) => {
         const formData = new FormData();
         formData.append("review", JSON.stringify(data));

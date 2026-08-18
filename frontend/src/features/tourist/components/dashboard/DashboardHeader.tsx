@@ -32,18 +32,32 @@ export function DashboardHeader({ userName: propUserName, userImage }: Dashboard
     const displayName = user?.name || propUserName || "Guest";
 
     useEffect(() => {
-        if (user) {
+        const token = localStorage.getItem('travelhub_token')
+            || localStorage.getItem('token')
+            || sessionStorage.getItem('travelhub_token')
+            || sessionStorage.getItem('token');
+        if (user && token) {
             fetchNotifications();
         }
     }, [user]);
 
     const fetchNotifications = async () => {
+        const token = localStorage.getItem('travelhub_token')
+            || localStorage.getItem('token')
+            || sessionStorage.getItem('travelhub_token')
+            || sessionStorage.getItem('token');
+        if (!token) return;
+
         try {
             const data = await notificationService.getAll();
-            setNotifications(data.slice(0, 5)); // Show latest 5
-            setUnreadCount(data.filter((n: any) => !n.read).length);
-        } catch (error) {
-            console.error("Failed to load notifications", error);
+            if (Array.isArray(data)) {
+                setNotifications(data.slice(0, 5)); // Show latest 5
+                setUnreadCount(data.filter((n: any) => !n.read).length);
+            }
+        } catch (error: any) {
+            if (error.response?.status !== 401 && error.response?.status !== 403) {
+                console.error("Failed to load notifications", error);
+            }
         }
     };
 

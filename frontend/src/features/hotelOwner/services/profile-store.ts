@@ -10,7 +10,8 @@ export type Profile = {
   nicImage: string;
 };
 
-const API_BASE = "http://localhost:8080/api/v1/owner/profile";
+const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8080/api";
+const API_BASE = `${BASE_URL}/v1/owner/profile`;
 
 const defaultProfile: Profile = {
   name: "",
@@ -77,7 +78,7 @@ export async function uploadNicImage(file: File): Promise<string> {
   const formData = new FormData();
   formData.append("file", file);
 
-  const res = await fetch("http://localhost:8080/api/upload/identity", {
+  const res = await fetch(`${BASE_URL}/upload/identity`, {
     method: "POST",
     headers: getOwnerAuthHeaders(),
     body: formData,

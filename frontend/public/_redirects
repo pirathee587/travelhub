@@ -1,0 +1,5 @@
+# Proxy /api/* to EC2 backend (avoids browser mixed-content: Netlify calls HTTP, not the browser)
+/api/*  http://18.139.13.105:8080/api/:splat  200
+
+# SPA fallback — must come AFTER the API proxy rule
+/*    /index.html   200

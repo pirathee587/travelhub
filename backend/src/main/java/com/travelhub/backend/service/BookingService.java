@@ -92,6 +92,7 @@ public class BookingService {
                 .hotelName(booking.getHotel() != null ? booking.getHotel().getHotelName() : null)
                 .startPlace(booking.getPkg() != null ? booking.getPkg().getStartPlace() : null)
                 .endPlace(booking.getPkg() != null ? booking.getPkg().getEndPlace() : null)
+                .district(booking.getPkg() != null ? booking.getPkg().getDistrict() : null)
                 .rating(averageRating)
                 .reviewCount(reviewCount)
                 .build();
@@ -152,6 +153,7 @@ public class BookingService {
         return BookingResponse.builder()
                 .id(booking.getId())
                 .bookingId(String.format("BK%05d", booking.getId()))
+                .packageId(booking.getPkg() != null ? String.valueOf(booking.getPkg().getId()) : null)
                 .packageName(booking.getPkg() != null ? booking.getPkg().getPackageName() : null)
                 .destination(booking.getPkg() != null ? booking.getPkg().getDestination() : null)
                 .startDate(booking.getStartDate())

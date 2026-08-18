@@ -2,6 +2,7 @@ package com.travelhub.backend.unit.admin;
 
 import com.travelhub.backend.entity.Hotel;
 import com.travelhub.backend.repository.AmenityRepository;
+import com.travelhub.backend.repository.BookingRepository;
 import com.travelhub.backend.repository.HotelRepository;
 import com.travelhub.backend.repository.ReviewRepository;
 import com.travelhub.backend.repository.RoomRepository;
@@ -26,7 +27,7 @@ import static org.testng.Assert.*;
 @Listeners(MockitoTestNGListener.class)
 public class AdminHotelServiceTest {
 
-    // AdminHotelService has 7 dependencies — all must be mocked
+    // AdminHotelService dependencies — all must be mocked
     @Mock
     private HotelRepository hotelRepository;
 
@@ -47,6 +48,9 @@ public class AdminHotelServiceTest {
 
     @Mock
     private ApplicationEventPublisher eventPublisher;
+
+    @Mock
+    private BookingRepository bookingRepository;
 
     @InjectMocks
     private AdminHotelService adminHotelService;
