@@ -10,22 +10,35 @@ export default function ForgotPassword() {
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const [sent, setSent] = useState(false);
+  const [needsVerification, setNeedsVerification] = useState(false);
+  const [error, setError] = useState('');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
+    setError('');
+    setNeedsVerification(false);
     try {
       const res = await fetch(`${BASE_URL}/auth/forgot-password`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email }),
       });
-      const data = await res.json();
+      const data = await res.json().catch(() => ({}));
+
       if (res.ok) {
         setSent(true);
-      } else {
-        toast.error(data.message || 'Failed to send reset link. Please try again.');
+        return;
       }
+
+      const message = data.message || '';
+      if (message.toLowerCase().includes('verify your email')) {
+        setError('Please verify your email before resetting your password.');
+        setNeedsVerification(true);
+        return;
+      }
+
+      toast.error(message || 'Failed to send reset link. Please try again.');
     } catch {
       toast.error('Could not connect to the server. Please check your connection.');
     } finally {
@@ -108,6 +121,20 @@ export default function ForgotPassword() {
                   className="w-full h-14 px-5 rounded-2xl border border-slate-200 text-base text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-600 transition-all font-display"
                 />
               </div>
+
+              {error && (
+                <div className="flex flex-col gap-3 text-sm text-red-700 bg-red-50 border border-red-200 rounded-2xl p-4 font-display">
+                  <span>{error}</span>
+                  {needsVerification && email && (
+                    <Link
+                      to={`/verify?email=${encodeURIComponent(email)}`}
+                      className="text-teal-700 font-bold hover:text-teal-800 hover:underline transition-colors"
+                    >
+                      Go to email verification →
+                    </Link>
+                  )}
+                </div>
+              )}
 
               <button
                 type="submit"

@@ -30,7 +30,7 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class SecurityConfig {
 
-    @Value("${cors.allowed-origins:http://localhost:5173,http://localhost:5174,http://localhost:8080,http://localhost:8001,http://localhost:8082,http://localhost:3000}")
+    @Value("${cors.allowed-origins:http://localhost:5173,http://localhost:5174,http://localhost:8080,http://localhost:8001,http://localhost:8082,http://localhost:3000,https://travelhublanka.netlify.app}")
     private String allowedOrigins;
 
     @Bean

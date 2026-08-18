@@ -6,7 +6,7 @@ const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080/api';
 
 export default function VerifyEmail() {
   const [searchParams] = useSearchParams();
-  const [status, setStatus] = useState<'verifying' | 'success' | 'error'>('verifying');
+  const [status, setStatus] = useState<'verifying' | 'success' | 'error' | 'pending'>('verifying');
   const [message, setMessage] = useState('');
   const [resendEmail, setResendEmail] = useState(searchParams.get('email') || '');
   const [resending, setResending] = useState(false);
@@ -19,7 +19,14 @@ export default function VerifyEmail() {
 
     const verify = async () => {
       const token = searchParams.get('token');
+      const email = searchParams.get('email');
+
       if (!token) {
+        if (email) {
+          setStatus('pending');
+          setMessage('We sent a verification link to your email. Please check your inbox and click the link to activate your account.');
+          return;
+        }
         setStatus('error');
         setMessage('Invalid verification link. No token found.');
         return;
@@ -93,6 +100,69 @@ export default function VerifyEmail() {
           </>
         )}
 
+        {/* Pending — post-signup, awaiting email verification */}
+        {status === 'pending' && (
+          <>
+            <div className="flex justify-center mb-4">
+              <Mail className="w-16 h-16 text-teal-500" />
+            </div>
+            <h1 className="text-xl font-bold text-slate-800 mb-2">Check Your Email</h1>
+            <p className="text-slate-600 text-sm mb-6">{message}</p>
+
+            <div className="bg-slate-50 rounded-xl p-5 mb-6 border border-slate-200/80 text-left">
+              <h2 className="text-sm font-semibold text-slate-800 mb-2 flex items-center gap-2">
+                <Mail className="w-4 h-4 text-teal-600" /> Didn't receive the email?
+              </h2>
+              <p className="text-xs text-slate-500 mb-3">
+                Enter your email address to resend the verification link:
+              </p>
+              <form onSubmit={handleResend} className="space-y-3">
+                <input
+                  type="email"
+                  placeholder="name@example.com"
+                  value={resendEmail}
+                  onChange={(e) => setResendEmail(e.target.value)}
+                  className="w-full px-3.5 py-2.5 rounded-lg border border-slate-300 text-sm focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none transition"
+                  required
+                />
+                <button
+                  type="submit"
+                  disabled={resending}
+                  className="w-full py-2.5 px-4 rounded-lg bg-gradient-to-r from-teal-500 to-emerald-600 text-white text-xs font-semibold hover:opacity-90 transition flex items-center justify-center gap-2 disabled:opacity-50"
+                >
+                  {resending ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" /> Sending...
+                    </>
+                  ) : (
+                    <>
+                      <Send className="w-3.5 h-3.5" /> Resend Verification Email
+                    </>
+                  )}
+                </button>
+              </form>
+
+              {resendStatus && (
+                <div
+                  className={`mt-3 p-3 rounded-lg text-xs font-medium ${resendStatus.type === 'success'
+                      ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                      : 'bg-red-50 text-red-700 border border-red-200'
+                    }`}
+                >
+                  {resendStatus.text}
+                </div>
+              )}
+            </div>
+
+            <Link
+              to="/login"
+              className="block w-full py-3 rounded-xl bg-gradient-to-r from-sky-500 to-teal-500 text-white font-semibold text-sm shadow-md hover:opacity-90 transition"
+            >
+              Go to Login
+            </Link>
+          </>
+        )}
+
         {/* Success */}
         {status === 'success' && (
           <>
@@ -100,7 +170,10 @@ export default function VerifyEmail() {
               <CheckCircle className="w-16 h-16 text-teal-500" />
             </div>
             <h1 className="text-xl font-bold text-teal-700 mb-2">Email Verified!</h1>
-            <p className="text-slate-600 text-sm mb-8">{message}</p>
+            <p className="text-slate-600 text-sm mb-4">{message}</p>
+            <p className="text-slate-600 text-xs mb-8 bg-amber-50 border border-amber-200 rounded-lg p-3 text-left">
+              If you registered as a travel agency, your account may still require admin approval before you can sign in.
+            </p>
             <Link
               to="/login"
               className="block w-full py-3 rounded-xl bg-gradient-to-r from-sky-500 to-teal-500 text-white font-semibold text-sm shadow-md hover:opacity-90 transition"

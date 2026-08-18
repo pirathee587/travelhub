@@ -5,6 +5,10 @@ import { toast } from 'sonner';
 
 const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080/api';
 
+const PASSWORD_REGEX = /^(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z])(?=.*[@#$%^&+=!])(?=\S+$).{8,}$/;
+const PASSWORD_REQUIREMENTS =
+  'Password must be at least 8 characters long, contain at least one digit, one uppercase letter, one lowercase letter, and one special character';
+
 export default function ResetPassword() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
@@ -48,8 +52,8 @@ export default function ResetPassword() {
       setError('Passwords do not match.');
       return;
     }
-    if (newPassword.length < 6) {
-      setError('Password must be at least 6 characters.');
+    if (!PASSWORD_REGEX.test(newPassword)) {
+      setError(PASSWORD_REQUIREMENTS);
       return;
     }
 
@@ -71,6 +75,8 @@ export default function ResetPassword() {
           setError('This reset link has expired. Please request a new one.');
         } else if (lower.includes('invalid') || lower.includes('not found')) {
           setError('This reset link is invalid. Please request a new one.');
+        } else if (lower.includes('validation failed') && lower.includes('newpassword')) {
+          setError(PASSWORD_REQUIREMENTS);
         } else {
           setError(raw);
         }
@@ -122,7 +128,7 @@ export default function ResetPassword() {
                     required
                     value={newPassword}
                     onChange={(e) => setNewPassword(e.target.value)}
-                    placeholder="Min. 6 characters"
+                    placeholder="Min. 8 characters with upper, lower, digit & special char"
                     className="w-full h-10 px-3 pr-10 rounded-lg border border-slate-200 text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-500/30 focus:border-teal-500 transition"
                   />
                   <button
