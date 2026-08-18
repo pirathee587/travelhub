@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
 import { CheckCircle, XCircle, Loader2, Mail, Send } from 'lucide-react';
 
-const BASE_URL = (import.meta.env.VITE_API_URL || 'http://localhost:8080') + '/api';
+const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080/api';
 
 export default function VerifyEmail() {
   const [searchParams] = useSearchParams();

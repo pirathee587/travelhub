@@ -65,8 +65,8 @@ export function AddRoomDrawer({ hotelId, onSuccess, children }: AddRoomDrawerPro
         data.append("image", image);
       }
 
-      const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8080";
-      const res = await fetch(`${BASE_URL}/api/rooms`, {
+      const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8080/api";
+      const res = await fetch(`${BASE_URL}/rooms`, {
         method: "POST",
         body: data,
       });

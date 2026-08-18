@@ -1,4 +1,6 @@
-const BASE_URL = (import.meta.env.VITE_API_URL || "http://localhost:8080") + "/api/v1";
+const BASE_URL = import.meta.env.VITE_API_URL
+    ? import.meta.env.VITE_API_URL + "/v1"  // e.g. "/api/v1"
+    : "http://localhost:8080/api/v1";        // local dev fallback
 
 // Dynamically retrieve the logged-in agent ID (User ID) from localStorage, no fallback
 const AGENT_ID = {
@@ -94,8 +96,8 @@ export const api = {
         if (district) params.append('district', district);
         const qString = params.toString() ? `?${params.toString()}` : '';
         // Note: Hotel search is at /api/hotels/search, not /api/v1/hotels/search
-        const apiBase = import.meta.env.VITE_API_URL || "http://localhost:8080";
-        return fetch(`${apiBase}/api/hotels/search${qString}`).then(r => r.json());
+        const apiBase = import.meta.env.VITE_API_URL || "http://localhost:8080/api";
+        return fetch(`${apiBase}/hotels/search${qString}`).then(r => r.json());
     },
 
     // Vehicles

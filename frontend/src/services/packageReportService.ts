@@ -55,8 +55,8 @@ const packageReportService = {
       headers['Authorization'] = `Bearer ${token}`;
     }
 
-    const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080';
-    const response = await fetch(`${BASE_URL}/api/tourist/reports?bookingId=${bookingId}`, {
+    const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080/api';
+    const response = await fetch(`${BASE_URL}/tourist/reports?bookingId=${bookingId}`, {
       method: 'POST',
       headers,
       body: formData,

@@ -1,12 +1,13 @@
 import axios from 'axios';
 
 // ── Base URL ───────────────────────────────────────
-const BASE_URL = import.meta.env.VITE_API_URL
-    || 'http://localhost:8080';
+// VITE_API_URL is already "/api" in production (Netlify proxy),
+// so we use it directly. For local dev it's unset, so we use the full URL.
+const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080/api';
 
 // ── Axios Instance ─────────────────────────────────
 const api = axios.create({
-    baseURL: `${BASE_URL}/api`,
+    baseURL: BASE_URL,
     headers: {
         'Content-Type': 'application/json',
     },

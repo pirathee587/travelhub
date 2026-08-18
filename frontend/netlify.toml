@@ -8,7 +8,7 @@
 # because Netlify's edge servers make the outbound HTTP call, not the browser.
 [[redirects]]
   from = "/api/*"
-  to = "http://18.140.197.169:8080/api/:splat"
+  to = "http://18.139.13.105:8080/api/:splat"
   status = 200
   force = true
 
