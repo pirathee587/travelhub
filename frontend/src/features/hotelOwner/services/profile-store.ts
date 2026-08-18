@@ -78,7 +78,7 @@ export async function uploadNicImage(file: File): Promise<string> {
   const formData = new FormData();
   formData.append("file", file);
 
-  const res = await fetch(`${BASE_URL}/api/upload/identity`, {
+  const res = await fetch(`${BASE_URL}/upload/identity`, {
     method: "POST",
     headers: getOwnerAuthHeaders(),
     body: formData,
