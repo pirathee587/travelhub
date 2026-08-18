@@ -126,17 +126,32 @@ jobs:
             BRANCH=$(git rev-parse --abbrev-ref HEAD)
             git reset --hard "origin/$BRANCH"
 
-            echo "🐳 Rebuilding and starting Docker containers..."
-            # Try Docker Compose V2 plugin first, fall back to V1 (hyphen) if missing
-            docker compose down --remove-orphans 2>/dev/null || docker-compose down --remove-orphans 2>/dev/null || true
-            docker compose up -d --build --remove-orphans 2>/dev/null || docker-compose up -d --build --remove-orphans
+            # ── Detect Compose command (V2 plugin vs V1 standalone) ─────
+            if docker compose version &>/dev/null; then
+              COMPOSE="docker compose"
+            elif docker-compose version &>/dev/null; then
+              COMPOSE="docker-compose"
+            else
+              echo "❌ Neither 'docker compose' nor 'docker-compose' found"
+              exit 1
+            fi
+            echo "✅ Using compose command: $COMPOSE"
+
+            echo "🐳 Stopping existing containers..."
+            $COMPOSE down --remove-orphans
+
+            echo "🔨 Building Docker images (separate step to surface build errors)..."
+            $COMPOSE build
+
+            echo "🚀 Starting containers..."
+            $COMPOSE up -d --remove-orphans
 
             echo "🧹 Cleaning up unused Docker images..."
             docker image prune -f
 
             echo "⏳ Checking container status and health..."
             sleep 15
-            docker compose ps 2>/dev/null || docker-compose ps
+            $COMPOSE ps
 
             echo "========================================================"
             echo "✅ TravelHub backend & chatbot successfully deployed!"
