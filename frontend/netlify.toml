@@ -3,6 +3,15 @@
   publish = "dist"
   command = "npm run build"
 
+# Proxy all /api/* requests to the EC2 backend server-side.
+# This avoids mixed-content (HTTPS → HTTP) errors in the browser
+# because Netlify's edge servers make the outbound HTTP call, not the browser.
+[[redirects]]
+  from = "/api/*"
+  to = "http://18.140.197.169:8080/api/:splat"
+  status = 200
+  force = true
+
 [[redirects]]
   from = "/*"
   to = "/index.html"
