@@ -132,71 +132,73 @@ const Packages = () => {
         {/* Header */}
         {/* Status Sub-Tab Navigation Bar & Search Controls */}
         <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-          <div className="flex items-center gap-1 rounded-xl bg-muted/60 p-1.5 border border-border/60 self-start">
+          {/* Segmented Pills */}
+          <div className="flex items-center gap-1.5 p-1 rounded-xl bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700/60 overflow-x-auto max-w-full">
             <button
               type="button"
               onClick={() => setStatusFilter('all')}
               className={cn(
-                'px-4 py-2 text-xs font-semibold rounded-lg transition-all flex items-center gap-2',
+                "px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all duration-150 flex items-center gap-1.5 whitespace-nowrap",
                 statusFilter === 'all'
-                  ? 'bg-card text-foreground shadow-sm'
-                  : 'text-muted-foreground hover:text-foreground'
-              )}
-            >
+                  ? "bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 shadow-sm font-bold"
+                  : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100"
+              )}>
               All Packages
-              <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-muted font-normal text-muted-foreground">
+              <span className="rounded-full bg-slate-200 dark:bg-slate-700 px-2 py-0.5 text-[10px] font-bold">
                 {packagesList.length}
               </span>
             </button>
+
             <button
               type="button"
               onClick={() => setStatusFilter('approved')}
               className={cn(
-                'px-4 py-2 text-xs font-semibold rounded-lg transition-all flex items-center gap-2',
+                "px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all duration-150 flex items-center gap-1.5 whitespace-nowrap",
                 statusFilter === 'approved'
-                  ? 'bg-card text-foreground shadow-sm'
-                  : 'text-muted-foreground hover:text-foreground'
-              )}
-            >
+                  ? "bg-teal-600 text-white shadow-sm font-bold"
+                  : "text-slate-600 dark:text-slate-400 hover:text-teal-600 dark:hover:text-teal-400"
+              )}>
               Approved
-              {approvedCount > 0 && (
-                <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 font-medium">
-                  {approvedCount}
-                </span>
-              )}
+              <span className="rounded-full bg-slate-200 dark:bg-slate-700 px-2 py-0.5 text-[10px] font-bold">
+                {approvedCount}
+              </span>
             </button>
+
             <button
               type="button"
               onClick={() => setStatusFilter('pending')}
               className={cn(
-                'px-4 py-2 text-xs font-semibold rounded-lg transition-all flex items-center gap-2',
+                "px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all duration-150 flex items-center gap-1.5 whitespace-nowrap",
                 statusFilter === 'pending'
-                  ? 'bg-card text-foreground shadow-sm'
-                  : 'text-muted-foreground hover:text-foreground'
-              )}
-            >
+                  ? "bg-amber-500 text-white shadow-sm font-bold"
+                  : "text-slate-600 dark:text-slate-400 hover:text-amber-600 dark:hover:text-amber-400"
+              )}>
               Pending
-              {pendingCount > 0 && (
-                <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-amber-100 dark:bg-amber-950 text-amber-700 dark:text-amber-300 font-medium">
+              {pendingCount > 0 ? (
+                <span className="rounded-full bg-amber-400 text-amber-950 px-2 py-0.5 text-[10px] font-extrabold animate-pulse">
                   {pendingCount}
                 </span>
+              ) : (
+                <span className="rounded-full bg-slate-200 dark:bg-slate-700 px-2 py-0.5 text-[10px] font-bold">0</span>
               )}
             </button>
+
             <button
               type="button"
               onClick={() => setStatusFilter('rejected')}
               className={cn(
-                'px-4 py-2 text-xs font-semibold rounded-lg transition-all flex items-center gap-2',
+                "px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all duration-150 flex items-center gap-1.5 whitespace-nowrap",
                 statusFilter === 'rejected'
-                  ? 'bg-card text-foreground shadow-sm'
-                  : 'text-muted-foreground hover:text-foreground'
-              )}
-            >
+                  ? "bg-rose-600 text-white shadow-sm font-bold"
+                  : "text-slate-600 dark:text-slate-400 hover:text-rose-600 dark:hover:text-rose-400"
+              )}>
               Needs Action
-              {rejectedCount > 0 && (
-                <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-red-100 dark:bg-red-950 text-red-700 dark:text-red-300 font-medium">
+              {rejectedCount > 0 ? (
+                <span className="rounded-full bg-rose-500/30 text-white px-2 py-0.5 text-[10px] font-bold">
                   {rejectedCount}
                 </span>
+              ) : (
+                <span className="rounded-full bg-slate-200 dark:bg-slate-700 px-2 py-0.5 text-[10px] font-bold">0</span>
               )}
             </button>
           </div>

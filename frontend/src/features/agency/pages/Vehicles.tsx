@@ -950,6 +950,18 @@ const Vehicles = () => {
       (d.mobileNumber || d.contact || '').includes(searchDriver))
   );
 
+  // Counts for Vehicles sub-tabs
+  const vApprovedCount = vehicles.filter(v => (v.lifecycleStatus || '').toLowerCase() === 'active' || (v.lifecycleStatus || '').toLowerCase() === 'approved' || !v.lifecycleStatus).length;
+  const vPendingCount = vehicles.filter(v => (v.lifecycleStatus || '').toLowerCase() === 'pending').length;
+  const vInactiveCount = vehicles.filter(v => ['suspended', 'inactive'].includes((v.lifecycleStatus || '').toLowerCase())).length;
+  const vRejectedCount = vehicles.filter(v => (v.lifecycleStatus || '').toLowerCase() === 'rejected').length;
+
+  // Counts for Drivers sub-tabs
+  const dApprovedCount = drivers.filter(d => (d.lifecycleStatus || '').toLowerCase() === 'active' || (d.lifecycleStatus || '').toLowerCase() === 'approved' || !d.lifecycleStatus).length;
+  const dPendingCount = drivers.filter(d => (d.lifecycleStatus || '').toLowerCase() === 'pending').length;
+  const dInactiveCount = drivers.filter(d => ['suspended', 'inactive'].includes((d.lifecycleStatus || '').toLowerCase())).length;
+  const dRejectedCount = drivers.filter(d => (d.lifecycleStatus || '').toLowerCase() === 'rejected').length;
+
   return (
     <DashboardLayout title="Vehicles AND Drivers" subtitle="Manage your fleet and driver assignments" showSearch={false}>
       <div className="space-y-6">
@@ -987,12 +999,89 @@ const Vehicles = () => {
             {/* --- VEHICLE MANAGEMENT SECTION --- */}
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
               <div className="flex gap-4 w-full sm:w-auto">
-                <div className="flex bg-muted p-1 rounded-lg">
-                  <Button variant={vehicleFilter === 'all' ? 'secondary' : 'ghost'} size="sm" onClick={() => setVehicleFilter('all')}>All Vehicles</Button>
-                  <Button variant={vehicleFilter === 'active' ? 'secondary' : 'ghost'} size="sm" onClick={() => setVehicleFilter('active')}>Active</Button>
-                  <Button variant={vehicleFilter === 'pending' ? 'secondary' : 'ghost'} size="sm" onClick={() => setVehicleFilter('pending')}>Pending</Button>
-                  <Button variant={vehicleFilter === 'suspended' ? 'secondary' : 'ghost'} size="sm" onClick={() => setVehicleFilter('suspended')}>Inactive</Button>
-                  <Button variant={vehicleFilter === 'rejected' ? 'secondary' : 'ghost'} size="sm" onClick={() => setVehicleFilter('rejected')}>Rejected</Button>
+                <div className="flex items-center gap-1.5 p-1 rounded-xl bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700/60 overflow-x-auto max-w-full">
+                  <button
+                    type="button"
+                    onClick={() => setVehicleFilter('all')}
+                    className={cn(
+                      "px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all duration-150 flex items-center gap-1.5 whitespace-nowrap",
+                      vehicleFilter === 'all'
+                        ? "bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 shadow-sm font-bold"
+                        : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100"
+                    )}>
+                    All Vehicles
+                    <span className="rounded-full bg-slate-200 dark:bg-slate-700 px-2 py-0.5 text-[10px] font-bold">
+                      {vehicles.length}
+                    </span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setVehicleFilter('active')}
+                    className={cn(
+                      "px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all duration-150 flex items-center gap-1.5 whitespace-nowrap",
+                      vehicleFilter === 'active'
+                        ? "bg-teal-600 text-white shadow-sm font-bold"
+                        : "text-slate-600 dark:text-slate-400 hover:text-teal-600 dark:hover:text-teal-400"
+                    )}>
+                    Active
+                    <span className="rounded-full bg-slate-200 dark:bg-slate-700 px-2 py-0.5 text-[10px] font-bold">
+                      {vApprovedCount}
+                    </span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setVehicleFilter('pending')}
+                    className={cn(
+                      "px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all duration-150 flex items-center gap-1.5 whitespace-nowrap",
+                      vehicleFilter === 'pending'
+                        ? "bg-amber-500 text-white shadow-sm font-bold"
+                        : "text-slate-600 dark:text-slate-400 hover:text-amber-600 dark:hover:text-amber-400"
+                    )}>
+                    Pending
+                    {vPendingCount > 0 ? (
+                      <span className="rounded-full bg-amber-400 text-amber-950 px-2 py-0.5 text-[10px] font-extrabold animate-pulse">
+                        {vPendingCount}
+                      </span>
+                    ) : (
+                      <span className="rounded-full bg-slate-200 dark:bg-slate-700 px-2 py-0.5 text-[10px] font-bold">0</span>
+                    )}
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setVehicleFilter('suspended')}
+                    className={cn(
+                      "px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all duration-150 flex items-center gap-1.5 whitespace-nowrap",
+                      vehicleFilter === 'suspended'
+                        ? "bg-slate-700 text-white shadow-sm font-bold"
+                        : "text-slate-600 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300"
+                    )}>
+                    Inactive
+                    <span className="rounded-full bg-slate-200 dark:bg-slate-700 px-2 py-0.5 text-[10px] font-bold">
+                      {vInactiveCount}
+                    </span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setVehicleFilter('rejected')}
+                    className={cn(
+                      "px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all duration-150 flex items-center gap-1.5 whitespace-nowrap",
+                      vehicleFilter === 'rejected'
+                        ? "bg-rose-600 text-white shadow-sm font-bold"
+                        : "text-slate-600 dark:text-slate-400 hover:text-rose-600 dark:hover:text-rose-400"
+                    )}>
+                    Rejected
+                    {vRejectedCount > 0 ? (
+                      <span className="rounded-full bg-rose-500/30 text-white px-2 py-0.5 text-[10px] font-bold">
+                        {vRejectedCount}
+                      </span>
+                    ) : (
+                      <span className="rounded-full bg-slate-200 dark:bg-slate-700 px-2 py-0.5 text-[10px] font-bold">0</span>
+                    )}
+                  </button>
                 </div>
                 <div className="relative">
                   <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -1415,12 +1504,89 @@ const Vehicles = () => {
             {/* --- DRIVER MANAGEMENT SECTION --- */}
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
               <div className="flex gap-4 w-full sm:w-auto">
-                <div className="flex bg-muted p-1 rounded-lg">
-                  <Button variant={driverFilter === 'all' ? 'secondary' : 'ghost'} size="sm" onClick={() => setDriverFilter('all')}>All Drivers</Button>
-                  <Button variant={driverFilter === 'active' ? 'secondary' : 'ghost'} size="sm" onClick={() => setDriverFilter('active')}>Active</Button>
-                  <Button variant={driverFilter === 'pending' ? 'secondary' : 'ghost'} size="sm" onClick={() => setDriverFilter('pending')}>Pending</Button>
-                  <Button variant={driverFilter === 'suspended' ? 'secondary' : 'ghost'} size="sm" onClick={() => setDriverFilter('suspended')}>Inactive</Button>
-                  <Button variant={driverFilter === 'rejected' ? 'secondary' : 'ghost'} size="sm" onClick={() => setDriverFilter('rejected')}>Rejected</Button>
+                <div className="flex items-center gap-1.5 p-1 rounded-xl bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700/60 overflow-x-auto max-w-full">
+                  <button
+                    type="button"
+                    onClick={() => setDriverFilter('all')}
+                    className={cn(
+                      "px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all duration-150 flex items-center gap-1.5 whitespace-nowrap",
+                      driverFilter === 'all'
+                        ? "bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 shadow-sm font-bold"
+                        : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100"
+                    )}>
+                    All Drivers
+                    <span className="rounded-full bg-slate-200 dark:bg-slate-700 px-2 py-0.5 text-[10px] font-bold">
+                      {drivers.length}
+                    </span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setDriverFilter('active')}
+                    className={cn(
+                      "px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all duration-150 flex items-center gap-1.5 whitespace-nowrap",
+                      driverFilter === 'active'
+                        ? "bg-teal-600 text-white shadow-sm font-bold"
+                        : "text-slate-600 dark:text-slate-400 hover:text-teal-600 dark:hover:text-teal-400"
+                    )}>
+                    Active
+                    <span className="rounded-full bg-slate-200 dark:bg-slate-700 px-2 py-0.5 text-[10px] font-bold">
+                      {dApprovedCount}
+                    </span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setDriverFilter('pending')}
+                    className={cn(
+                      "px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all duration-150 flex items-center gap-1.5 whitespace-nowrap",
+                      driverFilter === 'pending'
+                        ? "bg-amber-500 text-white shadow-sm font-bold"
+                        : "text-slate-600 dark:text-slate-400 hover:text-amber-600 dark:hover:text-amber-400"
+                    )}>
+                    Pending
+                    {dPendingCount > 0 ? (
+                      <span className="rounded-full bg-amber-400 text-amber-950 px-2 py-0.5 text-[10px] font-extrabold animate-pulse">
+                        {dPendingCount}
+                      </span>
+                    ) : (
+                      <span className="rounded-full bg-slate-200 dark:bg-slate-700 px-2 py-0.5 text-[10px] font-bold">0</span>
+                    )}
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setDriverFilter('suspended')}
+                    className={cn(
+                      "px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all duration-150 flex items-center gap-1.5 whitespace-nowrap",
+                      driverFilter === 'suspended'
+                        ? "bg-slate-700 text-white shadow-sm font-bold"
+                        : "text-slate-600 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300"
+                    )}>
+                    Inactive
+                    <span className="rounded-full bg-slate-200 dark:bg-slate-700 px-2 py-0.5 text-[10px] font-bold">
+                      {dInactiveCount}
+                    </span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setDriverFilter('rejected')}
+                    className={cn(
+                      "px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all duration-150 flex items-center gap-1.5 whitespace-nowrap",
+                      driverFilter === 'rejected'
+                        ? "bg-rose-600 text-white shadow-sm font-bold"
+                        : "text-slate-600 dark:text-slate-400 hover:text-rose-600 dark:hover:text-rose-400"
+                    )}>
+                    Rejected
+                    {dRejectedCount > 0 ? (
+                      <span className="rounded-full bg-rose-500/30 text-white px-2 py-0.5 text-[10px] font-bold">
+                        {dRejectedCount}
+                      </span>
+                    ) : (
+                      <span className="rounded-full bg-slate-200 dark:bg-slate-700 px-2 py-0.5 text-[10px] font-bold">0</span>
+                    )}
+                  </button>
                 </div>
                 <div className="relative">
                   <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />

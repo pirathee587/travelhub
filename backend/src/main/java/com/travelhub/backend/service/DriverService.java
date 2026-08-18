@@ -34,16 +34,25 @@ public class DriverService {
         Long realAgentId = agent.getId();
         List<Driver> drivers;
         if (lifecycleStatus != null) {
-            // Filter by lifecycle status when requested by the UI (e.g. active/inactive).
-            drivers = driverRepository.findByAgentIdAndLifecycleStatus(realAgentId, lifecycleStatus);
+            drivers = driverRepository.findByAgentId(realAgentId).stream()
+                    .filter(d -> d.getLifecycleStatus() != null &&
+                            ("active".equalsIgnoreCase(lifecycleStatus)
+                                    ? ("active".equalsIgnoreCase(d.getLifecycleStatus()) || "approved".equalsIgnoreCase(d.getLifecycleStatus()))
+                                    : d.getLifecycleStatus().equalsIgnoreCase(lifecycleStatus)))
+                    .collect(Collectors.toList());
         } else {
-            // Otherwise return all drivers for the agent.
             drivers = driverRepository.findByAgentId(realAgentId);
         }
 
         if (startDate != null && endDate != null) {
             LocalDate start = LocalDate.parse(startDate);
             LocalDate end = LocalDate.parse(endDate);
+            // When dates are provided (booking resource assignment), strictly filter for Admin-Approved drivers only
+            drivers = drivers.stream()
+                    .filter(d -> d.getLifecycleStatus() != null &&
+                            ("active".equalsIgnoreCase(d.getLifecycleStatus()) || "approved".equalsIgnoreCase(d.getLifecycleStatus())))
+                    .collect(Collectors.toList());
+
             List<Long> bookedDriverIds = bookingRepository.findBookedDriverIds(realAgentId, start, end);
             drivers = drivers.stream()
                     .filter(d -> !bookedDriverIds.contains(d.getId()))
