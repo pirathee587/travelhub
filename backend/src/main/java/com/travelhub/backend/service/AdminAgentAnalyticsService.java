@@ -167,8 +167,8 @@ public class AdminAgentAnalyticsService {
     // ── Map Agent → List Response ─────────────────────
     private AdminAgentListResponse mapToListResponse(
             Agent a) {
-        Long dbTotalTrips = agentRepository.getTotalTripsByAgentId(a.getId());
-        Integer totalTripsVal = dbTotalTrips != null ? dbTotalTrips.intValue() : 0;
+        // Use cached totalTrips from agent entity to avoid N+1 query
+        Integer totalTripsVal = a.getTotalTrips() != null ? a.getTotalTrips() : 0;
 
         return new AdminAgentListResponse(
                 a.getId(),

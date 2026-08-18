@@ -56,9 +56,8 @@ public class AdminDashboardService {
         if (totalTourists == null) totalTourists = 0L;
 
         List<Agent> allAgents = agentRepository.findAll();
-        Long totalAgents = allAgents.stream()
-                .filter(a -> "Approved".equalsIgnoreCase(resolveAgentStatus(a.getOwner(), a)))
-                .count();
+        long agentUsersCount = userRepository.findByRole(Role.AGENT).size();
+        Long totalAgents = Math.max((long) allAgents.size(), agentUsersCount);
 
         Long totalHotelManagers = userRepository.countByRole(Role.HOTEL_OWNER);
         if (totalHotelManagers == null) totalHotelManagers = 0L;
@@ -73,32 +72,27 @@ public class AdminDashboardService {
 
         List<Hotel> allHotels = hotelRepository.findAll();
         Long pendingHotels = allHotels.stream()
-                .filter(h -> "Pending".equalsIgnoreCase(h.getApplicationStatus()))
+                .filter(h -> h.getApplicationStatus() != null && "Pending".equalsIgnoreCase(h.getApplicationStatus()))
                 .count();
 
         List<Package> allPackages = packageRepository.findAll();
         Long pendingPackages = allPackages.stream()
-                .filter(p -> "Pending".equalsIgnoreCase(p.getApplicationStatus()))
+                .filter(p -> p.getDeletedAt() == null && p.getApplicationStatus() != null && "Pending".equalsIgnoreCase(p.getApplicationStatus()))
                 .count();
 
         List<Driver> allDrivers = driverRepository.findAll();
         Long pendingDrivers = allDrivers.stream()
-                .filter(d -> "pending".equalsIgnoreCase(d.getLifecycleStatus()))
+                .filter(d -> d.getLifecycleStatus() != null && "pending".equalsIgnoreCase(d.getLifecycleStatus()))
                 .count();
 
         List<Vehicle> allVehicles = vehicleRepository.findAll();
         Long pendingVehicles = allVehicles.stream()
-                .filter(v -> "pending".equalsIgnoreCase(v.getLifecycleStatus()))
+                .filter(v -> v.getLifecycleStatus() != null && "pending".equalsIgnoreCase(v.getLifecycleStatus()))
                 .count();
 
         // ── Totals ──────────────────────────────────────
-        Long totalHotels = allHotels.stream()
-                .filter(h -> "Approved".equalsIgnoreCase(h.getApplicationStatus()))
-                .count();
-
-        Long totalPackages = allPackages.stream()
-                .filter(p -> "Approved".equalsIgnoreCase(p.getApplicationStatus()))
-                .count();
+        Long totalHotels = (long) allHotels.size();
+        Long totalPackages = allPackages.stream().filter(p -> p.getDeletedAt() == null).count();
 
         Long totalBookings  = bookingRepository.count();
         if (totalBookings == null) totalBookings = 0L;
@@ -306,12 +300,12 @@ public class AdminDashboardService {
                 .count();
         Double packageGrowth = calculateGrowth(curPackagesCount, prevPackagesCount);
 
-        int curBookingsVal = monthlyBookings.size() >= 12 ? monthlyBookings.get(11) : 0;
-        int prevBookingsVal = monthlyBookings.size() >= 12 ? monthlyBookings.get(10) : 0;
+        int curBookingsVal = monthlyBookings.size() >= 1 ? monthlyBookings.get(monthlyBookings.size() - 1) : 0;
+        int prevBookingsVal = monthlyBookings.size() >= 2 ? monthlyBookings.get(monthlyBookings.size() - 2) : 0;
         Double bookingGrowth = calculateGrowth((long) curBookingsVal, (long) prevBookingsVal);
 
-        double curRevenueVal = monthlyRevenues.size() >= 12 ? monthlyRevenues.get(11) : 0.0;
-        double prevRevenueVal = monthlyRevenues.size() >= 12 ? monthlyRevenues.get(10) : 0.0;
+        double curRevenueVal = monthlyRevenues.size() >= 1 ? monthlyRevenues.get(monthlyRevenues.size() - 1) : 0.0;
+        double prevRevenueVal = monthlyRevenues.size() >= 2 ? monthlyRevenues.get(monthlyRevenues.size() - 2) : 0.0;
         Double revenueGrowth = calculateGrowth(curRevenueVal, prevRevenueVal);
 
         return new AdminDashboardResponse(

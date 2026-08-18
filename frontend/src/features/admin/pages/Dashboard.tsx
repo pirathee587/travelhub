@@ -247,20 +247,20 @@ export default function Dashboard() {
     load(); 
   }, [load]);
 
-  // Dynamic values with priority: stats -> live resource lists -> fallback 0
-  const totalUsers = stats?.totalUsers !== undefined ? stats.totalUsers : (liveCounts.totalUsers ?? 0);
-  const activeAgents = stats?.totalAgents !== undefined ? stats.totalAgents : (liveCounts.activeAgents ?? 0);
-  const partnerHotels = stats?.totalHotels !== undefined ? stats.totalHotels : (liveCounts.partnerHotels ?? 0);
-  const activePackages = stats?.totalPackages !== undefined ? stats.totalPackages : (liveCounts.activePackages ?? 0);
-  const totalBookings = stats?.totalBookings !== undefined ? stats.totalBookings : (liveCounts.totalBookings ?? 0);
+  // Dynamic values with priority: stats (if > 0) -> live resource lists -> fallback 0
+  const totalUsers = (stats?.totalUsers && stats.totalUsers > 0) ? stats.totalUsers : (liveCounts.totalUsers ?? 0);
+  const activeAgents = (stats?.totalAgents && stats.totalAgents > 0) ? stats.totalAgents : (liveCounts.activeAgents ?? 0);
+  const partnerHotels = (stats?.totalHotels && stats.totalHotels > 0) ? stats.totalHotels : (liveCounts.partnerHotels ?? 0);
+  const activePackages = (stats?.totalPackages && stats.totalPackages > 0) ? stats.totalPackages : (liveCounts.activePackages ?? 0);
+  const totalBookings = (stats?.totalBookings && stats.totalBookings > 0) ? stats.totalBookings : (liveCounts.totalBookings ?? 0);
   const totalRevenue = stats?.totalRevenue ?? 0;
   const netPlatformRevenue = financeStats?.totalPlatformNetRevenue ?? totalRevenue;
 
-  const pendingAgents = stats?.pendingAgents !== undefined ? stats.pendingAgents : (liveCounts.pendingAgents ?? 0);
-  const pendingHotels = stats?.pendingHotels !== undefined ? stats.pendingHotels : (liveCounts.pendingHotels ?? 0);
-  const pendingPackages = stats?.pendingPackages !== undefined ? stats.pendingPackages : (liveCounts.pendingPackages ?? 0);
-  const pendingVehicles = stats?.pendingVehicles !== undefined ? stats.pendingVehicles : (liveCounts.pendingVehicles ?? 0);
-  const pendingDrivers = stats?.pendingDrivers !== undefined ? stats.pendingDrivers : (liveCounts.pendingDrivers ?? 0);
+  const pendingAgents = (stats?.pendingAgents && stats.pendingAgents > 0) ? stats.pendingAgents : (liveCounts.pendingAgents ?? 0);
+  const pendingHotels = (stats?.pendingHotels && stats.pendingHotels > 0) ? stats.pendingHotels : (liveCounts.pendingHotels ?? 0);
+  const pendingPackages = (stats?.pendingPackages && stats.pendingPackages > 0) ? stats.pendingPackages : (liveCounts.pendingPackages ?? 0);
+  const pendingVehicles = (stats?.pendingVehicles && stats.pendingVehicles > 0) ? stats.pendingVehicles : (liveCounts.pendingVehicles ?? 0);
+  const pendingDrivers = (stats?.pendingDrivers && stats.pendingDrivers > 0) ? stats.pendingDrivers : (liveCounts.pendingDrivers ?? 0);
   const totalPending = pendingAgents + pendingHotels + pendingPackages + pendingVehicles + pendingDrivers;
 
   // Monthly Performance Chart Data

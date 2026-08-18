@@ -15,6 +15,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
@@ -38,9 +39,25 @@ public class AdminAgentService {
 
     // ── Get All Agents ────────────────────────────────
     public List<AdminAgentListResponse> getAllAgents() {
-        return agentRepository.findAll()
-                .stream()
-                .map(this::mapToListResponse)
+        List<Agent> agents = agentRepository.findAll();
+        if (agents.isEmpty()) return List.of();
+
+        // Pre-compute all data in bulk to avoid N+1 queries
+        List<Long> agentIds = agents.stream().map(Agent::getId).toList();
+        Map<Long, Double> ratingsMap = agentRatingCalculator.getAgentRatings(agentIds);
+
+        // Bulk package counts: one query per agent → use countByAgent_Id but collect via a single pass
+        Map<Long, Long> pkgCountMap = new java.util.HashMap<>();
+        for (Long id : agentIds) {
+            try {
+                pkgCountMap.put(id, packageRepository.countByAgent_Id(id));
+            } catch (Exception e) {
+                pkgCountMap.put(id, 0L);
+            }
+        }
+
+        return agents.stream()
+                .map(a -> mapToListResponseBulk(a, ratingsMap, pkgCountMap))
                 .toList();
     }
 
@@ -418,6 +435,44 @@ public class AdminAgentService {
         } catch (Exception ignored) {}
 
         Double computedRating = agentRatingCalculator.getAgentRating(a.getId());
+        Long dbTotalTrips = agentRepository.getTotalTripsByAgentId(a.getId());
+        Integer totalTripsVal = dbTotalTrips != null ? dbTotalTrips.intValue() : 0;
+
+        return new AdminAgentListResponse(
+                a.getId(),
+                a.getOwner() != null ? a.getOwner().getId() : null,
+                a.getAgencyName(),
+                a.getAgencyName(),
+                a.getOwner() != null ? a.getOwner().getName() : null,
+                a.getOwner() != null ? a.getOwner().getEmail() : null,
+                a.getOwner() != null ? a.getOwner().getTelephone() : null,
+                a.getLocation(),
+                a.getOwner() != null ? a.getOwner().getProfileImage() : null,
+                a.getBio(),
+                computedRating != null ? computedRating : (a.getRating() != null ? a.getRating() : 0.0),
+                totalTripsVal,
+                pkgCount,
+                a.getExperienceYears() != null ? a.getExperienceYears() : 0,
+                a.getOwner() != null ? a.getOwner().getNicNumber() : null,
+                resolveApplicationStatus(a.getOwner(), a),
+                resolveNicStatus(a.getOwner()),
+                submittedDate,
+                a.getIsActive() != null ? a.getIsActive() : true
+        );
+    }
+
+    // ── Bulk Map Agent → List Response (no N+1) ──────
+    private AdminAgentListResponse mapToListResponseBulk(
+            Agent a, Map<Long, Double> ratingsMap, Map<Long, Long> pkgCountMap) {
+
+        String submittedDate = "";
+        if (a.getSubmittedDate() != null) {
+            submittedDate = a.getSubmittedDate()
+                    .format(DateTimeFormatter.ofPattern("dd/MM/yyyy"));
+        }
+
+        int pkgCount = pkgCountMap.getOrDefault(a.getId(), 0L).intValue();
+        Double computedRating = ratingsMap.getOrDefault(a.getId(), 0.0);
         Long dbTotalTrips = agentRepository.getTotalTripsByAgentId(a.getId());
         Integer totalTripsVal = dbTotalTrips != null ? dbTotalTrips.intValue() : 0;
 

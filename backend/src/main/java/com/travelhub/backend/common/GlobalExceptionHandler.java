@@ -81,9 +81,21 @@ public class GlobalExceptionHandler {
                 .body(new ApiResponse(false, "Authentication failed. Please check your credentials."));
     }
 
+    // ── Client Disconnect / Aborted Requests ─────────────────
+    @ExceptionHandler({
+            org.springframework.web.context.request.async.AsyncRequestNotUsableException.class,
+            org.apache.catalina.connector.ClientAbortException.class
+    })
+    public void handleClientAbort() {
+        // Silently ignore client socket disconnects (browser refresh or cancellation)
+    }
+
     // ── General Exception ─────────────────────────────────────
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiResponse> handleGeneral(Exception ex) {
+        if (ex != null && ex.getCause() instanceof org.apache.catalina.connector.ClientAbortException) {
+            return null;
+        }
         ex.printStackTrace();
         return ResponseEntity
                 .status(HttpStatus.INTERNAL_SERVER_ERROR)
