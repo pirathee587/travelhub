@@ -90,15 +90,15 @@ jobs:
             echo "🚀 Starting TravelHub Deployment on AWS EC2..."
             echo "========================================================"
 
-            # Locate project root directory on EC2
-            if [ -d "$HOME/travelhub" ]; then
+            # Locate project root directory on EC2 or clone fresh if not present
+            if [ -d "$HOME/travelhub/.git" ]; then
               cd "$HOME/travelhub"
-            elif [ -d "/var/www/travelhub" ]; then
+            elif [ -d "/var/www/travelhub/.git" ]; then
               cd "/var/www/travelhub"
             else
-              echo "❌ Error: Project directory not found in ~/travelhub or /var/www/travelhub."
-              echo "Please run the setup script deploy/ec2-setup.sh on EC2 first."
-              exit 1
+              echo "📥 Repo not found, cloning fresh into ~/travelhub..."
+              git clone https://github.com/pirathee587/travelhub.git "$HOME/travelhub"
+              cd "$HOME/travelhub"
             fi
 
             echo "📥 Pulling latest updates from git repository..."
