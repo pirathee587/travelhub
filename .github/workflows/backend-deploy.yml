@@ -77,10 +77,37 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      - name: 🧼 Normalize & Validate EC2 Host
+        id: prepare_ssh_host
+        env:
+          RAW_EC2_HOST: ${{ secrets.EC2_HOST }}
+        run: |
+          set -euo pipefail
+
+          host="${RAW_EC2_HOST:-}"
+          host="${host#http://}"
+          host="${host#https://}"
+          host="${host%%/*}"
+          host="${host%%\?*}"
+          host="${host%%#*}"
+          host="$(printf '%s' "$host" | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')"
+
+          if [ -z "$host" ]; then
+            echo "::error::EC2_HOST is empty or invalid after normalization. Set it to a raw hostname or IP."
+            exit 1
+          fi
+
+          if printf '%s' "$host" | grep -q '[[:space:]]'; then
+            echo "::error::EC2_HOST contains whitespace. Set it to a raw hostname or IP."
+            exit 1
+          fi
+
+          echo "host=$host" >> "$GITHUB_OUTPUT"
+
       - name: 🔐 Execute Remote Deployment via SSH
         uses: appleboy/ssh-action@v1.0.3
         with:
-          host: ${{ secrets.EC2_HOST }}
+          host: ${{ steps.prepare_ssh_host.outputs.host }}
           username: ${{ secrets.EC2_USERNAME }}
           key: ${{ secrets.EC2_SSH_KEY }}
           port: ${{ secrets.EC2_PORT || 22 }}
