@@ -193,9 +193,8 @@ export function NotificationBell() {
                     <div
                       key={n.id}
                       onClick={() => !n.read && markAsRead(n.id)}
-                      className={`group flex cursor-pointer gap-3 border-b border-border/50 px-4 py-3 transition hover:bg-muted/40 ${
-                        !n.read ? "bg-primary/[0.03]" : ""
-                      }`}
+                      className={`group flex cursor-pointer gap-3 border-b border-border/50 px-4 py-3 transition hover:bg-muted/40 ${!n.read ? "bg-primary/[0.03]" : ""
+                        }`}
                     >
                       {/* Icon + unread dot */}
                       <div className="relative mt-0.5 flex-shrink-0">

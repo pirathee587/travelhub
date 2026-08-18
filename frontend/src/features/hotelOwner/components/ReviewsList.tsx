@@ -15,11 +15,10 @@ const Stars = ({ rating }: { rating: number }) => (
     {Array.from({ length: 5 }).map((_, i) => (
       <Star
         key={i}
-        className={`h-3 w-3 ${
-          i < Math.floor(rating)
+        className={`h-3 w-3 ${i < Math.floor(rating)
             ? "fill-amber-400 text-amber-400"
             : "text-muted-foreground/20"
-        }`}
+          }`}
       />
     ))}
   </div>

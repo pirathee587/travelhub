@@ -77,8 +77,8 @@ const Packages = () => {
     const matchesType = typeFilter === 'all'
       ? true
       : typeFilter === 'multi'
-      ? pkgIsMulti
-      : !pkgIsMulti;
+        ? pkgIsMulti
+        : !pkgIsMulti;
 
     const appStatus = (pkg.applicationStatus || 'Approved').trim().toLowerCase();
     let matchesStatus = true;
@@ -264,24 +264,24 @@ const Packages = () => {
             </div>
             <h3 className="text-xl font-bold text-foreground">
               {search ? 'No packages match your search' :
-               statusFilter === 'approved' && pendingCount > 0 ? 'No approved packages yet' :
-               statusFilter === 'approved' && rejectedCount > 0 ? 'No approved packages yet' :
-               statusFilter === 'pending' ? 'No packages pending approval' :
-               statusFilter === 'rejected' ? 'No rejected or suspended packages' :
-               'No travel packages created yet'}
+                statusFilter === 'approved' && pendingCount > 0 ? 'No approved packages yet' :
+                  statusFilter === 'approved' && rejectedCount > 0 ? 'No approved packages yet' :
+                    statusFilter === 'pending' ? 'No packages pending approval' :
+                      statusFilter === 'rejected' ? 'No rejected or suspended packages' :
+                        'No travel packages created yet'}
             </h3>
             <p className="mt-2 text-sm text-muted-foreground max-w-md">
               {search
                 ? 'Try adjusting your search query or clear the filter.'
                 : statusFilter === 'approved' && pendingCount > 0
-                ? 'You have submitted packages currently awaiting admin verification approval.'
-                : statusFilter === 'approved' && rejectedCount > 0
-                ? 'You have packages requiring update & re-submission.'
-                : statusFilter === 'pending'
-                ? 'All your submitted packages have been processed by admin.'
-                : statusFilter === 'rejected'
-                ? 'All your travel packages are currently in good standing.'
-                : "Start building your agency's travel offerings! Add custom itineraries, set pricing, and start accepting tourist bookings."}
+                  ? 'You have submitted packages currently awaiting admin verification approval.'
+                  : statusFilter === 'approved' && rejectedCount > 0
+                    ? 'You have packages requiring update & re-submission.'
+                    : statusFilter === 'pending'
+                      ? 'All your submitted packages have been processed by admin.'
+                      : statusFilter === 'rejected'
+                        ? 'All your travel packages are currently in good standing.'
+                        : "Start building your agency's travel offerings! Add custom itineraries, set pricing, and start accepting tourist bookings."}
             </p>
             {statusFilter === 'approved' && pendingCount > 0 && (
               <Button
@@ -356,7 +356,7 @@ const Packages = () => {
                             : 'bg-amber-500 text-slate-950 border-amber-400/50'
                         )}>
                           {pkg.applicationStatus.trim().toLowerCase() === 'rejected' ? <X className="h-3 w-3 text-white" /> :
-                           <Clock className="h-3 w-3 text-slate-950" />}
+                            <Clock className="h-3 w-3 text-slate-950" />}
                           {pkg.applicationStatus.trim().toLowerCase() === 'pending' ? 'Pending Approval' : pkg.applicationStatus.trim()}
                         </span>
                       )}
@@ -430,53 +430,53 @@ const Packages = () => {
                       </div>
                     </div>
 
-                  <div className="mt-4 flex gap-2">
-                    <Button variant="outline" size="sm" className="gap-1.5" asChild>
-                      <Link to={`/agency/packages/${pkg.packageId || pkg.id}`}>
-                        <Eye className="h-3.5 w-3.5" />
-                        View Details
-                      </Link>
-                    </Button>
-                    <AlertDialog>
-                      <AlertDialogTrigger asChild>
-                        <Button variant="outline" size="sm" className="gap-1.5 text-destructive hover:text-destructive hover:bg-destructive/10 border-destructive/20">
-                          <Trash2 className="h-3.5 w-3.5" />
-                          Delete
-                        </Button>
-                      </AlertDialogTrigger>
-                      <AlertDialogContent>
-                        <AlertDialogHeader>
-                          <AlertDialogTitle>Are you sure you want to delete this package?</AlertDialogTitle>
-                          <AlertDialogDescription>
-                            This action cannot be undone. This will permanently delete the travel package and remove it from our servers.
-                          </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                          <AlertDialogCancel>Cancel</AlertDialogCancel>
-                          <AlertDialogAction
-                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                            onClick={async () => {
-                              try {
-                                const targetId = pkg.packageId || pkg.id;
-                                await api.deleteAgentPackage(targetId);
-                                setPackagesList(prev => prev.filter(p => (p.packageId || p.id) !== targetId));
-                                toast.success('Package deleted successfully');
-                              } catch (err: any) {
-                                console.error('Delete package error:', err);
-                                toast.error(err.message || 'Failed to delete package');
-                              }
-                            }}
-                          >
+                    <div className="mt-4 flex gap-2">
+                      <Button variant="outline" size="sm" className="gap-1.5" asChild>
+                        <Link to={`/agency/packages/${pkg.packageId || pkg.id}`}>
+                          <Eye className="h-3.5 w-3.5" />
+                          View Details
+                        </Link>
+                      </Button>
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button variant="outline" size="sm" className="gap-1.5 text-destructive hover:text-destructive hover:bg-destructive/10 border-destructive/20">
+                            <Trash2 className="h-3.5 w-3.5" />
                             Delete
-                          </AlertDialogAction>
-                        </AlertDialogFooter>
-                      </AlertDialogContent>
-                    </AlertDialog>
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Are you sure you want to delete this package?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              This action cannot be undone. This will permanently delete the travel package and remove it from our servers.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <AlertDialogAction
+                              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                              onClick={async () => {
+                                try {
+                                  const targetId = pkg.packageId || pkg.id;
+                                  await api.deleteAgentPackage(targetId);
+                                  setPackagesList(prev => prev.filter(p => (p.packageId || p.id) !== targetId));
+                                  toast.success('Package deleted successfully');
+                                } catch (err: any) {
+                                  console.error('Delete package error:', err);
+                                  toast.error(err.message || 'Failed to delete package');
+                                }
+                              }}
+                            >
+                              Delete
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    </div>
                   </div>
                 </div>
-              </div>
-            )
-          })}
+              )
+            })}
           </div>
         )}
       </div>
