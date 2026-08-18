@@ -12,7 +12,7 @@ public class WebConfig implements WebMvcConfigurer {
     @Value("${app.upload.dir:uploads}")
     private String uploadDir;
 
-    @Value("${cors.allowed-origins:http://localhost:5173,http://localhost:5174,http://localhost:8080,http://localhost:8001,http://localhost:8082,http://localhost:3000}")
+    @Value("${cors.allowed-origins:http://localhost:5173,http://localhost:5174,http://localhost:8080,http://localhost:8001,http://localhost:8082,http://localhost:3000,https://travelhublanka.netlify.app}")
     private String allowedOrigins;
 
     // Teammate's existing code — keep this!

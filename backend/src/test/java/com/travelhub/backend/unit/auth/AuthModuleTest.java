@@ -194,6 +194,7 @@ public class AuthModuleTest {
                 .email("resetuser@example.com")
                 .name("Reset User")
                 .role(Role.TOURIST)
+                .isEmailVerified(true)
                 .build();
 
         when(userRepository.findByEmail("resetuser@example.com")).thenReturn(Optional.of(user));

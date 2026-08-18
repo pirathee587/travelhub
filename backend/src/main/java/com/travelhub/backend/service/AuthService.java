@@ -163,7 +163,8 @@ public class AuthService {
 
     public ApiResponse verifyEmail(String token) {
         User user = userRepository.findByVerificationToken(token)
-                .orElseThrow(() -> new ResourceNotFoundException("User", "verificationToken", token));
+                .orElseThrow(() -> new BadRequestException(
+                        "This verification link is invalid or has already been used. Please log in or request a new verification email."));
 
         user.setEmailVerified(true);
         user.setVerificationToken(null);
@@ -179,22 +180,32 @@ public class AuthService {
     }
 
     public ApiResponse requestPasswordReset(String email) {
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new ResourceNotFoundException("User", "email", email));
+        var userOpt = userRepository.findByEmail(email);
+        if (userOpt.isEmpty()) {
+            return new ApiResponse(true, "If an account exists for this email, a password reset link has been sent.");
+        }
+
+        User user = userOpt.get();
+        if (!user.isEmailVerified()) {
+            throw new UnauthorizedException("Please verify your email before resetting your password.");
+        }
 
         String token = UUID.randomUUID().toString();
         user.setPasswordResetToken(token);
         user.setPasswordResetExpires(LocalDateTime.now().plusHours(1));
         userRepository.save(user);
-
         emailService.sendPasswordResetEmail(user.getEmail(), token);
 
-        return new ApiResponse(true, "Password reset link sent to your email.");
+        return new ApiResponse(true, "If an account exists for this email, a password reset link has been sent.");
     }
 
     public ApiResponse resetPassword(String token, String newPassword) {
         User user = userRepository.findByPasswordResetToken(token)
                 .orElseThrow(() -> new BadRequestException("Invalid or expired reset token"));
+
+        if (!user.isEmailVerified()) {
+            throw new UnauthorizedException("Please verify your email before resetting your password.");
+        }
 
         if (user.getPasswordResetExpires().isBefore(LocalDateTime.now())) {
             throw new BadRequestException("Reset token has expired");

@@ -82,6 +82,7 @@ export default function AuthPage({ role: propRole, mode }: AuthPageProps = {}) {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [needsEmailVerification, setNeedsEmailVerification] = useState(false);
 
   const [form, setForm] = useState({
     email: '',
@@ -114,6 +115,7 @@ export default function AuthPage({ role: propRole, mode }: AuthPageProps = {}) {
       district: '',
     });
     setError('');
+    setNeedsEmailVerification(false);
   };
 
   const handleToggleMode = (loginState: boolean) => {
@@ -130,6 +132,7 @@ export default function AuthPage({ role: propRole, mode }: AuthPageProps = {}) {
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     setForm((f) => ({ ...f, [e.target.name]: e.target.value }));
     setError('');
+    setNeedsEmailVerification(false);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -224,10 +227,12 @@ export default function AuthPage({ role: propRole, mode }: AuthPageProps = {}) {
         const raw = data.message || data.error || 'Something went wrong';
         let friendly = raw;
         const lower = raw.toLowerCase();
+        setNeedsEmailVerification(false);
         if (lower.includes('invalid email or password') || lower.includes('bad credentials')) {
           friendly = 'Incorrect email or password. Please try again.';
         } else if (lower.includes('verify your email')) {
           friendly = 'Your email is not verified yet. Please check your inbox and click the verification link.';
+          setNeedsEmailVerification(true);
         } else if (lower.includes('pending approval') || lower.includes('agent account is pending')) {
           friendly = 'Your account is pending admin approval. You will be notified by email once approved.';
         } else if (lower.includes('deactivated')) {
@@ -238,6 +243,11 @@ export default function AuthPage({ role: propRole, mode }: AuthPageProps = {}) {
           friendly = 'No account found with this email address.';
         }
         setError(friendly);
+        return;
+      }
+
+      if (!isLogin) {
+        navigate(`/verify?email=${encodeURIComponent(form.email)}`);
         return;
       }
 
@@ -626,9 +636,19 @@ export default function AuthPage({ role: propRole, mode }: AuthPageProps = {}) {
 
             {/* Error Banner */}
             {error && (
-              <div className="flex items-start gap-3 text-sm text-red-700 bg-red-50 border border-red-200 rounded-2xl p-4 font-display">
-                <span className="mt-0.5 shrink-0 text-red-500 font-bold">!</span>
-                <span>{error}</span>
+              <div className="flex flex-col gap-3 text-sm text-red-700 bg-red-50 border border-red-200 rounded-2xl p-4 font-display">
+                <div className="flex items-start gap-3">
+                  <span className="mt-0.5 shrink-0 text-red-500 font-bold">!</span>
+                  <span>{error}</span>
+                </div>
+                {needsEmailVerification && form.email && (
+                  <Link
+                    to={`/verify?email=${encodeURIComponent(form.email)}`}
+                    className="text-teal-700 font-bold hover:text-teal-800 hover:underline transition-colors"
+                  >
+                    Resend verification email →
+                  </Link>
+                )}
               </div>
             )}
 
