@@ -163,8 +163,9 @@ PAYHERE_MERCHANT_ID=1235619
 PAYHERE_SECRET=your_payhere_secret
 PAYHERE_CURRENCY=USD
 
-CORS_ALLOWED_ORIGINS=https://travelhub.netlify.app,https://your-custom-domain.com,http://localhost:5173
-APP_BASE_URL=https://travelhub.netlify.app
+CORS_ALLOWED_ORIGINS=https://travelhublanka.netlify.app,https://travelhub.netlify.app,http://localhost:5173
+APP_BASE_URL=https://travelhublanka.netlify.app
+APP_BACKEND_URL=http://YOUR_EC2_PUBLIC_IP:8080
 
 GROQ_API_KEY=your_groq_api_key
 ```
@@ -230,7 +231,7 @@ To enable fully automated zero-downtime continuous deployment on every `git push
 - Verify `Backend & Chatbot CI/CD (AWS EC2)` runs tests, SSHes into EC2, and rebuilds containers.
 
 ### 6.2 Manual Verification:
-1. Open your Netlify site URL in browser (e.g. `https://travelhub.netlify.app`).
+1. Open your Netlify site URL in browser (e.g. `https://travelhublanka.netlify.app`).
 2. Open Browser DevTools -> Console & Network tab.
 3. Test User Registration / Login.
 4. Browse Packages, Hotels, and send a message to the AI Chatbot.
