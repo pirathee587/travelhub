@@ -37,6 +37,7 @@ public class PackageDetailResponse {
     private List<String> images;
     private List<String> inclusions;
     private String packageType;
+    private String description;
     
     @Data
     @Builder

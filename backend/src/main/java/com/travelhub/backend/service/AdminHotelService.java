@@ -18,13 +18,13 @@ import com.travelhub.backend.entity.Room;
 import com.travelhub.backend.entity.User;
 import com.travelhub.backend.event.HotelEvent;
 import com.travelhub.backend.repository.AmenityRepository;
+import com.travelhub.backend.repository.BookingRepository;
 import com.travelhub.backend.repository.HotelRepository;
 import com.travelhub.backend.repository.ReviewRepository;
 import com.travelhub.backend.repository.RoomRepository;
 import com.travelhub.backend.repository.UserRepository;
 import com.travelhub.backend.service.HotelPricingService.PriceRange;
 
-import jakarta.persistence.EntityManager;
 import lombok.RequiredArgsConstructor;
 
 @Service
@@ -39,18 +39,12 @@ public class AdminHotelService {
     private final HotelPricingService        hotelPricingService;
     private final UserRepository             userRepository;
     private final ApplicationEventPublisher  eventPublisher;
-    private final EntityManager              entityManager;
+    private final BookingRepository          bookingRepository;
 
     // ── Count Active Bookings for a Hotel ─────────────
     public long countActiveBookings(Long hotelId) {
-        Number count = (Number) entityManager.createNativeQuery(
-                "SELECT COUNT(DISTINCT b.id) FROM bookings b " +
-                "LEFT JOIN booking_hotel_preferences bhp ON bhp.booking_id = b.id " +
-                "WHERE (b.hotel_id = :hotelId OR bhp.hotel_id = :hotelId) " +
-                "AND LOWER(b.status) NOT IN ('cancelled', 'rejected', 'completed')"
-        ).setParameter("hotelId", hotelId).getSingleResult();
-
-        return count != null ? count.longValue() : 0L;
+        Long count = bookingRepository.countActiveBookingsByHotelId(hotelId);
+        return count != null ? count : 0L;
     }
 
     // ── Get All Hotels ────────────────────────────────
@@ -142,20 +136,13 @@ public class AdminHotelService {
 
     private Map<Long, Long> fetchActiveBookingsMap(List<Long> hotelIds) {
         Map<Long, Long> activeBookingsMap = new java.util.HashMap<>();
-        if (!hotelIds.isEmpty()) {
-            @SuppressWarnings("unchecked")
-            List<Object[]> rows = entityManager.createNativeQuery(
-                "SELECT COALESCE(b.hotel_id, bhp.hotel_id) AS hid, COUNT(DISTINCT b.id) " +
-                "FROM bookings b " +
-                "LEFT JOIN booking_hotel_preferences bhp ON bhp.booking_id = b.id " +
-                "WHERE (b.hotel_id IN :hotelIds OR bhp.hotel_id IN :hotelIds) " +
-                "AND LOWER(b.status) NOT IN ('cancelled', 'rejected', 'completed') " +
-                "GROUP BY COALESCE(b.hotel_id, bhp.hotel_id)"
-            ).setParameter("hotelIds", hotelIds).getResultList();
-
-            for (Object[] row : rows) {
-                if (row[0] != null && row[1] != null) {
-                    activeBookingsMap.put(((Number) row[0]).longValue(), ((Number) row[1]).longValue());
+        if (hotelIds != null && !hotelIds.isEmpty()) {
+            List<Object[]> rows = bookingRepository.findActiveBookingCountsByHotelIds(hotelIds);
+            if (rows != null) {
+                for (Object[] row : rows) {
+                    if (row[0] != null && row[1] != null) {
+                        activeBookingsMap.put(((Number) row[0]).longValue(), ((Number) row[1]).longValue());
+                    }
                 }
             }
         }
@@ -369,20 +356,13 @@ public class AdminHotelService {
         eventPublisher.publishEvent(new HotelEvent(this, hotel, "DELETED", effectiveReason));
 
         // Clean up unlinked completed/cancelled bookings and child records
-        entityManager.createNativeQuery("UPDATE bookings SET hotel_id = NULL WHERE hotel_id = :id")
-                .setParameter("id", id).executeUpdate();
-        entityManager.createNativeQuery("DELETE FROM booking_hotel_preferences WHERE hotel_id = :id")
-                .setParameter("id", id).executeUpdate();
-        entityManager.createNativeQuery("DELETE FROM hotel_images WHERE hotel_id = :id")
-                .setParameter("id", id).executeUpdate();
-        entityManager.createNativeQuery("DELETE FROM reviews WHERE hotel_id = :id")
-                .setParameter("id", id).executeUpdate();
-        entityManager.createNativeQuery("DELETE FROM room_amenities WHERE room_id IN (SELECT id FROM rooms WHERE hotel_id = :id)")
-                .setParameter("id", id).executeUpdate();
-        entityManager.createNativeQuery("DELETE FROM rooms WHERE hotel_id = :id")
-                .setParameter("id", id).executeUpdate();
-        entityManager.createNativeQuery("DELETE FROM hotel_amenities WHERE hotel_id = :id")
-                .setParameter("id", id).executeUpdate();
+        bookingRepository.unlinkHotelFromBookings(id);
+        bookingRepository.deleteBookingHotelPreferencesByHotelId(id);
+        hotelRepository.deleteHotelImagesByHotelId(id);
+        hotelRepository.deleteReviewsByHotelId(id);
+        hotelRepository.deleteRoomAmenitiesByHotelId(id);
+        hotelRepository.deleteRoomsByHotelId(id);
+        hotelRepository.deleteHotelAmenitiesByHotelId(id);
 
         hotelRepository.deleteById(id);
     }

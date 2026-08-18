@@ -1,8 +1,8 @@
 //Only on MyTrip page and OverView page 
 
-import { Calendar, ChevronRight, Star, CreditCard } from "lucide-react";
+import { Calendar, ChevronRight, Star, CreditCard, MapPin } from "lucide-react";
 import placeholderImg from "@/assets/images/placeholder.jpg";
-import { cn } from "@/features/tourist/services/utils";
+import { cn, RenderDateRange } from "@/features/tourist/services/utils";
 import { Progress } from "@/components/common/ui/progress";
 import { Badge } from "@/components/common/ui/badge";
 import { Button } from "@/components/common/ui/button";
@@ -71,9 +71,12 @@ export function TripCard({ trip, onClick, onReview, onHotelReview, onCancel }: {
                 <div className="absolute inset-0 bg-gradient-to-t from-foreground/60 to-transparent" />
                 <div className="absolute bottom-3 left-3 right-3">
                     <div className="flex items-start justify-between gap-2">
-                        <div>
-                            <h3 className="text-lg font-semibold text-primary-foreground">{trip.destination || "Trip"}</h3> {/*Destination name*/}
-                            <p className="text-sm text-primary-foreground/80">{trip.packageName || "Package"}</p>  {/* Package name */}
+                        <div className="min-w-0 flex-1">
+                            <h3 className="text-lg font-bold text-primary-foreground leading-snug line-clamp-1">{trip.packageName || "Package"}</h3> {/* Package name */}
+                            <p className="text-sm font-normal text-primary-foreground/90 flex items-center gap-1 mt-0.5">
+                                <MapPin className="h-3.5 w-3.5 text-primary-foreground/80 flex-shrink-0" />
+                                <span className="truncate">{trip.district || trip.destination || "Location"}</span>
+                            </p>  {/* District location with MapPin */}
                         </div>
                         <div className="flex items-center gap-1 rounded-full bg-white/20 px-2 py-1 backdrop-blur-md border border-white/30">
                             <Star className="h-3.5 w-3.5 fill-yellow-400 text-yellow-400" />
@@ -104,8 +107,8 @@ export function TripCard({ trip, onClick, onReview, onHotelReview, onCancel }: {
             <div className="p-4 space-y-3">
                 <div className="flex items-center gap-4 text-sm text-muted-foreground">
                     <div className="flex items-center gap-1.5">
-                        <Calendar className="h-4 w-4" />
-                        <span>{trip.startDate || "N/A"} - {trip.endDate || "N/A"}</span>    {/*Start and End date*/}
+                        <Calendar className="h-4 w-4 flex-shrink-0" />
+                        <RenderDateRange startDateStr={trip.startDate} endDateStr={trip.endDate} />    {/*Start and End date*/}
                     </div>
                 </div>
 

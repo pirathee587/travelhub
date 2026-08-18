@@ -27,6 +27,7 @@ public class TripResponse {
     private String hotelName;
     private String startPlace;
     private String endPlace;
+    private String district;
     private Double rating;
     private Long reviewCount;
 }

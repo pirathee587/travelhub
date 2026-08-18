@@ -213,6 +213,7 @@ public class PackageService {
                 .district(pkg.getDistrict())
                 .inclusions(inclusions)
                 .packageType(pkg.getPackageType())
+                .description(pkg.getDescription())
                 .build();
     }
 
