@@ -51,6 +51,14 @@ public class BookingService {
         return toBookingResponse(booking);
     }
 
+    // Get all bookings for admin
+    public List<BookingResponse> getAllBookingsForAdmin() {
+        return bookingRepository.findAll()
+                .stream()
+                .map(this::toBookingResponse)
+                .collect(Collectors.toList());
+    }
+
     // Map Booking → TripResponse
     private TripResponse toTripResponse(Booking booking) {
         // Calculate average rating and review count for the package

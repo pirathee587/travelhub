@@ -3,7 +3,7 @@ import { useSearchParams } from 'react-router-dom';
 import { createWorker } from 'tesseract.js';
 import {
   Car, Plus, Search, Edit, Trash2, User,
-  CheckCircle, Clock, AlertTriangle, Upload, Star, Lock, SearchX, Loader2, AlertCircle, Pencil,
+  CheckCircle, Clock, AlertTriangle, Upload, Star, Lock, SearchX, Loader2, AlertCircle, Pencil, PowerOff,
 } from 'lucide-react';
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
@@ -698,6 +698,15 @@ const Vehicles = () => {
     } catch (error) { toast.error('Failed to update vehicle status'); }
   };
 
+  const handleInactivateVehicle = async (id) => {
+    try {
+      const updated = await api.updateVehicleLifecycle(id, 'inactive');
+      setVehicles(prev => prev.map(v => v.id === id ? updated : v));
+      toast.success('Vehicle deactivated (marked inactive)');
+      setDeleteActionVehicle(null);
+    } catch (error) { toast.error('Failed to deactivate vehicle'); }
+  };
+
   const handleSuspendVehicle = async (id) => {
     try {
       const updated = await api.updateVehicleLifecycle(id, 'suspended');
@@ -827,6 +836,15 @@ const Vehicles = () => {
     } catch (error) { toast.error('Failed to update driver status'); }
   };
 
+  const handleInactivateDriver = async (id) => {
+    try {
+      const updated = await api.updateDriverLifecycle(id, 'inactive');
+      setDrivers(prev => prev.map(d => d.id === id ? updated : d));
+      toast.success('Driver deactivated (marked inactive)');
+      setDeleteActionDriver(null);
+    } catch (error) { toast.error('Failed to deactivate driver'); }
+  };
+
   const handleSuspendDriver = async (id) => {
     try {
       const updated = await api.updateDriverLifecycle(id, 'suspended');
@@ -919,18 +937,30 @@ const Vehicles = () => {
 
   // ── Filter ─────────────────────────────────────────────────
   const filteredVehicles = vehicles.filter(v =>
-    (vehicleFilter === 'all' || v.lifecycleStatus === vehicleFilter || (!v.lifecycleStatus && vehicleFilter === 'active')) &&
+    (vehicleFilter === 'all' || v.lifecycleStatus === vehicleFilter || (vehicleFilter === 'suspended' && ['suspended', 'inactive'].includes(v.lifecycleStatus)) || (!v.lifecycleStatus && vehicleFilter === 'active')) &&
     ((v.brand || v.name || '').toLowerCase().includes(searchVehicle.toLowerCase()) ||
       (v.registration || '').toLowerCase().includes(searchVehicle.toLowerCase()))
   );
 
   const filteredDrivers = drivers.filter(d =>
-    (driverFilter === 'all' || d.lifecycleStatus === driverFilter || (!d.lifecycleStatus && driverFilter === 'active')) &&
+    (driverFilter === 'all' || d.lifecycleStatus === driverFilter || (driverFilter === 'suspended' && ['suspended', 'inactive'].includes(d.lifecycleStatus)) || (!d.lifecycleStatus && driverFilter === 'active')) &&
     ((d.firstName || d.name || '').toLowerCase().includes(searchDriver.toLowerCase()) ||
       (d.licenseNumber || d.license || '').toLowerCase().includes(searchDriver.toLowerCase()) ||
       (d.email || '').toLowerCase().includes(searchDriver.toLowerCase()) ||
       (d.mobileNumber || d.contact || '').includes(searchDriver))
   );
+
+  // Counts for Vehicles sub-tabs
+  const vApprovedCount = vehicles.filter(v => (v.lifecycleStatus || '').toLowerCase() === 'active' || (v.lifecycleStatus || '').toLowerCase() === 'approved' || !v.lifecycleStatus).length;
+  const vPendingCount = vehicles.filter(v => (v.lifecycleStatus || '').toLowerCase() === 'pending').length;
+  const vInactiveCount = vehicles.filter(v => ['suspended', 'inactive'].includes((v.lifecycleStatus || '').toLowerCase())).length;
+  const vRejectedCount = vehicles.filter(v => (v.lifecycleStatus || '').toLowerCase() === 'rejected').length;
+
+  // Counts for Drivers sub-tabs
+  const dApprovedCount = drivers.filter(d => (d.lifecycleStatus || '').toLowerCase() === 'active' || (d.lifecycleStatus || '').toLowerCase() === 'approved' || !d.lifecycleStatus).length;
+  const dPendingCount = drivers.filter(d => (d.lifecycleStatus || '').toLowerCase() === 'pending').length;
+  const dInactiveCount = drivers.filter(d => ['suspended', 'inactive'].includes((d.lifecycleStatus || '').toLowerCase())).length;
+  const dRejectedCount = drivers.filter(d => (d.lifecycleStatus || '').toLowerCase() === 'rejected').length;
 
   return (
     <DashboardLayout title="Vehicles AND Drivers" subtitle="Manage your fleet and driver assignments" showSearch={false}>
@@ -969,12 +999,89 @@ const Vehicles = () => {
             {/* --- VEHICLE MANAGEMENT SECTION --- */}
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
               <div className="flex gap-4 w-full sm:w-auto">
-                <div className="flex bg-muted p-1 rounded-lg">
-                  <Button variant={vehicleFilter === 'all' ? 'secondary' : 'ghost'} size="sm" onClick={() => setVehicleFilter('all')}>All Vehicles</Button>
-                  <Button variant={vehicleFilter === 'active' ? 'secondary' : 'ghost'} size="sm" onClick={() => setVehicleFilter('active')}>Active</Button>
-                  <Button variant={vehicleFilter === 'pending' ? 'secondary' : 'ghost'} size="sm" onClick={() => setVehicleFilter('pending')}>Pending</Button>
-                  <Button variant={vehicleFilter === 'suspended' ? 'secondary' : 'ghost'} size="sm" onClick={() => setVehicleFilter('suspended')}>Suspended</Button>
-                  <Button variant={vehicleFilter === 'rejected' ? 'secondary' : 'ghost'} size="sm" onClick={() => setVehicleFilter('rejected')}>Rejected</Button>
+                <div className="flex items-center gap-1.5 p-1 rounded-xl bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700/60 overflow-x-auto max-w-full">
+                  <button
+                    type="button"
+                    onClick={() => setVehicleFilter('all')}
+                    className={cn(
+                      "px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all duration-150 flex items-center gap-1.5 whitespace-nowrap",
+                      vehicleFilter === 'all'
+                        ? "bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 shadow-sm font-bold"
+                        : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100"
+                    )}>
+                    All Vehicles
+                    <span className="rounded-full bg-slate-200 dark:bg-slate-700 px-2 py-0.5 text-[10px] font-bold">
+                      {vehicles.length}
+                    </span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setVehicleFilter('active')}
+                    className={cn(
+                      "px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all duration-150 flex items-center gap-1.5 whitespace-nowrap",
+                      vehicleFilter === 'active'
+                        ? "bg-teal-600 text-white shadow-sm font-bold"
+                        : "text-slate-600 dark:text-slate-400 hover:text-teal-600 dark:hover:text-teal-400"
+                    )}>
+                    Active
+                    <span className="rounded-full bg-slate-200 dark:bg-slate-700 px-2 py-0.5 text-[10px] font-bold">
+                      {vApprovedCount}
+                    </span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setVehicleFilter('pending')}
+                    className={cn(
+                      "px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all duration-150 flex items-center gap-1.5 whitespace-nowrap",
+                      vehicleFilter === 'pending'
+                        ? "bg-amber-500 text-white shadow-sm font-bold"
+                        : "text-slate-600 dark:text-slate-400 hover:text-amber-600 dark:hover:text-amber-400"
+                    )}>
+                    Pending
+                    {vPendingCount > 0 ? (
+                      <span className="rounded-full bg-amber-400 text-amber-950 px-2 py-0.5 text-[10px] font-extrabold animate-pulse">
+                        {vPendingCount}
+                      </span>
+                    ) : (
+                      <span className="rounded-full bg-slate-200 dark:bg-slate-700 px-2 py-0.5 text-[10px] font-bold">0</span>
+                    )}
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setVehicleFilter('suspended')}
+                    className={cn(
+                      "px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all duration-150 flex items-center gap-1.5 whitespace-nowrap",
+                      vehicleFilter === 'suspended'
+                        ? "bg-slate-700 text-white shadow-sm font-bold"
+                        : "text-slate-600 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300"
+                    )}>
+                    Inactive
+                    <span className="rounded-full bg-slate-200 dark:bg-slate-700 px-2 py-0.5 text-[10px] font-bold">
+                      {vInactiveCount}
+                    </span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setVehicleFilter('rejected')}
+                    className={cn(
+                      "px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all duration-150 flex items-center gap-1.5 whitespace-nowrap",
+                      vehicleFilter === 'rejected'
+                        ? "bg-rose-600 text-white shadow-sm font-bold"
+                        : "text-slate-600 dark:text-slate-400 hover:text-rose-600 dark:hover:text-rose-400"
+                    )}>
+                    Rejected
+                    {vRejectedCount > 0 ? (
+                      <span className="rounded-full bg-rose-500/30 text-white px-2 py-0.5 text-[10px] font-bold">
+                        {vRejectedCount}
+                      </span>
+                    ) : (
+                      <span className="rounded-full bg-slate-200 dark:bg-slate-700 px-2 py-0.5 text-[10px] font-bold">0</span>
+                    )}
+                  </button>
                 </div>
                 <div className="relative">
                   <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -1281,26 +1388,21 @@ const Vehicles = () => {
                             <span className="inline-flex items-center justify-center rounded-full px-3 py-0.5 text-xs font-semibold bg-rose-50/95 text-rose-700 border border-rose-300/90 backdrop-blur-md shadow-sm select-none">
                               Verification Rejected
                             </span>
+                          ) : ['suspended', 'inactive'].includes((vehicle.lifecycleStatus || '').trim().toLowerCase()) ? (
+                            <span className="inline-flex items-center justify-center rounded-full px-3 py-0.5 text-xs font-semibold bg-slate-100 text-slate-700 border border-slate-300 backdrop-blur-md shadow-sm select-none">
+                              Unavailable
+                            </span>
                           ) : (
-                            <DropdownMenu>
-                              <DropdownMenuTrigger className="focus:outline-none">
-                                <span className={cn('inline-flex items-center justify-center rounded-full px-3 py-0.5 text-xs font-semibold cursor-pointer hover:opacity-90 shadow-sm backdrop-blur-md', status.class)}>
-                                  {status.label}
-                                </span>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end">
-                                <DropdownMenuItem onClick={() => handleVehicleStatusChange(vehicle.id, 'available')}>Available</DropdownMenuItem>
-                                <DropdownMenuItem onClick={() => handleVehicleStatusChange(vehicle.id, 'booked')}>Booked</DropdownMenuItem>
-                                <DropdownMenuItem onClick={() => handleVehicleStatusChange(vehicle.id, 'maintenance')}>Maintenance</DropdownMenuItem>
-                              </DropdownMenuContent>
-                            </DropdownMenu>
+                            <span className={cn('inline-flex items-center justify-center rounded-full px-3 py-0.5 text-xs font-semibold shadow-sm backdrop-blur-md select-none', status.class)}>
+                              {status.label}
+                            </span>
                           )}
                         </div>
                       </div>
                       <div className="p-5">
                         <h3 className="font-semibold text-foreground text-lg">{vehicleName}</h3>
                         <p className="text-sm text-muted-foreground">{vehicle.vehicleType}</p>
-                        {['rejected', 'suspended'].includes((vehicle.lifecycleStatus || '').trim().toLowerCase()) && (
+                        {vehicle.lifecycleStatus === 'rejected' && (
                           <div className="mt-3 p-3 rounded-xl bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800 text-xs text-red-700 dark:text-red-300 flex flex-col gap-2 shadow-sm animate-fade-in">
                             <div className="flex items-start gap-1.5">
                               <AlertCircle className="h-4 w-4 shrink-0 mt-0.5 text-red-600 dark:text-red-400" />
@@ -1318,6 +1420,7 @@ const Vehicles = () => {
                             </Button>
                           </div>
                         )}
+
                         <div className="mt-4 space-y-2 text-sm">
                           <div className="flex justify-between">
                             <span className="text-muted-foreground">Registration</span>
@@ -1335,14 +1438,30 @@ const Vehicles = () => {
                           )}
                         </div>
                         <div className="mt-4 flex gap-2">
-                          {vehicleFilter === 'suspended' ? (
-                            <Button size="sm" className="flex-1 bg-green-600 hover:bg-green-700 text-white" onClick={() => handleRestoreVehicle(vehicle.id)}>Restore</Button>
+                          {vehicle.lifecycleStatus === 'rejected' ? (
+                            <Button variant="ghost" size="sm" className="w-full text-destructive hover:bg-destructive/10 border border-destructive/20 justify-center gap-1.5" onClick={() => setDeleteActionVehicle(vehicle)}>
+                              <Trash2 className="h-4 w-4" /> Delete Vehicle
+                            </Button>
                           ) : (
                             <>
                               <Button variant="outline" size="sm" className="flex-1 gap-1" onClick={() => handleEditVehicle(vehicle)}>
                                 <Edit className="h-3 w-3" />Edit
                               </Button>
-                              <Button variant="ghost" size="sm" className="text-destructive hover:bg-destructive/10" onClick={() => setDeleteActionVehicle(vehicle)}>
+                              {['inactive', 'suspended'].includes((vehicle.lifecycleStatus || '').trim().toLowerCase()) ? (
+                                <Button size="sm" className="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold shadow-sm border-0" onClick={() => handleRestoreVehicle(vehicle.id)}>
+                                  Make Available
+                                </Button>
+                              ) : (vehicle.lifecycleStatus === 'active' || !vehicle.lifecycleStatus) ? (
+                                <Button size="sm" className="bg-amber-500 hover:bg-amber-600 text-slate-950 font-semibold shadow-sm border-0" onClick={() => handleInactivateVehicle(vehicle.id)}>
+                                  Set Inactive
+                                </Button>
+                              ) : null}
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="text-destructive hover:bg-destructive/10"
+                                onClick={() => setDeleteActionVehicle(vehicle)}
+                              >
                                 <Trash2 className="h-4 w-4" />
                               </Button>
                             </>
@@ -1360,8 +1479,11 @@ const Vehicles = () => {
                 <AlertDialogContent>
                   {deleteActionVehicle.status === 'booked' ? (
                     <>
-                      <AlertDialogHeader><AlertDialogTitle>Cannot Delete Vehicle</AlertDialogTitle><AlertDialogDescription>This vehicle cannot be deleted because it has an active booking.</AlertDialogDescription></AlertDialogHeader>
-                      <AlertDialogFooter><AlertDialogCancel>Close</AlertDialogCancel></AlertDialogFooter>
+                      <AlertDialogHeader><AlertDialogTitle>Cannot Delete Vehicle</AlertDialogTitle><AlertDialogDescription>This vehicle cannot be deleted because it has an active booking. You can mark it as unavailable instead.</AlertDialogDescription></AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <Button variant="outline" className="bg-amber-500/10 text-amber-600 hover:bg-amber-500/20 border-amber-500/20 font-medium" onClick={() => handleInactivateVehicle(deleteActionVehicle.id)}>Make Unavailable</Button>
+                      </AlertDialogFooter>
                     </>
                   ) : (
                     <>
@@ -1382,12 +1504,89 @@ const Vehicles = () => {
             {/* --- DRIVER MANAGEMENT SECTION --- */}
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
               <div className="flex gap-4 w-full sm:w-auto">
-                <div className="flex bg-muted p-1 rounded-lg">
-                  <Button variant={driverFilter === 'all' ? 'secondary' : 'ghost'} size="sm" onClick={() => setDriverFilter('all')}>All Drivers</Button>
-                  <Button variant={driverFilter === 'active' ? 'secondary' : 'ghost'} size="sm" onClick={() => setDriverFilter('active')}>Active</Button>
-                  <Button variant={driverFilter === 'pending' ? 'secondary' : 'ghost'} size="sm" onClick={() => setDriverFilter('pending')}>Pending</Button>
-                  <Button variant={driverFilter === 'suspended' ? 'secondary' : 'ghost'} size="sm" onClick={() => setDriverFilter('suspended')}>Suspended</Button>
-                  <Button variant={driverFilter === 'rejected' ? 'secondary' : 'ghost'} size="sm" onClick={() => setDriverFilter('rejected')}>Rejected</Button>
+                <div className="flex items-center gap-1.5 p-1 rounded-xl bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700/60 overflow-x-auto max-w-full">
+                  <button
+                    type="button"
+                    onClick={() => setDriverFilter('all')}
+                    className={cn(
+                      "px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all duration-150 flex items-center gap-1.5 whitespace-nowrap",
+                      driverFilter === 'all'
+                        ? "bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 shadow-sm font-bold"
+                        : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100"
+                    )}>
+                    All Drivers
+                    <span className="rounded-full bg-slate-200 dark:bg-slate-700 px-2 py-0.5 text-[10px] font-bold">
+                      {drivers.length}
+                    </span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setDriverFilter('active')}
+                    className={cn(
+                      "px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all duration-150 flex items-center gap-1.5 whitespace-nowrap",
+                      driverFilter === 'active'
+                        ? "bg-teal-600 text-white shadow-sm font-bold"
+                        : "text-slate-600 dark:text-slate-400 hover:text-teal-600 dark:hover:text-teal-400"
+                    )}>
+                    Active
+                    <span className="rounded-full bg-slate-200 dark:bg-slate-700 px-2 py-0.5 text-[10px] font-bold">
+                      {dApprovedCount}
+                    </span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setDriverFilter('pending')}
+                    className={cn(
+                      "px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all duration-150 flex items-center gap-1.5 whitespace-nowrap",
+                      driverFilter === 'pending'
+                        ? "bg-amber-500 text-white shadow-sm font-bold"
+                        : "text-slate-600 dark:text-slate-400 hover:text-amber-600 dark:hover:text-amber-400"
+                    )}>
+                    Pending
+                    {dPendingCount > 0 ? (
+                      <span className="rounded-full bg-amber-400 text-amber-950 px-2 py-0.5 text-[10px] font-extrabold animate-pulse">
+                        {dPendingCount}
+                      </span>
+                    ) : (
+                      <span className="rounded-full bg-slate-200 dark:bg-slate-700 px-2 py-0.5 text-[10px] font-bold">0</span>
+                    )}
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setDriverFilter('suspended')}
+                    className={cn(
+                      "px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all duration-150 flex items-center gap-1.5 whitespace-nowrap",
+                      driverFilter === 'suspended'
+                        ? "bg-slate-700 text-white shadow-sm font-bold"
+                        : "text-slate-600 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300"
+                    )}>
+                    Inactive
+                    <span className="rounded-full bg-slate-200 dark:bg-slate-700 px-2 py-0.5 text-[10px] font-bold">
+                      {dInactiveCount}
+                    </span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setDriverFilter('rejected')}
+                    className={cn(
+                      "px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all duration-150 flex items-center gap-1.5 whitespace-nowrap",
+                      driverFilter === 'rejected'
+                        ? "bg-rose-600 text-white shadow-sm font-bold"
+                        : "text-slate-600 dark:text-slate-400 hover:text-rose-600 dark:hover:text-rose-400"
+                    )}>
+                    Rejected
+                    {dRejectedCount > 0 ? (
+                      <span className="rounded-full bg-rose-500/30 text-white px-2 py-0.5 text-[10px] font-bold">
+                        {dRejectedCount}
+                      </span>
+                    ) : (
+                      <span className="rounded-full bg-slate-200 dark:bg-slate-700 px-2 py-0.5 text-[10px] font-bold">0</span>
+                    )}
+                  </button>
                 </div>
                 <div className="relative">
                   <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -1620,19 +1819,14 @@ const Vehicles = () => {
                               <span className="inline-flex items-center justify-center rounded-full px-3 py-0.5 text-xs font-semibold bg-rose-50/95 text-rose-700 border border-rose-300/90 backdrop-blur-md shadow-sm select-none">
                                 Rejected
                               </span>
+                            ) : ['suspended', 'inactive'].includes((driver.lifecycleStatus || '').trim().toLowerCase()) ? (
+                              <span className="inline-flex items-center justify-center rounded-full px-3 py-0.5 text-xs font-semibold bg-slate-100 text-slate-700 border border-slate-300 backdrop-blur-md shadow-sm select-none">
+                                Unavailable
+                              </span>
                             ) : (
-                              <DropdownMenu>
-                                <DropdownMenuTrigger className="focus:outline-none">
-                                  <span className={cn('inline-flex items-center justify-center rounded-full px-3 py-0.5 text-xs font-semibold cursor-pointer hover:opacity-90 shadow-sm backdrop-blur-md', status.class)}>
-                                    {status.label}
-                                  </span>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent align="end">
-                                  <DropdownMenuItem onClick={() => handleDriverStatusChange(driver.id, 'available')}>Available</DropdownMenuItem>
-                                  <DropdownMenuItem onClick={() => handleDriverStatusChange(driver.id, 'on-trip')}>On Trip</DropdownMenuItem>
-                                  <DropdownMenuItem onClick={() => handleDriverStatusChange(driver.id, 'off-duty')}>Off Duty</DropdownMenuItem>
-                                </DropdownMenuContent>
-                              </DropdownMenu>
+                              <span className={cn('inline-flex items-center justify-center rounded-full px-3 py-0.5 text-xs font-semibold shadow-sm backdrop-blur-md select-none', status.class)}>
+                                {status.label}
+                              </span>
                             )}
                           </div>
                         </div>
@@ -1642,7 +1836,7 @@ const Vehicles = () => {
                           <h3 className="font-semibold text-foreground text-lg">{fullName}</h3>
                           <p className="text-sm text-muted-foreground">{driver.email || 'No email provided'}</p>
 
-                          {['rejected', 'suspended'].includes((driver.lifecycleStatus || '').trim().toLowerCase()) && (
+                          {driver.lifecycleStatus === 'rejected' && (
                             <div className="mt-3 p-3 rounded-xl bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800 text-xs text-red-700 dark:text-red-300 flex flex-col gap-2 shadow-sm animate-fade-in">
                               <div className="flex items-start gap-1.5">
                                 <AlertCircle className="h-4 w-4 shrink-0 mt-0.5 text-red-600 dark:text-red-400" />
@@ -1660,6 +1854,8 @@ const Vehicles = () => {
                               </Button>
                             </div>
                           )}
+
+
 
                           <div className="mt-4 space-y-2 text-sm">
                             <div className="flex justify-between">
@@ -1685,16 +1881,31 @@ const Vehicles = () => {
                         </div>
                       </div>
 
-                      {/* Card Footer Actions */}
                       <div className="px-5 pb-5 pt-0 flex gap-2">
-                        {driver.lifecycleStatus === 'suspended' ? (
-                          <Button size="sm" className="flex-1 bg-green-600 hover:bg-green-700 text-white" onClick={() => handleRestoreDriver(driver.id)}>Restore</Button>
+                        {driver.lifecycleStatus === 'rejected' ? (
+                          <Button variant="ghost" size="sm" className="w-full text-destructive hover:bg-destructive/10 border border-destructive/20 justify-center gap-1.5" onClick={() => setDeleteActionDriver(driver)}>
+                            <Trash2 className="h-4 w-4" /> Delete Driver
+                          </Button>
                         ) : (
                           <>
                             <Button variant="outline" size="sm" className="flex-1 gap-1" onClick={() => handleEditDriver(driver)}>
                               <Edit className="h-3.5 w-3.5" />Edit
                             </Button>
-                            <Button variant="ghost" size="sm" className="text-destructive hover:bg-destructive/10" onClick={() => setDeleteActionDriver(driver)}>
+                            {['inactive', 'suspended'].includes((driver.lifecycleStatus || '').trim().toLowerCase()) ? (
+                              <Button size="sm" className="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold shadow-sm border-0" onClick={() => handleRestoreDriver(driver.id)}>
+                                Make Available
+                              </Button>
+                            ) : (driver.lifecycleStatus === 'active' || !driver.lifecycleStatus) ? (
+                              <Button size="sm" className="bg-amber-500 hover:bg-amber-600 text-slate-950 font-semibold shadow-sm border-0" onClick={() => handleInactivateDriver(driver.id)}>
+                                Set Inactive
+                              </Button>
+                            ) : null}
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="text-destructive hover:bg-destructive/10"
+                              onClick={() => setDeleteActionDriver(driver)}
+                            >
                               <Trash2 className="h-4 w-4" />
                             </Button>
                           </>
@@ -1711,8 +1922,11 @@ const Vehicles = () => {
                 <AlertDialogContent>
                   {deleteActionDriver.status === 'on-trip' ? (
                     <>
-                      <AlertDialogHeader><AlertDialogTitle>Cannot Delete Driver</AlertDialogTitle><AlertDialogDescription>This driver cannot be deleted because they are currently on an active trip.</AlertDialogDescription></AlertDialogHeader>
-                      <AlertDialogFooter><AlertDialogCancel>Close</AlertDialogCancel></AlertDialogFooter>
+                      <AlertDialogHeader><AlertDialogTitle>Cannot Delete Driver</AlertDialogTitle><AlertDialogDescription>This driver cannot be deleted because they are currently on an active trip. You can mark them as unavailable instead.</AlertDialogDescription></AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <Button variant="outline" className="bg-amber-500/10 text-amber-600 hover:bg-amber-500/20 border-amber-500/20 font-medium" onClick={() => handleInactivateDriver(deleteActionDriver.id)}>Make Unavailable</Button>
+                      </AlertDialogFooter>
                     </>
                   ) : (
                     <>

@@ -39,16 +39,25 @@ public class AgentVehicleService {
 
         List<Vehicle> vehicles;
         if (lifecycleStatus != null) {
-            // Filter by lifecycle status when requested by the UI (e.g. active/inactive).
-            vehicles = vehicleRepository.findByAgentIdAndLifecycleStatus(realAgentId, lifecycleStatus);
+            vehicles = vehicleRepository.findByAgentId(realAgentId).stream()
+                    .filter(v -> v.getLifecycleStatus() != null &&
+                            ("active".equalsIgnoreCase(lifecycleStatus)
+                                    ? ("active".equalsIgnoreCase(v.getLifecycleStatus()) || "approved".equalsIgnoreCase(v.getLifecycleStatus()))
+                                    : v.getLifecycleStatus().equalsIgnoreCase(lifecycleStatus)))
+                    .collect(Collectors.toList());
         } else {
-            // Otherwise return all vehicles for the agent.
             vehicles = vehicleRepository.findByAgentId(realAgentId);
         }
 
         if (startDate != null && endDate != null) {
             LocalDate start = LocalDate.parse(startDate);
             LocalDate end = LocalDate.parse(endDate);
+            // When dates are provided (booking resource assignment), strictly filter for Admin-Approved vehicles only
+            vehicles = vehicles.stream()
+                    .filter(v -> v.getLifecycleStatus() != null &&
+                            ("active".equalsIgnoreCase(v.getLifecycleStatus()) || "approved".equalsIgnoreCase(v.getLifecycleStatus())))
+                    .collect(Collectors.toList());
+
             List<Long> bookedVehicleIds = bookingRepository.findBookedVehicleIds(realAgentId, start, end);
             vehicles = vehicles.stream()
                     .filter(v -> !bookedVehicleIds.contains(v.getId()))

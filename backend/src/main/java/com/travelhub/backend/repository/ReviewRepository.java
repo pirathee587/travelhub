@@ -56,6 +56,7 @@ public interface ReviewRepository extends JpaRepository<Review, Long> {
     // ── Convenience methods that return Maps ─────
 
     default Map<Long, Double> getAverageRatingsByPackageIds(List<Long> packageIds) {
+        if (packageIds == null || packageIds.isEmpty()) return new HashMap<>();
         return getAverageRatingsByPackageIdsRaw(packageIds).stream()
                 .collect(Collectors.toMap(
                         row -> (Long) row[0],
@@ -64,6 +65,7 @@ public interface ReviewRepository extends JpaRepository<Review, Long> {
     }
 
     default Map<Long, Long> getReviewCountsByPackageIds(List<Long> packageIds) {
+        if (packageIds == null || packageIds.isEmpty()) return new HashMap<>();
         return getReviewCountsByPackageIdsRaw(packageIds).stream()
                 .collect(Collectors.toMap(
                         row -> (Long) row[0],
@@ -72,6 +74,7 @@ public interface ReviewRepository extends JpaRepository<Review, Long> {
     }
 
     default Map<Long, Double> getAverageRatingsByHotelIds(List<Long> hotelIds) {
+        if (hotelIds == null || hotelIds.isEmpty()) return new HashMap<>();
         return getAverageRatingsByHotelIdsRaw(hotelIds).stream()
                 .collect(Collectors.toMap(
                         row -> (Long) row[0],
@@ -80,6 +83,7 @@ public interface ReviewRepository extends JpaRepository<Review, Long> {
     }
 
     default Map<Long, Long> getReviewCountsByHotelIds(List<Long> hotelIds) {
+        if (hotelIds == null || hotelIds.isEmpty()) return new HashMap<>();
         return getReviewCountsByHotelIdsRaw(hotelIds).stream()
                 .collect(Collectors.toMap(
                         row -> (Long) row[0],

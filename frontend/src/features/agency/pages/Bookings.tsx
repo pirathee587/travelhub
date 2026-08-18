@@ -870,36 +870,45 @@ const Bookings = () => {
                       </div>
 
                       {/* Info Chips & Allocation Badges */}
-                      <div className="mt-4 flex flex-wrap gap-2">
-                        {(booking.startDate || booking.endDate) && (
-                          <div className="inline-flex items-center gap-1.5 rounded-full bg-slate-100/80 dark:bg-slate-800/80 px-3 py-1 text-xs font-medium text-slate-700 dark:text-slate-300 border border-slate-200/50 dark:border-slate-700/50">
-                            <Calendar className="h-3.5 w-3.5 shrink-0 text-slate-400" />
-                            <span>
-                              {booking.startDate} → {booking.endDate}
-                            </span>
-                          </div>
-                        )}
-                        {(booking.adults != null || booking.children != null) && (
-                          <div className="inline-flex items-center gap-1.5 rounded-full bg-slate-100/80 dark:bg-slate-800/80 px-3 py-1 text-xs font-medium text-slate-700 dark:text-slate-300 border border-slate-200/50 dark:border-slate-700/50">
-                            <Users className="h-3.5 w-3.5 shrink-0 text-slate-400" />
-                            <span>
-                              {[
-                                booking.adults != null ? `${booking.adults} Adult${booking.adults !== 1 ? 's' : ''}` : null,
-                                booking.children != null && booking.children > 0 ? `${booking.children} Child${booking.children !== 1 ? 'ren' : ''}` : null,
-                              ].filter(Boolean).join(' · ')}
-                            </span>
-                          </div>
-                        )}
-                        {(booking.vehicleModel || booking.vehicleType || booking.vehicle) && (
-                          <div className="inline-flex items-center gap-1.5 rounded-full bg-teal-50 dark:bg-teal-950/40 px-3 py-1 text-xs font-semibold text-teal-700 dark:text-teal-300 border border-teal-200 dark:border-teal-800">
-                            <Car className="h-3.5 w-3.5 shrink-0 text-teal-500" />
-                            <span>{booking.vehicleModel || booking.vehicleType || (booking.vehicle ? `${booking.vehicle.brand || ''} ${booking.vehicle.model || ''}`.trim() : 'Vehicle')}</span>
-                          </div>
-                        )}
-                        {(booking.driverName || booking.driver) && (
-                          <div className="inline-flex items-center gap-1.5 rounded-full bg-indigo-50 dark:bg-indigo-950/40 px-3 py-1 text-xs font-semibold text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800">
-                            <User className="h-3.5 w-3.5 shrink-0 text-indigo-500" />
-                            <span>{booking.driverName || (booking.driver ? `${booking.driver.firstName || ''} ${booking.driver.lastName || ''}`.trim() : 'Driver')}</span>
+                      <div className="mt-4 space-y-2">
+                        {/* Row 1: Dates & Guests */}
+                        <div className="flex flex-wrap gap-2">
+                          {(booking.startDate || booking.endDate) && (
+                            <div className="inline-flex items-center gap-1.5 rounded-full bg-slate-100/80 dark:bg-slate-800/80 px-3 py-1 text-xs font-medium text-slate-700 dark:text-slate-300 border border-slate-200/50 dark:border-slate-700/50">
+                              <Calendar className="h-3.5 w-3.5 shrink-0 text-slate-400" />
+                              <span>
+                                {booking.startDate} → {booking.endDate}
+                              </span>
+                            </div>
+                          )}
+                          {(booking.adults != null || booking.children != null) && (
+                            <div className="inline-flex items-center gap-1.5 rounded-full bg-slate-100/80 dark:bg-slate-800/80 px-3 py-1 text-xs font-medium text-slate-700 dark:text-slate-300 border border-slate-200/50 dark:border-slate-700/50">
+                              <Users className="h-3.5 w-3.5 shrink-0 text-slate-400" />
+                              <span>
+                                {[
+                                  booking.adults != null ? `${booking.adults} Adult${booking.adults !== 1 ? 's' : ''}` : null,
+                                  booking.children != null && booking.children > 0 ? `${booking.children} Child${booking.children !== 1 ? 'ren' : ''}` : null,
+                                ].filter(Boolean).join(' · ')}
+                              </span>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Row 2: Driver & Vehicle Allocations (Side-by-Side) */}
+                        {((booking.driverName || booking.driver) || (booking.vehicleModel || booking.vehicleType || booking.vehicle)) && (
+                          <div className="flex flex-wrap items-center gap-2 pt-0.5">
+                            {(booking.driverName || booking.driver) && (
+                              <div className="inline-flex items-center gap-1.5 rounded-full bg-indigo-50 dark:bg-indigo-950/40 px-3 py-1 text-xs font-semibold text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800">
+                                <User className="h-3.5 w-3.5 shrink-0 text-indigo-500" />
+                                <span>{booking.driverName || (booking.driver ? `${booking.driver.firstName || ''} ${booking.driver.lastName || ''}`.trim() : 'Driver')}</span>
+                              </div>
+                            )}
+                            {(booking.vehicleModel || booking.vehicleType || booking.vehicle) && (
+                              <div className="inline-flex items-center gap-1.5 rounded-full bg-teal-50 dark:bg-teal-950/40 px-3 py-1 text-xs font-semibold text-teal-700 dark:text-teal-300 border border-teal-200 dark:border-teal-800">
+                                <Car className="h-3.5 w-3.5 shrink-0 text-teal-500" />
+                                <span>{booking.vehicleModel || booking.vehicleType || (booking.vehicle ? `${booking.vehicle.brand || ''} ${booking.vehicle.model || ''}`.trim() : 'Vehicle')}</span>
+                              </div>
+                            )}
                           </div>
                         )}
                       </div>

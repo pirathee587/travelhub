@@ -180,8 +180,9 @@ export const api = {
         }).then(r => r.json()),
 
     // Drivers
-    getDrivers: (startDate?: string, endDate?: string) => {
+    getDrivers: (startDate?: string, endDate?: string, lifecycleStatus?: string) => {
         const params = new URLSearchParams();
+        if (lifecycleStatus) params.append('lifecycleStatus', lifecycleStatus);
         if (startDate) params.append('startDate', startDate);
         if (endDate) params.append('endDate', endDate);
         const query = params.toString() ? `?${params.toString()}` : '';

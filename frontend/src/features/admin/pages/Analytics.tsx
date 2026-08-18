@@ -287,29 +287,6 @@ export default function Analytics() {
       const res = await adminAgentApi.getAllAgents()
       const agentsList = res?.data ?? res ?? []
       setAgents(Array.isArray(agentsList) ? agentsList : [])
-
-      const statsPromises = (Array.isArray(agentsList) ? agentsList : []).map(async (agent: any) => {
-        try {
-          const [statsRes, statusRes] = await Promise.all([
-            adminAgentApi.getAgentStats(agent.id),
-            adminAgentApi.getAgentTripStatus(agent.id)
-          ])
-          return {
-            id: agent.id,
-            stats: statsRes?.data ?? statsRes,
-            tripStatus: statusRes?.data ?? statusRes
-          }
-        } catch {
-          return { id: agent.id, stats: null, tripStatus: null }
-        }
-      })
-
-      const statsResults = await Promise.all(statsPromises)
-      const statsMap: Record<string | number, any> = {}
-      statsResults.forEach((r) => {
-        statsMap[r.id] = { stats: r.stats, tripStatus: r.tripStatus }
-      })
-      setAgentStatsMap(statsMap)
     } catch (err: any) {
       setError(err?.response?.data?.message || err?.message || 'Failed to load analytics data')
     } finally {

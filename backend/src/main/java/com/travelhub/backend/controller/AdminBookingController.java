@@ -2,6 +2,7 @@ package com.travelhub.backend.controller;
 
 import com.travelhub.backend.common.ApiResponse;
 import com.travelhub.backend.repository.BookingRepository;
+import com.travelhub.backend.service.BookingService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -14,12 +15,13 @@ import org.springframework.web.bind.annotation.*;
 public class AdminBookingController {
 
     private final BookingRepository bookingRepository;
+    private final BookingService bookingService;
 
     // GET /api/admin/bookings
     @GetMapping
     public ResponseEntity<?> getAllBookings() {
         return ResponseEntity.ok(
-                new ApiResponse(true, "Bookings found", bookingRepository.findAll()));
+                new ApiResponse(true, "Bookings found", bookingService.getAllBookingsForAdmin()));
     }
 
     // GET /api/admin/bookings/count
