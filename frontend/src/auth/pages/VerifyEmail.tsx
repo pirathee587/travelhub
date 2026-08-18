@@ -155,11 +155,10 @@ export default function VerifyEmail() {
 
               {resendStatus && (
                 <div
-                  className={`mt-3 p-3 rounded-lg text-xs font-medium ${
-                    resendStatus.type === 'success'
+                  className={`mt-3 p-3 rounded-lg text-xs font-medium ${resendStatus.type === 'success'
                       ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
                       : 'bg-red-50 text-red-700 border border-red-200'
-                  }`}
+                    }`}
                 >
                   {resendStatus.text}
                 </div>

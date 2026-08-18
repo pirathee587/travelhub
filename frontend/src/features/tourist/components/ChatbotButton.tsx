@@ -146,8 +146,8 @@ export function ChatbotButton() {
                                 </div>
                                 <div className={cn(
                                     "rounded-lg p-3 shadow-sm max-w-[80%] text-sm whitespace-pre-wrap",
-                                    msg.role === "user" 
-                                        ? "bg-primary text-primary-foreground" 
+                                    msg.role === "user"
+                                        ? "bg-primary text-primary-foreground"
                                         : "bg-card text-foreground"
                                 )}>
                                     {msg.text}
@@ -183,8 +183,8 @@ export function ChatbotButton() {
                             )}
                             disabled={isLoading}
                         />
-                        <Button 
-                            onClick={sendMessage} 
+                        <Button
+                            onClick={sendMessage}
                             disabled={isLoading || !inputValue.trim()}
                             size="icon"
                             className="h-10 w-10 flex-shrink-0"
