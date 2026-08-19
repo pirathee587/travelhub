@@ -122,6 +122,52 @@ public class EmailService {
         sendEmail(booking.getUser().getEmail(), "Booking Declined - TravelHub", message, "BOOKING", booking.getId());
     }
 
+    public void sendTripResourceUpdateAlert(Booking booking, String updateType) {
+        if (booking == null || booking.getUser() == null) return;
+
+        String packageName = booking.getPkg() != null ? booking.getPkg().getPackageName() : "Travel Package";
+        String driverInfo = booking.getDriver() != null
+                ? booking.getDriver().getFirstName() + " " + booking.getDriver().getLastName() + " (" + (booking.getDriver().getMobileNumber() != null ? booking.getDriver().getMobileNumber() : "N/A") + ")"
+                : "To be assigned";
+
+        String vehicleInfo = booking.getVehicle() != null
+                ? (booking.getVehicle().getBrand() != null ? booking.getVehicle().getBrand() + " " : "") + (booking.getVehicle().getModel() != null ? booking.getVehicle().getModel() : "Vehicle") + " (" + (booking.getVehicle().getRegistration() != null ? booking.getVehicle().getRegistration() : "Assigned") + ")"
+                : "To be assigned";
+
+        String subject;
+        String title;
+        String intro;
+
+        if ("vehicle".equalsIgnoreCase(updateType)) {
+            subject = "Vehicle Details Updated - TravelHub";
+            title = "Assigned Vehicle Updated";
+            intro = "Your travel agency has updated the assigned vehicle for your upcoming trip <strong>" + templates.escape(packageName) + "</strong>.";
+        } else if ("driver".equalsIgnoreCase(updateType)) {
+            subject = "Driver Details Updated - TravelHub";
+            title = "Assigned Driver Updated";
+            intro = "Your travel agency has updated the assigned escort driver for your upcoming trip <strong>" + templates.escape(packageName) + "</strong>.";
+        } else {
+            subject = "Trip Resource Details Updated - TravelHub";
+            title = "Trip Resource Details Updated";
+            intro = "Your travel agency has updated your trip crew & vehicle assignment for <strong>" + templates.escape(packageName) + "</strong>.";
+        }
+
+        String details = templates.detailRow("Package", packageName)
+                + templates.detailRow("Dates", booking.getStartDate() + " to " + booking.getEndDate())
+                + templates.detailRow("Assigned Driver", driverInfo)
+                + templates.detailRow("Assigned Vehicle", vehicleInfo);
+
+        String message = templates.render(templates.content(title)
+                .recipientName(booking.getUser().getName())
+                .intro(intro)
+                .detailsHtml(details)
+                .bodyHtml("You can view your complete itinerary and assigned crew details anytime on your My Trips dashboard.")
+                .button(EmailButton.primary("View My Trips", dashboardUrl(Role.TOURIST)))
+                .build());
+
+        sendEmail(booking.getUser().getEmail(), subject, message, "BOOKING", booking.getId());
+    }
+
     public void sendAccountApprovalNotification(User user) {
         String message = templates.render(templates.content("Your TravelHub account has been approved")
                 .recipientName(user.getName())

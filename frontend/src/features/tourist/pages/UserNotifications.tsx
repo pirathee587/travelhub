@@ -57,15 +57,43 @@ const UserNotifications = () => {
 
   const handleOpen = async (notification: any) => {
     if (!notification.read) {
-      await notificationService.markAsRead(notification.id);
+      try {
+        await notificationService.markAsRead(notification.id);
+      } catch (e) {
+        console.error('Failed to mark notification read:', e);
+      }
     }
-    if (notification.actionUrl) {
-      // Map action url from legacy /payment to /tourist/payment
-      let targetUrl = notification.actionUrl;
+
+    const actionUrl = notification.actionUrl || notification.link || notification.url;
+    if (actionUrl && typeof actionUrl === 'string') {
+      let targetUrl = actionUrl;
       if (targetUrl.startsWith('/payment/')) {
+        targetUrl = `/tourist${targetUrl}`;
+      } else if (!targetUrl.startsWith('/tourist') && targetUrl.startsWith('/')) {
         targetUrl = `/tourist${targetUrl}`;
       }
       navigate(targetUrl);
+      return;
+    }
+
+    // Fallback navigation based on notification content/type
+    const type = (notification.type || '').toLowerCase();
+    const title = (notification.title || '').toLowerCase();
+    const message = (notification.message || '').toLowerCase();
+
+    if (
+      type.includes('payment') || type.includes('billing') || type.includes('refund') || type.includes('payout') ||
+      title.includes('payment') || title.includes('billing') || title.includes('refund') || title.includes('payout') ||
+      message.includes('payment') || message.includes('refund')
+    ) {
+      navigate('/tourist/billing');
+    } else if (
+      type.includes('account') || type.includes('profile') || type.includes('setting') ||
+      title.includes('account') || title.includes('profile') || title.includes('setting')
+    ) {
+      navigate('/tourist/settings');
+    } else {
+      navigate('/tourist/trips');
     }
   };
 

@@ -118,33 +118,79 @@ export function DashboardLayout({ children, title, subtitle, showSearch = true }
     const type = (notification.type || '').toLowerCase();
     const title = (notification.title || '').toLowerCase();
     const message = (notification.message || notification.content || '').toLowerCase();
+    const link = notification.link || notification.actionUrl || notification.url;
     const targetEntityId = notification.packageId || notification.bookingId || notification.relatedEntityId;
 
+    // Direct link check first if specified
+    if (link && typeof link === 'string' && link.startsWith('/')) {
+      navigate(link);
+      return;
+    }
+
+    // Payout, Wallet, Escrow, Withdrawal & Financial notifications
+    if (
+      type.includes('payout') || type.includes('wallet') || type.includes('withdraw') || type.includes('escrow') ||
+      title.includes('payout') || title.includes('wallet') || title.includes('withdraw') || title.includes('escrow') ||
+      message.includes('payout') || message.includes('wallet') || message.includes('withdraw') || message.includes('escrow')
+    ) {
+      navigate('/agency/wallet');
+      return;
+    }
+
+    // Refund notifications
+    if (type.includes('refund') || title.includes('refund') || message.includes('refund')) {
+      navigate('/agency/refunds');
+      return;
+    }
+
+    // Review & Rating notifications
+    if (type.includes('review') || title.includes('review') || message.includes('review') || title.includes('rating')) {
+      navigate('/agency/profile');
+      return;
+    }
+
+    // Package notifications
     if (type.includes('package') || title.includes('package') || message.includes('package')) {
       if (targetEntityId) {
         navigate(`/agency/packages/${targetEntityId}`);
-      } else if (title.includes('suspended') || title.includes('rejected') || message.includes('suspended') || message.includes('rejected')) {
-        navigate('/agency/packages');
       } else {
         navigate('/agency/packages');
       }
-    } else if (type.includes('driver') || title.includes('driver') || message.includes('driver')) {
+      return;
+    }
+
+    // Driver notifications
+    if (type.includes('driver') || title.includes('driver') || message.includes('driver')) {
       const filter = title.includes('rejected') || message.includes('rejected') ? 'rejected' : title.includes('suspended') ? 'suspended' : title.includes('pending') ? 'pending' : 'all';
       navigate(`/agency/vehicles?tab=drivers&filter=${filter}`);
-    } else if (type.includes('vehicle') || title.includes('vehicle') || message.includes('vehicle')) {
+      return;
+    }
+
+    // Vehicle notifications
+    if (type.includes('vehicle') || title.includes('vehicle') || message.includes('vehicle')) {
       const filter = title.includes('rejected') || message.includes('rejected') ? 'rejected' : title.includes('suspended') ? 'suspended' : title.includes('pending') ? 'pending' : 'all';
       navigate(`/agency/vehicles?tab=vehicles&filter=${filter}`);
-    } else if (type.includes('booking') || title.includes('booking') || message.includes('booking')) {
+      return;
+    }
+
+    // Booking notifications
+    if (type.includes('booking') || title.includes('booking') || message.includes('booking')) {
       if (targetEntityId) {
         navigate(`/agency/bookings/${targetEntityId}`);
       } else {
         navigate('/agency/bookings');
       }
-    } else if (type.includes('account') || type.includes('verification') || title.includes('account') || title.includes('verified') || title.includes('rejected') || message.includes('account')) {
-      navigate('/agency/settings');
-    } else if (notification.link) {
-      navigate(notification.link);
+      return;
     }
+
+    // Account, Settings & Verification notifications
+    if (type.includes('account') || type.includes('verification') || title.includes('account') || title.includes('verified') || title.includes('rejected') || message.includes('account')) {
+      navigate('/agency/settings');
+      return;
+    }
+
+    // Fallback default navigation
+    navigate('/agency/dashboard');
   };
 
   const isSuspended = Boolean(

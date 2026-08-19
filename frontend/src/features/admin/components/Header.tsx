@@ -75,9 +75,34 @@ export default function Header() {
 
   const handleMarkAsRead = async (notification: any) => {
     if (!notification.read) await markAsRead(notification.id)
-    if (notification.actionUrl) {
-      setShowNotifications(false)
-      navigate(notification.actionUrl)
+    setShowNotifications(false)
+
+    const link = notification.actionUrl || notification.link || notification.url;
+    if (link && typeof link === 'string' && link.startsWith('/')) {
+      navigate(link)
+      return
+    }
+
+    const type = (notification.type || '').toLowerCase()
+    const title = (notification.title || '').toLowerCase()
+    const message = (notification.message || '').toLowerCase()
+
+    if (type.includes('payout') || title.includes('payout') || message.includes('payout')) {
+      navigate('/admin/payouts')
+    } else if (type.includes('agent') || title.includes('agent') || message.includes('agent')) {
+      navigate('/admin/agents')
+    } else if (type.includes('hotel') || title.includes('hotel') || message.includes('hotel')) {
+      navigate('/admin/hotels')
+    } else if (type.includes('package') || title.includes('package') || message.includes('package')) {
+      navigate('/admin/packages')
+    } else if (type.includes('driver') || title.includes('driver') || message.includes('driver')) {
+      navigate('/admin/drivers')
+    } else if (type.includes('vehicle') || title.includes('vehicle') || message.includes('vehicle')) {
+      navigate('/admin/vehicles')
+    } else if (type.includes('refund') || title.includes('refund') || message.includes('refund')) {
+      navigate('/admin/refunds')
+    } else {
+      navigate('/admin/overview')
     }
   }
 

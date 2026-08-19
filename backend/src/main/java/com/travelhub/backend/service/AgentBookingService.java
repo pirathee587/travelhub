@@ -34,6 +34,8 @@ public class AgentBookingService {
     private final HotelRepository hotelRepository;
     private final DriverRepository driverRepository;
     private final WalletService walletService;
+    private final UserNotificationService userNotificationService;
+    private final EmailService emailService;
 
     /**
      * Returns all bookings visible to the agent.
@@ -175,6 +177,19 @@ public class AgentBookingService {
             vehicle.setStatus("booked");
             vehicleRepository.save(vehicle);
             bookingRepository.save(booking);
+
+            if (booking.getUser() != null && ("confirmed".equalsIgnoreCase(booking.getStatus()) || "in_progress".equalsIgnoreCase(booking.getStatus()))) {
+                String pkgName = booking.getPkg() != null ? booking.getPkg().getPackageName() : "Trip";
+                String vDetails = (vehicle.getBrand() != null ? vehicle.getBrand() + " " : "") + (vehicle.getModel() != null ? vehicle.getModel() : "Vehicle") + " (" + (vehicle.getRegistration() != null ? vehicle.getRegistration() : "Assigned") + ")";
+                userNotificationService.notifyUser(
+                        booking.getUser().getId(),
+                        "booking",
+                        "Assigned Vehicle Updated",
+                        "Your travel agency updated the assigned vehicle for " + pkgName + " to " + vDetails + ".",
+                        "/tourist/trips"
+                );
+                emailService.sendTripResourceUpdateAlert(booking, "vehicle");
+            }
         }
         return toResponse(booking);
     }
@@ -200,6 +215,19 @@ public class AgentBookingService {
             driver.setStatus("on-trip");
             driverRepository.save(driver);
             bookingRepository.save(booking);
+
+            if (booking.getUser() != null && ("confirmed".equalsIgnoreCase(booking.getStatus()) || "in_progress".equalsIgnoreCase(booking.getStatus()))) {
+                String pkgName = booking.getPkg() != null ? booking.getPkg().getPackageName() : "Trip";
+                String dName = driver.getFirstName() + " " + (driver.getLastName() != null ? driver.getLastName() : "");
+                userNotificationService.notifyUser(
+                        booking.getUser().getId(),
+                        "booking",
+                        "Assigned Driver Updated",
+                        "Your travel agency updated the assigned driver for " + pkgName + " to " + dName.trim() + ".",
+                        "/tourist/trips"
+                );
+                emailService.sendTripResourceUpdateAlert(booking, "driver");
+            }
         }
         return toResponse(booking);
     }

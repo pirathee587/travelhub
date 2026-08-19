@@ -437,25 +437,25 @@ export default function Analytics() {
     const cancelRt = statsObj?.cancellationRate ?? cachedStats?.cancellationRate ?? detailAnalytics?.cancellationRate ?? 0
 
     // Header Bar
-    doc.setFillColor(11, 52, 68) // #0B3444
-    doc.rect(0, 0, 210, 40, 'F')
+    doc.setFillColor(14, 165, 233) // #0ea5e9 Light Blue
+    doc.roundedRect(10, 8, 190, 36, 4, 4, 'F')
 
     doc.setTextColor(255, 255, 255)
     doc.setFont('helvetica', 'bold')
     doc.setFontSize(20)
-    doc.text('TRAVELHUB', 15, 18)
+    doc.text('TRAVELHUB', 18, 22)
 
     doc.setFont('helvetica', 'normal')
-    doc.setFontSize(10)
-    doc.text('Agency Performance & Business Intelligence Report', 15, 25)
+    doc.setFontSize(9.5)
+    doc.text('Agency Performance & Business Intelligence Report', 18, 28)
 
     doc.setFont('helvetica', 'bold')
-    doc.setFontSize(11)
-    doc.text(`${agencyName.toUpperCase()} — Owner: ${ownerName}`, 15, 34)
+    doc.setFontSize(10.5)
+    doc.text(`${agencyName.toUpperCase()} — Owner: ${ownerName}`, 18, 36)
 
-    doc.setFontSize(9)
-    doc.text(`Period: ${viewMode.toUpperCase()}`, 195, 18, { align: 'right' })
-    doc.text(`Generated: ${new Date().toLocaleDateString()}`, 195, 25, { align: 'right' })
+    doc.setFontSize(8.5)
+    doc.text(`Period: ${viewMode.toUpperCase()}`, 192, 21, { align: 'right' })
+    doc.text(`Generated: ${new Date().toLocaleDateString()}`, 192, 27, { align: 'right' })
 
     // KPI Summary Table
     autoTable(doc, {
@@ -488,7 +488,7 @@ export default function Analytics() {
       head: [['Trip Status', 'Count']],
       body: statusData,
       theme: 'striped',
-      headStyles: { fillColor: [11, 52, 68], textColor: [255, 255, 255] },
+      headStyles: { fillColor: [14, 165, 233], textColor: [255, 255, 255] },
       styles: { fontSize: 9 },
       margin: { left: 15, right: 15 }
     })

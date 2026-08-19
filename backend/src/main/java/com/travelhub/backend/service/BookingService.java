@@ -3,8 +3,10 @@ package com.travelhub.backend.service;
 import com.travelhub.backend.dto.response.BookingResponse;
 import com.travelhub.backend.dto.response.TripResponse;
 import com.travelhub.backend.entity.Booking;
+import com.travelhub.backend.entity.AgentSettings;
 import com.travelhub.backend.repository.BookingRepository;
 import com.travelhub.backend.repository.ReviewRepository;
+import com.travelhub.backend.repository.AgentSettingsRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import java.util.List;
@@ -19,6 +21,7 @@ public class BookingService {
 
     private final BookingRepository bookingRepository;
     private final ReviewRepository reviewRepository;
+    private final AgentSettingsRepository agentSettingsRepository;
 
     // Get all trips for a user
     public List<TripResponse> getTripsByUserId(Long userId) {
@@ -149,6 +152,17 @@ public class BookingService {
                 }
             }
         } catch (Exception e) {}
+        
+        Long agentId = booking.getPkg() != null && booking.getPkg().getAgent() != null ? booking.getPkg().getAgent().getId() : null;
+        Integer freeDays = 2;
+        Double feePercent = 10.0;
+        if (agentId != null) {
+            AgentSettings settings = agentSettingsRepository.findByAgentId(agentId).orElse(null);
+            if (settings != null) {
+                if (settings.getFreeCancellationDays() != null) freeDays = settings.getFreeCancellationDays();
+                if (settings.getCancellationFeePercent() != null) feePercent = settings.getCancellationFeePercent();
+            }
+        }
 
         return BookingResponse.builder()
                 .id(booking.getId())
@@ -171,8 +185,10 @@ public class BookingService {
                 .category(booking.getPkg() != null ? booking.getPkg().getCategory() : null)
                 .startPlace(booking.getPkg() != null ? booking.getPkg().getStartPlace() : null)
                 .endPlace(booking.getPkg() != null ? booking.getPkg().getEndPlace() : null)
-                .agentId(booking.getPkg() != null && booking.getPkg().getAgent() != null ? booking.getPkg().getAgent().getId() : null)
+                .agentId(agentId)
                 .agencyName(booking.getPkg() != null && booking.getPkg().getAgent() != null ? booking.getPkg().getAgent().getAgencyName() : null)
+                .freeCancellationDays(freeDays)
+                .cancellationFeePercent(feePercent)
                 .bookedOn(booking.getCreatedAt())
                 .hotelId(booking.getHotel() != null ? booking.getHotel().getId() : null)
                 .hotelName(booking.getHotel() != null ? booking.getHotel().getHotelName() : null)

@@ -67,7 +67,7 @@ const Analytics = () => {
     : [];
 
   const topDestinations = analytics?.topDestinations?.map(d => ({
-    name: d.district,
+    name: d.district || d.destination || 'Unassigned',
     bookings: d.count,
   })) ?? [];
 
@@ -85,34 +85,34 @@ const Analytics = () => {
     const reportRef = `TRH-FIN-${Date.now().toString().slice(-6)}`;
 
     // ── PAGE DECORATION & EXECUTIVE BRANDING ──────────────────────
-    doc.setFillColor(13, 148, 136); // #0d9488 Primary Teal
-    doc.rect(0, 0, 210, 44, 'F');
+    doc.setFillColor(14, 165, 233); // #0ea5e9 Light Blue
+    doc.roundedRect(10, 8, 190, 36, 4, 4, 'F');
 
     // Brand Header Text
     doc.setTextColor(255, 255, 255);
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(22);
-    doc.text('TRAVELHUB', 15, 18);
-    
+    doc.text('TRAVELHUB', 18, 22);
+
     doc.setFont('helvetica', 'normal');
-    doc.setFontSize(10);
-    doc.text('Financial & Operational Statement', 15, 24);
+    doc.setFontSize(9.5);
+    doc.text('Financial & Operational Statement', 18, 28);
 
     // Agency Info
     doc.setFont('helvetica', 'bold');
-    doc.setFontSize(11);
-    doc.text(agencyName.toUpperCase(), 15, 33);
+    doc.setFontSize(10.5);
+    doc.text(agencyName.toUpperCase(), 18, 36);
 
     doc.setFont('helvetica', 'normal');
-    doc.setFontSize(8.5);
+    doc.setFontSize(8);
     const contactInfo = `Email: ${profile?.email || 'N/A'}  |  Phone: ${profile?.phone || 'N/A'}`;
-    doc.text(contactInfo, 15, 38);
+    doc.text(contactInfo, 18, 41);
 
     // Right-aligned Metadata
-    doc.setFontSize(9);
-    doc.text(`Report Ref: ${reportRef}`, 195, 18, { align: 'right' });
-    doc.text(`Period: ${viewMode.toUpperCase()}`, 195, 24, { align: 'right' });
-    doc.text(`Generated: ${new Date().toLocaleDateString()}`, 195, 30, { align: 'right' });
+    doc.setFontSize(8.5);
+    doc.text(`Report Ref: ${reportRef}`, 192, 21, { align: 'right' });
+    doc.text(`Period: ${viewMode.toUpperCase()}`, 192, 27, { align: 'right' });
+    doc.text(`Generated: ${new Date().toLocaleDateString()}`, 192, 33, { align: 'right' });
 
     // ── SUBTITLE SECTION ──────────────────────────────────────────
     doc.setTextColor(51, 65, 85); // Slate-700
@@ -132,7 +132,7 @@ const Analytics = () => {
     const totalWithdrawn = wallet?.totalWithdrawn ?? 0;
 
     const cards = [
-      { title: 'Gross Revenue', value: formatPrice(totalRevenue), color: [13, 148, 136] },
+      { title: 'Gross Revenue', value: formatPrice(totalRevenue), color: [14, 165, 233] },
       { title: 'Pending Escrow', value: formatPrice(pendingEscrow), color: [245, 158, 11] },
       { title: 'Available Wallet', value: formatPrice(availableEarnings), color: [16, 185, 129] },
       { title: 'Total Withdrawn', value: formatPrice(totalWithdrawn), color: [99, 102, 241] }
@@ -142,7 +142,7 @@ const Analytics = () => {
       const cardX = startX + index * (cardWidth + spacing);
       doc.setFillColor(248, 250, 252);
       doc.setDrawColor(226, 232, 240);
-      doc.rect(cardX, cardY, cardWidth, cardHeight, 'FD');
+      doc.roundedRect(cardX, cardY, cardWidth, cardHeight, 3, 3, 'FD');
 
       doc.setFont('helvetica', 'normal');
       doc.setFontSize(7.5);
@@ -175,7 +175,7 @@ const Analytics = () => {
       head: [['Financial Account Metric', 'Amount', 'Accounting Description']],
       body: walletSummaryRows,
       theme: 'striped',
-      headStyles: { fillColor: [13, 148, 136], textColor: [255, 255, 255], fontStyle: 'bold' },
+      headStyles: { fillColor: [14, 165, 233], textColor: [255, 255, 255], fontStyle: 'bold' },
       styles: { fontSize: 8.5 },
       margin: { left: 15, right: 15 }
     });
@@ -196,7 +196,7 @@ const Analytics = () => {
       head: [['Period Breakdown', 'Gross Revenue']],
       body: revenueRows,
       theme: 'striped',
-      headStyles: { fillColor: [15, 118, 110], textColor: [255, 255, 255], fontStyle: 'bold' },
+      headStyles: { fillColor: [14, 165, 233], textColor: [255, 255, 255], fontStyle: 'bold' },
       styles: { fontSize: 8.5 },
       margin: { left: 15, right: 15 }
     });
@@ -227,7 +227,7 @@ const Analytics = () => {
       head: [['Driver Name', 'Rating', 'Completed Trips', 'Current Status']],
       body: driverRows.length > 0 ? driverRows : [['No driver records', '—', '0', '—']],
       theme: 'striped',
-      headStyles: { fillColor: [13, 148, 136], textColor: [255, 255, 255], fontStyle: 'bold' },
+      headStyles: { fillColor: [14, 165, 233], textColor: [255, 255, 255], fontStyle: 'bold' },
       styles: { fontSize: 8.5 },
       margin: { left: 15, right: 15 }
     });
@@ -251,7 +251,7 @@ const Analytics = () => {
       head: [['Vehicle Details', 'Trips Completed']],
       body: vehicleRows.length > 0 ? vehicleRows : [['No vehicle records', '0']],
       theme: 'striped',
-      headStyles: { fillColor: [13, 148, 136], textColor: [255, 255, 255], fontStyle: 'bold' },
+      headStyles: { fillColor: [14, 165, 233], textColor: [255, 255, 255], fontStyle: 'bold' },
       styles: { fontSize: 8.5 },
       margin: { left: 15, right: 15 }
     });
@@ -275,7 +275,7 @@ const Analytics = () => {
       head: [['District Name', 'Total Bookings']],
       body: destinationRows.length > 0 ? destinationRows : [['No destination records', '0']],
       theme: 'striped',
-      headStyles: { fillColor: [13, 148, 136], textColor: [255, 255, 255], fontStyle: 'bold' },
+      headStyles: { fillColor: [14, 165, 233], textColor: [255, 255, 255], fontStyle: 'bold' },
       styles: { fontSize: 8.5 },
       margin: { left: 15, right: 15 }
     });
@@ -485,7 +485,7 @@ const Analytics = () => {
                           </div>
                           <div className="mt-1">
                             <div className="h-2 flex-1 overflow-hidden rounded-full bg-muted">
-                              <div className="h-full rounded-full bg-gradient-to-r from-primary to-accent"
+                              <div className="h-full rounded-full bg-teal-600 dark:bg-teal-500"
                                 style={{ width: `${(dest.bookings / maxDestBookings) * 100}%` }} />
                             </div>
                           </div>
@@ -517,7 +517,11 @@ const Analytics = () => {
                               {driver.rating && driver.rating > 0 ? driver.rating.toFixed(1) : 'New'}
                             </span>
                           </div>
-                          <p className="text-xs text-muted-foreground">{driver.status}</p>
+                          <p className="text-xs text-muted-foreground font-medium">
+                            {driver.status?.toLowerCase() === 'on-trip' || driver.status?.toLowerCase() === 'on_trip'
+                              ? 'On Trip'
+                              : 'Available'}
+                          </p>
                         </div>
                       </div>
                     ))

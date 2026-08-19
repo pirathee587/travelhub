@@ -142,6 +142,18 @@ export function MyReviewsSection() {
                     {review.comment}
                 </p>
 
+                {/* Agent Reply */}
+                {review.reply && review.reply.trim() !== "" && (
+                    <div className="mb-3 pl-3 py-2 pr-2 border-l-2 border-primary/60 bg-primary/5 rounded-r-md">
+                        <p className="text-[11px] font-bold text-primary mb-0.5">
+                            ↳ Agency Reply:
+                        </p>
+                        <p className="text-xs text-foreground/90 leading-relaxed">
+                            {review.reply}
+                        </p>
+                    </div>
+                )}
+
                 {/* Package/Hotel name and date */}
                 <div className="space-y-2 mb-3">
                     <div className="flex items-center gap-2 text-muted-foreground">
