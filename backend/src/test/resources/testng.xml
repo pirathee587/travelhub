@@ -1,11 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE suite SYSTEM "https://testng.org/testng-1.0.dtd">
-<suite name="TravelHub Test Suite" verbose="1" parallel="false">
+<suite name="TravelHub Test Suite" verbose="1">
 
     <!-- ===== UNIT TESTS ===== -->
     <test name="Unit Tests - Auth">
         <classes>
             <class name="com.travelhub.backend.unit.auth.AuthServiceTest"/>
+            <class name="com.travelhub.backend.unit.auth.AuthModuleTest"/>
         </classes>
     </test>
 
@@ -13,13 +14,35 @@
         <classes>
             <class name="com.travelhub.backend.unit.admin.AdminUserServiceTest"/>
             <class name="com.travelhub.backend.unit.admin.AdminHotelServiceTest"/>
+            <class name="com.travelhub.backend.unit.admin.AdminNotificationPreferenceServiceTest"/>
         </classes>
     </test>
 
     <test name="Unit Tests - Tourist">
         <classes>
             <class name="com.travelhub.backend.unit.tourist.BookingServiceTest"/>
+            <class name="com.travelhub.backend.unit.tourist.BookingCreationServiceTest"/>
             <class name="com.travelhub.backend.unit.tourist.PackageServiceTest"/>
+            <class name="com.travelhub.backend.unit.tourist.ReviewServiceTest"/>
+            <class name="com.travelhub.backend.unit.tourist.UserNotificationServiceTest"/>
+        </classes>
+    </test>
+
+    <test name="Unit Tests - User and Profile">
+        <classes>
+            <class name="com.travelhub.backend.unit.user.UserServiceTest"/>
+        </classes>
+    </test>
+
+    <test name="Unit Tests - Payment">
+        <classes>
+            <class name="com.travelhub.backend.unit.payment.PaymentModuleTest"/>
+        </classes>
+    </test>
+
+    <test name="Unit Tests - Email">
+        <classes>
+            <class name="com.travelhub.backend.unit.email.EmailServiceTest"/>
         </classes>
     </test>
 
@@ -51,6 +74,10 @@
     <test name="Controller Tests - Tourist">
         <classes>
             <class name="com.travelhub.backend.controller.tourist.BookingControllerTest"/>
+            <class name="com.travelhub.backend.controller.tourist.PackageControllerTest"/>
+            <class name="com.travelhub.backend.controller.tourist.ReviewControllerTest"/>
+            <class name="com.travelhub.backend.controller.tourist.UserControllerTest"/>
+            <class name="com.travelhub.backend.controller.tourist.UserNotificationControllerTest"/>
         </classes>
     </test>
 
