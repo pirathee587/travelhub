@@ -169,6 +169,8 @@ public class AdminAgentAnalyticsService {
             Agent a) {
         // Use cached totalTrips from agent entity to avoid N+1 query
         Integer totalTripsVal = a.getTotalTrips() != null ? a.getTotalTrips() : 0;
+        Double totalRevenueVal = agentRepository.getTotalRevenueByAgentId(a.getId());
+        Long compCount = bookingRepository.countByAgentIdAndStatus(a.getId(), "completed");
 
         return new AdminAgentListResponse(
                 a.getId(),
@@ -189,7 +191,9 @@ public class AdminAgentAnalyticsService {
                 a.getOwner() != null && Boolean.TRUE.equals(a.getOwner().getAgentApproved()) ? "Approved" : "Pending",
                 resolveNicStatus(a.getOwner()),
                 a.getSubmittedDate() != null ? a.getSubmittedDate().toString() : null,
-                a.getIsActive() != null ? a.getIsActive() : true
+                a.getIsActive() != null ? a.getIsActive() : true,
+                totalRevenueVal != null ? totalRevenueVal : 0.0,
+                compCount != null ? compCount.intValue() : 0
         );
     }
 }

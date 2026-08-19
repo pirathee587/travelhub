@@ -789,14 +789,14 @@ const Settings = () => {
             </div>
           </div>
 
-          {/* Inline Rejection Reason Notice Box */}
-          {(fullProfile?.nicStatus === 'REJECTED' || fullProfile?.nicVerificationStatus === 'rejected') && (
-            <div className="mb-6 p-4 rounded-xl bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800 text-sm text-destructive space-y-1">
+          {/* Inline Rejection / Suspension Reason Notice Box */}
+          {(['REJECTED', 'SUSPENDED'].includes((fullProfile?.nicStatus || fullProfile?.nicVerificationStatus || '').toUpperCase())) && (
+            <div className="mb-6 p-4 rounded-xl bg-destructive/10 border border-destructive/30 text-sm text-destructive space-y-1">
               <div className="font-semibold flex items-center gap-2">
-                ⚠️ Verification Rejected
+                ⚠️ {String(fullProfile?.nicVerificationStatus || fullProfile?.nicStatus).toUpperCase() === 'SUSPENDED' ? 'Account Suspended' : 'Verification Rejected'}
               </div>
-              <p className="text-xs text-red-700 dark:text-red-300">
-                {fullProfile?.nicRejectionReason || fullProfile?.rejectionReason || 'Your submitted NIC document was rejected. Please re-upload clear photos of both sides.'}
+              <p className="text-xs text-destructive/90 font-medium">
+                {fullProfile?.adminMessage || fullProfile?.nicRejectionReason || fullProfile?.rejectionReason || 'Your verification status requires administrative review. Please contact support or re-upload your verification documents.'}
               </p>
             </div>
           )}

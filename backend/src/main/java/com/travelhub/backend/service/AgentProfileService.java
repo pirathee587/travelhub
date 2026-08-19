@@ -116,6 +116,7 @@ public class AgentProfileService {
                 .totalRevenue(agent.getTotalRevenue())
                 .completionRate(agent.getCompletionRate())
                 .agentApproved(user != null ? user.getAgentApproved() : false)
+                .isActive(user != null && user.getIsActive() != null ? (user.getIsActive() && (agent.getIsActive() == null || agent.getIsActive())) : (agent.getIsActive() != null ? agent.getIsActive() : true))
                 .build();
     }
 }

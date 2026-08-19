@@ -114,11 +114,13 @@ const AgencyAnalyticsCard = ({ agent, index, statsInfo, onView }: AgencyAnalytic
     logoUrl,
     profileImage,
     rating,
-    totalTrips: agentTotalTrips
+    totalTrips: agentTotalTrips,
+    totalRevenue: agentTotalRevenue,
+    completedTrips: agentCompletedTrips
   } = agent
 
-  const displayName = companyName || agentName || 'agent1 agency'
-  const ownerDisplayName = ownerName || (agent.ownerFirstName ? `${agent.ownerFirstName} ${agent.ownerLastName || ''}`.trim() : agentName) || 'agent2'
+  const displayName = companyName || agentName || 'Travel Agency'
+  const ownerDisplayName = ownerName || (agent.ownerFirstName ? `${agent.ownerFirstName} ${agent.ownerLastName || ''}`.trim() : agentName) || 'Agency Owner'
 
   const avatar = profileImage || imageUrl || logoUrl
   const gradient = CARD_GRADIENTS[index % CARD_GRADIENTS.length]
@@ -127,13 +129,13 @@ const AgencyAnalyticsCard = ({ agent, index, statsInfo, onView }: AgencyAnalytic
   const stats = statsInfo?.stats
   const tripStatus = statsInfo?.tripStatus
 
-  const totalRevenue = stats?.totalRevenue ?? 0
+  const totalRevenue = stats?.totalRevenue ?? agentTotalRevenue ?? 0
   const totalTrips = stats?.totalTrips ?? agentTotalTrips ?? 0
-  const completedTripsCount = tripStatus?.completed ?? stats?.completedTrips ?? 0
+  const completedTripsCount = tripStatus?.completed ?? stats?.completedTrips ?? agentCompletedTrips ?? 0
 
   const ratingValue = stats?.averageRating
     ? Number(stats.averageRating).toFixed(1)
-    : (rating ? Number(rating).toFixed(1) : '0.0')
+    : (rating ? Number(rating).toFixed(1) : (agent.rating ? Number(agent.rating).toFixed(1) : '0.0'))
 
   const completedPct = totalTrips > 0
     ? Math.min(100, Math.round((completedTripsCount / totalTrips) * 100))
@@ -286,7 +288,31 @@ export default function Analytics() {
       setError(null)
       const res = await adminAgentApi.getAllAgents()
       const agentsList = res?.data ?? res ?? []
-      setAgents(Array.isArray(agentsList) ? agentsList : [])
+      const list = Array.isArray(agentsList) ? agentsList : []
+      setAgents(list)
+
+      // Fetch live stats for all agents in parallel to populate agentStatsMap
+      if (list.length > 0) {
+        Promise.allSettled(
+          list.map(async (a: any) => {
+            const [statsRes, tripStatusRes] = await Promise.allSettled([
+              adminAgentApi.getAgentStats(a.id),
+              adminAgentApi.getAgentTripStatus(a.id)
+            ])
+            const stats = statsRes.status === 'fulfilled' ? (statsRes.value?.data ?? statsRes.value) : null
+            const tripStatus = tripStatusRes.status === 'fulfilled' ? (tripStatusRes.value?.data ?? tripStatusRes.value) : null
+            return { id: a.id, stats, tripStatus }
+          })
+        ).then(results => {
+          const newMap: Record<string | number, any> = {}
+          results.forEach(r => {
+            if (r.status === 'fulfilled' && r.value?.id) {
+              newMap[r.value.id] = { stats: r.value.stats, tripStatus: r.value.tripStatus }
+            }
+          })
+          setAgentStatsMap(prev => ({ ...prev, ...newMap }))
+        })
+      }
     } catch (err: any) {
       setError(err?.response?.data?.message || err?.message || 'Failed to load analytics data')
     } finally {
@@ -342,6 +368,16 @@ export default function Analytics() {
       setDetailStats(statsData)
       setDetailTripStatus(statusData)
       setRevenueData(revData)
+
+      if (statsData || statusData) {
+        setAgentStatsMap(prev => ({
+          ...prev,
+          [agent.id]: {
+            stats: statsData || prev[agent.id]?.stats,
+            tripStatus: statusData || prev[agent.id]?.tripStatus
+          }
+        }))
+      }
     } catch (err) {
       console.error('Error loading agent analytics:', err)
     } finally {
@@ -395,8 +431,8 @@ export default function Analytics() {
     const statsObj = detailStats?.data || detailStats || cachedStats
     const statusObj = detailTripStatus?.data || detailTripStatus || cachedStatus
 
-    const totalRev = statsObj?.totalRevenue ?? cachedStats?.totalRevenue ?? detailAnalytics?.totalRevenue ?? 0
-    const totalTrp = statsObj?.totalTrips ?? cachedStats?.totalTrips ?? detailAnalytics?.totalTrips ?? 0
+    const totalRev = statsObj?.totalRevenue ?? selectedAgent?.totalRevenue ?? cachedStats?.totalRevenue ?? detailAnalytics?.totalRevenue ?? 0
+    const totalTrp = statsObj?.totalTrips ?? selectedAgent?.totalTrips ?? cachedStats?.totalTrips ?? detailAnalytics?.totalTrips ?? 0
     const avgRat = statsObj?.averageRating ?? statsObj?.agentRating ?? selectedAgent?.rating ?? cachedStats?.averageRating ?? detailAnalytics?.averageRating ?? 0
     const cancelRt = statsObj?.cancellationRate ?? cachedStats?.cancellationRate ?? detailAnalytics?.cancellationRate ?? 0
 
@@ -456,6 +492,27 @@ export default function Analytics() {
       styles: { fontSize: 9 },
       margin: { left: 15, right: 15 }
     })
+
+    // Revenue Breakdown Table if available
+    const monthlyArr = (revenueData?.data && Array.isArray(revenueData.data))
+      ? revenueData.data
+      : (revenueData && Array.isArray(revenueData) ? revenueData : [])
+
+    if (monthlyArr.length > 0) {
+      const revFinalY = (doc as any).lastAutoTable.finalY + 12
+      const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+      const revRows = months.map((m, idx) => [m, formatPrice(Number(monthlyArr[idx] || 0))])
+
+      autoTable(doc, {
+        startY: revFinalY,
+        head: [['Month', 'Revenue Generated']],
+        body: revRows,
+        theme: 'grid',
+        headStyles: { fillColor: [14, 165, 233], textColor: [255, 255, 255] },
+        styles: { fontSize: 8.5 },
+        margin: { left: 15, right: 15 }
+      })
+    }
 
     doc.save(`${agencyName.toLowerCase().replace(/\s+/g, '_')}_analytics_${viewMode}.pdf`)
   }
