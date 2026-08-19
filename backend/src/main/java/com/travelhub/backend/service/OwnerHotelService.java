@@ -32,6 +32,12 @@ public class OwnerHotelService {
     private final ApplicationEventPublisher eventPublisher;
 
     public List<HotelResponse> getOwnerHotels(String status, Long ownerId) {
+        if ("all".equalsIgnoreCase(status) || status == null || status.isBlank()) {
+            List<Hotel> hotels = hotelRepository.findByOwnerId(ownerId);
+            return hotels.stream()
+                    .map(this::toHotelResponse)
+                    .collect(Collectors.toList());
+        }
         String targetStatus = normalizeStatus(status);
         List<Hotel> hotels = hotelRepository.findByOwnerIdAndApplicationStatus(ownerId, targetStatus);
 
@@ -40,16 +46,23 @@ public class OwnerHotelService {
                 .collect(Collectors.toList());
     }
 
+    public HotelResponse getOwnerHotel(Long id, Long ownerId) {
+        Hotel hotel = getOwnedHotel(id, ownerId);
+        return toHotelResponse(hotel);
+    }
+
     public OwnerHotelSummaryResponse getOwnerHotelSummary(Long ownerId) {
         int approved = (int) hotelRepository.countByOwnerIdAndApplicationStatus(ownerId, "Approved");
         int pending = (int) hotelRepository.countByOwnerIdAndApplicationStatus(ownerId, "Pending");
         int rejected = (int) hotelRepository.countByOwnerIdAndApplicationStatus(ownerId, "Rejected");
+        int suspended = (int) hotelRepository.countByOwnerIdAndApplicationStatus(ownerId, "Suspended");
 
         return OwnerHotelSummaryResponse.builder()
                 .approved(approved)
                 .pending(pending)
                 .rejected(rejected)
-                .total(approved + pending + rejected)
+                .suspended(suspended)
+                .total(approved + pending + rejected + suspended)
                 .build();
     }
 
@@ -235,6 +248,9 @@ public class OwnerHotelService {
         }
         if ("Rejected".equalsIgnoreCase(status)) {
             return "Rejected";
+        }
+        if ("Suspended".equalsIgnoreCase(status)) {
+            return "Suspended";
         }
         return "Approved";
     }

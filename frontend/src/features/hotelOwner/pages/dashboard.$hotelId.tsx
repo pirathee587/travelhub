@@ -15,7 +15,7 @@ export default function HotelDashboardPage() {
   const { hotel, loading } = useHotel(hotelId);
 
   const isPending = hotel?.applicationStatus === "Pending";
-  const isSuspended = hotel?.applicationStatus === "Approved" && hotel?.isActive === false;
+  const isSuspended = hotel?.applicationStatus === "Suspended" || (!hotel?.isActive && hotel?.applicationStatus === "Approved");
   const isLocked = isPending || isSuspended;
 
   if (loading) {
