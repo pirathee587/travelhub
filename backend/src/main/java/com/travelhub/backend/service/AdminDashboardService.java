@@ -56,8 +56,12 @@ public class AdminDashboardService {
         if (totalTourists == null) totalTourists = 0L;
 
         List<Agent> allAgents = agentRepository.findAll();
-        long agentUsersCount = userRepository.findByRole(Role.AGENT).size();
-        Long totalAgents = Math.max((long) allAgents.size(), agentUsersCount);
+        Long totalAgents = (long) allAgents.size();
+
+        // activeAgents = Approved + Active + not Suspended (mirrors resolveAgentStatus logic)
+        Long activeAgents = allAgents.stream()
+                .filter(a -> "Approved".equalsIgnoreCase(resolveAgentStatus(a.getOwner(), a)))
+                .count();
 
         Long totalHotelManagers = userRepository.countByRole(Role.HOTEL_OWNER);
         if (totalHotelManagers == null) totalHotelManagers = 0L;
@@ -91,7 +95,11 @@ public class AdminDashboardService {
                 .count();
 
         // ── Totals ──────────────────────────────────────
-        Long totalHotels = (long) allHotels.size();
+        // totalHotels = only Approved AND active partner hotels (not Pending/Rejected/Deactivated)
+        Long totalHotels = allHotels.stream()
+                .filter(h -> "Approved".equalsIgnoreCase(h.getApplicationStatus())
+                        && !Boolean.FALSE.equals(h.getIsActive()))
+                .count();
         Long totalPackages = allPackages.stream().filter(p -> p.getDeletedAt() == null).count();
 
         Long totalBookings  = bookingRepository.count();
@@ -196,7 +204,7 @@ public class AdminDashboardService {
                 desc += " • " + agent.getEmail();
             }
             candidates.add(new ActivityCandidate(
-                    "Agency Approved",
+                    "Agent Approved",
                     desc,
                     "APPROVED",
                     ts,
@@ -308,10 +316,45 @@ public class AdminDashboardService {
         double prevRevenueVal = monthlyRevenues.size() >= 2 ? monthlyRevenues.get(monthlyRevenues.size() - 2) : 0.0;
         Double revenueGrowth = calculateGrowth(curRevenueVal, prevRevenueVal);
 
+        // ── Year-over-Year (YoY) Growth Calculations ───────────
+        long thisYearBookings = allBookings.stream()
+                .filter(b -> b.getCreatedAt() != null && b.getCreatedAt().getYear() == curYear)
+                .count();
+        long lastYearBookings = allBookings.stream()
+                .filter(b -> b.getCreatedAt() != null && b.getCreatedAt().getYear() == (curYear - 1))
+                .count();
+        Double yearlyBookingGrowth = calculateGrowth(thisYearBookings, lastYearBookings);
+
+        double thisYearRevenue = allTxns.stream()
+                .filter(t -> t.getCreatedAt() != null && t.getCreatedAt().getYear() == curYear)
+                .mapToDouble(t -> {
+                    if ("COMMISSION_DEDUCTION".equalsIgnoreCase(t.getType())) {
+                        return t.getAmount() != null ? t.getAmount() : 0.0;
+                    } else if ("CANCELLATION_COMPENSATION".equalsIgnoreCase(t.getType())) {
+                        return (t.getAmount() != null ? t.getAmount() : 0.0) / 4.0;
+                    }
+                    return 0.0;
+                })
+                .sum();
+
+        double lastYearRevenue = allTxns.stream()
+                .filter(t -> t.getCreatedAt() != null && t.getCreatedAt().getYear() == (curYear - 1))
+                .mapToDouble(t -> {
+                    if ("COMMISSION_DEDUCTION".equalsIgnoreCase(t.getType())) {
+                        return t.getAmount() != null ? t.getAmount() : 0.0;
+                    } else if ("CANCELLATION_COMPENSATION".equalsIgnoreCase(t.getType())) {
+                        return (t.getAmount() != null ? t.getAmount() : 0.0) / 4.0;
+                    }
+                    return 0.0;
+                })
+                .sum();
+        Double yearlyRevenueGrowth = calculateGrowth(thisYearRevenue, lastYearRevenue);
+
         return new AdminDashboardResponse(
                 totalUsers,
                 totalTourists,
                 totalAgents,
+                activeAgents,
                 totalHotelManagers,
                 totalHotels,
                 totalPackages,
@@ -334,7 +377,9 @@ public class AdminDashboardService {
                 hotelGrowth,
                 packageGrowth,
                 bookingGrowth,
-                revenueGrowth
+                revenueGrowth,
+                yearlyBookingGrowth,
+                yearlyRevenueGrowth
         );
     }
 

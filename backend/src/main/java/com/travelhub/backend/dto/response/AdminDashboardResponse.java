@@ -4,8 +4,9 @@ public record AdminDashboardResponse(
         Long   totalUsers,
         Long   totalTourists,
         Long   totalAgents,
+        Long   activeAgents,           // Approved + Active + not Suspended agents only
         Long   totalHotelManagers,
-        Long   totalHotels,
+        Long   totalHotels,            // Approved hotels only
         Long   totalPackages,
         Long   totalBookings,
         Long   totalReviews,
@@ -26,7 +27,9 @@ public record AdminDashboardResponse(
         Double hotelGrowth,
         Double packageGrowth,
         Double bookingGrowth,
-        Double revenueGrowth
+        Double revenueGrowth,
+        Double yearlyBookingGrowth,
+        Double yearlyRevenueGrowth
 ) {
     public record RecentActivityDto(
             String title,

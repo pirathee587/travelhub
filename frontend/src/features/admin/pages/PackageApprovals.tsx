@@ -2,6 +2,7 @@ import placeholderImg from '@/assets/images/placeholder.png'
 import kandyImg from '@/assets/images/kandy_temple.jpg'
 import galleImg from '@/assets/images/galle_fort.jpg'
 import React, { useState, useEffect, useCallback } from 'react'
+import { useNavigate } from 'react-router-dom'
 import adminPackageApi from '../services/adminPackageApi'
 import { useModal } from '../components/ModalContext'
 import { useAdminCurrency } from '../hooks/AdminCurrencyContext'
@@ -24,6 +25,7 @@ import {
   Package as PackageIcon,
   Tag,
   Building2,
+  ExternalLink,
   Maximize2
 } from 'lucide-react'
 
@@ -305,6 +307,7 @@ const PackageActionReasonModal: React.FC<PackageActionReasonModalProps> = ({
 
 // ── Package Detail View (Exact Modern Template) ───────────────────────────────
 const PackageDetailView = ({ pkg, onBack, onApprove, onReject, onToggle, onDelete, loading }: any) => {
+  const navigate = useNavigate()
   const { formatPrice } = useAdminCurrency()
   const [selectedImage, setSelectedImage] = useState<string | null>(null)
 
@@ -424,13 +427,6 @@ const PackageDetailView = ({ pkg, onBack, onApprove, onReject, onToggle, onDelet
               </div>
             )}
 
-            <span className={`backdrop-blur-md px-3.5 py-1 rounded-full text-xs font-semibold tracking-wide shadow-md ${isActive
-                ? 'bg-[#0ea5e9] text-white border border-white/20'
-                : 'bg-red-500 text-white border border-white/20'
-              }`}>
-              {isActive ? 'Active' : 'Inactive'}
-            </span>
-
             <span className={`backdrop-blur-md px-3.5 py-1 rounded-full text-xs font-semibold tracking-wide shadow-md flex items-center gap-1.5 border ${isApproved
                 ? 'bg-emerald-500 text-white border-emerald-400'
                 : isPending
@@ -485,8 +481,24 @@ const PackageDetailView = ({ pkg, onBack, onApprove, onReject, onToggle, onDelet
             )}
 
             {providerName && (
-              <span className="text-xs text-gray-400">
-                • Provided by <strong className="text-gray-700 font-semibold">{providerName}</strong>
+              <span className="text-xs text-gray-500 inline-flex items-center gap-1.5 flex-wrap">
+                <span>• Provided by</span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (pkg.agentId || pkg.agent?.id) {
+                      navigate(`/admin/agents/${pkg.agentId || pkg.agent?.id}`)
+                    } else {
+                      navigate('/admin/agents', { state: { search: providerName } })
+                    }
+                  }}
+                  className="inline-flex items-center gap-1 text-sky-600 hover:text-sky-800 font-bold bg-sky-50 hover:bg-sky-100/80 px-2.5 py-1 rounded-lg border border-sky-200/80 shadow-2xs transition active:scale-95 cursor-pointer"
+                  title={`View ${providerName} in Agency Approvals`}
+                >
+                  <Building2 className="w-3.5 h-3.5 text-sky-600 shrink-0" />
+                  <span className="font-bold underline decoration-sky-300 underline-offset-2">{providerName}</span>
+                  <ExternalLink className="w-3 h-3 text-sky-500 shrink-0 ml-0.5" />
+                </button>
               </span>
             )}
           </div>
@@ -836,14 +848,14 @@ const PackageCard = ({ pkg, onView, onApprove, onReject, onToggle, onDelete, act
         {/* Status Pill on Top-Left */}
         <div className="absolute top-3.5 left-3.5">
           <span className={`backdrop-blur-md px-3.5 py-1 rounded-full text-xs font-semibold tracking-wide border shadow-sm ${isApproved
-              ? 'bg-[#0b2838]/75 text-[#38bdf8] border-[#38bdf8]/20'
+              ? 'bg-[#062d1b]/85 text-[#34d399] border-[#34d399]/25'
               : isPending
                 ? 'bg-[#2d1b06]/75 text-[#fbbf24] border-[#fbbf24]/20'
                 : isSuspended
                   ? 'bg-[#2b1111]/75 text-[#f87171] border-[#f87171]/20'
                   : 'bg-[#2b1111]/75 text-[#f87171] border-[#f87171]/20'
             }`}>
-            {isApproved ? 'Active' : (isPending ? 'Pending' : (isSuspended ? 'Suspended' : 'Rejected'))}
+            {isApproved ? 'Approved' : (isPending ? 'Pending' : (isSuspended ? 'Suspended' : 'Rejected'))}
           </span>
         </div>
 

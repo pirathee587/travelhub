@@ -137,6 +137,15 @@ public class AdminAgentService {
         Long dbTotalTrips = agentRepository.getTotalTripsByAgentId(id);
         Integer totalTripsVal = dbTotalTrips != null ? dbTotalTrips.intValue() : 0;
 
+        String nicFront = null;
+        String nicRear = null;
+        if (agent.getOwner() != null) {
+            nicFront = (agent.getOwner().getNicFrontImage() != null && !agent.getOwner().getNicFrontImage().isBlank())
+                    ? agent.getOwner().getNicFrontImage()
+                    : agent.getOwner().getNicImage();
+            nicRear = agent.getOwner().getNicRearImage();
+        }
+
         return new AdminAgentDetailResponse(
                 agent.getId(),
                 agent.getOwner() != null ? agent.getOwner().getId() : null,
@@ -152,7 +161,9 @@ public class AdminAgentService {
                 resolveApplicationStatus(agent.getOwner(), agent),
                 submittedDate,
                 agent.getOwner() != null ? agent.getOwner().getNicNumber() : null,
-                agent.getOwner() != null ? agent.getOwner().getNicImage() : null,
+                nicFront,
+                nicFront,
+                nicRear,
                 resolveNicStatus(agent.getOwner()),
                 agent.getOwner() != null ? agent.getOwner().getAdminMessage() : null,
                 agentRatingCalculator.getAgentRating(id),
@@ -416,7 +427,9 @@ public class AdminAgentService {
     // ── Resolve NIC Status ────────────────────────────
     private String resolveNicStatus(com.travelhub.backend.entity.User owner) {
         if (owner == null) return "PENDING";
-        boolean hasNicDoc = owner.getNicImage() != null && !owner.getNicImage().isBlank();
+        boolean hasNicDoc = (owner.getNicImage() != null && !owner.getNicImage().isBlank())
+                || (owner.getNicFrontImage() != null && !owner.getNicFrontImage().isBlank())
+                || (owner.getNicRearImage() != null && !owner.getNicRearImage().isBlank());
         boolean hasNicNumber = owner.getNicNumber() != null && !owner.getNicNumber().isBlank() && !"—".equals(owner.getNicNumber().trim());
         String status = owner.getNicVerificationStatus();
 

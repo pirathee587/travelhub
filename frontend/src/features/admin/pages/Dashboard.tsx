@@ -247,14 +247,15 @@ export default function Dashboard() {
     load(); 
   }, [load]);
 
-  // Dynamic values with priority: stats (if > 0) -> live resource lists -> fallback 0
-  const totalUsers = (stats?.totalUsers && stats.totalUsers > 0) ? stats.totalUsers : (liveCounts.totalUsers ?? 0);
-  const activeAgents = (stats?.totalAgents && stats.totalAgents > 0) ? stats.totalAgents : (liveCounts.activeAgents ?? 0);
-  const partnerHotels = (stats?.totalHotels && stats.totalHotels > 0) ? stats.totalHotels : (liveCounts.partnerHotels ?? 0);
+  // Dynamic values — always trust stats from dashboard API (all fetched from DB)
+  const totalUsers = stats?.totalUsers ?? liveCounts.totalUsers ?? 0;
+  const activeAgents = stats?.activeAgents ?? liveCounts.activeAgents ?? 0;
+  const partnerHotels = (stats?.totalHotels != null && stats.totalHotels >= 0) ? stats.totalHotels : (liveCounts.partnerHotels ?? 0);
   const activePackages = (stats?.totalPackages && stats.totalPackages > 0) ? stats.totalPackages : (liveCounts.activePackages ?? 0);
-  const totalBookings = (stats?.totalBookings && stats.totalBookings > 0) ? stats.totalBookings : (liveCounts.totalBookings ?? 0);
+  const totalBookings = stats?.totalBookings ?? liveCounts.totalBookings ?? 0;
   const totalRevenue = stats?.totalRevenue ?? 0;
-  const netPlatformRevenue = financeStats?.totalPlatformNetRevenue ?? totalRevenue;
+  // Use dashboard API revenue only — financeStats from payout API uses a different formula
+  const netPlatformRevenue = totalRevenue;
 
   const pendingAgents = (stats?.pendingAgents && stats.pendingAgents > 0) ? stats.pendingAgents : (liveCounts.pendingAgents ?? 0);
   const pendingHotels = (stats?.pendingHotels && stats.pendingHotels > 0) ? stats.pendingHotels : (liveCounts.pendingHotels ?? 0);
@@ -327,6 +328,8 @@ export default function Dashboard() {
   const packageGrowth = stats?.packageGrowth ?? 0;
   const bookingGrowth = stats?.bookingGrowth ?? 0;
   const revenueGrowth = stats?.revenueGrowth ?? 0;
+  const yearlyBookingGrowth = stats?.yearlyBookingGrowth ?? bookingGrowth;
+  const yearlyRevenueGrowth = stats?.yearlyRevenueGrowth ?? revenueGrowth;
 
   const renderTrend = (growthVal?: number | null, isWhiteCard = true) => {
     const g = growthVal !== undefined && growthVal !== null ? Number(growthVal) : 0;
@@ -395,12 +398,12 @@ export default function Dashboard() {
 
         {/* 5 Interactive Quick Filter Counter Badges */}
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
-          {/* Agents */}
+          {/* Agencies */}
           <Link 
             to="/admin/agents" 
             className="bg-white hover:bg-amber-50/50 border border-orange-100 hover:border-amber-300 rounded-2xl p-3 text-center transition group shadow-2xs flex flex-col justify-center min-w-[70px]"
           >
-            <span className="text-[11px] font-bold text-gray-400 uppercase tracking-wider block">Agents</span>
+            <span className="text-[11px] font-bold text-gray-400 uppercase tracking-wider block">Agencies</span>
             <span className="text-xl font-bold text-gray-900 group-hover:text-amber-600 transition mt-0.5 flex justify-center">
               {loading && !stats ? <span className="inline-block w-5 h-6 bg-gray-200 rounded animate-pulse" /> : pendingAgents}
             </span>
@@ -471,10 +474,10 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* 2. Active Agents (Teal Gradient Card) */}
+        {/* 2. Active Agencies (Teal Gradient Card) */}
         <div className="bg-gradient-to-br from-[#0c4a6e] to-[#0284c7] rounded-3xl p-5 text-white shadow-sm hover:shadow-md transition flex flex-col justify-between">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-sky-100">Active Agents</span>
+            <span className="text-xs font-semibold text-sky-100">Active Agencies</span>
             <div className="w-10 h-10 rounded-2xl bg-white/20 text-white backdrop-blur-md flex items-center justify-center">
               <TrendingUp className="w-5 h-5 text-white" />
             </div>
@@ -548,7 +551,7 @@ export default function Dashboard() {
               {loading && !stats && !financeStats ? (
                 <span className="inline-block w-16 h-7 bg-gray-200 rounded animate-pulse" />
               ) : (
-                formatPrice(netPlatformRevenue, { showCents: false })
+                formatPrice(netPlatformRevenue)
               )}
             </span>
             {renderTrend(revenueGrowth, true)}
@@ -569,9 +572,28 @@ export default function Dashboard() {
                 <h3 className="text-lg font-bold text-gray-900 tracking-tight">
                   {chartViewMode === 'revenue' ? 'Revenue Overview' : 'Booking Trends'}
                 </h3>
-                <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-600 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-100">
-                  <TrendingUp className="w-3 h-3" /> {chartViewMode === 'revenue' ? '+18% vs last year' : '+23% vs last year'}
-                </span>
+                {(() => {
+                  const g = chartViewMode === 'revenue' ? yearlyRevenueGrowth : yearlyBookingGrowth;
+                  const val = Number(g ?? 0);
+                  const isPositive = val > 0;
+                  const isNegative = val < 0;
+                  const isZero = val === 0;
+
+                  const bgClass = isPositive 
+                    ? 'text-emerald-600 bg-emerald-50 border-emerald-100' 
+                    : isNegative 
+                    ? 'text-rose-600 bg-rose-50 border-rose-100' 
+                    : 'text-gray-600 bg-gray-50 border-gray-100';
+
+                  const arrow = isPositive ? '+' : isNegative ? '-' : '';
+                  const label = isZero ? '0%' : `${arrow}${Math.abs(val)}%`;
+
+                  return (
+                    <span className={`inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-0.5 rounded-full border ${bgClass}`}>
+                      <TrendingUp className={`w-3 h-3 ${isNegative ? 'rotate-180 text-rose-600' : ''}`} /> {label} vs last year
+                    </span>
+                  );
+                })()}
               </div>
               <p className="text-xs text-gray-400 mt-1 font-medium">
                 {chartViewMode === 'revenue' 

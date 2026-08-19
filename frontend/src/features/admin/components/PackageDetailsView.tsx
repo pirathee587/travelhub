@@ -1,4 +1,5 @@
 import React, { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import placeholderImg from '@/assets/images/placeholder.png'
 import { Badge } from '@/components/common/ui/badge'
 import {
@@ -14,7 +15,9 @@ import {
   Trash2,
   Power,
   Building2,
-  Maximize2
+  ExternalLink,
+  Maximize2,
+  AlertCircle
 } from 'lucide-react'
 
 // ── Robust Activity Parser ───────────────────────────────────────────────────
@@ -105,6 +108,7 @@ export default function PackageDetailsView({
   onDelete,
   loading = false,
 }: PackageDetailsViewProps) {
+  const navigate = useNavigate()
   const { formatPrice } = useAdminCurrency()
   const [selectedImage, setSelectedImage] = useState<string | null>(null)
 
@@ -227,14 +231,6 @@ export default function PackageDetailsView({
 
           {/* Floating Badges on Top Right of Cover */}
           <div className="absolute top-4 right-4 flex items-center gap-2 z-10">
-            <span className={`backdrop-blur-md px-3.5 py-1 rounded-full text-xs font-semibold tracking-wide shadow-md ${
-              isActive !== false
-                ? 'bg-[#0ea5e9] text-white border border-white/20'
-                : 'bg-red-500 text-white border border-white/20'
-            }`}>
-              {isActive !== false ? 'Active' : 'Inactive'}
-            </span>
-
             <span className={`backdrop-blur-md px-3.5 py-1 rounded-full text-xs font-semibold tracking-wide shadow-md flex items-center gap-1.5 border ${
               isApproved
                 ? 'bg-emerald-500 text-white border-emerald-400'
@@ -290,8 +286,24 @@ export default function PackageDetailsView({
             )}
 
             {(providerName || provider) && (
-              <span className="text-xs text-gray-400">
-                • Provided by <strong className="text-gray-700 font-semibold">{providerName || provider}</strong>
+              <span className="text-xs text-gray-500 inline-flex items-center gap-1.5 flex-wrap">
+                <span>• Provided by</span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (pkg.agentId || pkg.agent?.id) {
+                      navigate(`/admin/agents/${pkg.agentId || pkg.agent?.id}`)
+                    } else {
+                      navigate('/admin/agents', { state: { search: providerName || provider } })
+                    }
+                  }}
+                  className="inline-flex items-center gap-1 text-sky-600 hover:text-sky-800 font-bold bg-sky-50 hover:bg-sky-100/80 px-2.5 py-1 rounded-lg border border-sky-200/80 shadow-2xs transition active:scale-95 cursor-pointer"
+                  title={`View ${providerName || provider} in Agency Approvals`}
+                >
+                  <Building2 className="w-3.5 h-3.5 text-sky-600 shrink-0" />
+                  <span className="font-bold underline decoration-sky-300 underline-offset-2">{providerName || provider}</span>
+                  <ExternalLink className="w-3 h-3 text-sky-500 shrink-0 ml-0.5" />
+                </button>
               </span>
             )}
           </div>

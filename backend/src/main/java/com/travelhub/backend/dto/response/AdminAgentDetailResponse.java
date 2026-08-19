@@ -16,10 +16,13 @@ public record AdminAgentDetailResponse(
         String  submittedDate,
         String  ownerNic,
         String  nicImageUrl,
+        String  nicFrontImageUrl,
+        String  nicRearImageUrl,
         String  nicVerificationStatus,
         String  adminMessage,
         Double  rating,
         Integer totalTrips,
         Integer experienceYears,
         boolean isActive
-) {}
+) {}
+

@@ -52,7 +52,7 @@ export function BrandLogoLink({
           <Plane className={cn('text-white transition-all duration-300', collapsed ? 'h-5 w-5' : 'h-7 w-7')} />
         </div>
         {!collapsed && (
-          <div className="animate-fade-in">
+          <div>
             <h1 className="font-bold text-lg text-sidebar-foreground">TravelHub</h1>
             <p className="text-xs text-sidebar-foreground/60">Dashboard</p>
           </div>

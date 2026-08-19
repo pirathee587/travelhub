@@ -64,7 +64,7 @@ export default function Sidebar({ collapsed, setCollapsed }: SidebarProps) {
     }
   }
 
-  const SidebarContent = () => (
+  const sidebarContent = (
     <>
       {/* Logo */}
       <div className={cn("p-4 flex items-center gap-3 transition-all duration-300", collapsed && "justify-center px-2 py-4")}>
@@ -72,7 +72,7 @@ export default function Sidebar({ collapsed, setCollapsed }: SidebarProps) {
           <Plane className={cn("text-white transition-all duration-300", collapsed ? "h-5 w-5" : "h-7 w-7")} />
         </div>
         {!collapsed && (
-          <div className="animate-fade-in">
+          <div>
             <h1 className="font-bold text-lg text-sidebar-foreground">TravelHub</h1>
             <p className="text-xs text-sidebar-foreground/60">Admin Dashboard</p>
           </div>
@@ -182,7 +182,7 @@ export default function Sidebar({ collapsed, setCollapsed }: SidebarProps) {
           <X className="h-5 w-5" />
         </button>
         <div className="h-full flex flex-col">
-          <SidebarContent />
+          {sidebarContent}
         </div>
       </aside>
 
@@ -193,7 +193,7 @@ export default function Sidebar({ collapsed, setCollapsed }: SidebarProps) {
           collapsed ? "w-16" : "w-64"
         )}
       >
-        <SidebarContent />
+        {sidebarContent}
       </aside>
     </>
   )

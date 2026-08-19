@@ -21,12 +21,31 @@ public class AdminAgentAnalyticsService {
     private final BookingRepository bookingRepository;
 
     // ── Get All Agents List ───────────────────────────
-    // Admin portal-ல் எல்லா agents பட்டியல்
+    // Admin portal-ல் analytics & reports-க்கு approved/active agents பட்டியல் மட்டுமே (Pending & Rejected excluded)
     public List<AdminAgentListResponse> getAllAgents() {
         return agentRepository.findAll()
                 .stream()
+                .filter(a -> {
+                    String status = resolveAgentStatus(a.getOwner(), a);
+                    return !"Pending".equalsIgnoreCase(status) && !"Rejected".equalsIgnoreCase(status);
+                })
                 .map(this::mapToListResponse)
                 .toList();
+    }
+
+    // ── Resolve Agent Status ──────────────────────────
+    private String resolveAgentStatus(com.travelhub.backend.entity.User owner, Agent agent) {
+        if (owner == null) return "Pending";
+        if (Boolean.FALSE.equals(owner.getIsActive()) || (agent != null && Boolean.FALSE.equals(agent.getIsActive())) || "SUSPENDED".equalsIgnoreCase(owner.getNicVerificationStatus())) {
+            return "Suspended";
+        }
+        if ("REJECTED".equalsIgnoreCase(owner.getNicVerificationStatus())) {
+            return "Rejected";
+        }
+        if (Boolean.TRUE.equals(owner.getAgentApproved()) || "APPROVED".equalsIgnoreCase(owner.getNicVerificationStatus())) {
+            return "Approved";
+        }
+        return "Pending";
     }
 
     // ── Get Agent Stats ───────────────────────────────
@@ -188,7 +207,7 @@ public class AdminAgentAnalyticsService {
                 0,
                 a.getExperienceYears() != null ? a.getExperienceYears() : 0,
                 a.getOwner() != null ? a.getOwner().getNicNumber() : null,
-                a.getOwner() != null && Boolean.TRUE.equals(a.getOwner().getAgentApproved()) ? "Approved" : "Pending",
+                resolveAgentStatus(a.getOwner(), a),
                 resolveNicStatus(a.getOwner()),
                 a.getSubmittedDate() != null ? a.getSubmittedDate().toString() : null,
                 a.getIsActive() != null ? a.getIsActive() : true,
