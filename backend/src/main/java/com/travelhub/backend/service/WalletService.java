@@ -193,7 +193,7 @@ public class WalletService {
                     "Your payout request of $" + String.format("%.2f", saved.getAmount()) + " to " + saved.getBankName() + " is pending approval.");
             if (agent.getOwner() != null) {
                 userNotificationService.notifyUser(agent.getOwner().getId(), "PAYOUT", "Payout Request Submitted",
-                        "Payout request of $" + String.format("%.2f", saved.getAmount()) + " submitted to " + saved.getBankName(), "/agency/settings");
+                        "Payout request of $" + String.format("%.2f", saved.getAmount()) + " submitted to " + saved.getBankName(), "/agency/wallet");
             }
         } catch (Exception e) {
             // Non-blocking notification dispatch
@@ -259,7 +259,7 @@ public class WalletService {
                     "Your payout request of $" + String.format("%.2f", request.getAmount()) + " has been approved and processed to your bank account.");
             if (request.getAgent().getOwner() != null) {
                 userNotificationService.notifyUser(request.getAgent().getOwner().getId(), "PAYOUT", "Payout Approved!",
-                        "Payout of $" + String.format("%.2f", request.getAmount()) + " processed to " + request.getBankName(), "/agency/settings");
+                        "Payout of $" + String.format("%.2f", request.getAmount()) + " processed to " + request.getBankName(), "/agency/wallet");
             }
         } catch (Exception e) {
             // Non-blocking notification dispatch
@@ -300,7 +300,7 @@ public class WalletService {
                     "Your payout request of $" + String.format("%.2f", request.getAmount()) + " was declined. Reason: " + reason + ". Amount refunded to wallet.");
             if (request.getAgent().getOwner() != null) {
                 userNotificationService.notifyUser(request.getAgent().getOwner().getId(), "PAYOUT", "Payout Request Declined",
-                        "Payout request of $" + String.format("%.2f", request.getAmount()) + " declined. Reason: " + reason, "/agency/settings");
+                        "Payout request of $" + String.format("%.2f", request.getAmount()) + " declined. Reason: " + reason, "/agency/wallet");
             }
         } catch (Exception e) {
             // Non-blocking notification dispatch

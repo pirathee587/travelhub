@@ -43,6 +43,8 @@ public class BookingResponse {
     // Agent info
     private Long agentId;
     private String agencyName;
+    private Integer freeCancellationDays;
+    private Double cancellationFeePercent;
 
     // Hotel info
     private Long hotelId;

@@ -38,6 +38,8 @@ public class PackageDetailResponse {
     private List<String> inclusions;
     private String packageType;
     private String description;
+    private Integer freeCancellationDays;
+    private Double cancellationFeePercent;
     
     @Data
     @Builder

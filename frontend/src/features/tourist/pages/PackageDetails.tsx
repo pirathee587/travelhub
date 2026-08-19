@@ -399,6 +399,29 @@ const PackageDetails = () => {
                         </div>
                     </section>
 
+                    {/* Cancellation & Refund Policy */}
+                    <section className="bg-card rounded-xl p-6 border shadow-sm border-l-4 border-l-emerald-500">
+                        <h3 className="text-xl font-bold mb-3 flex items-center gap-2 text-foreground">
+                            <ShieldCheck className="h-5 w-5 text-emerald-500" /> Cancellation & Refund Policy
+                        </h3>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                            <div className="bg-emerald-500/10 dark:bg-emerald-900/20 p-4 rounded-lg border border-emerald-500/20">
+                                <span className="text-xs font-semibold text-emerald-700 dark:text-emerald-400 uppercase tracking-wider block mb-1">Free Cancellation Window</span>
+                                <p className="text-lg font-bold text-foreground">
+                                    Up to {pkg.freeCancellationDays ?? 2} Days <span className="text-sm font-normal text-muted-foreground">before trip start date</span>
+                                </p>
+                                <p className="text-xs text-muted-foreground mt-1">Cancellations made within this window are eligible for a 100% full refund.</p>
+                            </div>
+                            <div className="bg-amber-500/10 dark:bg-amber-900/20 p-4 rounded-lg border border-amber-500/20">
+                                <span className="text-xs font-semibold text-amber-700 dark:text-amber-400 uppercase tracking-wider block mb-1">Late Cancellation Fee</span>
+                                <p className="text-lg font-bold text-foreground">
+                                    {pkg.cancellationFeePercent ?? 10}% <span className="text-sm font-normal text-muted-foreground">deduction from total booking refund</span>
+                                </p>
+                                <p className="text-xs text-muted-foreground mt-1">Applied if cancelled after the free cancellation window expires.</p>
+                            </div>
+                        </div>
+                    </section>
+
                     {/* What's Included */}
                     {pkg.inclusions && pkg.inclusions.length > 0 && (
                         <section className="space-y-6">

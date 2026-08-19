@@ -22,6 +22,7 @@ import {
     Building2,
     Phone,
     ExternalLink,
+    ShieldCheck,
 } from "lucide-react";
 import { cn, formatDate, RenderDateRange } from "@/features/tourist/services/utils";
 import { useHotelById } from "@/features/tourist/hooks/useApi";
@@ -521,6 +522,13 @@ export function TripDetailsSheet({ trip, open, onOpenChange }: TripDetailsSheetP
                             Please enter your bank transfer details. The agent will process your refund manually via bank deposit.
                         </DialogDescription>
                     </DialogHeader>
+                    <div className="bg-amber-500/10 border border-amber-500/20 p-3 rounded-lg flex items-start gap-2 text-xs text-amber-800 dark:text-amber-300">
+                        <ShieldCheck className="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" />
+                        <div>
+                            <span className="font-semibold">Cancellation Policy: </span>
+                            Free cancellation is valid up to <span className="font-bold">{trip.freeCancellationDays ?? 2} days</span> before trip start date. Cancellations requested thereafter incur a <span className="font-bold">{trip.cancellationFeePercent ?? 10}%</span> fee deduction.
+                        </div>
+                    </div>
                     <form onSubmit={handleRequestRefund} className="space-y-4 py-2">
                         <div className="space-y-1">
                             <label className="text-xs font-semibold text-muted-foreground">Bank Name *</label>

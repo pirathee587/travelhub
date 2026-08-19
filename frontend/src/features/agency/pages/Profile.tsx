@@ -416,17 +416,9 @@ const Profile = () => {
         {/* Reviews Section */}
         <div className="lg:col-span-2 min-w-0">
           <div className="rounded-xl border border-border bg-card p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <h3 className="text-lg font-semibold text-foreground">Customer Reviews</h3>
-                <p className="text-sm text-muted-foreground">What your customers are saying</p>
-              </div>
-              <div className="flex items-center gap-2 rounded-full bg-success/10 px-4 py-2">
-                <CheckCircle className="h-4 w-4 text-success" />
-                <span className="text-sm font-medium text-success">
-                  {reviews.filter(r => r.rating >= 4).length} positive reviews
-                </span>
-              </div>
+            <div>
+              <h3 className="text-lg font-semibold text-foreground">Customer Reviews</h3>
+              <p className="text-sm text-muted-foreground">What your customers are saying</p>
             </div>
 
             <div className="mt-6 flex flex-wrap gap-3">

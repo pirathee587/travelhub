@@ -15,6 +15,8 @@ import com.travelhub.backend.dto.response.PackageDetailResponse;
 import com.travelhub.backend.dto.response.PackageResponse;
 import com.travelhub.backend.entity.Package;
 import com.travelhub.backend.entity.PackageItinerary;
+import com.travelhub.backend.entity.AgentSettings;
+import com.travelhub.backend.repository.AgentSettingsRepository;
 import com.travelhub.backend.repository.PackageRepository;
 import com.travelhub.backend.repository.ReviewRepository;
 import java.util.Map;
@@ -32,6 +34,7 @@ public class PackageService {
     private final PackageRepository packageRepository;
     private final ReviewRepository reviewRepository;
     private final AgentRatingCalculator agentRatingCalculator;
+    private final AgentSettingsRepository agentSettingsRepository;
 
     @Cacheable(value = "touristPackages", key = "'all'")
     public List<PackageResponse> getAllPackages() {
@@ -187,6 +190,16 @@ public class PackageService {
                     .collect(Collectors.toList());
         }
 
+        Integer freeDays = 2;
+        Double feePercent = 10.0;
+        if (aId != null) {
+            AgentSettings settings = agentSettingsRepository.findByAgentId(aId).orElse(null);
+            if (settings != null) {
+                if (settings.getFreeCancellationDays() != null) freeDays = settings.getFreeCancellationDays();
+                if (settings.getCancellationFeePercent() != null) feePercent = settings.getCancellationFeePercent();
+            }
+        }
+
         return PackageDetailResponse.builder()
                 .id(pkg.getId())
                 .packageName(pkg.getPackageName())
@@ -214,6 +227,8 @@ public class PackageService {
                 .inclusions(inclusions)
                 .packageType(pkg.getPackageType())
                 .description(pkg.getDescription())
+                .freeCancellationDays(freeDays)
+                .cancellationFeePercent(feePercent)
                 .build();
     }
 

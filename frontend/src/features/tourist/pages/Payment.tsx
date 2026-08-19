@@ -136,6 +136,15 @@ const Payment = () => {
                 </span>
               </div>
             </div>
+
+            {/* Cancellation Policy Callout */}
+            <div className="mt-4 pt-3 border-t border-border/60 text-xs text-muted-foreground flex items-start gap-2 bg-emerald-500/5 p-3 rounded-lg border border-emerald-500/20">
+              <ShieldCheck className="w-4 h-4 text-emerald-500 flex-shrink-0 mt-0.5" />
+              <div>
+                <span className="font-semibold text-foreground">Cancellation Terms: </span>
+                Free cancellation up to <span className="font-bold text-foreground">{booking.freeCancellationDays ?? 2} days</span> before trip start date. Cancellations requested thereafter incur a <span className="font-bold text-foreground">{booking.cancellationFeePercent ?? 10}%</span> deduction.
+              </div>
+            </div>
           </div>
 
           {checkoutData && (

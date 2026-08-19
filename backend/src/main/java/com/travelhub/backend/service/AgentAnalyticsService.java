@@ -76,27 +76,41 @@ public class AgentAnalyticsService {
         tripStatusData.put("pending", filtered.stream().filter(b -> b.getStatus() != null && b.getStatus().equalsIgnoreCase("pending")).count());
         tripStatusData.put("cancelled", cancelled);
 
-        // Top destinations: group bookings by package destination and take the top 5 by count.
+        // Top destinations: group valid confirmed/active/completed bookings by package district/destination and take the top 5 by count.
         List<Map<String, Object>> topDestinations = filtered.stream()
                 .filter(b -> {
-                    try { return b.getPkg() != null && b.getPkg().getDestination() != null; }
-                    catch (Exception e) { return false; }
+                    try {
+                        if (b.getPkg() == null || (b.getPkg().getDistrict() == null && b.getPkg().getDestination() == null)) {
+                            return false;
+                        }
+                        String st = b.getStatus();
+                        return st != null && (st.equalsIgnoreCase("confirmed") || st.equalsIgnoreCase("active") || st.equalsIgnoreCase("in_progress") || st.equalsIgnoreCase("completed") || st.equalsIgnoreCase("paid"));
+                    } catch (Exception e) { return false; }
                 })
-                .collect(Collectors.groupingBy(b -> b.getPkg().getDestination(), Collectors.counting()))
+                .collect(Collectors.groupingBy(b -> {
+                    if (b.getPkg().getDistrict() != null && !b.getPkg().getDistrict().isBlank()) {
+                        return b.getPkg().getDistrict();
+                    }
+                    return b.getPkg().getDestination() != null ? b.getPkg().getDestination() : "Other";
+                }, Collectors.counting()))
                 .entrySet().stream()
                 .sorted(Map.Entry.<String, Long>comparingByValue().reversed())
                 .limit(5)
                 .map(e -> {
                     Map<String, Object> m = new LinkedHashMap<>();
+                    m.put("district", e.getKey());
                     m.put("destination", e.getKey());
                     m.put("count", e.getValue());
                     return m;
                 })
                 .collect(Collectors.toList());
 
-        // Driver performance: take up to 5 drivers for this agent (basic summary fields).
+        // Driver performance: take up to 5 approved drivers for this agent.
         List<Map<String, Object>> driverPerformance = driverRepository
                 .findByAgentId(realAgentId).stream()
+                .filter(d -> d.getLifecycleStatus() == null ||
+                        "active".equalsIgnoreCase(d.getLifecycleStatus()) ||
+                        "approved".equalsIgnoreCase(d.getLifecycleStatus()))
                 .limit(5)
                 .map(d -> {
                     long trips = filtered.stream()
@@ -104,23 +118,31 @@ public class AgentAnalyticsService {
                                     b.getDriver().getId().equals(d.getId()) &&
                                     "completed".equalsIgnoreCase(b.getStatus()))
                             .count();
+                    boolean isOnTrip = filtered.stream()
+                            .anyMatch(b -> b.getDriver() != null &&
+                                    b.getDriver().getId().equals(d.getId()) &&
+                                    "in_progress".equalsIgnoreCase(b.getStatus()));
                     Map<String, Object> m = new LinkedHashMap<>();
                     m.put("name", d.getFirstName() + " " + (d.getLastName() != null ? d.getLastName() : ""));
                     m.put("rating", d.getRating() != null ? d.getRating() : 0.0);
-                    m.put("status", d.getStatus());
+                    m.put("status", isOnTrip ? "on-trip" : "available");
                     m.put("trips", trips);
                     return m;
                 })
                 .collect(Collectors.toList());
 
-        // Vehicle utilization: for each of up to 5 vehicles, count how many filtered bookings used it.
+        // Vehicle utilization: for each of up to 5 approved vehicles, count how many COMPLETED bookings used it.
         List<Map<String, Object>> vehicleUtilization = vehicleRepository
                 .findByAgentId(realAgentId).stream()
+                .filter(v -> v.getLifecycleStatus() == null ||
+                        "active".equalsIgnoreCase(v.getLifecycleStatus()) ||
+                        "approved".equalsIgnoreCase(v.getLifecycleStatus()))
                 .limit(5)
                 .map(v -> {
                     long trips = filtered.stream()
                             .filter(b -> b.getVehicle() != null &&
-                                    b.getVehicle().getId().equals(v.getId()))
+                                    b.getVehicle().getId().equals(v.getId()) &&
+                                    "completed".equalsIgnoreCase(b.getStatus()))
                             .count();
                     Map<String, Object> m = new LinkedHashMap<>();
                     m.put("name", v.getBrand() + " " + v.getModel());

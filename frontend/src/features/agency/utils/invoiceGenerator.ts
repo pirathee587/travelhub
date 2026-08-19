@@ -14,34 +14,34 @@ export const downloadBookingInvoice = (booking: any, formatPrice: (price: number
     const invoiceDate = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
 
     // ── PAGE DECORATION & HEADER ──────────────────────────────────
-    doc.setFillColor(13, 148, 136); // #0d9488 Primary Teal
-    doc.rect(0, 0, 210, 44, 'F');
+    doc.setFillColor(14, 165, 233); // #0ea5e9 Light Blue
+    doc.roundedRect(10, 8, 190, 36, 4, 4, 'F');
 
     // Brand Title
     doc.setTextColor(255, 255, 255);
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(22);
-    doc.text('TRAVELHUB', 15, 18);
+    doc.text('TRAVELHUB', 18, 22);
 
     doc.setFont('helvetica', 'normal');
-    doc.setFontSize(10);
-    doc.text('Official Payment & Settlement Invoice', 15, 24);
+    doc.setFontSize(9.5);
+    doc.text('Official Payment & Settlement Invoice', 18, 28);
 
     // Agency Profile Meta
     doc.setFont('helvetica', 'bold');
-    doc.setFontSize(11);
-    doc.text(agencyName.toUpperCase(), 15, 33);
+    doc.setFontSize(10.5);
+    doc.text(agencyName.toUpperCase(), 18, 36);
 
     doc.setFont('helvetica', 'normal');
-    doc.setFontSize(8.5);
-    doc.text(`Email: ${agencyEmail}  |  Phone: ${agencyPhone}`, 15, 38);
+    doc.setFontSize(8);
+    doc.text(`Email: ${agencyEmail}  |  Phone: ${agencyPhone}`, 18, 41);
 
     // Right-aligned Invoice Meta
-    doc.setFontSize(9);
-    doc.text(`Invoice #: ${invoiceNum}`, 195, 18, { align: 'right' });
-    doc.text(`Booking ID: ${bookingId}`, 195, 24, { align: 'right' });
-    doc.text(`Issue Date: ${invoiceDate}`, 195, 30, { align: 'right' });
-    doc.text(`Payment Method: Card / Escrow`, 195, 36, { align: 'right' });
+    doc.setFontSize(8.5);
+    doc.text(`Invoice #: ${invoiceNum}`, 192, 21, { align: 'right' });
+    doc.text(`Booking ID: ${bookingId}`, 192, 26, { align: 'right' });
+    doc.text(`Issue Date: ${invoiceDate}`, 192, 31, { align: 'right' });
+    doc.text(`Payment Method: Card / Escrow`, 192, 36, { align: 'right' });
 
     let currentY = 56;
 
@@ -86,7 +86,7 @@ export const downloadBookingInvoice = (booking: any, formatPrice: (price: number
     doc.text('2. Allocated Fleet & Staff Resources', 15, currentY);
     currentY += 4;
 
-    const vehicleInfo = booking?.assignedVehicleName 
+    const vehicleInfo = booking?.assignedVehicleName
       ? `${booking.assignedVehicleName} (${booking.assignedVehicleRegistration || 'Assigned'})`
       : booking?.vehicle ? `${booking.vehicle.brand || ''} ${booking.vehicle.model || ''} (${booking.vehicle.registration || 'Assigned'})` : 'Standard Tourist Transport';
 
@@ -120,8 +120,8 @@ export const downloadBookingInvoice = (booking: any, formatPrice: (price: number
     const platformCommission = totalPrice * 0.10; // 10% TravelHub Commission
     const netAgencyEarnings = totalPrice - platformCommission; // 90% Released to Agency Wallet
 
-    const paymentStatusText = (booking?.status || '').toLowerCase() === 'completed' 
-      ? 'Released to Agency Wallet' 
+    const paymentStatusText = (booking?.status || '').toLowerCase() === 'completed'
+      ? 'Released to Agency Wallet'
       : 'Held in TravelHub Escrow';
 
     autoTable(doc, {
@@ -133,7 +133,7 @@ export const downloadBookingInvoice = (booking: any, formatPrice: (price: number
         ['Net Agency Wallet Earnings', '90%', formatPrice(netAgencyEarnings), paymentStatusText],
       ],
       theme: 'striped',
-      headStyles: { fillColor: [13, 148, 136], textColor: [255, 255, 255], fontStyle: 'bold' },
+      headStyles: { fillColor: [14, 165, 233], textColor: [255, 255, 255], fontStyle: 'bold' },
       styles: { fontSize: 8.5, cellPadding: 3 },
       margin: { left: 15, right: 15 }
     });
@@ -141,13 +141,13 @@ export const downloadBookingInvoice = (booking: any, formatPrice: (price: number
     currentY = (doc as any).lastAutoTable.finalY + 12;
 
     // ── GUARANTEE & STAMP BOX ──────────────────────────────────────
-    doc.setFillColor(248, 250, 252);
-    doc.setDrawColor(203, 213, 225);
-    doc.rect(15, currentY, 180, 26, 'FD');
+    doc.setFillColor(240, 249, 255);
+    doc.setDrawColor(186, 230, 253);
+    doc.roundedRect(15, currentY, 180, 26, 3, 3, 'FD');
 
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(9);
-    doc.setTextColor(13, 148, 136);
+    doc.setTextColor(14, 165, 233);
     doc.text('TRAVELHUB DIGITAL PAYMENT GUARANTEE', 20, currentY + 7);
 
     doc.setFont('helvetica', 'normal');
