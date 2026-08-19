@@ -121,7 +121,9 @@ public class TouristAggregatorService {
         CompletableFuture.allOf(hotelFuture, roomsFuture, reviewsFuture, ratingFuture).join();
 
         HotelResponse hotel = hotelFuture.join();
-        List<String> images = hotel != null && hotel.getImages() != null ? hotel.getImages() : Collections.emptyList();
+        List<String> images = (hotel != null && hotel.getImages() != null && !hotel.getImages().isEmpty())
+                ? hotel.getImages()
+                : hotelService.getHotelImages(hotelId);
 
         return TouristHotelDetailsResponse.builder()
                 .hotel(hotel)

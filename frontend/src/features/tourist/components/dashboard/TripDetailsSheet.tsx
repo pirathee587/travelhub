@@ -458,6 +458,7 @@ export function TripDetailsSheet({ trip, open, onOpenChange }: TripDetailsSheetP
                                 </div>
                             )}
                             {(trip.paymentStatus?.toUpperCase() === "PAID" || trip.status?.toLowerCase() === "paid") &&
+                             trip.status?.toLowerCase() !== "completed" &&
                              !["refund_requested", "refunded"].includes(trip.status?.toLowerCase() || "") &&
                              !["REFUND_REQUESTED", "REFUNDED"].includes(trip.paymentStatus?.toUpperCase() || "") && (
                                 <div className="mt-4">

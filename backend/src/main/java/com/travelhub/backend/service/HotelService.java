@@ -133,6 +133,12 @@ public class HotelService {
                     .collect(Collectors.toList());
         }
 
+        List<String> imageList = hotelRepository.findImageUrlsByHotelId(hotel.getId());
+        if (imageList == null || imageList.isEmpty()) {
+            String fallback = getEffectiveImageUrl(hotel);
+            imageList = (fallback != null && !fallback.isBlank()) ? List.of(fallback) : List.of();
+        }
+
         return HotelResponse.builder()
                 .id(hotel.getId())
                 .hotelName(hotel.getHotelName())
@@ -144,11 +150,27 @@ public class HotelService {
                 .rating(Math.round(rating * 10.0) / 10.0)
                 .reviewCount(reviewCount)
                 .imageUrl(getEffectiveImageUrl(hotel))
+                .images(imageList)
                 .amenities(amenityList)
                 .rooms(roomResponses)
                 .district(hotel.getDistrict())
                 .applicationStatus(hotel.getApplicationStatus())
                 .build();
+    }
+
+    public List<String> getHotelImages(Long hotelId) {
+        List<String> images = hotelRepository.findImageUrlsByHotelId(hotelId);
+        if (images == null || images.isEmpty()) {
+            Hotel hotel = hotelRepository.findById(hotelId).orElse(null);
+            if (hotel != null) {
+                String fallback = getEffectiveImageUrl(hotel);
+                if (fallback != null && !fallback.isBlank()) {
+                    return List.of(fallback);
+                }
+            }
+            return List.of();
+        }
+        return images;
     }
 
     private String getEffectiveImageUrl(Hotel h) {

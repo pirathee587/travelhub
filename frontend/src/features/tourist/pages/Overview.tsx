@@ -333,7 +333,7 @@ const Overview = () => {
                         <Compass className="h-5 w-5 text-primary" />
                     </div>
                     <div>
-                        <h2 className="text-2xl font-bold">Interactive Sri Lanka Map</h2>
+                        <h2 className="text-2xl font-bold">Sri Lanka Map</h2>
                         <p className="text-muted-foreground text-sm">Explore travel packages by geographical district</p>
                     </div>
                 </div>

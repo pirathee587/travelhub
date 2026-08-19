@@ -39,6 +39,12 @@ public class RefundRequestService {
         if (!booking.getUser().getId().equals(userId)) {
             throw new BadRequestException("Unauthorized access to booking");
         }
+        if ("completed".equalsIgnoreCase(booking.getStatus())) {
+            throw new BadRequestException("Refund requests cannot be submitted for completed trips");
+        }
+        if ("cancelled".equalsIgnoreCase(booking.getStatus())) {
+            throw new BadRequestException("Refund requests cannot be submitted for cancelled trips");
+        }
         boolean isPaid = "PAID".equalsIgnoreCase(booking.getPaymentStatus()) || "Paid".equalsIgnoreCase(booking.getStatus());
         if (!isPaid) {
             throw new BadRequestException("Only paid bookings can be refunded");

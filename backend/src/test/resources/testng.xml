@@ -25,6 +25,7 @@
             <class name="com.travelhub.backend.unit.tourist.PackageServiceTest"/>
             <class name="com.travelhub.backend.unit.tourist.ReviewServiceTest"/>
             <class name="com.travelhub.backend.unit.tourist.UserNotificationServiceTest"/>
+            <class name="com.travelhub.backend.unit.tourist.RefundRequestServiceTest"/>
         </classes>
     </test>
 

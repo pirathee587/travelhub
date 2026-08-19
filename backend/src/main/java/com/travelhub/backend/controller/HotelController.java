@@ -40,6 +40,11 @@ public class HotelController {
         return ResponseEntity.ok(hotelService.getHotelById(id));
     }
 
+    @GetMapping("/{id}/images")
+    public ResponseEntity<List<String>> getHotelImages(@PathVariable Long id) {
+        return ResponseEntity.ok(hotelService.getHotelImages(id));
+    }
+
     // ── Chatbot endpoint ───────────────────────────────────────────────────
     // GET /api/hotels/chatbot-data
     // Called by Python AI service on startup and every 30 min to sync ChromaDB
