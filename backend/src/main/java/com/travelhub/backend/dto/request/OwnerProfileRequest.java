@@ -12,4 +12,6 @@ public class OwnerProfileRequest {
     private String district;
     private String nicNumber;
     private String nicImage;
+    private String nicFrontImage;
+    private String nicRearImage;
 }

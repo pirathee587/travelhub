@@ -10,6 +10,7 @@ import com.travelhub.backend.entity.User;
 import com.travelhub.backend.event.PaymentEvent;
 import com.travelhub.backend.repository.BookingRepository;
 import com.travelhub.backend.repository.PaymentRepository;
+import com.travelhub.backend.repository.UserRepository;
 import com.travelhub.backend.service.PaymentService;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
@@ -41,6 +42,12 @@ public class PaymentModuleTest {
 
     @Mock
     private BookingRepository bookingRepository;
+
+    @Mock
+    private UserRepository userRepository;
+
+    @Mock
+    private com.travelhub.backend.service.WalletService walletService;
 
     @Mock
     private ApplicationEventPublisher eventPublisher;
@@ -80,7 +87,8 @@ public class PaymentModuleTest {
 
         assertNotNull(result, "Processed payment should not be null");
         assertEquals(result.getStatus(), "Completed", "Payment status should be set to Completed");
-        assertEquals(booking.getStatus(), "Paid", "Booking status should be set to Paid");
+        assertEquals(booking.getPaymentStatus(), "PAID", "Booking paymentStatus should be set to PAID");
+        assertEquals(booking.getStatus(), "confirmed", "Booking status should be set to confirmed");
         verify(eventPublisher, times(1)).publishEvent(any(PaymentEvent.class));
     }
 
@@ -131,7 +139,8 @@ public class PaymentModuleTest {
     @Test(description = "TC-PAY-04: Duplicate payment attempt on already paid booking throws BadRequestException")
     public void testTC_PAY_04_DuplicatePaymentPrevention() {
         User user = User.builder().id(73L).build();
-        Booking paidBooking = Booking.builder().id(149L).user(user).status("paid").totalPrice(150.0).build();
+        Package pkg = Package.builder().id(25L).packageName("Colombo City Explorer").build();
+        Booking paidBooking = Booking.builder().id(149L).user(user).pkg(pkg).status("confirmed").paymentStatus("PAID").totalPrice(150.0).build();
 
         when(bookingRepository.findById(149L)).thenReturn(Optional.of(paidBooking));
 

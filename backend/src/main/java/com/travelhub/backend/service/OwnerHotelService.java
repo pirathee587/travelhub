@@ -55,20 +55,29 @@ public class OwnerHotelService {
 
     @Transactional
     @CacheEvict(value = {"touristHotels", "touristHotelDetails"}, allEntries = true)
-    public HotelResponse createHotel(OwnerHotelRequest request, MultipartFile hotelImage, Long ownerId) {
+    public HotelResponse createHotel(OwnerHotelRequest request, List<MultipartFile> hotelImages, Long ownerId) {
         User owner = userRepository.findById(ownerId)
                 .orElseThrow(() -> new RuntimeException("Owner not found with id: " + ownerId));
 
-        String imageUrl = request.getImageUrl();
-        if (hotelImage != null && !hotelImage.isEmpty()) {
-            try {
-                imageUrl = imageUploadService.uploadHotelImage(hotelImage).getImageUrl();
-            } catch (Exception e) {
-                System.err.println("Warning: Hotel image upload failed: " + e.getMessage());
-                if (imageUrl == null || imageUrl.isBlank()) {
-                    imageUrl = "https://images.unsplash.com/photo-1566073771259-6a8506099945?q=80&w=2070&auto=format&fit=crop";
+        List<String> allUrls = new java.util.ArrayList<>();
+        if (hotelImages != null) {
+            for (MultipartFile file : hotelImages) {
+                if (!file.isEmpty()) {
+                    try {
+                        allUrls.add(imageUploadService.uploadHotelImage(file).getImageUrl());
+                    } catch (Exception e) {
+                        System.err.println("Warning: Hotel image upload failed: " + e.getMessage());
+                    }
                 }
             }
+        }
+
+        String imageUrl = request.getImageUrl();
+        if (!allUrls.isEmpty()) {
+            imageUrl = allUrls.get(0);
+        } else if (imageUrl == null || imageUrl.isBlank()) {
+            imageUrl = "https://images.unsplash.com/photo-1566073771259-6a8506099945?q=80&w=2070&auto=format&fit=crop";
+            allUrls.add(imageUrl);
         }
 
         Hotel hotel = Hotel.builder()
@@ -99,23 +108,39 @@ public class OwnerHotelService {
         userRepository.save(owner);
 
         hotel = hotelRepository.save(hotel);
+
+        // Save multiple images
+        for (int i = 0; i < allUrls.size(); i++) {
+            hotelRepository.insertHotelImage(hotel.getId(), allUrls.get(i), i);
+        }
+
         eventPublisher.publishEvent(new HotelEvent(this, hotel, "CREATED"));
         return toHotelResponse(hotel);
     }
 
     @Transactional
     @CacheEvict(value = {"touristHotels", "touristHotelDetails"}, allEntries = true)
-    public HotelResponse updateHotel(Long id, OwnerHotelRequest request, MultipartFile hotelImage, Long ownerId) {
+    public HotelResponse updateHotel(Long id, OwnerHotelRequest request, List<MultipartFile> hotelImages, List<String> existingImages, Long ownerId) {
         Hotel hotel = getOwnedHotel(id, ownerId);
 
-        String imageUrl = request.getImageUrl();
-        if (hotelImage != null && !hotelImage.isEmpty()) {
-            try {
-                imageUrl = imageUploadService.uploadHotelImage(hotelImage).getImageUrl();
-                hotel.setImageUrl(imageUrl);
-            } catch (Exception e) {
-                System.err.println("Warning: Hotel image update failed: " + e.getMessage());
+        List<String> allUrls = new java.util.ArrayList<>();
+        if (existingImages != null) {
+            allUrls.addAll(existingImages);
+        }
+        if (hotelImages != null) {
+            for (MultipartFile file : hotelImages) {
+                if (!file.isEmpty()) {
+                    try {
+                        allUrls.add(imageUploadService.uploadHotelImage(file).getImageUrl());
+                    } catch (Exception e) {
+                        System.err.println("Warning: Hotel image update failed: " + e.getMessage());
+                    }
+                }
             }
+        }
+
+        if (!allUrls.isEmpty()) {
+            hotel.setImageUrl(allUrls.get(0));
         }
 
         hotel.setHotelName(request.getHotelName());
@@ -153,6 +178,13 @@ public class OwnerHotelService {
         }
 
         hotel = hotelRepository.save(hotel);
+
+        // Update hotel_images table
+        hotelRepository.deleteHotelImagesByHotelId(hotel.getId());
+        for (int i = 0; i < allUrls.size(); i++) {
+            hotelRepository.insertHotelImage(hotel.getId(), allUrls.get(i), i);
+        }
+
         return toHotelResponse(hotel);
     }
 

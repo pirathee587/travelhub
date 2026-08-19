@@ -2,12 +2,10 @@ import { useState } from 'react';
 import { useSearchParams, useNavigate, Link } from 'react-router-dom';
 import { KeyRound, Eye, EyeOff, ArrowLeft, XCircle } from 'lucide-react';
 import { toast } from 'sonner';
+import { BrandLogoLink } from '@/components/common/BrandLogoLink';
+import { PASSWORD_REGEX, PASSWORD_REQUIREMENTS_MESSAGE } from '@/constants/passwordRules';
 
-const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080/api';
-
-const PASSWORD_REGEX = /^(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z])(?=.*[@#$%^&+=!])(?=\S+$).{8,}$/;
-const PASSWORD_REQUIREMENTS =
-  'Password must be at least 8 characters long, contain at least one digit, one uppercase letter, one lowercase letter, and one special character';
+const BASE_URL = import.meta.env.VITE_API_URL || (import.meta.env.DEV ? "http://localhost:8080/api" : "");
 
 export default function ResetPassword() {
   const [searchParams] = useSearchParams();
@@ -26,6 +24,9 @@ export default function ResetPassword() {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-teal-50 flex items-center justify-center px-4">
         <div className="bg-white rounded-2xl shadow-xl border border-slate-100 w-full max-w-md p-10 text-center">
+          <div className="flex justify-center mb-6">
+            <BrandLogoLink variant="image" />
+          </div>
           <div className="flex justify-center mb-4">
             <XCircle className="w-14 h-14 text-red-500" />
           </div>
@@ -53,7 +54,7 @@ export default function ResetPassword() {
       return;
     }
     if (!PASSWORD_REGEX.test(newPassword)) {
-      setError(PASSWORD_REQUIREMENTS);
+      setError(PASSWORD_REQUIREMENTS_MESSAGE);
       return;
     }
 
@@ -76,7 +77,7 @@ export default function ResetPassword() {
         } else if (lower.includes('invalid') || lower.includes('not found')) {
           setError('This reset link is invalid. Please request a new one.');
         } else if (lower.includes('validation failed') && lower.includes('newpassword')) {
-          setError(PASSWORD_REQUIREMENTS);
+          setError(PASSWORD_REQUIREMENTS_MESSAGE);
         } else {
           setError(raw);
         }
@@ -91,6 +92,9 @@ export default function ResetPassword() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-teal-50 flex items-center justify-center px-4 py-12">
       <div className="w-full max-w-md">
+        <div className="flex justify-center mb-6">
+          <BrandLogoLink variant="image" />
+        </div>
 
         {/* Back button */}
         <Link
@@ -165,12 +169,7 @@ export default function ResetPassword() {
 
               {/* Error */}
               {error && (
-                <div className="flex items-start gap-2.5 text-sm text-red-700 bg-red-50 border border-red-200 rounded-xl px-4 py-3">
-                  <span className="mt-0.5 shrink-0">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 text-red-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" />
-                    </svg>
-                  </span>
+                <div className="text-sm text-red-700 bg-red-50 border border-red-200 rounded-xl px-4 py-3">
                   <span>{error}</span>
                 </div>
               )}

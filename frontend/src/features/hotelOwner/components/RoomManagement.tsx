@@ -33,7 +33,7 @@ const RoomManagement = ({ searchQuery, hotelId, isLocked = false }: RoomManageme
     }
     try {
       setLoading(true);
-      const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8080/api";
+      const BASE_URL = import.meta.env.VITE_API_URL || (import.meta.env.DEV ? "http://localhost:8080/api" : "");
       const res = await fetch(
         `${BASE_URL}/rooms/hotel/${hotelId}`
       );
@@ -55,7 +55,7 @@ const RoomManagement = ({ searchQuery, hotelId, isLocked = false }: RoomManageme
   const handleDelete = async (roomId: string) => {
     if (!window.confirm("Are you sure you want to delete this room?")) return;
     try {
-      const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8080/api";
+      const BASE_URL = import.meta.env.VITE_API_URL || (import.meta.env.DEV ? "http://localhost:8080/api" : "");
       const res = await fetch(`${BASE_URL}/rooms/${roomId}`, {
         method: "DELETE",
       });

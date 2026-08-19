@@ -36,6 +36,7 @@ public class AdminAgentService {
     private final PaymentRepository       paymentRepository;
     private final PackageReportRepository packageReportRepository;
     private final UserRepository          userRepository;
+    private final BookingRepository       bookingRepository;
 
     // ── Get All Agents ────────────────────────────────
     public List<AdminAgentListResponse> getAllAgents() {
@@ -48,16 +49,30 @@ public class AdminAgentService {
 
         // Bulk package counts: one query per agent → use countByAgent_Id but collect via a single pass
         Map<Long, Long> pkgCountMap = new java.util.HashMap<>();
+        Map<Long, Double> revenueMap = new java.util.HashMap<>();
+        Map<Long, Integer> completedMap = new java.util.HashMap<>();
         for (Long id : agentIds) {
             try {
                 pkgCountMap.put(id, packageRepository.countByAgent_Id(id));
             } catch (Exception e) {
                 pkgCountMap.put(id, 0L);
             }
+            try {
+                Double rev = agentRepository.getTotalRevenueByAgentId(id);
+                revenueMap.put(id, rev != null ? rev : 0.0);
+            } catch (Exception e) {
+                revenueMap.put(id, 0.0);
+            }
+            try {
+                Long comp = bookingRepository.countByAgentIdAndStatus(id, "completed");
+                completedMap.put(id, comp != null ? comp.intValue() : 0);
+            } catch (Exception e) {
+                completedMap.put(id, 0);
+            }
         }
 
         return agents.stream()
-                .map(a -> mapToListResponseBulk(a, ratingsMap, pkgCountMap))
+                .map(a -> mapToListResponseBulk(a, ratingsMap, pkgCountMap, revenueMap, completedMap))
                 .toList();
     }
 
@@ -437,6 +452,8 @@ public class AdminAgentService {
         Double computedRating = agentRatingCalculator.getAgentRating(a.getId());
         Long dbTotalTrips = agentRepository.getTotalTripsByAgentId(a.getId());
         Integer totalTripsVal = dbTotalTrips != null ? dbTotalTrips.intValue() : 0;
+        Double totalRevenueVal = agentRepository.getTotalRevenueByAgentId(a.getId());
+        Long compCount = bookingRepository.countByAgentIdAndStatus(a.getId(), "completed");
 
         return new AdminAgentListResponse(
                 a.getId(),
@@ -457,13 +474,16 @@ public class AdminAgentService {
                 resolveApplicationStatus(a.getOwner(), a),
                 resolveNicStatus(a.getOwner()),
                 submittedDate,
-                a.getIsActive() != null ? a.getIsActive() : true
+                a.getIsActive() != null ? a.getIsActive() : true,
+                totalRevenueVal != null ? totalRevenueVal : 0.0,
+                compCount != null ? compCount.intValue() : 0
         );
     }
 
     // ── Bulk Map Agent → List Response (no N+1) ──────
     private AdminAgentListResponse mapToListResponseBulk(
-            Agent a, Map<Long, Double> ratingsMap, Map<Long, Long> pkgCountMap) {
+            Agent a, Map<Long, Double> ratingsMap, Map<Long, Long> pkgCountMap,
+            Map<Long, Double> revenueMap, Map<Long, Integer> completedMap) {
 
         String submittedDate = "";
         if (a.getSubmittedDate() != null) {
@@ -475,6 +495,8 @@ public class AdminAgentService {
         Double computedRating = ratingsMap.getOrDefault(a.getId(), 0.0);
         Long dbTotalTrips = agentRepository.getTotalTripsByAgentId(a.getId());
         Integer totalTripsVal = dbTotalTrips != null ? dbTotalTrips.intValue() : 0;
+        Double revVal = revenueMap.getOrDefault(a.getId(), 0.0);
+        Integer compVal = completedMap.getOrDefault(a.getId(), 0);
 
         return new AdminAgentListResponse(
                 a.getId(),
@@ -495,7 +517,9 @@ public class AdminAgentService {
                 resolveApplicationStatus(a.getOwner(), a),
                 resolveNicStatus(a.getOwner()),
                 submittedDate,
-                a.getIsActive() != null ? a.getIsActive() : true
+                a.getIsActive() != null ? a.getIsActive() : true,
+                revVal != null ? revVal : 0.0,
+                compVal != null ? compVal : 0
         );
     }
 

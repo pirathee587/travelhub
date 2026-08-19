@@ -50,7 +50,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
 
                         // ── Public Access (No Login Required) ──
-                        .requestMatchers("/", "/health", "/api/health").permitAll()
+                        .requestMatchers("/", "/health", "/api/health", "/actuator/health", "/actuator/health/**").permitAll()
                         .requestMatchers("/api/auth/**").permitAll()
                         // PayHere callbacks must be public
                         .requestMatchers("/api/payments/notify", "/api/payments/return").permitAll()
@@ -72,7 +72,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/v1/test/**").permitAll() // DEV ONLY: test agent creation
 
                         // ── Chatbot Routes ──
-                        .requestMatchers("/chat").permitAll() // Public access for tourists
+                        .requestMatchers("/api/chatbot/**").permitAll() // Public access for tourists
                         .requestMatchers("/sync").hasRole("ADMIN") // Only admins can trigger data sync
 
                         // ── Admin Protected Routes ──

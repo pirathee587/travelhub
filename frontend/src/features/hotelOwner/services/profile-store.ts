@@ -8,9 +8,11 @@ export type Profile = {
   avatar: string;
   nicNumber: string;
   nicImage: string;
+  nicFrontImage: string;
+  nicRearImage: string;
 };
 
-const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8080/api";
+const BASE_URL = import.meta.env.VITE_API_URL || (import.meta.env.DEV ? "http://localhost:8080/api" : "");
 const API_BASE = `${BASE_URL}/v1/owner/profile`;
 
 const defaultProfile: Profile = {
@@ -20,6 +22,8 @@ const defaultProfile: Profile = {
   avatar: "",
   nicNumber: "",
   nicImage: "",
+  nicFrontImage: "",
+  nicRearImage: "",
 };
 
 function mapResponse(data: Record<string, string>): Profile {
@@ -30,6 +34,8 @@ function mapResponse(data: Record<string, string>): Profile {
     avatar: data.profileImage ?? "",
     nicNumber: data.nicNumber ?? "",
     nicImage: data.nicImage ?? "",
+    nicFrontImage: data.nicFrontImage ?? "",
+    nicRearImage: data.nicRearImage ?? "",
   };
 }
 
@@ -44,13 +50,15 @@ export async function fetchProfile(): Promise<Profile> {
 }
 
 export async function updateProfile(
-  patch: Partial<Pick<Profile, "name" | "phone" | "nicNumber" | "nicImage">>,
+  patch: Partial<Pick<Profile, "name" | "phone" | "nicNumber" | "nicImage" | "nicFrontImage" | "nicRearImage">>,
 ): Promise<Profile> {
   const body: Record<string, string> = {};
   if (patch.name !== undefined) body.name = patch.name;
   if (patch.phone !== undefined) body.telephone = patch.phone;
   if (patch.nicNumber !== undefined) body.nicNumber = patch.nicNumber;
   if (patch.nicImage !== undefined) body.nicImage = patch.nicImage;
+  if (patch.nicFrontImage !== undefined) body.nicFrontImage = patch.nicFrontImage;
+  if (patch.nicRearImage !== undefined) body.nicRearImage = patch.nicRearImage;
 
   const res = await fetch(API_BASE, {
     method: "PUT",

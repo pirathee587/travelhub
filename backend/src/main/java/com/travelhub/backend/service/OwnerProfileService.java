@@ -34,6 +34,11 @@ public class OwnerProfileService {
         if (request.getDistrict() != null) user.setDistrict(request.getDistrict());
         if (request.getNicNumber() != null) user.setNicNumber(request.getNicNumber());
         if (request.getNicImage() != null) user.setNicImage(request.getNicImage());
+        if (request.getNicFrontImage() != null) user.setNicFrontImage(request.getNicFrontImage());
+        if (request.getNicRearImage() != null) user.setNicRearImage(request.getNicRearImage());
+        if (request.getNicFrontImage() != null || request.getNicRearImage() != null || request.getNicImage() != null) {
+            user.setNicVerificationStatus("PENDING");
+        }
 
         user = userRepository.save(user);
 
@@ -64,6 +69,8 @@ public class OwnerProfileService {
                 .businessRegistrationId(user.getBusinessRegistrationId())
                 .nicNumber(user.getNicNumber())
                 .nicImage(user.getNicImage())
+                .nicFrontImage(user.getNicFrontImage())
+                .nicRearImage(user.getNicRearImage())
                 .status(user.getStatus())
                 .updatedAt(user.getUpdatedAt())
                 .build();

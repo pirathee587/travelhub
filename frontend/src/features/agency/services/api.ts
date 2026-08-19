@@ -1,6 +1,6 @@
 const getBaseUrl = () => {
-    const rawUrl = import.meta.env.VITE_API_URL;
-    if (!rawUrl) return "http://localhost:8080/api/v1";
+    const rawUrl = import.meta.env.VITE_API_URL || (import.meta.env.DEV ? "http://localhost:8080/api" : "");
+    if (!rawUrl) return "/api/v1";
     const cleanUrl = rawUrl.trim().replace(/\/+$/, '');
     if (cleanUrl.endsWith('/api/v1')) return cleanUrl;
     if (cleanUrl.endsWith('/api')) return cleanUrl + '/v1';
@@ -102,8 +102,8 @@ export const api = {
         if (district) params.append('district', district);
         const qString = params.toString() ? `?${params.toString()}` : '';
         // Note: Hotel search is at /api/hotels/search, not /api/v1/hotels/search
-        const rawApiBase = import.meta.env.VITE_API_URL || "http://localhost:8080/api";
-        const apiBase = rawApiBase.replace(/\/+$/, '').endsWith('/api') ? rawApiBase.replace(/\/+$/, '') : `${rawApiBase.replace(/\/+$/, '')}/api`;
+        const rawApiBase = import.meta.env.VITE_API_URL || (import.meta.env.DEV ? "http://localhost:8080/api" : "");
+        const apiBase = rawApiBase ? (rawApiBase.replace(/\/+$/, '').endsWith('/api') ? rawApiBase.replace(/\/+$/, '') : `${rawApiBase.replace(/\/+$/, '')}/api`) : '/api';
         return fetch(`${apiBase}/hotels/search${qString}`).then(r => r.json());
     },
 

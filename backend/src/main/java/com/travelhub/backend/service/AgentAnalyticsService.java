@@ -201,13 +201,21 @@ public class AgentAnalyticsService {
                 result.add(m);
             }
         } else if (isQuarterly) {
-            String[] weeks = {"Week 1","Week 2","Week 3","Week 4",
-                    "Week 5","Week 6","Week 7","Week 8",
-                    "Week 9","Week 10","Week 11","Week 12"};
-            for (int i = 0; i < 12; i++) {
+            LocalDate now = LocalDate.now();
+            for (int i = 11; i >= 0; i--) {
+                LocalDate weekStart = now.minusWeeks(i).with(java.time.DayOfWeek.MONDAY);
+                LocalDate weekEnd = weekStart.plusDays(6);
+                double revenue = bookings.stream()
+                        .filter(b -> "completed".equalsIgnoreCase(b.getStatus()) && b.getCreatedAt() != null)
+                        .filter(b -> {
+                            LocalDate d = b.getCreatedAt().toLocalDate();
+                            return !d.isBefore(weekStart) && !d.isAfter(weekEnd);
+                        })
+                        .mapToDouble(b -> b.getTotalPrice() != null ? b.getTotalPrice() * 0.95 : 0)
+                        .sum();
                 Map<String, Object> m = new LinkedHashMap<>();
-                m.put("label", weeks[i]);
-                m.put("value", 0);
+                m.put("label", "Week " + (12 - i));
+                m.put("value", revenue);
                 result.add(m);
             }
         } else {

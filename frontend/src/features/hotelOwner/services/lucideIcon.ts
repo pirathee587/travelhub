@@ -17,7 +17,7 @@ export function resolveLucideIcon(iconName: string | null | undefined): LucideIc
   const normalized = toPascalCase(iconName ?? "");
   const Icon = (LucideIcons as unknown as Record<string, unknown>)[normalized];
   if (typeof Icon === "function") return Icon as LucideIcon;
-  return LucideIcons.HelpCircle;
+  return LucideIcons.Check;
 }
 
 export function getLucideIconNames(): string[] {

@@ -8,6 +8,7 @@ import { Button } from '@/components/common/ui/button';
 import { Loader2, AlertCircle, ShieldCheck, CreditCard } from 'lucide-react';
 import { useTouristCurrency } from '@/features/tourist/hooks/TouristCurrencyContext';
 import { Shimmer } from "@/components/common/ui/skeletons";
+import { PaymentPageHeader } from '@/components/common/PaymentPageHeader';
 
 const Payment = () => {
   const { id } = useParams<{ id: string }>();
@@ -39,7 +40,9 @@ const Payment = () => {
 
   if (loading) {
     return (
-      <div className="container max-w-xl py-12 mx-auto animate-slide-up">
+      <>
+        <PaymentPageHeader />
+        <div className="container max-w-xl py-12 mx-auto animate-slide-up">
         <div className="rounded-xl overflow-hidden shadow-lg border-0 bg-white">
           <Shimmer className="h-20 w-full" />
           <div className="p-8 space-y-6">
@@ -61,12 +64,15 @@ const Payment = () => {
           </div>
         </div>
       </div>
+      </>
     );
   }
 
   if (error || !booking) {
     return (
-      <div className="container max-w-2xl py-20 mx-auto animate-slide-up">
+      <>
+        <PaymentPageHeader />
+        <div className="container max-w-2xl py-20 mx-auto animate-slide-up">
         <Card className="text-center shadow-sm border-dashed">
           <CardContent className="pt-12 pb-12 px-6">
             <div className="flex justify-center mb-4">
@@ -80,11 +86,14 @@ const Payment = () => {
           </CardContent>
         </Card>
       </div>
+      </>
     );
   }
 
   return (
-    <div className="container max-w-xl py-12 mx-auto animate-slide-up">
+    <>
+      <PaymentPageHeader />
+      <div className="container max-w-xl py-12 mx-auto animate-slide-up">
       <Card className="shadow-lg overflow-hidden border-0">
         <CardHeader className="bg-primary text-primary-foreground py-6 text-center">
           <CardTitle className="text-2xl font-bold">Secure Payment</CardTitle>
@@ -175,6 +184,7 @@ const Payment = () => {
         </CardContent>
       </Card>
     </div>
+    </>
   );
 };
 

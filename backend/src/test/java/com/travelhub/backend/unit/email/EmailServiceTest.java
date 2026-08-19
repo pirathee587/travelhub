@@ -8,11 +8,12 @@ import com.travelhub.backend.enums.Role;
 import com.travelhub.backend.repository.UserRepository;
 import com.travelhub.backend.service.EmailLogService;
 import com.travelhub.backend.service.EmailService;
+import com.travelhub.backend.service.EmailTemplateBuilder;
 import jakarta.mail.internet.MimeMessage;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.testng.MockitoTestNGListener;
 import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.test.util.ReflectionTestUtils;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
@@ -39,7 +40,6 @@ public class EmailServiceTest {
     @Mock
     private UserRepository userRepository;
 
-    @InjectMocks
     private EmailService emailService;
 
     @Mock
@@ -47,6 +47,15 @@ public class EmailServiceTest {
 
     @BeforeMethod
     public void setUp() {
+        EmailTemplateBuilder templateBuilder = new EmailTemplateBuilder();
+        ReflectionTestUtils.setField(templateBuilder, "baseUrl", "http://localhost:5173");
+        ReflectionTestUtils.setField(templateBuilder, "emailLogoUrl", "https://travelhublanka.netlify.app/TravelHUB.png");
+        ReflectionTestUtils.setField(templateBuilder, "supportEmail", "hello@travelhub.lk");
+
+        emailService = new EmailService(mailSender, emailLogService, userRepository, templateBuilder);
+        ReflectionTestUtils.setField(emailService, "baseUrl", "http://localhost:5173");
+        ReflectionTestUtils.setField(emailService, "backendUrl", "http://localhost:8080");
+
         lenient().when(mailSender.createMimeMessage()).thenReturn(mimeMessage);
     }
 
@@ -64,7 +73,8 @@ public class EmailServiceTest {
         verify(emailLogService, times(1)).logSent(
                 eq("newtourist@example.com"),
                 eq("Verify your email - TravelHub"),
-                contains("uuid-verification-token-123"),
+                argThat(content -> content.contains("uuid-verification-token-123")
+                        && content.contains("https://travelhublanka.netlify.app/TravelHUB.png")),
                 eq("USER"),
                 eq(10L)
         );

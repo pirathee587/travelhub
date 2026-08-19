@@ -17,7 +17,7 @@ public class JwtTokenProvider {
     @Value("${jwt.secret:travelhub_secret_key_minimum_32_chars_long}")
     private String jwtSecret;
 
-    @Value("${app.jwt.expiration:86400000}")
+    @Value("${jwt.expiration:86400000}")
     private long jwtExpiration;
 
     private Key getSigningKey() {

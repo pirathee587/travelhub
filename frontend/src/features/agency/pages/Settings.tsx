@@ -31,8 +31,8 @@ const uploadImage = async (file: File) => {
   if (token) {
     headers['Authorization'] = token.startsWith('Bearer ') ? token : `Bearer ${token}`;
   }
-  const rawApiBase = import.meta.env.VITE_API_URL || 'http://localhost:8080/api';
-  const apiBase = rawApiBase.replace(/\/+$/, '').endsWith('/api') ? rawApiBase.replace(/\/+$/, '') : `${rawApiBase.replace(/\/+$/, '')}/api`;
+  const rawApiBase = import.meta.env.VITE_API_URL || (import.meta.env.DEV ? "http://localhost:8080/api" : "");
+  const apiBase = rawApiBase ? (rawApiBase.replace(/\/+$/, '').endsWith('/api') ? rawApiBase.replace(/\/+$/, '') : `${rawApiBase.replace(/\/+$/, '')}/api`) : '';
   const response = await fetch(`${apiBase}/upload/identity`, {
     method: 'POST',
     headers,
@@ -790,14 +790,14 @@ const Settings = () => {
             </div>
           </div>
 
-          {/* Inline Rejection Reason Notice Box */}
-          {(fullProfile?.nicStatus === 'REJECTED' || fullProfile?.nicVerificationStatus === 'rejected') && (
-            <div className="mb-6 p-4 rounded-xl bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800 text-sm text-destructive space-y-1">
+          {/* Inline Rejection / Suspension Reason Notice Box */}
+          {(['REJECTED', 'SUSPENDED'].includes((fullProfile?.nicStatus || fullProfile?.nicVerificationStatus || '').toUpperCase())) && (
+            <div className="mb-6 p-4 rounded-xl bg-destructive/10 border border-destructive/30 text-sm text-destructive space-y-1">
               <div className="font-semibold flex items-center gap-2">
-                ⚠️ Verification Rejected
+                ⚠️ {String(fullProfile?.nicVerificationStatus || fullProfile?.nicStatus).toUpperCase() === 'SUSPENDED' ? 'Account Suspended' : 'Verification Rejected'}
               </div>
-              <p className="text-xs text-red-700 dark:text-red-300">
-                {fullProfile?.nicRejectionReason || fullProfile?.rejectionReason || 'Your submitted NIC document was rejected. Please re-upload clear photos of both sides.'}
+              <p className="text-xs text-destructive/90 font-medium">
+                {fullProfile?.adminMessage || fullProfile?.nicRejectionReason || fullProfile?.rejectionReason || 'Your verification status requires administrative review. Please contact support or re-upload your verification documents.'}
               </p>
             </div>
           )}

@@ -6,6 +6,7 @@ import billingService from '@/services/billingService';
 import { Card, CardContent } from '@/components/common/ui/card';
 import { Button } from '@/components/common/ui/button';
 import { CheckCircle2, Download, Home, FileText } from 'lucide-react';
+import { PaymentPageHeader } from '@/components/common/PaymentPageHeader';
 
 const PaymentSuccess = () => {
   const [searchParams] = useSearchParams();
@@ -52,7 +53,9 @@ const PaymentSuccess = () => {
   };
 
   return (
-    <div className="container max-w-2xl py-20 mx-auto animate-slide-up">
+    <>
+      <PaymentPageHeader />
+      <div className="container max-w-2xl py-20 mx-auto animate-slide-up">
       <Card className="text-center shadow-lg border-emerald-100 bg-emerald-50/50">
         <CardContent className="pt-12 pb-12 px-6">
           <div className="flex justify-center mb-6">
@@ -91,6 +94,7 @@ const PaymentSuccess = () => {
         </CardContent>
       </Card>
     </div>
+    </>
   );
 };
 

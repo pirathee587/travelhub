@@ -6,6 +6,7 @@ public class UserNotificationResponse {
     private String title;
     private String message;
     private String actionUrl;
+    private Long hotelId;
     private String time;
     private Boolean read;
 
@@ -19,6 +20,8 @@ public class UserNotificationResponse {
     public void setMessage(String message) { this.message = message; }
     public String getActionUrl() { return actionUrl; }
     public void setActionUrl(String actionUrl) { this.actionUrl = actionUrl; }
+    public Long getHotelId() { return hotelId; }
+    public void setHotelId(Long hotelId) { this.hotelId = hotelId; }
     public String getTime() { return time; }
     public void setTime(String time) { this.time = time; }
     public Boolean getRead() { return read; }

@@ -27,6 +27,9 @@ public class UserNotification {
     @Column(name = "action_url")
     private String actionUrl;
 
+    @Column(name = "hotel_id")
+    private Long hotelId;
+
     @Column(nullable = false)
     private Boolean read = false;
 
@@ -50,6 +53,8 @@ public class UserNotification {
     public void setMessage(String message) { this.message = message; }
     public String getActionUrl() { return actionUrl; }
     public void setActionUrl(String actionUrl) { this.actionUrl = actionUrl; }
+    public Long getHotelId() { return hotelId; }
+    public void setHotelId(Long hotelId) { this.hotelId = hotelId; }
     public Boolean getRead() { return read; }
     public void setRead(Boolean read) { this.read = read; }
     public LocalDateTime getCreatedAt() { return createdAt; }

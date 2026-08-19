@@ -6,7 +6,9 @@ import java.util.List;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.authentication.InternalAuthenticationServiceException;
 import org.springframework.security.core.AuthenticationException;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -71,6 +73,24 @@ public class GlobalExceptionHandler {
         return ResponseEntity
                 .status(HttpStatus.UNAUTHORIZED)
                 .body(new ApiResponse(false, "Invalid email or password. Please check your credentials and try again."));
+    }
+
+    // ── UsernameNotFoundException (unknown email during login) ─
+    @ExceptionHandler(UsernameNotFoundException.class)
+    public ResponseEntity<ApiResponse> handleUsernameNotFound(UsernameNotFoundException ex) {
+        return ResponseEntity
+                .status(HttpStatus.UNAUTHORIZED)
+                .body(new ApiResponse(false, "Invalid email or password. Please check your credentials and try again."));
+    }
+
+    // ── Internal auth failures (e.g. database/schema issues during login) ─
+    @ExceptionHandler(InternalAuthenticationServiceException.class)
+    public ResponseEntity<ApiResponse> handleInternalAuthentication(InternalAuthenticationServiceException ex) {
+        ex.printStackTrace();
+        String details = ex.getCause() != null ? ex.getCause().getMessage() : ex.getMessage();
+        return ResponseEntity
+                .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(new ApiResponse(false, "Authentication service error. Please contact support if this continues. Details: " + details));
     }
 
     // ── AuthenticationException (generic Spring Security) ─────

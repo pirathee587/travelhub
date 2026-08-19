@@ -24,7 +24,7 @@ const AmenitiesGrid = ({ hotelId, isLocked = false }: { hotelId?: string; isLock
     }
     try {
       setLoading(true);
-      const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8080/api";
+      const BASE_URL = import.meta.env.VITE_API_URL || (import.meta.env.DEV ? "http://localhost:8080/api" : "");
       const res = await fetch(
         `${BASE_URL}/v1/amenities/hotel/${hotelId}`
       );
@@ -48,7 +48,7 @@ const AmenitiesGrid = ({ hotelId, isLocked = false }: { hotelId?: string; isLock
   const handleDelete = async (amenityId: string) => {
     if (!window.confirm("Delete this amenity?")) return;
     try {
-      const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8080/api";
+      const BASE_URL = import.meta.env.VITE_API_URL || (import.meta.env.DEV ? "http://localhost:8080/api" : "");
       const res = await fetch(
         `${BASE_URL}/v1/amenities/${amenityId}`,
         { method: "DELETE" }

@@ -1,6 +1,6 @@
 const getBaseUrl = () => {
-  const rawUrl = import.meta.env.VITE_API_URL;
-  if (!rawUrl) return "http://localhost:8080/api";
+  const rawUrl = import.meta.env.VITE_API_URL || (import.meta.env.DEV ? "http://localhost:8080/api" : "");
+  if (!rawUrl) return "/api";
   const cleanUrl = rawUrl.trim().replace(/\/+$/, '');
   return cleanUrl.endsWith('/api') ? cleanUrl : `${cleanUrl}/api`;
 };
