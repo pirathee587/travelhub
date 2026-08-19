@@ -105,6 +105,7 @@ app.add_middleware(
 
 class ChatRequest(BaseModel):
     prompt: str
+    history: list = []
 
 
 class ChatResponse(BaseModel):
@@ -118,7 +119,7 @@ class ChatResponse(BaseModel):
 def _get_llm():
     return ChatGroq(
         api_key=GROQ_API_KEY,
-        model_name="llama-3.1-8b-instant",
+        model_name="groq/compound-mini",
         temperature=0.2,
     )
 
@@ -350,22 +351,8 @@ def _answer_with_rag(question: str) -> str:
 
 
 # ──────────────────────────────────────────────
-# In-memory context window (last 3 user messages)
+# In-memory context window is removed - using history from request
 # ──────────────────────────────────────────────
-
-_conversation_history: list = []
-MAX_HISTORY = 3
-
-
-def _get_context_string() -> str:
-    return " | ".join(_conversation_history[-MAX_HISTORY:]) if _conversation_history else ""
-
-
-def _push_to_history(message: str):
-    _conversation_history.append(message)
-    if len(_conversation_history) > MAX_HISTORY * 2:
-        _conversation_history.pop(0)
-
 
 # ──────────────────────────────────────────────
 # Endpoints
@@ -384,14 +371,20 @@ async def health_check():
 @app.post("/chat", response_model=ChatResponse)
 async def chat(request: ChatRequest):
     user_prompt = request.prompt.strip()
+    history = request.history
     if not user_prompt:
         return ChatResponse(response="Please type a question.")
 
     print(f"[Chat] 💬 User: {user_prompt[:120]}")
 
     try:
-        context_str = _get_context_string()
-        _push_to_history(user_prompt)
+        # Build context from request history
+        context_str = ""
+        if history:
+            context_str = "\n".join([
+                f"{'User' if msg.get('role') == 'user' else 'Assistant'}: {msg.get('text', '')}"
+                for msg in history[-6:]
+            ])
 
         # Step 1: Extract intent + keyword
         intent_data = _extract_intent(user_prompt, context_str)
@@ -426,7 +419,11 @@ async def chat(request: ChatRequest):
         # Step 4: Fallback to RAG for general questions
         if answer is None:
             print(f"[Chat] 🔍 Falling back to ChromaDB RAG (intent={intent}, keyword='{keyword}')")
-            answer = _answer_with_rag(user_prompt)
+            try:
+                answer = _answer_with_rag(user_prompt)
+            except Exception as rag_e:
+                print(f"[Chat] ⚠️ RAG failed: {rag_e}")
+                answer = "I'm having some trouble finding that information right now. Please try again later."
 
         print(f"[Chat] 🤖 Bot: {answer[:150]}...")
         return ChatResponse(response=answer)

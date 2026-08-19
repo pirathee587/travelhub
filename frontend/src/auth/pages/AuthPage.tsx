@@ -185,7 +185,7 @@ export default function AuthPage({ role: propRole, mode }: AuthPageProps = {}) {
 
     setLoading(true);
     try {
-      const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080/api';
+      const BASE_URL = import.meta.env.VITE_API_URL || (import.meta.env.DEV ? "http://localhost:8080/api" : "");
       const endpoint = isLogin
         ? `${BASE_URL}/auth/login`
         : `${BASE_URL}/auth/register`;

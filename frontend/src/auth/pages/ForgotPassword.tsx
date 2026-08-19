@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { Plane, ArrowLeft, CheckCircle } from 'lucide-react';
 import { toast } from 'sonner';
 
-const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080/api';
+const BASE_URL = import.meta.env.VITE_API_URL || (import.meta.env.DEV ? "http://localhost:8080/api" : "");
 
 export default function ForgotPassword() {
   const navigate = useNavigate();

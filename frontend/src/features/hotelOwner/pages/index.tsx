@@ -98,7 +98,7 @@ export default function WelcomePage() {
 
 
       {/* Header */}
-      <section className="mt-10 text-center">
+      <section className="mt-2 text-center">
         <motion.div
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}

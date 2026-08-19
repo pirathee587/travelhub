@@ -19,7 +19,6 @@ public class ChatbotController {
     private final ChatbotCurrencyService chatbotCurrencyService;
 
     @PostMapping("/message")
-    @PreAuthorize("hasRole('TOURIST')")
     public ResponseEntity<ChatbotResponseDto> chat(@RequestBody ChatbotRequestDto request) {
         // Validate
         if (request.getPrompt() == null || request.getPrompt().trim().isEmpty()) {

@@ -1,4 +1,4 @@
-const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8080/api";
+const BASE_URL = import.meta.env.VITE_API_URL || (import.meta.env.DEV ? "http://localhost:8080/api" : "");
 
 const getAgentUserId = (): string => {
   const userStr = localStorage.getItem('travelhub_user') || localStorage.getItem('user');
