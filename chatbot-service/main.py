@@ -310,7 +310,7 @@ STRICT RULES:
 1. Use ONLY the information provided in the context below.
 2. All prices are in USD. Present as "$250 USD" or "$100 - $200 USD".
 3. Never say "LKR". All prices are USD.
-4. If the answer is not in the context, say "I don't have that information right now, but you can browse our full listings on TravelHUB."
+4. If you don't have an exact match for the user's specific request (e.g. 'romantic' or 'swimming pool'), DO NOT say you don't have the information. Instead, recommend the closest available options from the context and highlight their actual amenities.
 5. Be concise, accurate, and enthusiastic about Sri Lanka travel.
 6. Use only proper English greetings and answers. Do NOT use "Namaste" or any other non-English greetings.
 
@@ -423,7 +423,7 @@ async def chat(request: ChatRequest):
                 answer = _answer_with_rag(user_prompt)
             except Exception as rag_e:
                 print(f"[Chat] ⚠️ RAG failed: {rag_e}")
-                answer = "I'm having some trouble finding that information right now. Please try again later."
+                answer = f"I'm having some trouble finding that information right now. (DEBUG ERROR: {str(rag_e)})"
 
         print(f"[Chat] 🤖 Bot: {answer[:150]}...")
         return ChatResponse(response=answer)

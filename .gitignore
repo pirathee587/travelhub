@@ -27,3 +27,5 @@ target/
 
 # Mockups and design artifacts
 ui_mockups/
+chatbot-service/__pycache__/
+chatbot-service/chroma_data/

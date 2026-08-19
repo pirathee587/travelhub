@@ -153,9 +153,9 @@ public class NotificationListener {
         if (hotel.getOwnerId() != null) {
             owner = userRepository.findById(hotel.getOwnerId()).orElse(null);
             log.info("Fetched owner using ownerId {}: {}", hotel.getOwnerId(), owner != null ? owner.getEmail() : "null");
-        } else if (hotel.getId() != null) {
-            owner = userRepository.findByHotelId(hotel.getId()).orElse(null);
-            log.info("Fetched owner using findByHotelId {}: {}", hotel.getId(), owner != null ? owner.getEmail() : "null");
+        } else if (hotel.getOwner() != null) {
+            owner = hotel.getOwner();
+            log.info("Fetched owner using hotel.getOwner(): {}", owner.getEmail());
         }
 
         String email = null;
