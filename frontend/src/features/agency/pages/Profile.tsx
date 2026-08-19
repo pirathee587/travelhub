@@ -27,7 +27,8 @@ const uploadImage = async (file: File) => {
   if (token) {
     headers['Authorization'] = token.startsWith('Bearer ') ? token : `Bearer ${token}`;
   }
-  const apiBase = import.meta.env.VITE_API_URL || (import.meta.env.DEV ? "http://localhost:8080/api" : "");
+  const rawApiBase = import.meta.env.VITE_API_URL || (import.meta.env.DEV ? "http://localhost:8080/api" : "");
+  const apiBase = rawApiBase ? (rawApiBase.replace(/\/+$/, '').endsWith('/api') ? rawApiBase.replace(/\/+$/, '') : `${rawApiBase.replace(/\/+$/, '')}/api`) : '';
   const response = await fetch(`${apiBase}/upload/agent`, {
     method: 'POST',
     headers,

@@ -1,4 +1,10 @@
-const BASE_URL = import.meta.env.VITE_API_URL || (import.meta.env.DEV ? "http://localhost:8080/api" : "");
+const getBaseUrl = () => {
+  const rawUrl = import.meta.env.VITE_API_URL || (import.meta.env.DEV ? "http://localhost:8080/api" : "");
+  if (!rawUrl) return "/api";
+  const cleanUrl = rawUrl.trim().replace(/\/+$/, '');
+  return cleanUrl.endsWith('/api') ? cleanUrl : `${cleanUrl}/api`;
+};
+const BASE_URL = getBaseUrl();
 
 const getAgentUserId = (): string => {
   const userStr = localStorage.getItem('travelhub_user') || localStorage.getItem('user');

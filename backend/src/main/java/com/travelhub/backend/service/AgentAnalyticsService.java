@@ -10,6 +10,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 import org.springframework.transaction.annotation.Transactional;
@@ -45,7 +46,7 @@ public class AgentAnalyticsService {
 
         // Stat cards: net revenue (95%) from completed trips.
         double totalRevenue = filtered.stream()
-                .filter(b -> b.getStatus().equals("completed"))
+                .filter(b -> b.getStatus() != null && "completed".equalsIgnoreCase(b.getStatus()))
                 .mapToDouble(b -> b.getTotalPrice() != null ? b.getTotalPrice() * 0.95 : 0)
                 .sum();
 
@@ -149,8 +150,6 @@ public class AgentAnalyticsService {
      * - "monthly" (default): last 1 month
      * - "quarterly": last 3 months
      * - "yearly": last 1 year
-     *
-     * Filtering is based on Booking.createdAt.
      */
     private List<Booking> filterByPeriod(List<Booking> bookings, String period) {
         LocalDate now = LocalDate.now();
@@ -164,18 +163,21 @@ public class AgentAnalyticsService {
 
         LocalDate finalFrom = from;
         return bookings.stream()
-                .filter(b -> b.getCreatedAt() != null &&
-                        !b.getCreatedAt().toLocalDate().isBefore(finalFrom))
+                .filter(b -> {
+                    LocalDateTime dt = b.getCreatedAt();
+                    if (dt == null && b.getStartDate() != null) {
+                        dt = b.getStartDate().atStartOfDay();
+                    }
+                    if (dt == null) {
+                        return true; // Include if date is unspecified
+                    }
+                    return !dt.toLocalDate().isBefore(finalFrom);
+                })
                 .collect(Collectors.toList());
     }
 
     /**
      * Builds the revenue chart series (label/value entries) for the given period.
-     * <p>
-     * Current behavior:
-     * - yearly: 12 month buckets (Jan..Dec) with computed completed-trip revenue per month
-     * - quarterly: 12 week labels prefilled with zero
-     * - monthly/default: 7 day labels (Mon..Sun) prefilled with zero
      */
     private List<Map<String, Object>> buildRevenueData(List<Booking> bookings, String period) {
         List<Map<String, Object>> result = new ArrayList<>();
@@ -188,9 +190,9 @@ public class AgentAnalyticsService {
             for (int i = 0; i < 12; i++) {
                 final int month = i + 1;
                 double revenue = bookings.stream()
-                        .filter(b -> "completed".equalsIgnoreCase(b.getStatus()) &&
-                                b.getCreatedAt() != null &&
-                                b.getCreatedAt().getMonthValue() == month)
+                        .filter(b -> b.getStatus() != null && "completed".equalsIgnoreCase(b.getStatus()) &&
+                                ((b.getCreatedAt() != null && b.getCreatedAt().getMonthValue() == month) ||
+                                 (b.getCreatedAt() == null && b.getStartDate() != null && b.getStartDate().getMonthValue() == month)))
                         .mapToDouble(b -> b.getTotalPrice() != null ? b.getTotalPrice() * 0.95 : 0)
                         .sum();
                 Map<String, Object> m = new LinkedHashMap<>();
@@ -218,21 +220,12 @@ public class AgentAnalyticsService {
             }
         } else {
             String[] days = {"Mon","Tue","Wed","Thu","Fri","Sat","Sun"};
-            java.time.DayOfWeek[] dows = {
-                java.time.DayOfWeek.MONDAY,
-                java.time.DayOfWeek.TUESDAY,
-                java.time.DayOfWeek.WEDNESDAY,
-                java.time.DayOfWeek.THURSDAY,
-                java.time.DayOfWeek.FRIDAY,
-                java.time.DayOfWeek.SATURDAY,
-                java.time.DayOfWeek.SUNDAY
-            };
-            for (int i = 0; i < 7; i++) {
-                final java.time.DayOfWeek targetDow = dows[i];
+            for (int i = 0; i < days.length; i++) {
+                final int dayOfWeek = i + 1; // 1 = Mon, 7 = Sun
                 double revenue = bookings.stream()
-                        .filter(b -> "completed".equalsIgnoreCase(b.getStatus()) &&
-                                b.getCreatedAt() != null &&
-                                b.getCreatedAt().getDayOfWeek() == targetDow)
+                        .filter(b -> b.getStatus() != null && "completed".equalsIgnoreCase(b.getStatus()) &&
+                                ((b.getCreatedAt() != null && b.getCreatedAt().getDayOfWeek().getValue() == dayOfWeek) ||
+                                 (b.getCreatedAt() == null && b.getStartDate() != null && b.getStartDate().getDayOfWeek().getValue() == dayOfWeek)))
                         .mapToDouble(b -> b.getTotalPrice() != null ? b.getTotalPrice() * 0.95 : 0)
                         .sum();
                 Map<String, Object> m = new LinkedHashMap<>();
