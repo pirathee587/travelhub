@@ -9,5 +9,7 @@ public class OwnerHotelSummaryResponse {
     private int approved;
     private int pending;
     private int rejected;
+    private int suspended;
     private int total;
 }
+

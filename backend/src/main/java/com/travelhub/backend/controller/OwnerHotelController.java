@@ -40,6 +40,15 @@ public class OwnerHotelController {
         return ResponseEntity.ok(ownerHotelService.getOwnerHotelSummary(ownerId));
     }
 
+    @GetMapping("/{id}")
+    public ResponseEntity<HotelResponse> getOwnerHotel(
+            @PathVariable Long id,
+            @RequestHeader(value = "X-Owner-Id", required = false) Long devOwnerId) {
+        Long ownerId = requireOwnerId(devOwnerId);
+        ownerAccessService.validateApprovedActiveHotelOwner(ownerId);
+        return ResponseEntity.ok(ownerHotelService.getOwnerHotel(id, ownerId));
+    }
+
     @PostMapping
     public ResponseEntity<HotelResponse> createHotel(
             @ModelAttribute OwnerHotelRequest request,

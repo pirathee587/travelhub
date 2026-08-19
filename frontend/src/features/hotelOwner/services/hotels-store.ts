@@ -21,7 +21,7 @@ export type Hotel = {
   hotelContactNumber: string;
   phoneNumber?: string;
   hotlineNumber?: string;
-  applicationStatus: "Pending" | "Approved" | "Rejected";
+  applicationStatus: "Pending" | "Approved" | "Rejected" | "Suspended";
   isActive: boolean;
   rejectionReason?: string | null;
 };
@@ -30,6 +30,7 @@ export type HotelSummary = {
   approved: number;
   pending: number;
   rejected: number;
+  suspended?: number;
   total: number;
 };
 
@@ -191,6 +192,16 @@ export function useHotel(hotelId: string) {
       setLoading(true);
       try {
         const headers = getOwnerAuthHeaders();
+        const response = await fetch(`${API_BASE}/${hotelId}`, { headers });
+        if (response.ok) {
+          const data = (await response.json()) as Hotel;
+          if (!cancelled) {
+            setHotel(data);
+          }
+          return;
+        }
+
+        // Fallback: search across all statuses if direct fetch is not available
         const fetchByStatus = async (status: string) => {
           const res = await fetch(`${API_BASE}?status=${status}`, { headers });
           if (!res.ok) return [];
@@ -200,6 +211,7 @@ export function useHotel(hotelId: string) {
         const results = await Promise.all([
           fetchByStatus("Pending"),
           fetchByStatus("Approved"),
+          fetchByStatus("Suspended"),
           fetchByStatus("Rejected"),
         ]);
 

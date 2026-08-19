@@ -38,11 +38,11 @@ export default function WelcomePage() {
   const getInitialStatus = () => {
     const params = new URLSearchParams(location.search);
     const searchStatus = params.get("status");
-    if (searchStatus === "Pending" || searchStatus === "Approved" || searchStatus === "Rejected") {
+    if (searchStatus === "Pending" || searchStatus === "Approved" || searchStatus === "Rejected" || searchStatus === "Suspended") {
       return searchStatus;
     }
     const storedStatus = sessionStorage.getItem("travelhub:lastHotelFilterStatus");
-    if (storedStatus === "Pending" || storedStatus === "Approved" || storedStatus === "Rejected") {
+    if (storedStatus === "Pending" || storedStatus === "Approved" || storedStatus === "Rejected" || storedStatus === "Suspended") {
       sessionStorage.removeItem("travelhub:lastHotelFilterStatus");
       return storedStatus;
     }
@@ -53,7 +53,7 @@ export default function WelcomePage() {
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     const searchStatus = params.get("status");
-    if (searchStatus === "Pending" || searchStatus === "Approved" || searchStatus === "Rejected") {
+    if (searchStatus === "Pending" || searchStatus === "Approved" || searchStatus === "Rejected" || searchStatus === "Suspended") {
       setFilterStatus(searchStatus);
     }
   }, [location.search]);
@@ -195,6 +195,16 @@ export default function WelcomePage() {
               Pending ({summary.pending})
             </button>
             <button
+              onClick={() => setFilterStatus("Suspended")}
+              className={`rounded-lg px-4 py-1.5 text-xs font-semibold transition-all ${
+                filterStatus === "Suspended"
+                  ? "bg-amber-500 text-white shadow-sm"
+                  : "text-muted-foreground hover:bg-secondary hover:text-foreground"
+              }`}
+            >
+              Suspended ({summary.suspended || 0})
+            </button>
+            <button
               onClick={() => setFilterStatus("Rejected")}
               className={`rounded-lg px-4 py-1.5 text-xs font-semibold transition-all ${
                 filterStatus === "Rejected"
@@ -268,7 +278,7 @@ function HotelCard({ hotel, onDelete, onRefresh }: { hotel: Hotel; onDelete: () 
   const navigate = useNavigate();
   const isPending = hotel.applicationStatus === "Pending";
   const isRejected = hotel.applicationStatus === "Rejected";
-  const isSuspended = hotel.applicationStatus === "Approved" && hotel.isActive === false;
+  const isSuspended = hotel.applicationStatus === "Suspended" || (!hotel.isActive && hotel.applicationStatus === "Approved");
   const isLocked = isPending || isRejected || isSuspended;
 
   // Pick the best available image
@@ -480,18 +490,22 @@ function EmptyState({ status, hasSearch }: { status: string; hasSearch?: boolean
           ? "No matching hotels found" 
           : status === "Pending" 
             ? "No Pending Hotels" 
-            : status === "Rejected" 
-              ? "No Rejected Hotels" 
-              : "No Approved Hotels"}
+            : status === "Suspended"
+              ? "No Suspended Hotels"
+              : status === "Rejected" 
+                ? "No Rejected Hotels" 
+                : "No Approved Hotels"}
       </h3>
       <p className="mx-auto mt-1.5 max-w-sm text-sm text-muted-foreground">
         {hasSearch 
           ? "Try adjusting your search query or district filter."
           : status === "Pending" 
             ? "You don't have any properties currently waiting for approval." 
-            : status === "Rejected" 
-              ? "You don't have any rejected properties." 
-              : "You haven't added any properties yet. Let's set up your first hotel."}
+            : status === "Suspended"
+              ? "You don't have any suspended properties."
+              : status === "Rejected" 
+                ? "You don't have any rejected properties." 
+                : "You haven't added any properties yet. Let's set up your first hotel."}
       </p>
       {/* The top Add Hotel button already provides the primary action. */}
     </div>
