@@ -463,21 +463,23 @@ const Bookings = () => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     const start = new Date(booking.startDate);
+    start.setHours(0, 0, 0, 0);
     return start <= today;
   };
 
-  // Returns true if the booking's endDate has passed
+  // Returns true if the booking's endDate has arrived or passed
   const isTripEndPast = (booking) => {
     if (!booking.endDate) return false;
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     const end = new Date(booking.endDate);
-    return end < today;
+    end.setHours(0, 0, 0, 0);
+    return end <= today;
   };
 
   // ── Smart Action Buttons (context-aware per status + date) ─────────────────
   const renderActionButtons = (booking) => {
-    const { status } = booking;
+    const status = (booking.status || '').toLowerCase();
 
     // ── PENDING: new request — view details before deciding ──────────────────
     if (status === 'pending') {

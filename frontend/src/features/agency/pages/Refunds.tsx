@@ -104,7 +104,7 @@ const Refunds = ({ embedded = false }: { embedded?: boolean }) => {
         {!embedded && (
           <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
             <div>
-              <h1 className="text-3xl font-bold tracking-tight text-white">Refund Requests</h1>
+              <h1 className="text-3xl font-bold tracking-tight text-foreground">Refund Requests</h1>
               <p className="text-muted-foreground text-sm mt-1">
                 Manage and process manual bank deposit refunds requested by tourists.
               </p>
@@ -113,17 +113,17 @@ const Refunds = ({ embedded = false }: { embedded?: boolean }) => {
         )}
 
         {/* Filters and Search */}
-        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between bg-sidebar-accent/30 p-4 rounded-xl border border-sidebar-border/40">
+        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between bg-card p-4 rounded-xl border border-border shadow-sm">
           {/* Tabs */}
-          <div className="flex bg-sidebar-background/60 p-1 rounded-lg border border-sidebar-border/60 max-w-fit">
+          <div className="flex bg-muted p-1 rounded-lg border border-border max-w-fit">
             {(['ALL', 'PENDING', 'APPROVED', 'REJECTED'] as const).map((tab) => (
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
-                className={`px-4 py-2 rounded-md text-xs font-semibold uppercase tracking-wider transition-all duration-200 ${
+                className={`px-4 py-2 rounded-md text-xs font-bold uppercase tracking-wider transition-all duration-200 ${
                   activeTab === tab
-                    ? 'bg-primary text-primary-foreground shadow'
-                    : 'text-muted-foreground hover:text-white'
+                    ? 'bg-primary text-primary-foreground shadow-sm'
+                    : 'text-muted-foreground hover:text-foreground'
                 }`}
               >
                 {tab}
@@ -139,7 +139,7 @@ const Refunds = ({ embedded = false }: { embedded?: boolean }) => {
               placeholder="Search by tourist, package or ID..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="pl-10 text-sm h-10 w-full"
+              className="pl-10 text-sm h-10 w-full bg-background border-border text-foreground placeholder:text-muted-foreground"
             />
           </div>
         </div>
@@ -150,18 +150,18 @@ const Refunds = ({ embedded = false }: { embedded?: boolean }) => {
             <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
           </div>
         ) : filteredRequests.length === 0 ? (
-          <div className="text-center py-20 bg-sidebar-accent/20 rounded-2xl border border-dashed border-sidebar-border/40">
+          <div className="text-center py-20 bg-card rounded-2xl border border-dashed border-border shadow-sm">
             <FileText className="mx-auto h-12 w-12 text-muted-foreground/60 mb-4" />
-            <h3 className="text-lg font-bold text-white">No Refund Requests Found</h3>
+            <h3 className="text-lg font-bold text-foreground">No Refund Requests Found</h3>
             <p className="text-muted-foreground text-sm">
               Any refund requests submitted by tourists will appear here.
             </p>
           </div>
         ) : (
-          <div className="overflow-hidden rounded-xl border border-sidebar-border/40 bg-sidebar-accent/10 backdrop-blur-md">
+          <div className="overflow-hidden rounded-xl border border-border bg-card shadow-sm">
             <table className="w-full text-left border-collapse">
               <thead>
-                <tr className="border-b border-sidebar-border/60 bg-sidebar-accent/40 text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                <tr className="border-b border-border bg-muted/60 text-xs font-bold uppercase tracking-wider text-muted-foreground">
                   <th className="p-4">Booking</th>
                   <th className="p-4">Tourist</th>
                   <th className="p-4">Package</th>
@@ -171,29 +171,29 @@ const Refunds = ({ embedded = false }: { embedded?: boolean }) => {
                   <th className="p-4 text-center">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-sidebar-border/40 text-sm text-sidebar-foreground">
+              <tbody className="divide-y divide-border/60 text-sm text-foreground">
                 {filteredRequests.map((req) => (
-                  <tr key={req.id} className="hover:bg-sidebar-accent/15 transition-all">
-                    <td className="p-4 font-mono font-medium text-white">#{req.bookingId}</td>
-                    <td className="p-4 font-medium text-white">{req.touristName}</td>
-                    <td className="p-4">{req.packageName}</td>
+                  <tr key={req.id} className="hover:bg-muted/30 transition-colors">
+                    <td className="p-4 font-mono font-bold text-foreground">#{req.bookingId}</td>
+                    <td className="p-4 font-semibold text-foreground">{req.touristName}</td>
+                    <td className="p-4 font-medium text-foreground/90">{req.packageName}</td>
                     <td className="p-4 text-right font-bold text-primary">${req.amount.toLocaleString()}</td>
-                    <td className="p-4 max-w-xs truncate text-xs text-muted-foreground">
+                    <td className="p-4 max-w-xs truncate text-xs font-medium text-foreground/80">
                       {req.bankName} - {req.accountNo}
                     </td>
                     <td className="p-4">
                       <span
-                        className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold border ${
+                        className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold border shadow-xs ${
                           req.status === 'PENDING'
-                            ? 'bg-warning/10 text-warning border-warning/20'
+                            ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/30'
                             : req.status === 'APPROVED'
-                            ? 'bg-success/10 text-success border-success/20'
-                            : 'bg-destructive/10 text-destructive border-destructive/20'
+                            ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/30'
+                            : 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/30'
                         }`}
                       >
-                        {req.status === 'PENDING' && <Clock className="h-3 w-3" />}
-                        {req.status === 'APPROVED' && <CheckCircle className="h-3 w-3" />}
-                        {req.status === 'REJECTED' && <XCircle className="h-3 w-3" />}
+                        {req.status === 'PENDING' && <Clock className="h-3.5 w-3.5" />}
+                        {req.status === 'APPROVED' && <CheckCircle className="h-3.5 w-3.5" />}
+                        {req.status === 'REJECTED' && <XCircle className="h-3.5 w-3.5" />}
                         {req.status}
                       </span>
                     </td>
@@ -206,7 +206,7 @@ const Refunds = ({ embedded = false }: { embedded?: boolean }) => {
                           setShowDetailDialog(true);
                           setShowDeclineForm(false);
                         }}
-                        className="gap-1 font-semibold text-xs border-sidebar-border/80 hover:bg-sidebar-accent"
+                        className="gap-1.5 font-bold text-xs border-border hover:bg-muted text-foreground"
                       >
                         <Eye className="h-3.5 w-3.5" />
                         View
@@ -222,9 +222,9 @@ const Refunds = ({ embedded = false }: { embedded?: boolean }) => {
 
       {/* Detail & Action Modal */}
       <Dialog open={showDetailDialog} onOpenChange={setShowDetailDialog}>
-        <DialogContent className="sm:max-w-lg bg-sidebar border-sidebar-border text-white">
+        <DialogContent className="sm:max-w-lg bg-card border-border text-foreground">
           <DialogHeader>
-            <DialogTitle className="text-xl font-bold flex items-center gap-2">
+            <DialogTitle className="text-xl font-bold flex items-center gap-2 text-foreground">
               <FileText className="h-6 w-6 text-primary" />
               Refund Request Details
             </DialogTitle>
@@ -235,33 +235,33 @@ const Refunds = ({ embedded = false }: { embedded?: boolean }) => {
 
           {selectedRequest && (
             <div className="space-y-6 py-4">
-              <div className="grid grid-cols-2 gap-4 bg-sidebar-accent/30 p-4 rounded-xl border border-sidebar-border/40">
+              <div className="grid grid-cols-2 gap-4 bg-muted/40 p-4 rounded-xl border border-border">
                 <div>
-                  <p className="text-xs text-muted-foreground">Tourist</p>
-                  <p className="font-semibold text-sm">{selectedRequest.touristName}</p>
+                  <p className="text-xs font-semibold text-muted-foreground">Tourist</p>
+                  <p className="font-bold text-sm text-foreground">{selectedRequest.touristName}</p>
                 </div>
                 <div>
-                  <p className="text-xs text-muted-foreground">Original Paid Amount</p>
+                  <p className="text-xs font-semibold text-muted-foreground">Original Paid Amount</p>
                   <p className="font-bold text-sm text-primary">${selectedRequest.amount.toLocaleString()}</p>
                 </div>
                 <div>
-                  <p className="text-xs text-muted-foreground">Booking ID</p>
-                  <p className="font-mono text-sm">#{selectedRequest.bookingId}</p>
+                  <p className="text-xs font-semibold text-muted-foreground">Booking ID</p>
+                  <p className="font-mono font-bold text-sm text-foreground">#{selectedRequest.bookingId}</p>
                 </div>
                 <div>
-                  <p className="text-xs text-muted-foreground">Package</p>
-                  <p className="font-semibold text-sm truncate">{selectedRequest.packageName}</p>
+                  <p className="text-xs font-semibold text-muted-foreground">Package</p>
+                  <p className="font-bold text-sm text-foreground truncate">{selectedRequest.packageName}</p>
                 </div>
                 {selectedRequest.cancellationFee !== undefined && selectedRequest.cancellationFee !== null && (
                   <div>
-                    <p className="text-xs text-muted-foreground">Cancellation Fee</p>
+                    <p className="text-xs font-semibold text-muted-foreground">Cancellation Fee</p>
                     <p className="font-bold text-sm text-destructive">${selectedRequest.cancellationFee.toLocaleString()}</p>
                   </div>
                 )}
                 {selectedRequest.netRefundAmount !== undefined && selectedRequest.netRefundAmount !== null && (
                   <div>
-                    <p className="text-xs text-muted-foreground">Net Payout to Bank</p>
-                    <p className="font-bold text-sm text-emerald-400">${selectedRequest.netRefundAmount.toLocaleString()}</p>
+                    <p className="text-xs font-semibold text-muted-foreground">Net Payout to Bank</p>
+                    <p className="font-bold text-sm text-emerald-600 dark:text-emerald-400">${selectedRequest.netRefundAmount.toLocaleString()}</p>
                   </div>
                 )}
               </div>
@@ -269,22 +269,22 @@ const Refunds = ({ embedded = false }: { embedded?: boolean }) => {
               {/* Tourist Bank Account Info */}
               <div className="space-y-2">
                 <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Tourist Bank Details</h4>
-                <div className="grid grid-cols-2 gap-3 text-sm bg-sidebar-background/60 p-4 rounded-xl border border-sidebar-border/60">
+                <div className="grid grid-cols-2 gap-3 text-sm bg-muted/30 p-4 rounded-xl border border-border">
                   <div>
-                    <span className="text-muted-foreground text-xs block">Bank Name</span>
-                    <span className="font-medium text-white">{selectedRequest.bankName}</span>
+                    <span className="text-muted-foreground text-xs block font-medium">Bank Name</span>
+                    <span className="font-bold text-foreground">{selectedRequest.bankName}</span>
                   </div>
                   <div>
-                    <span className="text-muted-foreground text-xs block">Account Number</span>
-                    <span className="font-mono font-medium text-white">{selectedRequest.accountNo}</span>
+                    <span className="text-muted-foreground text-xs block font-medium">Account Number</span>
+                    <span className="font-mono font-bold text-foreground">{selectedRequest.accountNo}</span>
                   </div>
                   <div>
-                    <span className="text-muted-foreground text-xs block">Account Holder Name</span>
-                    <span className="font-medium text-white">{selectedRequest.accountHolderName}</span>
+                    <span className="text-muted-foreground text-xs block font-medium">Account Holder Name</span>
+                    <span className="font-bold text-foreground">{selectedRequest.accountHolderName}</span>
                   </div>
                   <div>
-                    <span className="text-muted-foreground text-xs block">Branch Name</span>
-                    <span className="font-medium text-white">{selectedRequest.branchName}</span>
+                    <span className="text-muted-foreground text-xs block font-medium">Branch Name</span>
+                    <span className="font-bold text-foreground">{selectedRequest.branchName}</span>
                   </div>
                 </div>
               </div>
@@ -293,7 +293,7 @@ const Refunds = ({ embedded = false }: { embedded?: boolean }) => {
               {selectedRequest.reason && (
                 <div className="space-y-1">
                   <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Reason for refund</span>
-                  <div className="p-3 rounded-lg bg-sidebar-accent/20 border border-sidebar-border/30 italic text-sm text-muted-foreground">
+                  <div className="p-3 rounded-lg bg-muted/40 border border-border italic text-sm text-foreground font-medium">
                     "{selectedRequest.reason}"
                   </div>
                 </div>
@@ -302,12 +302,12 @@ const Refunds = ({ embedded = false }: { embedded?: boolean }) => {
               {/* Status Specific Details */}
               {selectedRequest.status === 'APPROVED' && selectedRequest.refundSlipUrl && (
                 <div className="space-y-2">
-                  <span className="text-xs font-bold uppercase tracking-wider text-success">Approved Deposit Slip</span>
+                  <span className="text-xs font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">Approved Deposit Slip</span>
                   <a
                     href={selectedRequest.refundSlipUrl}
                     target="_blank"
                     rel="noreferrer"
-                    className="flex items-center justify-between p-3 rounded-lg border border-success/35 bg-success/5 text-success hover:bg-success/10 text-sm font-semibold"
+                    className="flex items-center justify-between p-3 rounded-lg border border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-500/20 text-sm font-bold"
                   >
                     <span>View Refund Deposit Slip Receipt</span>
                     <ArrowUpRight className="h-4 w-4" />
@@ -318,7 +318,7 @@ const Refunds = ({ embedded = false }: { embedded?: boolean }) => {
               {selectedRequest.status === 'REJECTED' && (
                 <div className="space-y-1">
                   <span className="text-xs font-bold uppercase tracking-wider text-destructive">Rejection Reason</span>
-                  <div className="p-3 rounded-lg bg-destructive/5 border border-destructive/20 text-sm text-destructive font-semibold">
+                  <div className="p-3 rounded-lg bg-destructive/10 border border-destructive/20 text-sm text-destructive font-bold">
                     {selectedRequest.reason || 'No reason provided.'}
                   </div>
                 </div>
@@ -326,11 +326,11 @@ const Refunds = ({ embedded = false }: { embedded?: boolean }) => {
 
               {/* Actions for PENDING request */}
               {selectedRequest.status === 'PENDING' && (
-                <div className="border-t border-sidebar-border/60 pt-4 space-y-4">
+                <div className="border-t border-border pt-4 space-y-4">
                   {!showDeclineForm ? (
                     <form onSubmit={handleApprove} className="space-y-4">
                       <div className="space-y-2">
-                        <label className="text-sm font-medium text-white block">
+                        <label className="text-sm font-bold text-foreground block">
                           Upload Bank Deposit Slip (JPG, PNG or WEBP) *
                         </label>
                         <div className="flex items-center gap-3">
@@ -342,7 +342,7 @@ const Refunds = ({ embedded = false }: { embedded?: boolean }) => {
                                 setSlipFile(e.target.files[0]);
                               }
                             }}
-                            className="bg-sidebar-background/60 border-sidebar-border/80 text-sm cursor-pointer"
+                            className="bg-background border-border text-foreground text-sm cursor-pointer"
                             required
                           />
                         </div>
@@ -353,7 +353,7 @@ const Refunds = ({ embedded = false }: { embedded?: boolean }) => {
                           type="button"
                           variant="ghost"
                           onClick={() => setShowDeclineForm(true)}
-                          className="gap-1 text-xs text-destructive hover:bg-destructive/10 hover:text-destructive"
+                          className="gap-1 text-xs text-destructive hover:bg-destructive/10 hover:text-destructive font-bold"
                         >
                           <Ban className="h-3.5 w-3.5" />
                           Decline Request
@@ -370,11 +370,11 @@ const Refunds = ({ embedded = false }: { embedded?: boolean }) => {
                   ) : (
                     <form onSubmit={handleDecline} className="space-y-4">
                       <div className="space-y-2">
-                        <label className="text-sm font-medium text-white block">
+                        <label className="text-sm font-bold text-foreground block">
                           Reason for Rejection *
                         </label>
                         <textarea
-                          className="w-full p-3 bg-sidebar-background border border-sidebar-border rounded-lg text-sm text-white placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+                          className="w-full p-3 bg-background border border-border rounded-lg text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary font-medium"
                           value={declineReason}
                           onChange={(e) => setDeclineReason(e.target.value)}
                           placeholder="Provide the reason for rejecting the request..."
@@ -389,6 +389,7 @@ const Refunds = ({ embedded = false }: { embedded?: boolean }) => {
                           variant="ghost"
                           onClick={() => setShowDeclineForm(false)}
                           disabled={processing}
+                          className="text-foreground hover:bg-muted font-semibold"
                         >
                           Back to Approve
                         </Button>
