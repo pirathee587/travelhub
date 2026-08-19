@@ -33,7 +33,7 @@ const Overview = () => {
 
     // Single aggregated SWR hook (Overview Dashboard: 4 requests -> 1 request)
     const userId = defaultUserId();
-    const { data: overview, isLoading: overviewLoading } = useTouristOverview(userId);
+    const { data: overview, isLoading: overviewLoading, mutate } = useTouristOverview(userId);
 
     const stats = overview?.stats ?? { totalTrips: 0, ongoingTrips: 0, completedTrips: 0, upcomingTrips: 0 };
     const trips = overview?.trips ?? [];
@@ -84,6 +84,20 @@ const Overview = () => {
             setReviewDialogOpen(true);
         }
     }, []);
+
+    const handleCancelClick = useCallback(async (trip) => {
+        if (window.confirm("Cancel Booking?\n\nAre you sure you want to cancel this booking?\nThis action cannot be undone.")) {
+            try {
+                await api.cancelBooking(trip.id, userId);
+                if (mutate) {
+                    await mutate();
+                }
+                alert("Booking cancelled successfully.");
+            } catch (err) {
+                alert("Failed to cancel booking. Please try again.");
+            }
+        }
+    }, [userId, mutate]);
 
     const scrollRecommendations = useCallback((direction) => {
         if (scrollContainerRef.current) {
@@ -196,6 +210,7 @@ const Overview = () => {
                                     key={trip.id}
                                     trip={trip}
                                     onClick={() => handleTripClick(trip)}
+                                    onCancel={() => handleCancelClick(trip)}
                                     onReview={() => handleReviewClick(trip)}
                                     onHotelReview={() => handleHotelReviewClick(trip)}
                                 />
@@ -216,6 +231,7 @@ const Overview = () => {
                                     key={trip.id}
                                     trip={trip}
                                     onClick={() => handleTripClick(trip)}
+                                    onCancel={() => handleCancelClick(trip)}
                                     onReview={() => handleReviewClick(trip)}
                                     onHotelReview={() => handleHotelReviewClick(trip)}
                                 />
