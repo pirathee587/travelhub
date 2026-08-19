@@ -11,6 +11,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/common/ui/
 import { cn } from '@/utils/utils';
 import { api } from '@/features/agency/services/api';
 import { Skeleton } from '@/components/common/ui/skeleton';
+import { AgencyLockedOverlay } from './AgencyLockedOverlay';
 
 // Map notification type to icon + color
 const typeConfig = {
@@ -146,8 +147,25 @@ export function DashboardLayout({ children, title, subtitle, showSearch = true }
     }
   };
 
+  const isSuspended = Boolean(
+    profile && (
+      profile.nicVerificationStatus === 'SUSPENDED' ||
+      profile.isActive === false ||
+      String(profile.status || '').toLowerCase() === 'suspended' ||
+      String(profile.applicationStatus || '').toLowerCase() === 'suspended'
+    )
+  );
+
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background relative">
+      {/* Full-screen Locked Overlay when suspended */}
+      {isSuspended && (
+        <AgencyLockedOverlay
+          adminReason={profile?.adminMessage}
+          agencyName={profile?.agencyName}
+        />
+      )}
+
       {/* Mobile sidebar overlay */}
       {sidebarOpen && (
         <div
@@ -159,7 +177,8 @@ export function DashboardLayout({ children, title, subtitle, showSearch = true }
       {/* Sidebar */}
       <div className={cn(
         'fixed inset-y-0 left-0 z-40 transform transition-transform duration-300 lg:translate-x-0',
-        sidebarOpen ? 'translate-x-0' : '-translate-x-full'
+        sidebarOpen ? 'translate-x-0' : '-translate-x-full',
+        isSuspended && 'pointer-events-none opacity-60'
       )}>
         <Sidebar 
           collapsed={collapsed} 
@@ -174,7 +193,8 @@ export function DashboardLayout({ children, title, subtitle, showSearch = true }
       {/* Main content */}
       <div className={cn(
         "transition-all duration-300",
-        collapsed ? "lg:pl-20" : "lg:pl-64"
+        collapsed ? "lg:pl-20" : "lg:pl-64",
+        isSuspended && "pointer-events-none select-none filter blur-[1.5px]"
       )}>
         {/* Header */}
         <header className={cn(
@@ -337,7 +357,7 @@ export function DashboardLayout({ children, title, subtitle, showSearch = true }
 
         {/* Page content */}
         <main className="p-4 md:p-6">
-          {profile && !profile.nicImage && (
+          {!isSuspended && profile && !profile.nicImage && (
             <div className="mb-6 flex flex-col md:flex-row md:items-center justify-between gap-4 p-4 rounded-xl border border-amber-500/20 bg-amber-500/10 text-amber-900 dark:text-amber-200 animate-in fade-in slide-in-from-top-4 duration-300">
               <div className="flex items-start gap-3">
                 <AlertTriangle className="h-5 w-5 text-amber-500 shrink-0 mt-0.5" />
@@ -359,7 +379,7 @@ export function DashboardLayout({ children, title, subtitle, showSearch = true }
             </div>
           )}
 
-          {profile && profile.nicImage && !profile.agentApproved && (
+          {!isSuspended && profile && profile.nicImage && !profile.agentApproved && (
             <div className="mb-6 flex items-start gap-3 p-4 rounded-xl border border-blue-500/20 bg-blue-500/10 text-blue-900 dark:text-blue-200 animate-in fade-in slide-in-from-top-4 duration-300">
               <Clock className="h-5 w-5 text-blue-500 shrink-0 mt-0.5" />
               <div>

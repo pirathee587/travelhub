@@ -31,4 +31,5 @@ public class AgentProfileResponse {
     private Integer totalRevenue;
     private Double completionRate;
     private Boolean agentApproved;
+    private Boolean isActive;
 }

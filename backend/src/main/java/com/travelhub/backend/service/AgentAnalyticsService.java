@@ -179,8 +179,8 @@ public class AgentAnalyticsService {
      */
     private List<Map<String, Object>> buildRevenueData(List<Booking> bookings, String period) {
         List<Map<String, Object>> result = new ArrayList<>();
-        boolean isYearly = "yearly".equals(period);
-        boolean isQuarterly = "quarterly".equals(period);
+        boolean isYearly = "yearly".equalsIgnoreCase(period);
+        boolean isQuarterly = "quarterly".equalsIgnoreCase(period);
 
         if (isYearly) {
             String[] months = {"Jan","Feb","Mar","Apr","May","Jun",
@@ -188,7 +188,7 @@ public class AgentAnalyticsService {
             for (int i = 0; i < 12; i++) {
                 final int month = i + 1;
                 double revenue = bookings.stream()
-                        .filter(b -> b.getStatus().equals("completed") &&
+                        .filter(b -> "completed".equalsIgnoreCase(b.getStatus()) &&
                                 b.getCreatedAt() != null &&
                                 b.getCreatedAt().getMonthValue() == month)
                         .mapToDouble(b -> b.getTotalPrice() != null ? b.getTotalPrice() * 0.95 : 0)
@@ -199,21 +199,45 @@ public class AgentAnalyticsService {
                 result.add(m);
             }
         } else if (isQuarterly) {
-            String[] weeks = {"Week 1","Week 2","Week 3","Week 4",
-                    "Week 5","Week 6","Week 7","Week 8",
-                    "Week 9","Week 10","Week 11","Week 12"};
-            for (int i = 0; i < 12; i++) {
+            LocalDate now = LocalDate.now();
+            for (int i = 11; i >= 0; i--) {
+                LocalDate weekStart = now.minusWeeks(i).with(java.time.DayOfWeek.MONDAY);
+                LocalDate weekEnd = weekStart.plusDays(6);
+                double revenue = bookings.stream()
+                        .filter(b -> "completed".equalsIgnoreCase(b.getStatus()) && b.getCreatedAt() != null)
+                        .filter(b -> {
+                            LocalDate d = b.getCreatedAt().toLocalDate();
+                            return !d.isBefore(weekStart) && !d.isAfter(weekEnd);
+                        })
+                        .mapToDouble(b -> b.getTotalPrice() != null ? b.getTotalPrice() * 0.95 : 0)
+                        .sum();
                 Map<String, Object> m = new LinkedHashMap<>();
-                m.put("label", weeks[i]);
-                m.put("value", 0);
+                m.put("label", "Week " + (12 - i));
+                m.put("value", revenue);
                 result.add(m);
             }
         } else {
             String[] days = {"Mon","Tue","Wed","Thu","Fri","Sat","Sun"};
-            for (String day : days) {
+            java.time.DayOfWeek[] dows = {
+                java.time.DayOfWeek.MONDAY,
+                java.time.DayOfWeek.TUESDAY,
+                java.time.DayOfWeek.WEDNESDAY,
+                java.time.DayOfWeek.THURSDAY,
+                java.time.DayOfWeek.FRIDAY,
+                java.time.DayOfWeek.SATURDAY,
+                java.time.DayOfWeek.SUNDAY
+            };
+            for (int i = 0; i < 7; i++) {
+                final java.time.DayOfWeek targetDow = dows[i];
+                double revenue = bookings.stream()
+                        .filter(b -> "completed".equalsIgnoreCase(b.getStatus()) &&
+                                b.getCreatedAt() != null &&
+                                b.getCreatedAt().getDayOfWeek() == targetDow)
+                        .mapToDouble(b -> b.getTotalPrice() != null ? b.getTotalPrice() * 0.95 : 0)
+                        .sum();
                 Map<String, Object> m = new LinkedHashMap<>();
-                m.put("label", day);
-                m.put("value", 0);
+                m.put("label", days[i]);
+                m.put("value", revenue);
                 result.add(m);
             }
         }
