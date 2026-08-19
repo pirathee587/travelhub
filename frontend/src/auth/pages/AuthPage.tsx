@@ -2,6 +2,9 @@ import { useState } from 'react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
 import { Plane, ShieldCheck, Building2, Users, Eye, EyeOff, ArrowLeft } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
+import { BrandLogoLink } from '@/components/common/BrandLogoLink';
+import { COUNTRIES } from '@/constants/countries';
+import { PASSWORD_CRITERIA, PASSWORD_REGEX, PASSWORD_REQUIREMENTS_MESSAGE } from '@/constants/passwordRules';
 
 const DISTRICTS = [
   "Ampara", "Anuradhapura", "Badulla", "Batticaloa", "Colombo",
@@ -80,6 +83,7 @@ export default function AuthPage({ role: propRole, mode }: AuthPageProps = {}) {
   const config = ROLE_CONFIG[selectedRole] || ROLE_CONFIG.general;
   const [isLogin, setIsLogin] = useState(() => mode !== 'signup');
   const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [needsEmailVerification, setNeedsEmailVerification] = useState(false);
@@ -144,9 +148,9 @@ export default function AuthPage({ role: propRole, mode }: AuthPageProps = {}) {
         setError('Passwords do not match');
         return;
       }
-      const passwordRegex = /^(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z])(?=.*[@#$%^&+=!])(?=\S+$).{8,}$/;
+      const passwordRegex = PASSWORD_REGEX;
       if (!passwordRegex.test(form.password)) {
-        setError('Password must be at least 8 characters long, contain at least one digit, one uppercase letter, one lowercase letter, and one special character');
+        setError(PASSWORD_REQUIREMENTS_MESSAGE);
         return;
       }
       if (!form.telephone) {
@@ -292,12 +296,7 @@ export default function AuthPage({ role: propRole, mode }: AuthPageProps = {}) {
 
         {/* Top Branding */}
         <div className="relative z-10 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-teal-500 to-cyan-500 flex items-center justify-center shadow-md">
-              <Plane className="w-5 h-5 text-white" />
-            </div>
-            <span className="text-xl font-bold tracking-tight text-white font-display">TravelHub</span>
-          </div>
+          <BrandLogoLink variant="hero" />
         </div>
 
         {/* Bottom Tagline Quote Card */}
@@ -439,6 +438,17 @@ export default function AuthPage({ role: propRole, mode }: AuthPageProps = {}) {
                   {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                 </button>
               </div>
+              {!isLogin && (
+                <ul className="mt-2 space-y-1 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-xs text-slate-600">
+                  <li className="font-semibold text-slate-700 mb-1">Password must include:</li>
+                  {PASSWORD_CRITERIA.map((rule) => (
+                    <li key={rule} className="flex items-start gap-2">
+                      <span className="mt-0.5 text-teal-600">•</span>
+                      <span>{rule}</span>
+                    </li>
+                  ))}
+                </ul>
+              )}
             </div>
 
             {/* Confirm Password (Signup only) */}
@@ -447,15 +457,24 @@ export default function AuthPage({ role: propRole, mode }: AuthPageProps = {}) {
                 <label className="block text-sm font-bold text-slate-700 mb-2 uppercase tracking-wide">
                   Confirm Password
                 </label>
-                <input
-                  type="password"
-                  name="confirmPassword"
-                  value={form.confirmPassword}
-                  onChange={handleChange}
-                  required
-                  placeholder="••••••••"
-                  className="w-full h-14 px-5 rounded-2xl border border-slate-200 text-base text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-600 transition-all font-display"
-                />
+                <div className="relative">
+                  <input
+                    type={showConfirmPassword ? 'text' : 'password'}
+                    name="confirmPassword"
+                    value={form.confirmPassword}
+                    onChange={handleChange}
+                    required
+                    placeholder="••••••••"
+                    className="w-full h-14 px-5 pr-12 rounded-2xl border border-slate-200 text-base text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-600 transition-all font-display"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-teal-600 transition-colors p-1"
+                  >
+                    {showConfirmPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                  </button>
+                </div>
               </div>
             )}
 
@@ -498,16 +517,19 @@ export default function AuthPage({ role: propRole, mode }: AuthPageProps = {}) {
                 {config.apiRole === 'TOURIST' && (
                   <div>
                     <label className="block text-sm font-bold text-slate-700 mb-2 uppercase tracking-wide">
-                      Nationality
+                      Country
                     </label>
-                    <input
-                      type="text"
+                    <select
                       name="nationality"
                       value={form.nationality}
                       onChange={handleChange}
-                      placeholder="e.g. Sri Lankan"
-                      className="w-full h-14 px-5 rounded-2xl border border-slate-200 text-base text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-600 transition-all font-display"
-                    />
+                      className="w-full h-14 px-5 rounded-2xl border border-slate-200 text-base text-slate-800 focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-600 transition-all font-display"
+                    >
+                      <option value="">Select your country</option>
+                      {COUNTRIES.map((country) => (
+                        <option key={country} value={country}>{country}</option>
+                      ))}
+                    </select>
                   </div>
                 )}
 
@@ -637,10 +659,7 @@ export default function AuthPage({ role: propRole, mode }: AuthPageProps = {}) {
             {/* Error Banner */}
             {error && (
               <div className="flex flex-col gap-3 text-sm text-red-700 bg-red-50 border border-red-200 rounded-2xl p-4 font-display">
-                <div className="flex items-start gap-3">
-                  <span className="mt-0.5 shrink-0 text-red-500 font-bold">!</span>
-                  <span>{error}</span>
-                </div>
+                <span>{error}</span>
                 {needsEmailVerification && form.email && (
                   <Link
                     to={`/verify?email=${encodeURIComponent(form.email)}`}

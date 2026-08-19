@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
 import { CheckCircle, XCircle, Loader2, Mail, Send } from 'lucide-react';
+import { BrandLogoLink } from '@/components/common/BrandLogoLink';
 
 const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080/api';
 
@@ -24,7 +25,7 @@ export default function VerifyEmail() {
       if (!token) {
         if (email) {
           setStatus('pending');
-          setMessage('We sent a verification link to your email. Please check your inbox and click the link to activate your account.');
+          setMessage('We sent a verification link to your email. Please check your inbox and click the link to activate your account. The link expires in 24 hours.');
           return;
         }
         setStatus('error');
@@ -81,12 +82,7 @@ export default function VerifyEmail() {
       <div className="bg-white rounded-2xl shadow-xl border border-slate-100 w-full max-w-md p-8 text-center">
         {/* Logo */}
         <div className="flex justify-center mb-6">
-          <img
-            src="/TravelHUB.png"
-            alt="TravelHub"
-            className="h-12 w-auto"
-            onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
-          />
+          <BrandLogoLink variant="image" />
         </div>
 
         {/* Verifying */}

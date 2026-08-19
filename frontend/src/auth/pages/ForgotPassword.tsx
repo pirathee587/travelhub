@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Plane, ArrowLeft, CheckCircle } from 'lucide-react';
+import { ArrowLeft, CheckCircle } from 'lucide-react';
 import { toast } from 'sonner';
+import { BrandLogoLink } from '@/components/common/BrandLogoLink';
 
 const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080/api';
 
@@ -65,12 +66,7 @@ export default function ForgotPassword() {
 
         {/* Top Branding */}
         <div className="relative z-10 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-teal-500 to-cyan-500 flex items-center justify-center shadow-md">
-              <Plane className="w-5 h-5 text-white" />
-            </div>
-            <span className="text-xl font-bold tracking-tight text-white font-display">TravelHub</span>
-          </div>
+          <BrandLogoLink variant="hero" />
         </div>
 
         {/* Bottom Tagline Quote Card */}

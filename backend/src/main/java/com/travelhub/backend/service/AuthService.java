@@ -31,6 +31,8 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class AuthService {
 
+    private static final int VERIFICATION_TOKEN_HOURS = 24;
+
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtTokenProvider tokenProvider;
@@ -59,6 +61,7 @@ public class AuthService {
                 .businessAddress(request.getBusinessAddress())
                 .district(request.getDistrict())
                 .verificationToken(verificationToken)
+                .verificationTokenExpires(verificationTokenExpiry())
                 .isEmailVerified(false)
                 .status("PENDING")
                 .isActive(true)
@@ -166,8 +169,15 @@ public class AuthService {
                 .orElseThrow(() -> new BadRequestException(
                         "This verification link is invalid or has already been used. Please log in or request a new verification email."));
 
+        if (user.getVerificationTokenExpires() != null
+                && user.getVerificationTokenExpires().isBefore(LocalDateTime.now())) {
+            throw new BadRequestException(
+                    "Verification link has expired. Please request a new verification email.");
+        }
+
         user.setEmailVerified(true);
         user.setVerificationToken(null);
+        user.setVerificationTokenExpires(null);
         
         // Tourists are activated immediately after email verification
         if (user.getRole() == Role.TOURIST) {
@@ -229,14 +239,16 @@ public class AuthService {
             throw new BadRequestException("Email is already verified");
         }
 
-        String verificationToken = user.getVerificationToken();
-        if (verificationToken == null) {
-            verificationToken = UUID.randomUUID().toString();
-            user.setVerificationToken(verificationToken);
-            userRepository.save(user);
-        }
+        String verificationToken = UUID.randomUUID().toString();
+        user.setVerificationToken(verificationToken);
+        user.setVerificationTokenExpires(verificationTokenExpiry());
+        userRepository.save(user);
 
         emailService.sendVerificationEmail(user.getEmail(), verificationToken);
         return new ApiResponse(true, "Verification email resent successfully.");
+    }
+
+    private LocalDateTime verificationTokenExpiry() {
+        return LocalDateTime.now().plusHours(VERIFICATION_TOKEN_HOURS);
     }
 }

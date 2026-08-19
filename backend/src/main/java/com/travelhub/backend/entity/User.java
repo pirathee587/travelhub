@@ -74,6 +74,7 @@ public class User {
     private boolean isEmailVerified = false;
 
     private String verificationToken;
+    private LocalDateTime verificationTokenExpires;
     private String passwordResetToken;
     private LocalDateTime passwordResetExpires;
 

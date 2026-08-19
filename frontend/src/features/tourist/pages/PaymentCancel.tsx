@@ -2,13 +2,16 @@ import { Link, useSearchParams } from 'react-router-dom';
 import { Card, CardContent } from '@/components/common/ui/card';
 import { Button } from '@/components/common/ui/button';
 import { XCircle, RefreshCw, Home, FileText } from 'lucide-react';
+import { PaymentPageHeader } from '@/components/common/PaymentPageHeader';
 
 const PaymentCancel = () => {
   const [searchParams] = useSearchParams();
   const bookingId = searchParams.get('bookingId');
 
   return (
-    <div className="container max-w-2xl py-20 mx-auto animate-slide-up">
+    <>
+      <PaymentPageHeader />
+      <div className="container max-w-2xl py-20 mx-auto animate-slide-up">
       <Card className="text-center shadow-lg border-destructive/20 bg-destructive/5">
         <CardContent className="pt-12 pb-12 px-6">
           <div className="flex justify-center mb-6">
@@ -44,6 +47,7 @@ const PaymentCancel = () => {
         </CardContent>
       </Card>
     </div>
+    </>
   );
 };
 
