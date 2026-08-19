@@ -847,6 +847,10 @@ const Bookings = () => {
                               <span className="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold bg-emerald-100 text-emerald-800 border border-emerald-300">
                                 💳 Paid
                               </span>
+                            ) : booking.paymentStatus === 'REFUNDED' ? (
+                              <span className="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold bg-purple-100 text-purple-800 border border-purple-300">
+                                🔄 Refunded
+                              </span>
                             ) : (
                               <span className="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold bg-slate-100 text-slate-600 border border-slate-300">
                                 ⏳ Unpaid

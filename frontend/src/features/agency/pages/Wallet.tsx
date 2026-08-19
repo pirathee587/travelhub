@@ -397,7 +397,7 @@ export default function Wallet() {
                 <input 
                   type="number" 
                   step="0.01"
-                  max={availableBalance}
+                  min="0.01"
                   value={amount}
                   onChange={e => setAmount(e.target.value)}
                   placeholder="e.g. 500.00"

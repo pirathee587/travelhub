@@ -25,7 +25,13 @@ import {
   AlertDialogTrigger,
 } from "@/components/common/ui/alert-dialog";
 
-const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080/api';
+const getBaseUrl = () => {
+  const rawUrl = import.meta.env.VITE_API_URL;
+  if (!rawUrl) return "http://localhost:8080/api";
+  const cleanUrl = rawUrl.trim().replace(/\/+$/, '');
+  return cleanUrl.endsWith('/api') ? cleanUrl : `${cleanUrl}/api`;
+};
+const BASE_URL = getBaseUrl();
 
 const Packages = () => {
   const { formatPrice } = useCurrency();
