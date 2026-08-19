@@ -522,9 +522,9 @@ const PackageDetails = () => {
                 </Button>
               </>
             ) : (
-              <Button size="sm" className="gap-1.5 font-medium" variant={['rejected', 'suspended'].includes(pkg.applicationStatus?.trim()?.toLowerCase()) ? 'default' : 'outline'} onClick={() => setIsEditing(true)}>
+              <Button size="sm" className="gap-1.5 font-medium" variant="outline" onClick={() => setIsEditing(true)}>
                 <Edit className="h-4 w-4" />
-                {['rejected', 'suspended'].includes(pkg.applicationStatus?.trim()?.toLowerCase()) ? 'Fix & Re-submit Package' : 'Edit Package'}
+                Edit Package
               </Button>
             )}
           </div>
