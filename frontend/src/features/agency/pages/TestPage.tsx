@@ -6,7 +6,7 @@ import { Label } from '@/components/common/ui/label';
 import { toast } from 'sonner';
 import { CheckCircle2, XCircle, Loader2, Send, Database, UserPlus, Package } from 'lucide-react';
 
-const API_HOST = import.meta.env.VITE_API_URL || 'http://localhost:8080/api';
+const API_HOST = import.meta.env.VITE_API_URL || (import.meta.env.DEV ? "http://localhost:8080/api" : "");
 const BASE_URL = `${API_HOST}/v1`;
 
 // ── Utility: run a test step and return result ──────────────────────────────

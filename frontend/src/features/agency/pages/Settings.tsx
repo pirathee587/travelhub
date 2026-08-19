@@ -31,7 +31,7 @@ const uploadImage = async (file: File) => {
   if (token) {
     headers['Authorization'] = token.startsWith('Bearer ') ? token : `Bearer ${token}`;
   }
-  const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:8080/api';
+  const apiBase = import.meta.env.VITE_API_URL || (import.meta.env.DEV ? "http://localhost:8080/api" : "");
   const response = await fetch(`${apiBase}/upload/identity`, {
     method: 'POST',
     headers,

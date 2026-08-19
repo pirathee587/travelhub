@@ -5,7 +5,7 @@ import { toast } from 'sonner';
 import { BrandLogoLink } from '@/components/common/BrandLogoLink';
 import { PASSWORD_REGEX, PASSWORD_REQUIREMENTS_MESSAGE } from '@/constants/passwordRules';
 
-const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080/api';
+const BASE_URL = import.meta.env.VITE_API_URL || (import.meta.env.DEV ? "http://localhost:8080/api" : "");
 
 export default function ResetPassword() {
   const [searchParams] = useSearchParams();

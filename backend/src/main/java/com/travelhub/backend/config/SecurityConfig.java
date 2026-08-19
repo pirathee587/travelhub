@@ -72,7 +72,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/v1/test/**").permitAll() // DEV ONLY: test agent creation
 
                         // ── Chatbot Routes ──
-                        .requestMatchers("/chat").permitAll() // Public access for tourists
+                        .requestMatchers("/api/chatbot/message").permitAll() // Public access for tourists
                         .requestMatchers("/sync").hasRole("ADMIN") // Only admins can trigger data sync
 
                         // ── Admin Protected Routes ──

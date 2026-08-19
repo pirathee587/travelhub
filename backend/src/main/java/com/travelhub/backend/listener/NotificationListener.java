@@ -138,18 +138,24 @@ public class NotificationListener {
 
     @Async
     @EventListener
+    @org.springframework.transaction.annotation.Transactional
     public void handleHotelEvent(HotelEvent event) {
-        log.info("Handling hotel event: {} for hotel: {}", event.getType(), event.getHotel().getHotelName());
+        log.info("Handling hotel event: {} for hotel: {}", event.getType(), event.getHotel() != null ? event.getHotel().getHotelName() : "null");
 
         com.travelhub.backend.entity.Hotel hotel = event.getHotel();
-        if (hotel == null) return;
-
-        com.travelhub.backend.entity.User owner = hotel.getOwner();
-        if (owner == null && hotel.getId() != null) {
-            owner = userRepository.findByHotelId(hotel.getId()).orElse(null);
+        if (hotel == null) {
+            log.error("HotelEvent received with null hotel!");
+            return;
         }
-        if (owner == null && hotel.getOwnerId() != null) {
+
+        com.travelhub.backend.entity.User owner = null;
+        log.info("Hotel ID: {}, OwnerId: {}", hotel.getId(), hotel.getOwnerId());
+        if (hotel.getOwnerId() != null) {
             owner = userRepository.findById(hotel.getOwnerId()).orElse(null);
+            log.info("Fetched owner using ownerId {}: {}", hotel.getOwnerId(), owner != null ? owner.getEmail() : "null");
+        } else if (hotel.getId() != null) {
+            owner = userRepository.findByHotelId(hotel.getId()).orElse(null);
+            log.info("Fetched owner using findByHotelId {}: {}", hotel.getId(), owner != null ? owner.getEmail() : "null");
         }
 
         String email = null;
@@ -160,6 +166,8 @@ public class NotificationListener {
         } else if (hotel.getHotelEmail() != null && !hotel.getHotelEmail().trim().isEmpty()) {
             email = hotel.getHotelEmail();
         }
+        
+        log.info("Determined email to notify: {}", email);
 
         if (email != null && !email.trim().isEmpty()) {
             try {
@@ -198,12 +206,17 @@ public class NotificationListener {
             }
 
             try {
-                userNotificationService.notifyUser(owner.getId(), "hotel", title, message, "/hotelowner");
+                log.info("Creating user notification for owner {} (hotel {}): {}", owner.getId(), hotel.getId(), title);
+                userNotificationService.notifyUser(owner.getId(), "hotel", title, message, "/hotelowner", hotel.getId());
+                log.info("Successfully created user notification.");
             } catch (Exception e) {
                 log.warn("Failed to create in-app notification for hotel owner: {}", e.getMessage());
             }
+        } else {
+            log.warn("Cannot create in-app notification because owner is null or owner.getId() is null");
         }
     }
+
 
     @Async
     @EventListener

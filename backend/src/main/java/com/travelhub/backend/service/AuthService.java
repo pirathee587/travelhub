@@ -144,10 +144,9 @@ public class AuthService {
         Long hotelId = null;
         if (user.getRole() == Role.HOTEL_OWNER) {
             Hotel hotel = hotelRepository.findByOwnerId(user.getId()).stream().findFirst().orElse(null);
-            if (hotel == null) {
-                throw new UnauthorizedException("No Hotel profile associated with this account. Please register.");
+            if (hotel != null) {
+                hotelId = hotel.getId();
             }
-            hotelId = hotel.getId();
         }
 
         String jwt = tokenProvider.generateToken(authentication, user);

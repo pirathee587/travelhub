@@ -26,6 +26,11 @@
     <test name="Unit Tests - Hotel Owner">
         <classes>
             <class name="com.travelhub.backend.unit.hotelowner.HotelServiceTest"/>
+            <class name="com.travelhub.backend.unit.hotelowner.RoomServiceTest"/>
+            <class name="com.travelhub.backend.unit.hotelowner.AmenityServiceTest"/>
+            <class name="com.travelhub.backend.unit.hotelowner.OwnerHotelServiceTest"/>
+            <class name="com.travelhub.backend.unit.hotelowner.ReviewServiceTest"/>
+            <class name="com.travelhub.backend.unit.hotelowner.UserNotificationServiceTest"/>
         </classes>
     </test>
 
@@ -57,6 +62,7 @@
     <test name="Controller Tests - Hotel Owner">
         <classes>
             <class name="com.travelhub.backend.controller.hotelowner.HotelControllerTest"/>
+            <class name="com.travelhub.backend.controller.hotelowner.ChatbotControllerTest"/>
         </classes>
     </test>
 

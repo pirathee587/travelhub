@@ -96,7 +96,7 @@ export const api = {
         if (district) params.append('district', district);
         const qString = params.toString() ? `?${params.toString()}` : '';
         // Note: Hotel search is at /api/hotels/search, not /api/v1/hotels/search
-        const apiBase = import.meta.env.VITE_API_URL || "http://localhost:8080/api";
+        const apiBase = import.meta.env.VITE_API_URL || (import.meta.env.DEV ? "http://localhost:8080/api" : "");
         return fetch(`${apiBase}/hotels/search${qString}`).then(r => r.json());
     },
 

@@ -34,10 +34,9 @@ public class ChatbotClient {
      *                follow-up questions like "give those prices in LKR".
      */
     public String sendMessage(String prompt, List<Map<String, String>> history) {
-        String contextualPrompt = buildContextualPrompt(prompt, history);
-
         ChatbotRequestDto request = new ChatbotRequestDto();
-        request.setPrompt(contextualPrompt);
+        request.setPrompt(prompt);
+        request.setHistory(history);
 
         try {
             ChatbotResponseDto response = restTemplate.postForObject(
@@ -53,38 +52,6 @@ public class ChatbotClient {
             logger.error("[ChatbotClient] Error calling Python AI: {}", e.getMessage());
             return "The assistant is temporarily unavailable. Please try again in a moment.";
         }
-    }
-
-    /**
-     * Builds a context-enriched prompt by prepending the last N conversation
-     * turns so the Python AI understands follow-up references like "that prices"
-     * or "those packages".
-     *
-     * Example output sent to Python AI:
-     *   [Previous conversation]
-     *   User: What are Matale packages?
-     *   Assistant: Spice & Spirituality costs $110/adult...
-     *
-     *   [Current question]
-     *   give that prices in srilankan currency
-     */
-    private String buildContextualPrompt(String currentPrompt, List<Map<String, String>> history) {
-        if (history == null || history.isEmpty()) {
-            return currentPrompt;
-        }
-
-        StringBuilder sb = new StringBuilder();
-        sb.append("[Previous conversation]\n");
-        for (Map<String, String> msg : history) {
-            String role = msg.getOrDefault("role", "user");
-            String text = msg.getOrDefault("text", "");
-            // Skip the chatbot's own welcome/system message
-            if (text.isBlank()) continue;
-            String label = "bot".equalsIgnoreCase(role) ? "Assistant" : "User";
-            sb.append(label).append(": ").append(text).append("\n");
-        }
-        sb.append("\n[Current question]\n").append(currentPrompt);
-        return sb.toString();
     }
 
     public void triggerDataSync() {

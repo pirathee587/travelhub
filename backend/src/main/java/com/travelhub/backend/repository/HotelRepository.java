@@ -44,6 +44,10 @@ public interface HotelRepository
     void deleteHotelImagesByHotelId(@Param("hotelId") Long hotelId);
 
     @Modifying
+    @Query(value = "INSERT INTO hotel_images (hotel_id, image_url, display_order) VALUES (:hotelId, :imageUrl, :displayOrder)", nativeQuery = true)
+    void insertHotelImage(@Param("hotelId") Long hotelId, @Param("imageUrl") String imageUrl, @Param("displayOrder") Integer displayOrder);
+
+    @Modifying
     @Query(value = "DELETE FROM reviews WHERE hotel_id = :hotelId", nativeQuery = true)
     void deleteReviewsByHotelId(@Param("hotelId") Long hotelId);
 
