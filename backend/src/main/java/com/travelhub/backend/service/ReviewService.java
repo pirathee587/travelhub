@@ -36,6 +36,7 @@ public class ReviewService {
     private final HotelRepository hotelRepository;
     private final ReviewImageRepository reviewImageRepository;
     private final ImageUploadService imageUploadService;  // ✅ NEW: Injected for backend orchestration
+    private final UserNotificationService userNotificationService;
 
     // ─────────────────────────────────────────────────────────────────────────
     // GET reviews
@@ -174,6 +175,17 @@ public class ReviewService {
             log.info("[DEBUG] No images provided for hotel review {}", saved.getId());  
         }
         
+        // Notify hotel owner
+        if (hotel.getOwner() != null && hotel.getOwner().getId() != null) {
+            String title = "New " + request.getRating() + "-Star Review";
+            String msg = "A guest left a " + request.getRating() + "-star review for your hotel " + hotel.getHotelName();
+            try {
+                userNotificationService.notifyUser(hotel.getOwner().getId(), "review", title, msg, "/hotelowner", hotel.getId());
+            } catch (Exception e) {
+                log.warn("Failed to create in-app review notification for hotel owner: {}", e.getMessage());
+            }
+        }
+
         return toReviewResponse(saved);
     }
 

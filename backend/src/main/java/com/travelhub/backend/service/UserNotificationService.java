@@ -34,6 +34,11 @@ public class UserNotificationService {
 
     @Transactional
     public void notifyUser(Long userId, String type, String title, String message, String actionUrl) {
+        notifyUser(userId, type, title, message, actionUrl, null);
+    }
+
+    @Transactional
+    public void notifyUser(Long userId, String type, String title, String message, String actionUrl, Long hotelId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User", "id", userId));
 
@@ -43,6 +48,7 @@ public class UserNotificationService {
         notification.setTitle(title);
         notification.setMessage(message);
         notification.setActionUrl(actionUrl);
+        notification.setHotelId(hotelId);
         notification.setRead(false);
         userNotificationRepository.save(notification);
     }
@@ -94,6 +100,16 @@ public class UserNotificationService {
         userNotificationRepository.saveAll(unread);
     }
 
+    @Transactional
+    public void deleteNotification(Long userId, Long notificationId) {
+        UserNotification notification = userNotificationRepository.findById(notificationId)
+                .orElseThrow(() -> new ResourceNotFoundException("UserNotification", "id", notificationId));
+        if (!notification.getUser().getId().equals(userId)) {
+            throw new ResourceNotFoundException("UserNotification", "userId", userId);
+        }
+        userNotificationRepository.delete(notification);
+    }
+
     private UserNotificationResponse toResponse(UserNotification notification) {
         UserNotificationResponse response = new UserNotificationResponse();
         response.setId(notification.getId());
@@ -101,6 +117,7 @@ public class UserNotificationService {
         response.setTitle(notification.getTitle());
         response.setMessage(notification.getMessage());
         response.setActionUrl(notification.getActionUrl());
+        response.setHotelId(notification.getHotelId());
         response.setRead(notification.getRead());
         response.setTime(getRelativeTime(notification.getCreatedAt()));
         return response;

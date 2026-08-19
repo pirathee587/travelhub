@@ -8,6 +8,7 @@ interface Review {
   rating: number;
   comment: string;
   reviewDate: string;
+  imageUrls?: string[];
 }
 
 const Stars = ({ rating }: { rating: number }) => (

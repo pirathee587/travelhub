@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
-import { Bell, CheckCheck, Trash2, Hotel, XCircle, Lock } from "lucide-react";
+import { Bell, CheckCheck, Trash2, Hotel, XCircle, Lock, Star } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { getOwnerAuthHeaders } from "@/features/hotelOwner/services/owner-auth-headers";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -9,40 +10,63 @@ const API_BASE = `${BASE_URL}/v1/owner/notifications`;
 type OwnerNotification = {
   id: number;
   hotelId: number | null;
-  type: "APPROVED" | "REJECTED" | "SUSPENDED";
+  type: string;
   title: string;
   message: string;
   time: string;
   read: boolean;
 };
 
-function typeConfig(type: OwnerNotification["type"]) {
-  switch (type) {
-    case "APPROVED":
-      return {
-        icon: <Hotel className="h-4 w-4" />,
-        dot: "bg-emerald-500",
-        badge: "bg-emerald-50 text-emerald-700 border-emerald-200",
-        label: "Approved",
-      };
-    case "REJECTED":
-      return {
-        icon: <XCircle className="h-4 w-4" />,
-        dot: "bg-red-500",
-        badge: "bg-red-50 text-red-700 border-red-200",
-        label: "Rejected",
-      };
-    case "SUSPENDED":
-      return {
-        icon: <Lock className="h-4 w-4" />,
-        dot: "bg-amber-500",
-        badge: "bg-amber-50 text-amber-700 border-amber-200",
-        label: "Suspended",
-      };
+function typeConfig(n: OwnerNotification) {
+  const type = n.type;
+  const title = n.title.toLowerCase();
+
+  if (type === "review") {
+    return {
+      icon: <Star className="h-4 w-4" />,
+      dot: "bg-blue-500",
+      badge: "bg-blue-50 text-blue-700 border-blue-200",
+      label: "Review",
+    };
   }
+
+  if (title.includes("approved") || title.includes("activated")) {
+    return {
+      icon: <Hotel className="h-4 w-4" />,
+      dot: "bg-emerald-500",
+      badge: "bg-emerald-50 text-emerald-700 border-emerald-200",
+      label: "Approved",
+    };
+  }
+  
+  if (title.includes("rejected")) {
+    return {
+      icon: <XCircle className="h-4 w-4" />,
+      dot: "bg-red-500",
+      badge: "bg-red-50 text-red-700 border-red-200",
+      label: "Rejected",
+    };
+  }
+  
+  if (title.includes("suspended") || title.includes("deleted")) {
+    return {
+      icon: <Lock className="h-4 w-4" />,
+      dot: "bg-amber-500",
+      badge: "bg-amber-50 text-amber-700 border-amber-200",
+      label: "Suspended",
+    };
+  }
+
+  return {
+    icon: <Bell className="h-4 w-4" />,
+    dot: "bg-primary",
+    badge: "bg-primary/10 text-primary border-primary/20",
+    label: "Notification",
+  };
 }
 
 export function NotificationBell() {
+  const navigate = useNavigate();
   const [open, setOpen] = useState(false);
   const [notifications, setNotifications] = useState<OwnerNotification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -188,11 +212,14 @@ export function NotificationBell() {
                 </div>
               ) : (
                 notifications.map((n) => {
-                  const cfg = typeConfig(n.type);
+                  const cfg = typeConfig(n);
                   return (
                     <div
                       key={n.id}
-                      onClick={() => !n.read && markAsRead(n.id)}
+                      onClick={() => {
+                        if (!n.read) markAsRead(n.id);
+                        if (n.hotelId) navigate(`/hotelowner/dashboard/${n.hotelId}`);
+                      }}
                       className={`group flex cursor-pointer gap-3 border-b border-border/50 px-4 py-3 transition hover:bg-muted/40 ${!n.read ? "bg-primary/[0.03]" : ""
                         }`}
                     >
