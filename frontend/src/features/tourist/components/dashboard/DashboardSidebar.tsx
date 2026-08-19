@@ -70,7 +70,7 @@ export function DashboardSidebar({ collapsed, setCollapsed }: DashboardSidebarPr
         return true;
     });
 
-    const SidebarContent = () => (
+    const sidebarContent = (
         <>
             {/* Logo */} 
             <BrandLogoLink variant="sidebar" collapsed={collapsed} />
@@ -172,7 +172,7 @@ export function DashboardSidebar({ collapsed, setCollapsed }: DashboardSidebarPr
                     <X className="h-5 w-5" />
                 </button>
                 <div className="h-full flex flex-col">
-                    <SidebarContent />
+                    {sidebarContent}
                 </div>
             </aside>
 
@@ -183,7 +183,7 @@ export function DashboardSidebar({ collapsed, setCollapsed }: DashboardSidebarPr
                     collapsed ? "w-16" : "w-64"
                 )}
             >
-                <SidebarContent />
+                {sidebarContent}
             </aside>
         </>
     );

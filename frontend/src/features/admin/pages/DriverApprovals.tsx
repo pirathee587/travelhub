@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import adminDriverApi from '../services/adminDriverApi'
 import { useModal } from '../components/ModalContext'
-import { User, Clock, CheckCircle, AlertTriangle, ShieldAlert, FileText, Star, Car, Search, Eye, Building2, ExternalLink } from 'lucide-react'
+import { User, CheckCircle, ShieldAlert, FileText, Car, Search, Eye, Building2, ExternalLink, X, AlertTriangle, Check, Sparkles } from 'lucide-react'
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 const STATUSES = ['All', 'Pending', 'Approved', 'Rejected']
@@ -10,17 +10,27 @@ const STATUSES = ['All', 'Pending', 'Approved', 'Rejected']
 const STATUS_STYLES: Record<string, string> = {
   pending:   'bg-orange-100 text-orange-700 border-orange-200',
   active:    'bg-emerald-100 text-emerald-700 border-emerald-200',
+  approved:  'bg-emerald-100 text-emerald-700 border-emerald-200',
   rejected:  'bg-red-100 text-red-700 border-red-200',
   suspended: 'bg-gray-100 text-gray-600 border-gray-200',
 }
 
 const STATUS_LABELS: Record<string, string> = {
   pending:   'Pending',
-  active:    'Active',
-  approved:  'Active',
+  active:    'Approved',
+  approved:  'Approved',
   rejected:  'Rejected',
   suspended: 'Suspended',
 }
+
+const PRESET_DRIVER_REASONS = [
+  'Blurry or unreadable document scans',
+  'Driver photo does not match NIC image',
+  'Driving license is expired or invalid',
+  'NIC details or name mismatch',
+  'Vehicle category mismatch on driving license',
+  'Incomplete verification documents provided',
+]
 
 // ── Card Skeleton ─────────────────────────────────────────────────────────────
 const CardSkeleton = () => (
@@ -41,6 +51,8 @@ const DriverDetailView = ({ driver, onBack, onApprove, onReject, loading }) => {
   if (!driver) return null
 
   const fullName = driver.firstName && driver.lastName ? `${driver.firstName} ${driver.lastName}` : (driver.firstName || 'Unknown')
+  const isPending = (driver.lifecycleStatus || driver.status || '').toLowerCase() === 'pending'
+  const isRejected = (driver.lifecycleStatus || driver.status || '').toLowerCase() === 'rejected'
 
   return (
     <div className="animate-fade-in max-w-5xl mx-auto">
@@ -62,13 +74,24 @@ const DriverDetailView = ({ driver, onBack, onApprove, onReject, loading }) => {
             </div>
             <div>
               <h2 className="text-3xl font-bold text-gray-900">{fullName}</h2>
-              <p className="text-sm text-gray-500 mt-1">Status: {driver.status} | Rating: {driver.rating ?? 'N/A'}</p>
+              <p className="text-sm text-gray-500 mt-1">Status: {driver.status === 'active' || driver.status === 'approved' ? 'Approved' : (STATUS_LABELS[driver.lifecycleStatus] || driver.status)} | Rating: {driver.rating ?? 'N/A'}</p>
             </div>
           </div>
-          <span className={`px-3 py-1 rounded-full text-xs font-semibold border ${STATUS_STYLES[driver.lifecycleStatus] || 'bg-gray-100 text-gray-700'}`}>
+          <span className={`px-3.5 py-1 rounded-full text-xs font-semibold border ${STATUS_STYLES[driver.lifecycleStatus] || 'bg-gray-100 text-gray-700'}`}>
             {STATUS_LABELS[driver.lifecycleStatus] || driver.lifecycleStatus}
           </span>
         </div>
+
+        {/* Rejection Notice Banner if Rejected */}
+        {isRejected && driver.rejectionReason && (
+          <div className="bg-red-50/90 border border-red-200 rounded-xl p-5 flex items-start gap-3 shadow-xs">
+            <ShieldAlert className="h-5 w-5 text-red-600 mt-0.5 shrink-0" />
+            <div className="space-y-1">
+              <h4 className="text-sm font-bold text-red-900">Rejection Reason Provided by Admin</h4>
+              <p className="text-sm text-red-700 leading-relaxed">{driver.rejectionReason}</p>
+            </div>
+          </div>
+        )}
 
         {/* Assigned Travel Agency Box */}
         <div className="bg-sky-50/60 rounded-xl p-6 border border-sky-100 space-y-4">
@@ -167,7 +190,7 @@ const DriverDetailView = ({ driver, onBack, onApprove, onReject, loading }) => {
               <div className="col-span-2">
                 <span className="block text-xs text-gray-500 font-medium">Permitted Vehicle Types</span>
                 <div className="flex gap-2 mt-1.5 flex-wrap">
-                  {driver.vehicleTypes ? driver.vehicleTypes.split(',').map((t, idx) => (
+                  {driver.vehicleTypes ? driver.vehicleTypes.split(',').map((t: string, idx: number) => (
                     <span key={idx} className="px-2 py-0.5 text-xs font-semibold bg-teal-50 text-teal-700 border border-teal-100 rounded">
                       {t.trim()}
                     </span>
@@ -197,7 +220,7 @@ const DriverDetailView = ({ driver, onBack, onApprove, onReject, loading }) => {
                 <span className="block text-xs font-semibold text-gray-700">NIC Front Photo</span>
                 <div className="aspect-video w-full rounded bg-gray-50 overflow-hidden relative border mt-2 flex items-center justify-center">
                   {driver.nicFrontImage ? (
-                    <img src={driver.nicFrontImage} className="w-full h-full object-cover" />
+                    <img src={driver.nicFrontImage} className="w-full h-full object-cover" alt="NIC Front" />
                   ) : (
                     <span className="text-xs text-gray-400">No Image</span>
                   )}
@@ -218,7 +241,7 @@ const DriverDetailView = ({ driver, onBack, onApprove, onReject, loading }) => {
                 <span className="block text-xs font-semibold text-gray-700">NIC Rear Photo</span>
                 <div className="aspect-video w-full rounded bg-gray-50 overflow-hidden relative border mt-2 flex items-center justify-center">
                   {driver.nicRearImage ? (
-                    <img src={driver.nicRearImage} className="w-full h-full object-cover" />
+                    <img src={driver.nicRearImage} className="w-full h-full object-cover" alt="NIC Rear" />
                   ) : (
                     <span className="text-xs text-gray-400">No Image</span>
                   )}
@@ -239,7 +262,7 @@ const DriverDetailView = ({ driver, onBack, onApprove, onReject, loading }) => {
                 <span className="block text-xs font-semibold text-gray-700">License Front</span>
                 <div className="aspect-video w-full rounded bg-gray-50 overflow-hidden relative border mt-2 flex items-center justify-center">
                   {driver.licenseFrontImage ? (
-                    <img src={driver.licenseFrontImage} className="w-full h-full object-cover" />
+                    <img src={driver.licenseFrontImage} className="w-full h-full object-cover" alt="License Front" />
                   ) : (
                     <span className="text-xs text-gray-400">No Image</span>
                   )}
@@ -260,7 +283,7 @@ const DriverDetailView = ({ driver, onBack, onApprove, onReject, loading }) => {
                 <span className="block text-xs font-semibold text-gray-700">License Rear</span>
                 <div className="aspect-video w-full rounded bg-gray-50 overflow-hidden relative border mt-2 flex items-center justify-center">
                   {driver.licenseRearImage ? (
-                    <img src={driver.licenseRearImage} className="w-full h-full object-cover" />
+                    <img src={driver.licenseRearImage} className="w-full h-full object-cover" alt="License Rear" />
                   ) : (
                     <span className="text-xs text-gray-400">No Image</span>
                   )}
@@ -278,19 +301,19 @@ const DriverDetailView = ({ driver, onBack, onApprove, onReject, loading }) => {
         </div>
 
         {/* Action Controls */}
-        {driver.lifecycleStatus === 'pending' && (
+        {isPending && (
           <div className="flex gap-4 border-t pt-6 justify-end">
             <button 
               onClick={() => onReject(driver)} 
               disabled={loading}
-              className="px-6 py-2.5 rounded-lg border border-red-200 text-red-700 font-semibold text-sm hover:bg-red-50 active:bg-red-100 transition disabled:opacity-50 flex items-center gap-2"
+              className="px-6 py-2.5 rounded-xl border border-red-200 text-red-700 font-semibold text-sm hover:bg-red-50 active:bg-red-100 transition disabled:opacity-50 flex items-center gap-2"
             >
-              <ShieldAlert className="h-4 w-4" /> Reject Registration
+              <ShieldAlert className="h-4 w-4 text-red-600" /> Reject Driver Registration
             </button>
             <button 
               onClick={() => onApprove(driver)} 
               disabled={loading}
-              className="px-6 py-2.5 rounded-lg bg-emerald-600 text-white font-semibold text-sm hover:bg-emerald-700 active:bg-emerald-800 shadow-sm transition disabled:opacity-50 flex items-center gap-2"
+              className="px-6 py-2.5 rounded-xl bg-emerald-600 text-white font-semibold text-sm hover:bg-emerald-700 active:bg-emerald-800 shadow-sm transition disabled:opacity-50 flex items-center gap-2"
             >
               <CheckCircle className="h-4 w-4" /> Approve & Activate
             </button>
@@ -315,6 +338,7 @@ export default function DriverApprovals() {
   const [isRejectModalOpen, setIsRejectModalOpen] = useState(false)
 
   const modal = useModal()
+  const navigate = useNavigate()
 
   const fetchDriversList = useCallback(async (filter: string) => {
     try {
@@ -334,8 +358,8 @@ export default function DriverApprovals() {
     fetchDriversList(statusFilter)
   }, [statusFilter, fetchDriversList])
 
-  const handleApprove = async (driver) => {
-    const name = `${driver.firstName} ${driver.lastName}`
+  const handleApprove = async (driver: any) => {
+    const name = `${driver.firstName || ''} ${driver.lastName || ''}`.trim() || 'Driver'
     const ok = await modal.showConfirm({
       title:   'Approve Driver',
       message: `Are you sure you want to approve driver "${name}"? They will be activated immediately.`,
@@ -350,7 +374,7 @@ export default function DriverApprovals() {
         d.id === driver.id ? { ...d, lifecycleStatus: 'active', status: 'available' } : d
       ))
       if (selectedDriver?.id === driver.id) {
-        setSelectedDriver(null)
+        setSelectedDriver((prev: any) => prev ? { ...prev, lifecycleStatus: 'active', status: 'available' } : null)
       }
     } catch (err: any) {
       modal.addToast(`❌ ${err?.response?.data?.message || 'Approval failed'}`)
@@ -359,7 +383,7 @@ export default function DriverApprovals() {
     }
   }
 
-  const handleReject = (driver) => {
+  const handleReject = (driver: any) => {
     setRejectingDriver(driver)
     setRejectReason('')
     setIsRejectModalOpen(true)
@@ -367,29 +391,30 @@ export default function DriverApprovals() {
 
   const submitRejection = async () => {
     if (!rejectReason.trim()) {
-      modal.addToast('⚠️ Rejection reason is required')
+      modal.addToast('⚠️ Rejection reason is required. Please provide a clear explanation.')
       return
     }
     const driver = rejectingDriver
     if (!driver) return
-    const name = `${driver.firstName} ${driver.lastName}`
+    const name = `${driver.firstName || ''} ${driver.lastName || ''}`.trim() || 'Driver'
     try {
       setActionLoading(true)
-      setIsRejectModalOpen(false)
-      await adminDriverApi.rejectDriver(driver.id, rejectReason)
+      await adminDriverApi.rejectDriver(driver.id, rejectReason.trim())
       modal.addToast(`🚫 Driver "${name}" registration rejected`)
       
       setDrivers(prev => prev.map(d =>
-        d.id === driver.id ? { ...d, lifecycleStatus: 'rejected', status: 'off-duty', rejectionReason: rejectReason } : d
+        d.id === driver.id ? { ...d, lifecycleStatus: 'rejected', status: 'off-duty', rejectionReason: rejectReason.trim() } : d
       ))
       if (selectedDriver?.id === driver.id) {
-        setSelectedDriver(null)
+        setSelectedDriver((prev: any) => prev ? { ...prev, lifecycleStatus: 'rejected', status: 'off-duty', rejectionReason: rejectReason.trim() } : null)
       }
+      setIsRejectModalOpen(false)
+      setRejectingDriver(null)
+      setRejectReason('')
     } catch (err: any) {
       modal.addToast(`❌ ${err?.response?.data?.message || 'Rejection failed'}`)
     } finally {
       setActionLoading(false)
-      setRejectingDriver(null)
     }
   }
 
@@ -408,8 +433,6 @@ export default function DriverApprovals() {
       (d.agentOwnerName || '').toLowerCase().includes(q)
     )
   })
-
-  const navigate = useNavigate()
 
   return (
     <div className="p-8 bg-gray-50 min-h-screen">
@@ -484,7 +507,7 @@ export default function DriverApprovals() {
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {displayed.map(driver => {
-                const name = `${driver.firstName} ${driver.lastName}`
+                const name = `${driver.firstName || ''} ${driver.lastName || ''}`.trim() || 'Unnamed Driver'
                 const statusKey = String(driver.lifecycleStatus || driver.status || 'active').trim().toLowerCase()
                 const isApproved = statusKey === 'active' || statusKey === 'approved'
                 const isPending = statusKey === 'pending'
@@ -505,14 +528,14 @@ export default function DriverApprovals() {
                         <div className="absolute top-3.5 left-3.5">
                           <span className={`backdrop-blur-md px-3.5 py-1 rounded-full text-xs font-semibold tracking-wide border shadow-sm ${
                             isApproved 
-                              ? 'bg-[#0b2838]/85 text-[#38bdf8] border-[#38bdf8]/25' 
+                              ? 'bg-[#062d1b]/85 text-[#34d399] border-[#34d399]/25' 
                               : isPending 
                               ? 'bg-[#2d1b06]/85 text-[#fbbf24] border-[#fbbf24]/25' 
                               : isSuspended 
                               ? 'bg-[#2b1111]/85 text-[#f87171] border-[#f87171]/25' 
                               : 'bg-[#2b1111]/85 text-[#f87171] border-[#f87171]/25'
                           }`}>
-                            {isApproved ? 'Active' : (isPending ? 'Pending' : (isSuspended ? 'Suspended' : 'Rejected'))}
+                            {isApproved ? 'Approved' : (isPending ? 'Pending' : (isSuspended ? 'Suspended' : 'Rejected'))}
                           </span>
                         </div>
                       </div>
@@ -535,7 +558,7 @@ export default function DriverApprovals() {
 
                         {/* Vehicle Types Pills */}
                         <div className="flex flex-wrap gap-1.5 mt-2.5">
-                          {driver.vehicleTypes ? driver.vehicleTypes.split(',').map((t, idx) => (
+                          {driver.vehicleTypes ? driver.vehicleTypes.split(',').map((t: string, idx: number) => (
                             <span key={idx} className="px-2.5 py-0.5 text-xs font-medium bg-gray-100 text-gray-600 rounded-full">
                               {t.trim()}
                             </span>
@@ -582,10 +605,18 @@ export default function DriverApprovals() {
                             </div>
                           </div>
                         </div>
+
+                        {/* Rejection reason snippet on rejected cards */}
+                        {!isPending && !isApproved && driver.rejectionReason && (
+                          <div className="mt-3 p-2.5 bg-red-50/70 border border-red-100 rounded-xl text-xs text-red-700">
+                            <span className="font-semibold block text-[10px] uppercase text-red-800">Reason</span>
+                            <span className="line-clamp-2">{driver.rejectionReason}</span>
+                          </div>
+                        )}
                       </div>
                     </div>
 
-                    {/* Card Actions - Sky Blue View Details Button */}
+                    {/* Card Actions */}
                     <div className="p-5 pt-0">
                       <button
                         onClick={() => setSelectedDriver(driver)}
@@ -603,33 +634,114 @@ export default function DriverApprovals() {
         </>
       )}
 
-      {isRejectModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 animate-fade-in">
-          <div className="bg-white w-full max-w-md rounded-2xl p-6 shadow-xl space-y-4 border animate-scale-in">
-            <h3 className="text-xl font-bold text-gray-900">Provide Rejection Reason</h3>
-            <p className="text-sm text-gray-500">
-              Please enter the reason for rejecting this driver. This feedback will be visible to the agency.
-            </p>
-            <textarea
-              className="w-full min-h-[100px] p-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-1 focus:ring-teal-600 focus:border-transparent resize-none"
-              placeholder="e.g. Driver photo does not match NIC image, please upload a clear, matching profile picture."
-              value={rejectReason}
-              onChange={(e) => setRejectReason(e.target.value)}
-            />
-            <div className="flex gap-3 justify-end">
+      {/* ── Rejection Reason Modal ────────────────────────────────────────── */}
+      {isRejectModalOpen && rejectingDriver && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 animate-fade-in">
+          <div className="bg-white w-full max-w-lg rounded-3xl p-6 sm:p-7 shadow-2xl space-y-5 border border-gray-100 animate-scale-in">
+            
+            {/* Modal Header */}
+            <div className="flex items-start justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <div className="h-11 w-11 rounded-2xl bg-red-100 text-red-600 flex items-center justify-center shrink-0">
+                  <ShieldAlert className="h-6 w-6" />
+                </div>
+                <div>
+                  <h3 className="text-xl font-bold text-gray-900">Reject Driver Registration</h3>
+                  <p className="text-xs text-gray-500 mt-0.5">
+                    Target: <span className="font-bold text-gray-800">{rejectingDriver.firstName} {rejectingDriver.lastName}</span>
+                    {rejectingDriver.agencyName && <span> • {rejectingDriver.agencyName}</span>}
+                  </p>
+                </div>
+              </div>
               <button
-                className="px-4 py-2 border border-gray-200 text-gray-700 font-semibold text-sm rounded-lg hover:bg-gray-50 transition"
+                onClick={() => !actionLoading && setIsRejectModalOpen(false)}
+                className="text-gray-400 hover:text-gray-600 p-1.5 rounded-xl hover:bg-gray-100 transition"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            {/* Instruction Banner */}
+            <div className="p-3.5 bg-amber-50/80 border border-amber-200/80 rounded-2xl text-xs text-amber-800 space-y-1">
+              <div className="font-semibold flex items-center gap-1.5">
+                <AlertTriangle className="h-3.5 w-3.5 text-amber-600 shrink-0" />
+                <span>Rejection feedback is mandatory</span>
+              </div>
+              <p className="text-amber-700 leading-normal">
+                This explanation will be sent immediately as an official notice to the travel agency and driver profile.
+              </p>
+            </div>
+
+            {/* Quick Preset Reasons */}
+            <div>
+              <label className="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                <Sparkles className="h-3.5 w-3.5 text-[#0ea5e9]" />
+                <span>Quick Preset Reasons (Click to insert)</span>
+              </label>
+              <div className="flex flex-wrap gap-1.5">
+                {PRESET_DRIVER_REASONS.map((preset, idx) => (
+                  <button
+                    key={idx}
+                    type="button"
+                    onClick={() => {
+                      setRejectReason(prev => {
+                        if (!prev.trim()) return preset
+                        if (prev.includes(preset)) return prev
+                        return `${prev.trim()}; ${preset}`
+                      })
+                    }}
+                    className="px-2.5 py-1 text-xs rounded-xl bg-gray-50 hover:bg-sky-50 text-gray-700 hover:text-sky-700 border border-gray-200 hover:border-sky-300 transition active:scale-95 text-left"
+                  >
+                    + {preset}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Rejection Reason Textarea */}
+            <div className="space-y-1.5">
+              <div className="flex justify-between items-center text-xs">
+                <label className="font-bold text-gray-700">Detailed Reason for Rejection *</label>
+                <span className={`text-[11px] ${rejectReason.trim().length === 0 ? 'text-gray-400' : 'text-sky-600 font-semibold'}`}>
+                  {rejectReason.length} characters
+                </span>
+              </div>
+              <textarea
+                className="w-full min-h-[110px] p-3.5 border border-gray-200 rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500 placeholder-gray-400 resize-none shadow-2xs leading-relaxed"
+                placeholder="Type the exact reason for rejection (e.g. NIC photo is blurred, please upload high-resolution scan of NIC both front and back)..."
+                value={rejectReason}
+                onChange={(e) => setRejectReason(e.target.value)}
+                autoFocus
+              />
+            </div>
+
+            {/* Modal Actions */}
+            <div className="flex gap-3 justify-end pt-2 border-t border-gray-100">
+              <button
+                type="button"
+                className="px-5 py-2.5 border border-gray-200 text-gray-700 font-semibold text-sm rounded-xl hover:bg-gray-50 transition"
                 onClick={() => setIsRejectModalOpen(false)}
                 disabled={actionLoading}
               >
                 Cancel
               </button>
               <button
-                className="px-4 py-2 bg-red-600 text-white font-semibold text-sm rounded-lg hover:bg-red-700 active:bg-red-800 transition disabled:opacity-50"
+                type="button"
+                className="px-5 py-2.5 bg-red-600 text-white font-semibold text-sm rounded-xl hover:bg-red-700 active:bg-red-800 shadow-sm transition disabled:opacity-50 flex items-center gap-2"
                 onClick={submitRejection}
-                disabled={actionLoading}
+                disabled={actionLoading || !rejectReason.trim()}
               >
-                Confirm Rejection
+                {actionLoading ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    <span>Rejecting...</span>
+                  </>
+                ) : (
+                  <>
+                    <ShieldAlert className="h-4 w-4" />
+                    <span>Confirm Rejection</span>
+                  </>
+                )}
               </button>
             </div>
           </div>

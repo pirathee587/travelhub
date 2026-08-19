@@ -239,6 +239,7 @@ interface DocumentViewerModalProps {
   nicImageUrl?: string | null
   nicRearImageUrl?: string | null
   businessRegistrationImageUrl?: string | null
+  initialTab?: 'front' | 'rear' | 'br'
   onClose: () => void
 }
 
@@ -248,10 +249,24 @@ const DocumentViewerModal = ({
   nicImageUrl,
   nicRearImageUrl,
   businessRegistrationImageUrl,
+  initialTab = 'front',
   onClose
 }: DocumentViewerModalProps) => {
-  const initialTab = nicImageUrl ? 'front' : (nicRearImageUrl ? 'rear' : (businessRegistrationImageUrl ? 'br' : 'front'))
-  const [activeTab, setActiveTab] = useState<'front' | 'rear' | 'br'>(initialTab)
+  const getAvailableTab = (preferred?: 'front' | 'rear' | 'br') => {
+    if (preferred === 'front' && nicImageUrl) return 'front'
+    if (preferred === 'rear' && nicRearImageUrl) return 'rear'
+    if (preferred === 'br' && businessRegistrationImageUrl) return 'br'
+    if (nicImageUrl) return 'front'
+    if (nicRearImageUrl) return 'rear'
+    if (businessRegistrationImageUrl) return 'br'
+    return 'front'
+  }
+
+  const [activeTab, setActiveTab] = useState<'front' | 'rear' | 'br'>(() => getAvailableTab(initialTab))
+
+  useEffect(() => {
+    setActiveTab(getAvailableTab(initialTab))
+  }, [initialTab, nicImageUrl, nicRearImageUrl, businessRegistrationImageUrl])
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose() }
@@ -316,7 +331,7 @@ const DocumentViewerModal = ({
                 activeTab === 'rear' ? 'bg-[#0ea5e9] text-white shadow-sm' : 'bg-white text-slate-600 hover:bg-slate-200'
               }`}
             >
-              NIC Back
+              NIC Rear
             </button>
           )}
           {businessRegistrationImageUrl && (
@@ -350,8 +365,8 @@ const DocumentViewerModal = ({
         {/* Modal Footer */}
         <div className="px-6 py-4 bg-white border-t border-slate-200 flex items-center justify-between">
           <div className="text-xs text-slate-500">
-            {activeTab === 'front' && 'Showing National Identity Card (Front)'}
-            {activeTab === 'rear' && 'Showing National Identity Card (Back)'}
+            {activeTab === 'front' && 'Showing National Identity Card (Front Photo)'}
+            {activeTab === 'rear' && 'Showing National Identity Card (Rear Photo)'}
             {activeTab === 'br' && 'Showing Business Registration Certificate'}
           </div>
           <div className="flex items-center gap-3">
@@ -363,12 +378,6 @@ const DocumentViewerModal = ({
                 <ExternalLink className="h-3.5 w-3.5" /> Open in New Tab
               </button>
             )}
-            <button
-              onClick={onClose}
-              className="px-5 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-semibold transition"
-            >
-              Close
-            </button>
           </div>
         </div>
       </div>
@@ -649,6 +658,7 @@ const AgentDetailView = ({
   const [viewingPackage, setViewingPackage] = useState<any | null>(null)
   const [pkgDetailLoading, setPkgDetailLoading] = useState(false)
   const [docModalOpen, setDocModalOpen] = useState(false)
+  const [selectedDocTab, setSelectedDocTab] = useState<'front' | 'rear' | 'br'>('front')
 
   if (!agent) return null
 
@@ -739,7 +749,10 @@ const AgentDetailView = ({
     memberSince,
     applicationStatus,
     nicImageUrl,
+    nicFrontImageUrl,
+    nicFrontImage,
     nicRearImageUrl,
+    nicRearImage,
     ownerNic,
     businessRegistrationNumber,
     businessRegistrationImageUrl,
@@ -753,6 +766,9 @@ const AgentDetailView = ({
     logoUrl,
     totalPackages
   } = agent
+
+  const nicFrontUrl = nicFrontImageUrl || nicFrontImage || nicImageUrl || agent.nicImage || agent.nicPhotocopy || null
+  const nicRearUrl = nicRearImageUrl || nicRearImage || agent.nicRearImage || agent.nicRearImageUrl || null
 
   const displayName = companyName || agentName || 'Travel Agency'
   const ownerDisplayName = ownerName || agentName || 'Agent'
@@ -788,9 +804,10 @@ const AgentDetailView = ({
         <DocumentViewerModal
           ownerName={ownerDisplayName}
           nicNumber={ownerNic || agent.nicNumber}
-          nicImageUrl={nicImageUrl || agent.nicImage || agent.nicPhotocopy}
-          nicRearImageUrl={nicRearImageUrl}
+          nicImageUrl={nicFrontUrl}
+          nicRearImageUrl={nicRearUrl}
           businessRegistrationImageUrl={businessRegistrationImageUrl}
+          initialTab={selectedDocTab}
           onClose={() => setDocModalOpen(false)}
         />
       )}
@@ -1008,9 +1025,12 @@ const AgentDetailView = ({
 
         {/* Documents Inspection Button Bar */}
         <div className="flex items-center gap-3 mt-6 flex-wrap">
-          {nicImageUrl || agent.nicImage || agent.nicPhotocopy || nicRearImageUrl || businessRegistrationImageUrl ? (
+          {nicFrontUrl || nicRearUrl || agent.nicImage || agent.nicPhotocopy || businessRegistrationImageUrl ? (
             <button
-              onClick={() => setDocModalOpen(true)}
+              onClick={() => {
+                setSelectedDocTab(nicFrontUrl ? 'front' : (nicRearUrl ? 'rear' : 'front'))
+                setDocModalOpen(true)
+              }}
               className="px-5 py-2.5 bg-[#0ea5e9] hover:bg-[#0284c7] text-white rounded-xl text-sm font-bold flex items-center gap-2 shadow-sm transition"
             >
               🪪 View NIC Document
@@ -1026,7 +1046,10 @@ const AgentDetailView = ({
 
           {businessRegistrationImageUrl && (
             <button
-              onClick={() => setDocModalOpen(true)}
+              onClick={() => {
+                setSelectedDocTab('br')
+                setDocModalOpen(true)
+              }}
               className="px-5 py-2.5 bg-slate-800 hover:bg-slate-900 text-white rounded-xl text-sm font-bold flex items-center gap-2 shadow-sm transition"
             >
               📄 View Business Registration
@@ -1221,9 +1244,9 @@ const AgencyCard = ({ agent, index, onView, onApprove, onReject, onSuspend, onUn
   return (
     <div
       onClick={() => onView(agent)}
-      className="group flex flex-col bg-white p-5 rounded-2xl border-2 border-primary/20 shadow-sm hover:shadow-xl hover:-translate-y-1 hover:border-primary/60 transition-all duration-300 cursor-pointer h-full justify-between"
+      className="group relative flex flex-col bg-white/70 backdrop-blur-xl p-5 rounded-3xl border border-white/80 shadow-[0_8px_30px_rgb(0,0,0,0.04)] hover:shadow-[0_20px_40px_rgba(14,165,233,0.18)] hover:-translate-y-1.5 hover:border-[#0ea5e9]/50 transition-all duration-300 cursor-pointer h-full justify-between overflow-hidden before:absolute before:inset-0 before:bg-gradient-to-b before:from-white/40 before:to-transparent before:pointer-events-none"
     >
-      <div>
+      <div className="relative z-10">
         {/* Top Header: Avatar + Info */}
         <div className="flex gap-3.5 items-start mb-3">
           <div className="relative flex-shrink-0">
@@ -1241,7 +1264,7 @@ const AgencyCard = ({ agent, index, onView, onApprove, onReject, onSuspend, onUn
             </h3>
 
             {(ownerName || agentName) && (
-              <p className="text-xs text-gray-500 truncate mt-0.5">
+              <p className="text-xs text-gray-500 truncate mt-0.5 font-medium">
                 {ownerName || agentName}
               </p>
             )}
@@ -1276,18 +1299,18 @@ const AgencyCard = ({ agent, index, onView, onApprove, onReject, onSuspend, onUn
             <span>{totalTrips ?? 0} trips</span>
           </div>
 
-          <div className="flex items-center gap-1 bg-emerald-50 text-emerald-700 border border-emerald-200/60 px-2 py-0.5 rounded-md font-semibold text-[11px]">
+          <div className="flex items-center gap-1 bg-emerald-50/80 backdrop-blur-xs text-emerald-700 border border-emerald-200/60 px-2 py-0.5 rounded-md font-semibold text-[11px]">
             <span>📦</span>
             <span>{pkgs} packages</span>
           </div>
         </div>
 
         {/* Status Pills Row */}
-        <div className="flex items-center justify-between gap-2 mb-4 pt-2 border-t border-gray-100">
+        <div className="flex items-center justify-between gap-2 mb-4 pt-2 border-t border-gray-100/80">
           <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold ${
             isApproved ? 'bg-emerald-50 text-emerald-700' : isPending ? 'bg-amber-50 text-amber-700' : 'bg-red-50 text-red-600'
           }`}>
-            {displayStatus === 'Approved' ? 'Active' : displayStatus}
+            {displayStatus === 'Approved' ? 'Approved' : displayStatus}
           </span>
 
           <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold ${nicStatus.bg}`}>
@@ -1298,10 +1321,10 @@ const AgencyCard = ({ agent, index, onView, onApprove, onReject, onSuspend, onUn
       </div>
 
       {/* Action CTA button */}
-      <div className="pt-1 mt-auto" onClick={(e) => e.stopPropagation()}>
+      <div className="pt-1 mt-auto relative z-10" onClick={(e) => e.stopPropagation()}>
         <button
           onClick={() => onView(agent)}
-          className="w-full py-2.5 px-3 bg-[#0ea5e9]/10 text-[#0ea5e9] hover:bg-[#0ea5e9] hover:text-white rounded-xl text-xs sm:text-sm font-bold flex items-center justify-center gap-1 transition duration-200 shadow-sm"
+          className="w-full py-2.5 px-3 bg-[#0ea5e9] hover:bg-[#0284c7] text-white rounded-xl text-xs sm:text-sm font-bold flex items-center justify-center gap-1.5 transition-all duration-200 shadow-md shadow-[#0ea5e9]/25 hover:shadow-lg hover:shadow-[#0ea5e9]/40 active:scale-[0.98] cursor-pointer"
         >
           View Details <ChevronRight className="h-4 w-4" />
         </button>

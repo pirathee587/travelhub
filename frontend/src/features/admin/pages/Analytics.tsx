@@ -144,9 +144,9 @@ const AgencyAnalyticsCard = ({ agent, index, statsInfo, onView }: AgencyAnalytic
   return (
     <div
       onClick={() => onView(agent)}
-      className="group flex flex-col bg-white p-5 rounded-2xl border-2 border-primary/20 shadow-sm hover:shadow-xl hover:-translate-y-1 hover:border-primary/60 transition-all duration-300 cursor-pointer h-full justify-between"
+      className="group relative flex flex-col bg-white/70 backdrop-blur-xl p-5 rounded-3xl border border-white/80 shadow-[0_8px_30px_rgb(0,0,0,0.04)] hover:shadow-[0_20px_40px_rgba(14,165,233,0.18)] hover:-translate-y-1.5 hover:border-[#0ea5e9]/50 transition-all duration-300 cursor-pointer h-full justify-between overflow-hidden before:absolute before:inset-0 before:bg-gradient-to-b before:from-white/40 before:to-transparent before:pointer-events-none"
     >
-      <div>
+      <div className="relative z-10">
         {/* Top Header: Avatar + Info + Rating */}
         <div className="flex gap-3.5 items-start mb-4">
           <div className="relative flex-shrink-0">
@@ -187,7 +187,7 @@ const AgencyAnalyticsCard = ({ agent, index, statsInfo, onView }: AgencyAnalytic
         {/* ── 3 Exact Metric Blocks from User Request ─────────────────── */}
         <div className="space-y-2.5 mb-4">
           {/* 1. TOTAL REVENUE */}
-          <div className="bg-[#F8FAFC] rounded-2xl p-3.5 border border-gray-100 flex items-center justify-between">
+          <div className="bg-white/60 backdrop-blur-md rounded-2xl p-3.5 border border-sky-100/60 shadow-2xs flex items-center justify-between">
             <div>
               <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">
                 TOTAL REVENUE
@@ -198,14 +198,14 @@ const AgencyAnalyticsCard = ({ agent, index, statsInfo, onView }: AgencyAnalytic
             </div>
             <div className="flex items-center">
               <RevenueSparkline id={id} />
-              <div className="w-7 h-7 rounded-xl bg-sky-100 text-[#0ea5e9] font-black flex items-center justify-center text-xs ml-2 flex-shrink-0">
+              <div className="w-7 h-7 rounded-xl bg-sky-100/80 text-[#0ea5e9] font-black flex items-center justify-center text-xs ml-2 flex-shrink-0">
                 {currencySymbol}
               </div>
             </div>
           </div>
 
           {/* 2. TOTAL TRIPS */}
-          <div className="bg-[#F8FAFC] rounded-2xl p-3.5 border border-gray-100 flex items-center justify-between">
+          <div className="bg-white/60 backdrop-blur-md rounded-2xl p-3.5 border border-sky-100/60 shadow-2xs flex items-center justify-between">
             <div>
               <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">
                 TOTAL TRIPS
@@ -216,14 +216,14 @@ const AgencyAnalyticsCard = ({ agent, index, statsInfo, onView }: AgencyAnalytic
             </div>
             <div className="flex items-center">
               <MiniBarChart />
-              <div className="w-7 h-7 rounded-xl bg-sky-100 text-[#0ea5e9] flex items-center justify-center flex-shrink-0 ml-2">
+              <div className="w-7 h-7 rounded-xl bg-sky-100/80 text-[#0ea5e9] flex items-center justify-center flex-shrink-0 ml-2">
                 <Car className="w-3.5 h-3.5 text-[#0ea5e9]" />
               </div>
             </div>
           </div>
 
           {/* 3. COMPLETED TRIPS */}
-          <div className="bg-[#F8FAFC] rounded-2xl p-3.5 border border-gray-100 flex items-center justify-between gap-3">
+          <div className="bg-white/60 backdrop-blur-md rounded-2xl p-3.5 border border-sky-100/60 shadow-2xs flex items-center justify-between gap-3">
             <div className="flex-1 min-w-0">
               <div className="flex items-center justify-between text-xs mb-1.5">
                 <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">
@@ -233,7 +233,7 @@ const AgencyAnalyticsCard = ({ agent, index, statsInfo, onView }: AgencyAnalytic
                   {completedPct}%
                 </span>
               </div>
-              <div className="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
+              <div className="w-full bg-gray-200/80 rounded-full h-2 overflow-hidden">
                 <div
                   className="bg-[#86EFAC] h-full rounded-full transition-all duration-500"
                   style={{ width: `${completedPct}%` }}
@@ -248,10 +248,10 @@ const AgencyAnalyticsCard = ({ agent, index, statsInfo, onView }: AgencyAnalytic
       </div>
 
       {/* Action CTA button */}
-      <div className="pt-1 mt-auto" onClick={(e) => e.stopPropagation()}>
+      <div className="pt-1 mt-auto relative z-10" onClick={(e) => e.stopPropagation()}>
         <button
           onClick={() => onView(agent)}
-          className="w-full py-2.5 px-3 bg-[#0ea5e9]/10 text-[#0ea5e9] hover:bg-[#0ea5e9] hover:text-white rounded-xl text-xs sm:text-sm font-bold flex items-center justify-center gap-1 transition duration-200 shadow-sm"
+          className="w-full py-2.5 px-3 bg-[#0ea5e9] hover:bg-[#0284c7] text-white rounded-xl text-xs sm:text-sm font-bold flex items-center justify-center gap-1.5 transition-all duration-200 shadow-md shadow-[#0ea5e9]/25 hover:shadow-lg hover:shadow-[#0ea5e9]/40 active:scale-[0.98] cursor-pointer"
         >
           View Details <ChevronRight className="h-4 w-4" />
         </button>
@@ -398,6 +398,10 @@ export default function Analytics() {
 
   const filteredAgents = useMemo(() => {
     return agents.filter(a => {
+      const agentStatus = (a.applicationStatus || a.lifecycleStatus || a.status || '').toLowerCase()
+      // Agencies with pending or rejected status must not appear in Agency Analytics & Reports
+      if (agentStatus === 'pending' || agentStatus === 'rejected') return false
+
       const company = (a.companyName || a.agentName || '').toLowerCase()
       const owner = (a.ownerName || `${a.ownerFirstName || ''} ${a.ownerLastName || ''}`).toLowerCase()
       const matchesSearch = company.includes(searchTerm.toLowerCase()) || owner.includes(searchTerm.toLowerCase())
@@ -405,12 +409,9 @@ export default function Analytics() {
       if (!matchesSearch) return false
 
       if (statusFilter !== 'All Statuses') {
-        const agentStatus = (a.lifecycleStatus || a.applicationStatus || a.status || '').toLowerCase()
         const targetStatus = statusFilter.toLowerCase()
-        if (targetStatus === 'active' && !['active', 'approved'].includes(agentStatus)) return false
-        if (targetStatus === 'pending' && agentStatus !== 'pending') return false
+        if ((targetStatus === 'approved' || targetStatus === 'active') && !['active', 'approved'].includes(agentStatus)) return false
         if (targetStatus === 'suspended' && agentStatus !== 'suspended') return false
-        if (targetStatus === 'rejected' && agentStatus !== 'rejected') return false
       }
 
       return true
@@ -1048,10 +1049,8 @@ export default function Analytics() {
               className="bg-transparent text-sm text-gray-700 font-medium focus:outline-none cursor-pointer pr-2"
             >
               <option value="All Statuses">All Statuses</option>
-              <option value="Active">Active</option>
-              <option value="Pending">Pending</option>
+              <option value="Approved">Approved</option>
               <option value="Suspended">Suspended</option>
-              <option value="Rejected">Rejected</option>
             </select>
           </div>
         </div>
