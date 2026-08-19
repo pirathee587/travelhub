@@ -22,6 +22,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
 
+import java.time.LocalDateTime;
 import java.util.Optional;
 
 import static org.mockito.ArgumentMatchers.*;
@@ -150,6 +151,73 @@ public class AuthServiceTest {
 
         assertNotNull(response);
         assertEquals(response.getToken(), "mock.jwt.token");
+    }
+
+    // ─────────────────────────────────────────────────────────────
+    // verifyEmail() tests
+    // ─────────────────────────────────────────────────────────────
+
+    @Test(description = "verifyEmail should reject expired verification tokens")
+    public void verifyEmail_WhenTokenExpired_ShouldThrowBadRequestException() {
+        User user = User.builder()
+                .id(1L)
+                .email("pending@email.com")
+                .verificationToken("expired-token")
+                .verificationTokenExpires(LocalDateTime.now().minusHours(1))
+                .build();
+        when(userRepository.findByVerificationToken("expired-token")).thenReturn(Optional.of(user));
+
+        try {
+            authService.verifyEmail("expired-token");
+            fail("Expected BadRequestException for expired verification token");
+        } catch (BadRequestException ex) {
+            assertTrue(ex.getMessage().contains("expired"));
+        }
+        verify(userRepository, never()).save(any());
+    }
+
+    @Test(description = "verifyEmail should verify user when token is valid")
+    public void verifyEmail_WhenTokenValid_ShouldMarkEmailVerified() {
+        User user = User.builder()
+                .id(1L)
+                .email("pending@email.com")
+                .role(Role.TOURIST)
+                .verificationToken("valid-token")
+                .verificationTokenExpires(LocalDateTime.now().plusHours(12))
+                .build();
+        when(userRepository.findByVerificationToken("valid-token")).thenReturn(Optional.of(user));
+        when(userRepository.save(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        var response = authService.verifyEmail("valid-token");
+
+        assertTrue(response.isSuccess());
+        verify(userRepository, times(1)).save(argThat(saved ->
+                saved.isEmailVerified()
+                        && saved.getVerificationToken() == null
+                        && saved.getVerificationTokenExpires() == null));
+    }
+
+    @Test(description = "resendVerificationEmail should issue a fresh token and expiry")
+    public void resendVerificationEmail_ShouldIssueFreshToken() {
+        User user = User.builder()
+                .id(1L)
+                .email("pending@email.com")
+                .isEmailVerified(false)
+                .verificationToken("old-token")
+                .verificationTokenExpires(LocalDateTime.now().minusHours(1))
+                .build();
+        when(userRepository.findByEmail("pending@email.com")).thenReturn(Optional.of(user));
+        when(userRepository.save(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        doNothing().when(emailService).sendVerificationEmail(anyString(), anyString());
+
+        var response = authService.resendVerificationEmail("pending@email.com");
+
+        assertTrue(response.isSuccess());
+        verify(userRepository, times(1)).save(argThat(saved ->
+                !"old-token".equals(saved.getVerificationToken())
+                        && saved.getVerificationTokenExpires() != null
+                        && saved.getVerificationTokenExpires().isAfter(LocalDateTime.now())));
+        verify(emailService, times(1)).sendVerificationEmail(eq("pending@email.com"), anyString());
     }
 
     // ─────────────────────────────────────────────────────────────

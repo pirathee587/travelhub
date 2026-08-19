@@ -8,7 +8,6 @@ import {
     Compass,
     Settings,
     LogOut,
-    Plane,
     Menu,
     X,
     Building2,
@@ -16,6 +15,7 @@ import {
     CreditCard,
 } from "lucide-react";
 import { cn } from "@/features/tourist/services/utils";
+import { BrandLogoLink } from "@/components/common/BrandLogoLink";
 
 const navItems = [
     { icon: Compass, label: "Explore", path: "/tourist" },
@@ -73,17 +73,7 @@ export function DashboardSidebar({ collapsed, setCollapsed }: DashboardSidebarPr
     const SidebarContent = () => (
         <>
             {/* Logo */} 
-            <div className={cn("p-4 flex items-center gap-3 transition-all duration-300", collapsed && "justify-center px-2 py-4")}>
-                <div className={cn("rounded-xl bg-primary flex items-center justify-center shadow-glow transition-all duration-300", collapsed ? "h-10 w-10" : "h-12 w-12")}>
-                    <Plane className={cn("text-white transition-all duration-300", collapsed ? "h-5 w-5" : "h-7 w-7")} />
-                </div>
-                {!collapsed && (
-                    <div className="animate-fade-in">
-                        <h1 className="font-bold text-lg text-sidebar-foreground">TravelHub</h1> 
-                        <p className="text-xs text-sidebar-foreground/60">Dashboard</p>
-                    </div>
-                )}
-            </div>
+            <BrandLogoLink variant="sidebar" collapsed={collapsed} />
 
             {/* Main Navigation */}
             <nav className={cn("flex-1 px-3 py-4 space-y-1 transition-all duration-300", collapsed && "px-1")}>
