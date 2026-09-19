@@ -6,6 +6,7 @@ import { TripCard } from "@/features/tourist/components/dashboard/TripCard";
 import { TravelCard } from "@/features/tourist/components/dashboard/TravelCard";
 import { TripDetailsSheet } from "@/features/tourist/components/dashboard/TripDetailsSheet";
 import { ReviewDialog } from "@/features/tourist/components/dashboard/ReviewDialog";
+import { BookingCalendar } from "@/features/tourist/components/dashboard/BookingCalendar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/common/ui/tabs";
 import { Button } from "@/components/common/ui/button";
 import { Link } from "react-router-dom";
@@ -324,6 +325,15 @@ const Overview = () => {
                         </div>
                     </TabsContent>
                 </Tabs>
+            </section>
+
+            {/* Booking Calendar Section */}
+            <section className="animate-slide-up py-8" style={{ animationDelay: "0.3s" }}>
+                <BookingCalendar
+                    trips={trips}
+                    isLoading={overviewLoading}
+                    onOpenTripDetails={handleTripClick}
+                />
             </section>
 
             {/* Interactive Sri Lanka Travel Map Section */}
